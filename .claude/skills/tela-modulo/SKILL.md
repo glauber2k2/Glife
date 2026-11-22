@@ -1,6 +1,6 @@
 ---
 name: tela-modulo
-description: Criar ou refazer uma tela do Vida respeitando o design system minimalista, LinkPanel e estados offline/carregando/vazio.
+description: Criar ou refazer uma tela do Glife respeitando o design system minimalista, LinkPanel e estados offline/carregando/vazio.
 ---
 
 # Tela de módulo

@@ -1,4 +1,4 @@
-// Referências bíblicas no formato OSIS-like usado pelo Vida: `JHN.3`, `JHN.3.16`,
+// Referências bíblicas no formato OSIS-like usado pelo Glife: `JHN.3`, `JHN.3.16`,
 // `JHN.3.16-18`, `JHN.3.16-4.2`, `PSA.23-24`.
 import { findBook, getBook } from './books.ts';
 
@@ -65,7 +65,7 @@ export function isValidRef(ref: BibleRef): boolean {
   return true;
 }
 
-/** Serializa para o formato guardado em `links.target_ref` e usado em `vida://bible/...`. */
+/** Serializa para o formato guardado em `links.target_ref` e usado em `glife://bible/...`. */
 export function toOsis(ref: BibleRef): string {
   let s = `${ref.book}.${ref.chapter}`;
   if (ref.verse !== undefined) s += `.${ref.verse}`;

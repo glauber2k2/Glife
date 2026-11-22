@@ -5,16 +5,17 @@ const TX = '41aa0000-0000-4000-8000-000000000001';
 const MEDIA = 'e5f60000-0000-4000-8000-000000000002';
 const NOTE = '9f2c0000-0000-4000-8000-000000000003';
 
-describe('URIs vida://', () => {
+describe('URIs glife://', () => {
   it('ida e volta', () => {
     expect(parseUri(toUri({ type: 'tx', ref: TX }))).toEqual({ type: 'tx', ref: TX });
-    expect(parseUri('vida://bible/JHN.3.16-18')).toEqual({ type: 'bible', ref: 'JHN.3.16-18' });
+    expect(toUri({ type: 'tx', ref: TX })).toBe(`glife://tx/${TX}`);
+    expect(parseUri('glife://bible/JHN.3.16-18')).toEqual({ type: 'bible', ref: 'JHN.3.16-18' });
   });
   it('rejeita inválidos', () => {
-    expect(parseUri('vida://tx/nao-e-uuid')).toBeNull();
-    expect(parseUri('vida://foo/' + TX)).toBeNull();
+    expect(parseUri('glife://tx/nao-e-uuid')).toBeNull();
+    expect(parseUri('glife://foo/' + TX)).toBeNull();
     expect(parseUri('http://tx/' + TX)).toBeNull();
-    expect(parseUri('vida://bible/JHN.99.1')).toBeNull();
+    expect(parseUri('glife://bible/JHN.99.1')).toBeNull();
   });
 });
 

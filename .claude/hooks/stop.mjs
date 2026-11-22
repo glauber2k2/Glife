@@ -36,13 +36,13 @@ async function main() {
   const mais = status.length > 15 ? `\n  … e mais ${status.length - 15}` : '';
 
   const reason = [
-    `Há ${status.length} alteração(ões) não commitada(s) em vida/:`,
+    `Há ${status.length} alteração(ões) não commitada(s) em glife/:`,
     arquivos + mais,
     '',
     'Antes de parar:',
     '1. Atualize o HANDOFF.md: "Estado atual" com o estado exato. Se uma tarefa ficou pela metade,',
     '   diga o que foi feito e o que falta, para o Codex (ou a próxima sessão) continuar dali.',
-    '2. Rode pnpm lint, pnpm typecheck e pnpm test na raiz vida/.',
+    '2. Rode pnpm lint, pnpm typecheck e pnpm test na raiz glife/.',
     '3. Faça commit "claude: <descrição>" (se algo falhar, commite mesmo assim e registre a falha no HANDOFF.md).',
   ].join('\n');
 

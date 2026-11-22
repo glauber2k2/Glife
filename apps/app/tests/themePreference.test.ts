@@ -37,7 +37,18 @@ describe('createThemePreferenceStore', () => {
     const store = createThemePreferenceStore(kv);
     await store.save('dark');
     expect(await store.load()).toBe('dark');
+    expect(kv.data['glife.theme.preference']).toBe('dark');
     expect(await createThemePreferenceStore(kv).load()).toBe('dark');
+  });
+
+  it('preserva a preferência salva antes da mudança de nome para Glife', async () => {
+    const kv = memoryStorage({ 'vida.theme.preference': 'dark' });
+    expect(await createThemePreferenceStore(kv).load()).toBe('dark');
+  });
+
+  it('a preferência Glife prevalece sobre a preferência antiga', async () => {
+    const kv = memoryStorage({ 'vida.theme.preference': 'dark', 'glife.theme.preference': 'light' });
+    expect(await createThemePreferenceStore(kv).load()).toBe('light');
   });
 
   it('valor corrompido no armazenamento vira null', async () => {

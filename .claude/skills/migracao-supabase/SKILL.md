@@ -1,6 +1,6 @@
 ---
 name: migracao-supabase
-description: Qualquer mudança no banco do Vida (tabela, coluna, índice). Gera migração versionada com RLS e deleted_at e atualiza o PowerSync.
+description: Qualquer mudança no banco do Glife (tabela, coluna, índice). Gera migração versionada com RLS e deleted_at e atualiza o PowerSync.
 ---
 
 # Migração Supabase

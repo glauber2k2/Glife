@@ -57,7 +57,7 @@ function main() {
       '',
       'ANTES de qualquer outra coisa (inclusive antes de responder ao pedido do usuário):',
       `1. Revise só o diff: git diff ${short}..HEAD (não leia os arquivos inteiros).`,
-      '2. Rode pnpm lint, pnpm typecheck e pnpm test (na raiz vida/).',
+      '2. Rode pnpm lint, pnpm typecheck e pnpm test (na raiz glife/).',
       '3. Verifique aderência ao HANDOFF.md (arquivos permitidos, critérios de aceite, "Decisões tomadas"),',
       '   segurança (segredos, RLS, validação de entrada, dados pessoais) e casos de borda.',
       '4. Corrija os problemas encontrados.',

@@ -1,6 +1,6 @@
 # AGENTS.md — instruções para o Codex
 
-Projeto **Vida**: organizador de vida pessoal (Expo SDK 58 + Expo Router + TypeScript, local-first com
+Projeto **Glife**: organizador de vida pessoal (Expo SDK 58 + Expo Router + TypeScript, local-first com
 SQLite/PowerSync/Supabase). Arquitetura completa e regras em `CLAUDE.md`; plano por fases em
 `docs/PLANO_DE_IMPLEMENTACAO.md`. Você trabalha em dupla com o Claude Code, que planeja e revisa.
 
@@ -11,7 +11,7 @@ SQLite/PowerSync/Supabase). Arquitetura completa e regras em `CLAUDE.md`; plano 
    cuidados. **Pule** as tarefas marcadas **"(só Claude)"** e as listadas como bloqueadas.
 3. Não altere a seção "Decisões tomadas", não refatore o que já está `[x]` e não adicione dependências que a
    tarefa não peça.
-4. Depois de **cada** tarefa, na raiz `vida/`:
+4. Depois de **cada** tarefa, na raiz `glife/`:
    ```bash
    pnpm lint && pnpm typecheck && pnpm test
    ```

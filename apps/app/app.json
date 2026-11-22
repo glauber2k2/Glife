@@ -1,18 +1,18 @@
 {
   "expo": {
-    "name": "Vida",
-    "slug": "vida",
+    "name": "Glife",
+    "slug": "glife",
     "version": "0.1.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "vida",
+    "scheme": "glife",
     "userInterfaceStyle": "automatic",
     "ios": {
       "icon": "./assets/expo.icon",
-      "bundleIdentifier": "app.vida.pessoal"
+      "bundleIdentifier": "app.glife.pessoal"
     },
     "android": {
-      "package": "app.vida.pessoal",
+      "package": "app.glife.pessoal",
       "adaptiveIcon": {
         "backgroundColor": "#FAFAF9",
         "foregroundImage": "./assets/images/android-icon-foreground.png",

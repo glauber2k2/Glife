@@ -1,4 +1,4 @@
-# Plano de implementação — Vida (Organizador de Vida)
+# Plano de implementação — Glife (Organizador de Vida)
 
 Baseado em `Organizador de Vida — Planejamento do Projeto.md` (22/11/2026).
 O roadmap original vinha num bloco embutido que não foi exportado; as fases abaixo
@@ -18,7 +18,7 @@ Objetivo: o mesmo app abre no Android e no navegador, com login, banco local e s
 | 0.2 | App Expo SDK 58 + Expo Router + TypeScript, alias `@/` | `pnpm web` abre no navegador | ✅ |
 | 0.3 | Design system: tokens (`shared/ui/theme`), fontes Inter + Source Serif 4, tema claro/escuro, componentes `Text`, `Button`, `Input`, `ListItem`, `Sheet`, `Chip` | Tela de demonstração nos dois temas | ✅ |
 | 0.4 | Navegação: 4 abas (Hoje · Notas · Finanças · Bíblia) + botão central da caixa de entrada | Navega entre abas no web e no Android | 🟡 web ok; falta Android |
-| 0.5 | `packages/domain`: base de entidade (UUID, timestamps, `deleted_at`), Zod, `links` (parser de `[[...]]` e URIs `vida://`) com testes | `pnpm test` verde | ✅ |
+| 0.5 | `packages/domain`: base de entidade (UUID, timestamps, `deleted_at`), Zod, `links` (parser de `[[...]]` e URIs `glife://`) com testes | `pnpm test` verde | ✅ |
 | 0.6 | ESLint com `eslint-plugin-boundaries` aplicando as 6 regras de importação | Import proibido quebra o lint | ✅ testado em `apps/app/tests/boundaries.test.ts` |
 | 0.7 | Supabase: projeto, CLI, primeira migração (`links`, `notes`, `tags`) com RLS, cadastro público desligado, MFA | 2º usuário de teste não enxerga nada | 🟡 local ok (`supabase/tests/rls.test.ts`, 2 usuários + MFA); falta o projeto hospedado |
 | 0.8 | PowerSync: schema local, sync rules por `user_id`, conector Supabase (upload queue) | Editar offline no celular e ver no web ao reconectar | ⏳ |
@@ -38,7 +38,7 @@ Objetivo: o mesmo app abre no Android e no navegador, com login, banco local e s
 
 - Notas: lista, pastas, tags, fixar, editor (campo de texto + pré-visualização markdown; editor rico fica para 1.5).
 - Links: tabela `links` atualizada pelo parser ao salvar, `LinkPanel` com backlinks, autocomplete ao digitar `[[`.
-- Registro de tipos (`vida://note` …) na feature `links`.
+- Registro de tipos (`glife://note` …) na feature `links`.
 - Busca universal com FTS5 (Ctrl+K no web), incluindo ações (“nova nota”).
 - Lixeira (exclusão lógica).
 - `app-lock`: biometria + senha do app (scrypt/argon2 via `@noble/hashes`, `expo-secure-store`), espera crescente, tela oculta em recentes.
@@ -65,7 +65,7 @@ Objetivo: o mesmo app abre no Android e no navegador, com login, banco local e s
 
 - `tools/bible-import`: USFM da Bíblia Livre → `blivre.sqlite` com FTS5 (31 mil versículos).
 - Leitor em modo leitura (serifa 18), camadas: marcações, anotações, edições (restaurar/ver original), favoritos e progresso.
-- Referências OSIS (`[[Jo 3:16]]` → `vida://bible/JHN.3.16`).
+- Referências OSIS (`[[Jo 3:16]]` → `glife://bible/JHN.3.16`).
 - Devocional (modelo SOAP), linha do tempo, lembrete diário; crédito CC BY 4.0 visível.
 
 ## Fase 5 — Galeria e mídia (≈ 2 semanas)

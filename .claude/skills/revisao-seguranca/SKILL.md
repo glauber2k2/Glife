@@ -1,6 +1,6 @@
 ---
 name: revisao-seguranca
-description: Checklist de segurança do Vida antes de cada release.
+description: Checklist de segurança do Glife antes de cada release.
 ---
 
 # Revisão de segurança

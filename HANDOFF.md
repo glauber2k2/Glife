@@ -29,6 +29,13 @@ do usuário ou são "(só Claude)".
 
 Formato: `- [ ] Título` + Arquivos permitidos · Aceite (verificável) · Cuidados.
 
+- [x] **R1 — Renomear o sistema/app para Glife (pedido do usuário)**
+  - Arquivos: configuração Expo/pnpm/Supabase local, imports/exports do domain, esquema de URI e testes,
+    preferência de tema, documentação e hooks; pasta raiz renomeada de `vida/` para `glife/`.
+  - Aceite: nome Glife, slug/esquema `glife`, identificadores `app.glife.pessoal`, pacotes `@glife/*`, links
+    `glife://`; preferência de tema existente preservada; lint/typecheck/test/build:web passam na nova pasta.
+  - Cuidados: manter migrações SQL já commitadas e a função legada `vida_apply_standard` (sem alterar permissões).
+
 - [x] **T1 — Base do movimento (0.13a)**
   - Arquivos: `apps/app/package.json`, `pnpm-lock.yaml`, `apps/app/src/shared/ui/theme/tokens.ts`,
     `apps/app/src/shared/ui/theme/ThemeProvider.tsx`, `apps/app/src/shared/ui/motion.ts` (novo),
@@ -87,12 +94,14 @@ Formato: `- [ ] Título` + Arquivos permitidos · Aceite (verificável) · Cuida
 - T1 concluída: instalação Expo conferida (Reanimated 4.7.1/Worklets 0.13.0 já presentes), tokens de mola/escala,
   `resolveSpring` (6 testes) e preferência de movimento acompanhando alterações do sistema. Lint, typecheck,
   100 testes e build web passaram. Babel configurado automaticamente pelo `babel-preset-expo` do SDK 58.
-- Próximo pedido do usuário: renomear o app/sistema para **Glife**, incluindo arquivos e pastas necessários.
+- R1 concluída: projeto em `Glauber/glife/`, nome **Glife**, pacotes `@glife/*`, esquema `glife://`,
+  identificadores `app.glife.pessoal`, documentação/hooks alinhados e tema anterior preservado. Instalação,
+  lint, typecheck, 102 testes e build web passaram na nova pasta. SQL versionado permanece intacto.
 - Nenhuma tarefa pela metade.
 
 ## Armadilhas conhecidas
 
-- Windows: rode comandos na raiz `vida/`. Avisos "LF will be replaced by CRLF" do git são inofensivos.
+- Windows: rode comandos na raiz `glife/`. Avisos "LF will be replaced by CRLF" do git são inofensivos.
 - `python -m http.server` (ou servidor estático simples) dá 404 ao recarregar rotas como `/notas`; navegue a
   partir de `/`.
 - Screenshots logo após trocar de aba pegam a transição no meio; espere ~1 s antes de concluir que algo "sumiu".
@@ -107,7 +116,7 @@ _(nenhuma)_
 
 ## Comandos
 
-Na raiz `vida/`:
+Na raiz `glife/`:
 
 ```bash
 pnpm install       # dependências

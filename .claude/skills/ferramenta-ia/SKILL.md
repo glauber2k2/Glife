@@ -1,6 +1,6 @@
 ---
 name: ferramenta-ia
-description: Ensinar a IA da caixa de entrada do Vida a fazer algo novo (nova ferramenta de busca, criação ou alteração).
+description: Ensinar a IA da caixa de entrada do Glife a fazer algo novo (nova ferramenta de busca, criação ou alteração).
 ---
 
 # Ferramenta de IA

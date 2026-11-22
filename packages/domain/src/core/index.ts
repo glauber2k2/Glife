@@ -1,4 +1,4 @@
-// Base de toda entidade do Vida: UUID, dono, timestamps e exclusão lógica.
+// Base de toda entidade do Glife: UUID, dono, timestamps e exclusão lógica.
 // Imports relativos usam extensão .ts explícita para rodar também no Deno (Edge Functions).
 import { z } from 'zod';
 

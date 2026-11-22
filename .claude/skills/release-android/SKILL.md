@@ -1,6 +1,6 @@
 ---
 name: release-android
-description: Gerar uma nova versão Android (APK local) do Vida.
+description: Gerar uma nova versão Android (APK local) do Glife.
 ---
 
 # Release Android

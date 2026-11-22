@@ -1,9 +1,9 @@
-# Vida — organizador de vida pessoal
+# Glife — organizador de vida pessoal
 
 App único (Expo SDK 58 + Expo Router + TypeScript) para Android, web e futuramente iOS.
 Local-first: tudo é lido/gravado no SQLite do aparelho e sincronizado com o Supabase via PowerSync.
 Módulos: notas, finanças, investimentos, compras, agenda, dieta, Bíblia/devocionais, galeria, caixa de entrada com IA.
-O coração é o **grafo de links**: toda entidade tem UUID e endereço `vida://<tipo>/<ref>`; qualquer uma aponta para qualquer outra.
+O coração é o **grafo de links**: toda entidade tem UUID e endereço `glife://<tipo>/<ref>`; qualquer uma aponta para qualquer outra.
 Planejamento: `../Organizador de Vida — Planejamento do Projeto.md` · Plano por fases: `docs/PLANO_DE_IMPLEMENTACAO.md`.
 
 ## Estrutura
@@ -18,7 +18,7 @@ Planejamento: `../Organizador de Vida — Planejamento do Projeto.md` · Plano p
 
 1. Cada feature é dona do que é dela: mexer em finanças = `features/finance` + `domain/finance`.
 2. Uma feature só usa outra pelo `index.ts` dela; rotas também.
-3. Features não se conhecem diretamente: ligações passam pela feature `links` (registro `vida://tipo`). Só `today` compõe várias features.
+3. Features não se conhecem diretamente: ligações passam pela feature `links` (registro `glife://tipo`). Só `today` compõe várias features.
 4. `shared/` nunca importa features.
 5. `packages/domain` não importa React, React Native, Expo, Supabase nem PowerSync.
 6. Import proibido quebra o lint (`pnpm lint`).
@@ -51,7 +51,7 @@ Estilos via `makeStyles((t) => ({...}))`; textos via `<Text variant tone>`; íco
 Telas usam os componentes de `@/shared/ui` (`Screen`, `Section`, `Text`, `Button`, `Input`, `ListItem`, `Sheet`, `Chip`, `EmptyState`).
 Conferir toda tela nos dois temas (Ajustes → Aparência) e no Android e web.
 
-## Comandos (na raiz `vida/`)
+## Comandos (na raiz `glife/`)
 
 ```bash
 pnpm install          # dependências do monorepo
@@ -81,4 +81,4 @@ O trabalho é dividido com o Codex CLI através do `HANDOFF.md` (plano vivo) e d
 - Hooks (`.claude/settings.json` + `.claude/hooks/`): no início da sessão, se houver commits `codex:` depois do
   último `claude:`, você recebe a instrução de revisá-los primeiro; ao parar com alterações não commitadas, o hook
   pede para atualizar o `HANDOFF.md`, testar e commitar.
-- Os hooks valem quando o Claude Code é aberto na pasta `vida/` (raiz do repositório).
+- Os hooks valem quando o Claude Code é aberto na pasta `glife/` (raiz do repositório).

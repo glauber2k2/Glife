@@ -1,9 +1,9 @@
-// Endereço universal: vida://<tipo>/<ref>
+// Endereço universal: glife://<tipo>/<ref>
 // ref é um UUID para entidades comuns, ou uma referência OSIS para a Bíblia (JHN.3.16-18).
 import { ENTITY_TYPES, type EntityType } from '../core/index.ts';
 import { parseOsis } from '../bible/index.ts';
 
-export const VIDA_SCHEME = 'vida';
+export const GLIFE_SCHEME = 'glife';
 
 export interface EntityAddress {
   type: EntityType;
@@ -22,11 +22,11 @@ export function isValidRef(type: EntityType, ref: string): boolean {
 }
 
 export function toUri({ type, ref }: EntityAddress): string {
-  return `${VIDA_SCHEME}://${type}/${ref}`;
+  return `${GLIFE_SCHEME}://${type}/${ref}`;
 }
 
 export function parseUri(uri: string): EntityAddress | null {
-  const m = uri.trim().match(/^vida:\/\/([a-z_]+)\/([^/?#\s]+)$/);
+  const m = uri.trim().match(/^glife:\/\/([a-z_]+)\/([^/?#\s]+)$/);
   if (!m) return null;
   const [, type, ref] = m;
   if (!type || !ref || !isEntityType(type) || !isValidRef(type, ref)) return null;

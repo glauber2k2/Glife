@@ -1,4 +1,4 @@
-export { VIDA_SCHEME, isEntityType, isValidRef, parseUri, toUri, type EntityAddress } from './uri.ts';
+export { GLIFE_SCHEME, isEntityType, isValidRef, parseUri, toUri, type EntityAddress } from './uri.ts';
 export {
   formatWikilink,
   parseTarget,

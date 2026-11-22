@@ -1,4 +1,4 @@
-import { formatRef, getBook, parseBibleRef, toOsis } from '@vida/domain/bible';
+import { formatRef, getBook, parseBibleRef, toOsis } from '@glife/domain/bible';
 import { useState } from 'react';
 import { View } from 'react-native';
 
@@ -23,7 +23,7 @@ export function BibleHomeScreen() {
         <View style={s.result}>
           <Text variant="heading">{formatRef(ref, 'name')}</Text>
           <Text variant="caption" tone="tertiary">
-            vida://bible/{toOsis(ref)} · {getBook(ref.book)?.testament === 'AT' ? 'Antigo' : 'Novo'} Testamento
+            glife://bible/{toOsis(ref)} · {getBook(ref.book)?.testament === 'AT' ? 'Antigo' : 'Novo'} Testamento
           </Text>
         </View>
       )}

@@ -14,7 +14,8 @@ export interface ThemePreferenceStore {
   save(preference: ThemePreference): Promise<void>;
 }
 
-const KEY = 'vida.theme.preference';
+const KEY = 'glife.theme.preference';
+const LEGACY_KEY = 'vida.theme.preference';
 const VALID: readonly ThemePreference[] = ['system', 'light', 'dark'];
 
 /** Valida o que veio do armazenamento: qualquer coisa fora do esperado é ignorada. */
@@ -27,7 +28,8 @@ export function createThemePreferenceStore(storage: KeyValueStorage): ThemePrefe
   return {
     async load() {
       try {
-        return parseThemePreference(await storage.getItem(KEY));
+        const saved = parseThemePreference(await storage.getItem(KEY));
+        return saved ?? parseThemePreference(await storage.getItem(LEGACY_KEY));
       } catch {
         return null;
       }

@@ -61,7 +61,7 @@ module.exports = defineConfig([
               from: { element: { type: 'shared' } },
               allow: { to: { element: { type: 'shared' } } },
             },
-            // Pacotes externos (react, expo, @vida/domain…) são livres.
+            // Pacotes externos (react, expo, @glife/domain…) são livres.
             { allow: { to: { module: { origin: ['external', 'core'] } } } },
           ],
         },
