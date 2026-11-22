@@ -53,3 +53,5 @@ SQLite/PowerSync/Supabase). Arquitetura completa e regras em `CLAUDE.md`; plano 
 - **Libs do Expo/RN:** `cd apps/app && npx expo install <pkg>`; confira a API em
   https://docs.expo.dev/versions/v58.0.0/.
 - **Telas novas:** não crie tela nova que não esteja descrita numa tarefa do `HANDOFF.md`.
+  Orientação do usuário em 22/11/2026: implemente a versão básica das telas autorizadas e registre a
+  prototipagem como pendente; não aguarde protótipo para avançar.

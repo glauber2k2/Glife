@@ -73,7 +73,8 @@ O trabalho é dividido com o Codex CLI através do `HANDOFF.md` (plano vivo) e d
 - **Pedido com mais de uma etapa:** primeiro escreva o plano no `HANDOFF.md`, em tarefas de 15–30 min, cada uma
   com arquivos permitidos, critério de aceite verificável e cuidados. Escreva os testes antes de implementar
   quando possível. Não peça aprovação do plano, exceto para decisão de arquitetura importante.
-  (Continua valendo: antes de **tela nova**, liste os protótipos necessários e pergunte se o usuário quer enviá-los.)
+  (Orientação do usuário em 22/11/2026: para **tela nova** prevista numa tarefa, construa a versão básica e
+  registre a prototipagem como pendente; não aguarde protótipo para avançar.)
 - **Ao concluir cada tarefa:** rode `pnpm lint`, `pnpm typecheck` e `pnpm test`; marque `[x]`; atualize
   "Estado atual" com edições pontuais; commit `claude: <descrição>`.
 - Tarefas com **autenticação, permissões, pagamentos ou dados sensíveis** levam "(só Claude)" no título.

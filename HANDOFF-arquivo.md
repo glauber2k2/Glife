@@ -2,6 +2,16 @@
 
 Tarefas concluídas de funcionalidades já terminadas, movidas do `HANDOFF.md` (mais recentes no topo).
 
+## 2026-11-22 — R3: retomada e preservação (neste commit)
+
+- [x] Histórico até `5d7e5e3` e árvore local conferidos: `git fsck --full` sem erros, sem arquivos pendentes,
+  apagados ou stash. O pedido de continuação às 16:09 foi interrompido antes de qualquer alteração em arquivo.
+- [x] Backup do histórico completo (`git bundle`, verificado) e dos dois documentos externos, com manifesto
+  SHA-256 em `../backups/glife-20261122-antes-retomada/`.
+- [x] Orientação do usuário recuperada e registrada: implementar telas básicas previstas nas tarefas e deixar
+  a prototipagem pendente. Decisões anteriores e tarefas reservadas ao Claude preservadas.
+- [x] Lint, typecheck e os 123 testes passaram novamente. T9 definida a partir da dúvida de navegação de 0.13.
+
 ## 2026-11-22 — Glife, movimento e validação do domain
 
 | Tarefa | Commit | Entrega |

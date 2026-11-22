@@ -26,6 +26,12 @@ e o escopo de navegação/abas do item 0.13 (ver Dúvidas).
 - Testes: vitest em todos os pacotes; banco testado em Postgres real via PGlite (`supabase/tests`).
 - **Telas novas** só depois de perguntar ao usuário se ele quer enviar protótipo (o Claude faz essa pergunta).
 
+## Orientação posterior do usuário (22/11/2026)
+
+- "Construa o básico e deixe pendente a prototipagem": telas previstas nas tarefas podem avançar sem
+  aguardar protótipos. Esta orientação substitui o bloqueio por protótipo acima; cada tela básica deve
+  manter a prototipagem registrada como pendente. As demais reservas e dependências continuam válidas.
+
 ## Tarefas
 
 Formato: `- [ ] Título` + Arquivos permitidos · Aceite (verificável) · Cuidados.
@@ -36,6 +42,15 @@ Formato: `- [ ] Título` + Arquivos permitidos · Aceite (verificável) · Cuida
   - Autenticação. Depende do projeto Supabase hospedado.
 - [ ] **Bloqueadas (dependem do usuário):** 0.8 PowerSync (contas Supabase/PowerSync), 0.11 APK (Android Studio),
   aplicar migrações no projeto hospedado.
+
+- [ ] **T9 — Navegação com movimento reduzido (0.13e)**
+  - Arquivos: layouts de `src/app/`, `src/shared/navigation/`, `apps/app/tests/navigationMotion.test.ts`,
+    `HANDOFF.md`, `HANDOFF-arquivo.md`, `docs/PLANO_DE_IMPLEMENTACAO.md`.
+  - Aceite: stack, modal e Ajustes sem animação ao reduzir movimento; abas com entrada Reanimated e
+    indicador ativo que desliza, sem movimento quando a preferência estiver ligada; navegação e estado
+    das telas preservados; lint/typecheck/test/build:web e interação web nos dois temas passam.
+  - Cuidados: nenhuma dependência ou tela nova; tokens existentes; mudança dinâmica de acessibilidade;
+    não marcar 0.13 completo antes de validar no Android.
 
 ## Estado atual
 
@@ -49,6 +64,11 @@ Formato: `- [ ] Título` + Arquivos permitidos · Aceite (verificável) · Cuida
   `Glife — Design System.html`; referências do repositório alinhadas. R2 concluída: handoff/arquivo e roadmap
   reconciliados, com verificações finais passando e só pendências no handoff ativo.
 - Nenhuma tarefa de código pela metade. Migrações SQL versionadas permanecem intactas.
+- Retomada: histórico até `5d7e5e3` íntegro (`git fsck --full`), árvore limpa e 123 testes novamente verdes.
+  O pedido posterior de continuar foi interrompido antes de salvar alterações. Backup completo do Git
+  e dos dois documentos externos, com SHA-256: `../backups/glife-20261122-antes-retomada/`.
+- R3 concluída: orientação sobre telas básicas persistida em AGENTS/CLAUDE/handoff; prototipagem pendente
+  não bloqueia tarefas autorizadas. Lint/typecheck/123 testes passaram; próxima tarefa possível: T9.
 
 ## Armadilhas conhecidas
 
