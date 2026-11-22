@@ -12,21 +12,26 @@ Regra de ouro: **cada fase termina com 1 semana de uso real no dia a dia** antes
 
 Objetivo: o mesmo app abre no Android e no navegador, com login, banco local e sync.
 
-| # | Entrega | Pronto quando |
-|---|---------|---------------|
-| 0.1 | Monorepo pnpm: `apps/app`, `packages/domain`, `supabase/`, `tools/` | `pnpm install` na raiz funciona |
-| 0.2 | App Expo SDK 58 + Expo Router + TypeScript, alias `@/` | `pnpm web` abre no navegador |
-| 0.3 | Design system: tokens (`shared/ui/theme`), fontes Inter + Source Serif 4, tema claro/escuro, componentes `Text`, `Button`, `Input`, `ListItem`, `Sheet`, `Chip` | Tela de demonstração nos dois temas |
-| 0.4 | Navegação: 4 abas (Hoje · Notas · Finanças · Bíblia) + botão central da caixa de entrada | Navega entre abas no web e no Android |
-| 0.5 | `packages/domain`: base de entidade (UUID, timestamps, `deleted_at`), Zod, `links` (parser de `[[...]]` e URIs `vida://`) com testes | `pnpm test` verde |
-| 0.6 | ESLint com `eslint-plugin-boundaries` aplicando as 6 regras de importação | Import proibido quebra o lint |
-| 0.7 | Supabase: projeto, CLI, primeira migração (`links`, `notes`, `tags`) com RLS, cadastro público desligado, MFA | 2º usuário de teste não enxerga nada |
-| 0.8 | PowerSync: schema local, sync rules por `user_id`, conector Supabase (upload queue) | Editar offline no celular e ver no web ao reconectar |
-| 0.9 | Validar import de `packages/domain` numa Edge Function Deno (import map) | Função “hello” usando uma regra do domain |
-| 0.10 | `CLAUDE.md` + skills `.claude/skills/*` | Arquivos no repo |
-| 0.11 | APK local (`npx expo run:android`) | APK instalado no celular |
+| # | Entrega | Pronto quando | Status |
+|---|---------|---------------|--------|
+| 0.1 | Monorepo pnpm: `apps/app`, `packages/domain`, `supabase/`, `tools/` | `pnpm install` na raiz funciona | ✅ |
+| 0.2 | App Expo SDK 58 + Expo Router + TypeScript, alias `@/` | `pnpm web` abre no navegador | ✅ |
+| 0.3 | Design system: tokens (`shared/ui/theme`), fontes Inter + Source Serif 4, tema claro/escuro, componentes `Text`, `Button`, `Input`, `ListItem`, `Sheet`, `Chip` | Tela de demonstração nos dois temas | ✅ |
+| 0.4 | Navegação: 4 abas (Hoje · Notas · Finanças · Bíblia) + botão central da caixa de entrada | Navega entre abas no web e no Android | 🟡 web ok; falta Android |
+| 0.5 | `packages/domain`: base de entidade (UUID, timestamps, `deleted_at`), Zod, `links` (parser de `[[...]]` e URIs `vida://`) com testes | `pnpm test` verde | ✅ |
+| 0.6 | ESLint com `eslint-plugin-boundaries` aplicando as 6 regras de importação | Import proibido quebra o lint | ✅ testado em `apps/app/tests/boundaries.test.ts` |
+| 0.7 | Supabase: projeto, CLI, primeira migração (`links`, `notes`, `tags`) com RLS, cadastro público desligado, MFA | 2º usuário de teste não enxerga nada | 🟡 local ok (`supabase/tests/rls.test.ts`, 2 usuários + MFA); falta o projeto hospedado |
+| 0.8 | PowerSync: schema local, sync rules por `user_id`, conector Supabase (upload queue) | Editar offline no celular e ver no web ao reconectar | ⏳ |
+| 0.9 | Validar import de `packages/domain` numa Edge Function Deno (import map) | Função “hello” usando uma regra do domain | ⏳ |
+| 0.10 | `CLAUDE.md` + skills `.claude/skills/*` | Arquivos no repo | ✅ |
+| 0.11 | APK local (`npx expo run:android`) | APK instalado no celular | ⏳ depende do Android Studio |
+| 0.12 | Login: e-mail + senha forte + MFA (TOTP); sessão `aal2` obrigatória (o banco recusa `aal1`) | Entrar no web e no Android com MFA | ⏳ |
 
 **Depende de você:** criar contas Supabase e PowerSync (grátis) e instalar Android Studio/SDK.
+
+**Antes da 0.8 (arquitetura):** cada feature acessa dados só por uma interface de repositório (ex.: `NotesRepository`) definida no `domain`; a implementação com PowerSync fica em `features/<f>/data`. O lint deve proibir `@powersync/*` e `@supabase/*` fora de `data/` e `shared/lib` (inversão de dependência: telas não conhecem o banco).
+
+`tools/` entra na Fase 4 (importador da Bíblia).
 
 ## Fase 1 — Notas, links, busca e bloqueio (≈ 4 semanas) → app vira ferramenta diária
 

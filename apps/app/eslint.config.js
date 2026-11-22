@@ -41,11 +41,17 @@ module.exports = defineConfig([
                 to: { element: { type: 'feature', captured: { feature: '{{ from.element.captured.feature }}' } } },
               },
             },
-            // …outra feature só pelo index.ts (regra 2); shared à vontade.
+            // …features não se conhecem (regra 3): só `today` compõe outras, e sempre pelo index.ts (regra 2).
             {
-              from: { element: { type: 'feature' } },
+              from: { element: { type: 'feature', captured: { feature: 'today' } } },
               allow: { to: { element: { type: 'feature', fileInternalPath: 'index.ts' } } },
             },
+            // Ligações entre entidades passam pela feature `links`, que qualquer uma pode usar (pelo index.ts).
+            {
+              from: { element: { type: 'feature' } },
+              allow: { to: { element: { type: 'feature', captured: { feature: 'links' }, fileInternalPath: 'index.ts' } } },
+            },
+            // shared à vontade.
             {
               from: { element: { type: 'feature' } },
               allow: { to: { element: { type: 'shared' } } },

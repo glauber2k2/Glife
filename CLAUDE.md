@@ -29,6 +29,11 @@ Em `packages/domain`, imports relativos usam extensão `.ts` explícita (compat�
 
 - **Dinheiro sempre em centavos** (inteiro), nunca float.
 - **Toda tabela** tem `id uuid`, `user_id`, `created_at`, `updated_at`, `deleted_at` e RLS — use `select public.vida_apply_standard('public.<tabela>')` e adicione à publicação `powersync` e ao `sync-rules.yaml`.
+- `vida_apply_standard` também cria a política **restritiva de MFA** (só sessão `aal2` lê/grava) e `unique (id, user_id)`.
+- **FK entre tabelas do usuário é sempre composta**: `foreign key (x_id, user_id) references public.x (id, user_id)`,
+  com `on delete set null (x_id)` quando for opcional. FK simples deixaria apontar para linha de outro usuário.
+- Funções SQL: `set search_path = ''` e nomes qualificados; função de migração leva `revoke execute ... from public, anon, authenticated`.
+- Telas não conhecem o banco: dados passam por uma interface de repositório (domain) implementada em `features/<f>/data`.
 - Exclusão é lógica (`deleted_at`), com lixeira.
 - **Texto da Bíblia é somente leitura**; marcações, anotações e edições ficam em camadas separadas.
 - Arquivos nunca passam pelo sync — só metadados.
@@ -48,7 +53,7 @@ Conferir toda tela nos dois temas (Ajustes → Aparência) e no Android e web.
 pnpm install          # dependências do monorepo
 pnpm web              # app no navegador
 pnpm android          # app no Android (dev build)
-pnpm test             # testes (vitest no domain)
+pnpm test             # vitest: domain, fronteiras do ESLint (app) e RLS/MFA do banco (supabase, via PGlite)
 pnpm typecheck        # tsc em todos os pacotes
 pnpm lint             # ESLint + fronteiras de features
 cd apps/app && npx expo install <pkg>   # SEMPRE para libs do Expo/RN (versões compatíveis com o SDK)
