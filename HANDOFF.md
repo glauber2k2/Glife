@@ -53,7 +53,7 @@ Formato: `- [ ] Título` + Arquivos permitidos · Aceite (verificável) · Cuida
     movimento, só a opacidade muda (comportamento atual); `onPress`, `disabled` e acessibilidade inalterados;
     lint/typecheck/test/build:web passam.
   - Cuidados: use `Animated.createAnimatedComponent(Pressable)` ou `Animated.View` interno; nenhum número solto.
-- [ ] **T3 — Sheet que desliza (0.13c)**
+- [x] **T3 — Sheet que desliza (0.13c)**
   - Arquivos: `apps/app/src/shared/ui/Sheet.tsx`.
   - Aceite: folha entra de baixo (mola `standard`) e o fundo (scrim) faz fade; ao fechar, sai ao contrário;
     reduzir movimento = aparece sem animação; lint/typecheck/test/build:web passam.
@@ -100,6 +100,9 @@ Formato: `- [ ] Título` + Arquivos permitidos · Aceite (verificável) · Cuida
 - T2 concluída: Button/Chip com mola `snappy`, hit area preservada e retorno por opacidade com movimento
   reduzido. Lint/typecheck/102 testes/build web passaram; Edge headless confirmou escala/retorno, mudança
   dinâmica de movimento reduzido e seleção/persistência de tema, sem erros de execução.
+- T3 concluída: Sheet com mola `standard`, scrim com fade, saída antes de desmontar e presença modal
+  acessível; movimento reduzido é imediato. Lint/typecheck/102 testes/build web passaram; navegador confirmou
+  entrada/saída, fechamento durante a entrada e tema escuro com movimento reduzido, sem erros de execução.
 - Nenhuma tarefa pela metade.
 
 ## Armadilhas conhecidas
