@@ -47,7 +47,7 @@ Formato: `- [ ] Título` + Arquivos permitidos · Aceite (verificável) · Cuida
     `pnpm lint` e `pnpm build:web` passam.
   - Cuidados: confira a instalação em https://docs.expo.dev/versions/v58.0.0/ (plugin Babel/Worklets). Não remova
     o token `motion` existente (está em uso). Sem dependências além das do Reanimated.
-- [ ] **T2 — Botão e Chip que afundam ao toque (0.13b)**
+- [x] **T2 — Botão e Chip que afundam ao toque (0.13b)**
   - Arquivos: `apps/app/src/shared/ui/Button.tsx`, `apps/app/src/shared/ui/Chip.tsx`.
   - Aceite: ao pressionar, escala vai a `t.size`/token `pressScale` com mola `snappy` e volta; com reduzir
     movimento, só a opacidade muda (comportamento atual); `onPress`, `disabled` e acessibilidade inalterados;
@@ -97,6 +97,9 @@ Formato: `- [ ] Título` + Arquivos permitidos · Aceite (verificável) · Cuida
 - R1 concluída: projeto em `Glauber/glife/`, nome **Glife**, pacotes `@glife/*`, esquema `glife://`,
   identificadores `app.glife.pessoal`, documentação/hooks alinhados e tema anterior preservado. Instalação,
   lint, typecheck, 102 testes e build web passaram na nova pasta. SQL versionado permanece intacto.
+- T2 concluída: Button/Chip com mola `snappy`, hit area preservada e retorno por opacidade com movimento
+  reduzido. Lint/typecheck/102 testes/build web passaram; Edge headless confirmou escala/retorno, mudança
+  dinâmica de movimento reduzido e seleção/persistência de tema, sem erros de execução.
 - Nenhuma tarefa pela metade.
 
 ## Armadilhas conhecidas
