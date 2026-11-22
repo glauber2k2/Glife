@@ -26,7 +26,7 @@ Objetivo: o mesmo app abre no Android e no navegador, com login, banco local e s
 | 0.10 | `CLAUDE.md` + skills `.claude/skills/*` | Arquivos no repo | ✅ |
 | 0.11 | APK local (`npx expo run:android`) | APK instalado no celular | ⏳ depende do Android Studio |
 | 0.12 | Login: e-mail + senha forte + MFA (TOTP); sessão `aal2` obrigatória (o banco recusa `aal1`) | Entrar no web e no Android com MFA | ⏳ |
-| 0.13 | Sistema de movimento: React Native Reanimated, tokens de mola (200–350 ms, amortecidas), componentes base animados (botão que afunda, folhas e abas que deslizam, listas que se reorganizam), respeito a “reduzir movimento” | Demonstração em Ajustes; com “reduzir movimento” ligado nada anima | 🟡 T1–T4 concluídas: molas, Button/Chip/Sheet/ListItem e demo, movimento reduzido dinâmico; falta navegação/abas e Android |
+| 0.13 | Sistema de movimento: React Native Reanimated, tokens de mola (200–350 ms, amortecidas), componentes base animados (botão que afunda, folhas e abas que deslizam, listas que se reorganizam), respeito a “reduzir movimento” | Demonstração em Ajustes; com “reduzir movimento” ligado nada anima | 🟡 T1–T4 e T9 concluídas: componentes, demo, abas e indicador Reanimated; stack/modal/Ajustes respeitam movimento reduzido dinâmico. Web validado; falta Android |
 
 **Depende de você:** criar contas Supabase e PowerSync (grátis) e instalar Android Studio/SDK.
 
@@ -112,6 +112,8 @@ Objetivo: o mesmo app abre no Android e no navegador, com login, banco local e s
 - [x] 0.10 CLAUDE.md + 6 skills
 - [ ] 0.11 APK local (precisa do Android SDK)
 - [ ] 0.12 Login e-mail + senha + MFA (só Claude; depende do Supabase hospedado)
-- [~] 0.13 Componentes e demo de movimento concluídos; falta navegação/abas e validação Android
+- [~] 0.13 Componentes, demo e navegação concluídos e validados no web; falta validação Android
 - [x] Fronteira de dados no lint: Supabase/PowerSync só em `features/*/data` e `shared/lib`
 - [x] Nome Glife: pasta `glife/`, pacotes `@glife/*`, esquema `glife://` e identificadores `app.glife.pessoal`
+- [x] Retomada preservada: histórico Git verificado, backup dos commits e documentos externos com SHA-256;
+  orientação vigente do usuário registrada (telas básicas podem avançar, prototipagem fica pendente)

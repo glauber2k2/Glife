@@ -2,7 +2,28 @@
 
 Tarefas concluídas de funcionalidades já terminadas, movidas do `HANDOFF.md` (mais recentes no topo).
 
-## 2026-11-22 — R3: retomada e preservação (neste commit)
+## 2026-11-22 — T9: navegação e acessibilidade (neste commit)
+
+- [x] **T9 — Navegação com movimento reduzido (0.13e)**
+  - Arquivos: layouts de `src/app/`, `src/shared/navigation/`, `apps/app/tests/navigationMotion.test.ts`,
+    handoffs e `docs/PLANO_DE_IMPLEMENTACAO.md`.
+  - Aceite: stack, modal e Ajustes sem animação ao reduzir movimento; abas com entrada Reanimated e
+    indicador ativo que desliza; navegação e estado preservados; lint/typecheck/test/build:web e interação
+    web nos dois temas passam.
+  - Cuidados respeitados: tokens existentes, sem telas/dependências novas; preferência dinâmica;
+    item 0.13 ainda parcial até conferir no Android.
+- Opções de stack/modal/detalhe centralizadas em função pura, com movimento reduzido aplicado a cada
+  sobrescrita de rota. Entrada das abas e indicador com mola `standard`; atribuições imediatas cancelam
+  movimento pendente quando a preferência muda. `aria-selected` explicita a aba ativa no web.
+- Seis testes de navegação escritos antes da implementação e observados falhando; **129 testes** passaram
+  (55 domain, 45 app, 29 Supabase), além de lint/typecheck/build:web e novo `deno check` da hello.
+- Edge headless, 390 × 640 e 1000 × 900: temas claro/escuro, quatro abas, movimento normal/reduzido dinâmico,
+  centralização do indicador, modal/Ajustes sem animação ao reduzir movimento, rolagem e texto digitado na
+  Bíblia preservados, redimensionamento e trocas rápidas. Sem erros de execução.
+- Scripts e screenshots locais em `../backups/glife-20261122-antes-retomada/retomada-validacao/`.
+  Android continua pendente; migrações e documentos externos não foram alterados.
+
+## 2026-11-22 — R3: retomada e preservação (`8e11852`)
 
 - [x] Histórico até `5d7e5e3` e árvore local conferidos: `git fsck --full` sem erros, sem arquivos pendentes,
   apagados ou stash. O pedido de continuação às 16:09 foi interrompido antes de qualquer alteração em arquivo.

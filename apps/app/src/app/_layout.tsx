@@ -10,7 +10,8 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { installIdGenerator } from '@/shared/lib/ids';
 import { toNavigationTheme } from '@/shared/navigation/navigationTheme';
-import { ThemeProvider, createThemePreferenceStore, useTheme } from '@/shared/ui';
+import { resolveNavigationMotion } from '@/shared/navigation/navigationMotion';
+import { ThemeProvider, createThemePreferenceStore, useReduceMotion, useTheme } from '@/shared/ui';
 
 installIdGenerator();
 // Raiz de composição: aqui as interfaces recebem as implementações concretas.
@@ -19,6 +20,8 @@ void SplashScreen.preventAutoHideAsync();
 
 function RootStack() {
   const t = useTheme();
+  const reduceMotion = useReduceMotion();
+  const animation = resolveNavigationMotion(reduceMotion);
   const navigationTheme = useMemo(() => toNavigationTheme(t), [t]);
   return (
     <NavigationThemeProvider value={navigationTheme}>
@@ -27,13 +30,13 @@ function RootStack() {
         screenOptions={{
           headerShown: false,
           contentStyle: { backgroundColor: t.colors.bg },
-          animation: 'fade',
+          animation: animation.stack,
           animationDuration: t.motion.base,
         }}
       >
         <Stack.Screen name="(tabs)" />
-        <Stack.Screen name="caixa-de-entrada" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
-        <Stack.Screen name="ajustes" options={{ animation: 'slide_from_right' }} />
+        <Stack.Screen name="caixa-de-entrada" options={{ presentation: 'modal', animation: animation.modal }} />
+        <Stack.Screen name="ajustes" options={{ animation: animation.detail }} />
       </Stack>
     </NavigationThemeProvider>
   );

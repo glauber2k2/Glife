@@ -5,10 +5,10 @@
 
 ## Objetivo atual
 
-Concluir a **Fase 0 (fundação)** de `docs/PLANO_DE_IMPLEMENTACAO.md`. Glife e as entregas T1–T6
-(componentes de movimento, fronteira de dados e hello Deno) estão prontas e detalhadas em
-`HANDOFF-arquivo.md`. Restam os contratos/login reservados ao Claude, infraestrutura do usuário
-e o escopo de navegação/abas do item 0.13 (ver Dúvidas).
+Concluir a **Fase 0 (fundação)** de `docs/PLANO_DE_IMPLEMENTACAO.md`. Glife, T1–T6 e T9
+(movimento dos componentes e da navegação, fronteira de dados e hello Deno) estão implementados e
+detalhados em `HANDOFF-arquivo.md`. Restam os contratos/login reservados ao Claude, infraestrutura
+do usuário e validação Android. Não há outra tarefa disponível ao Codex neste handoff.
 
 ## Decisões tomadas (não mudar sem motivo)
 
@@ -43,21 +43,12 @@ Formato: `- [ ] Título` + Arquivos permitidos · Aceite (verificável) · Cuida
 - [ ] **Bloqueadas (dependem do usuário):** 0.8 PowerSync (contas Supabase/PowerSync), 0.11 APK (Android Studio),
   aplicar migrações no projeto hospedado.
 
-- [ ] **T9 — Navegação com movimento reduzido (0.13e)**
-  - Arquivos: layouts de `src/app/`, `src/shared/navigation/`, `apps/app/tests/navigationMotion.test.ts`,
-    `HANDOFF.md`, `HANDOFF-arquivo.md`, `docs/PLANO_DE_IMPLEMENTACAO.md`.
-  - Aceite: stack, modal e Ajustes sem animação ao reduzir movimento; abas com entrada Reanimated e
-    indicador ativo que desliza, sem movimento quando a preferência estiver ligada; navegação e estado
-    das telas preservados; lint/typecheck/test/build:web e interação web nos dois temas passam.
-  - Cuidados: nenhuma dependência ou tela nova; tokens existentes; mudança dinâmica de acessibilidade;
-    não marcar 0.13 completo antes de validar no Android.
-
 ## Estado atual
 
 - Projeto **Glife** em `Glauber/glife/`: pacotes `@glife/*`, esquema `glife://`, IDs `app.glife.pessoal`.
 - T1–T6 concluídas e arquivadas com hashes: movimento em Button/Chip/Sheet/ListItem, demo em Ajustes,
   preferência dinâmica de movimento reduzido, lint de dados e hello usando o domain real.
-- Lint/typecheck verdes; **123 testes** (55 domain, 39 app, 29 Supabase). Build web e verificações de
+- Lint/typecheck verdes; **129 testes** (55 domain, 45 app, 29 Supabase). Build web e verificações de
   interação no Edge headless passaram nos dois temas; Android e deploy ainda não validados.
 - Hello: Deno check + execução real passaram; do diretório raiz é necessário informar `--config` (abaixo).
 - Planejamento e protótipo na pasta pai renomeados para `Glife — Planejamento do Projeto.md` e
@@ -67,8 +58,13 @@ Formato: `- [ ] Título` + Arquivos permitidos · Aceite (verificável) · Cuida
 - Retomada: histórico até `5d7e5e3` íntegro (`git fsck --full`), árvore limpa e 123 testes novamente verdes.
   O pedido posterior de continuar foi interrompido antes de salvar alterações. Backup completo do Git
   e dos dois documentos externos, com SHA-256: `../backups/glife-20261122-antes-retomada/`.
-- R3 concluída: orientação sobre telas básicas persistida em AGENTS/CLAUDE/handoff; prototipagem pendente
-  não bloqueia tarefas autorizadas. Lint/typecheck/123 testes passaram; próxima tarefa possível: T9.
+- R3 (`8e11852`): orientação sobre telas básicas persistida em AGENTS/CLAUDE/handoff; prototipagem pendente
+  não bloqueia tarefas autorizadas. Git e documentos externos preservados e conferidos por SHA-256.
+- T9 concluída: stack/modal/Ajustes consultam movimento reduzido; conteúdo das abas e indicador ativo usam
+  Reanimated. A seleção da aba também é anunciada no web (`aria-selected`). Edge headless confirmou os dois
+  temas, preferência dinâmica, quatro abas, modal/Ajustes sem animação ao reduzir movimento, rolagem e texto
+  digitado preservados, redimensionamento e trocas rápidas. Sem novas telas ou dependências.
+- Evidências e scripts de validação web preservados no backup, subpasta `retomada-validacao/`.
 
 ## Armadilhas conhecidas
 
@@ -85,11 +81,11 @@ Formato: `- [ ] Título` + Arquivos permitidos · Aceite (verificável) · Cuida
 
 ## Dúvidas para o Claude
 
-- **0.13 / navegação:** T1–T4 cobrem componentes e demo, mas o roadmap também menciona abas deslizando e
-  movimento reduzido em toda navegação. `src/app/_layout.tsx` ainda configura animações de stack sem consultar
-  a preferência e a TabBar não tem transição Reanimated; esses arquivos não eram permitidos nas tarefas.
-  Falta definir tarefa para a navegação (desligar animações com `useReduceMotion` e escolher a transição de abas)
-  e validar no Android. O item 0.13 completo ainda não deve ser marcado como finalizado.
+- **0.13 / Android:** dúvida de implementação da navegação resolvida pela T9; falta conferir componentes,
+  transições, modal e preferência dinâmica de movimento no Android, quando o SDK/aparelho estiver disponível.
+  Não marcar 0.13 completo antes dessa validação.
+- **Próximo passo de arquitetura:** T7 permanece reservada ao Claude conforme AGENTS.md; o anúncio na
+  sessão interrompida não resultou em contratos implementados. Nenhum arquivo desses contratos se perdeu.
 
 ## Comandos
 
