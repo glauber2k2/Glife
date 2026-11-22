@@ -1,0 +1,16 @@
+{
+  "name": "vida",
+  "private": true,
+  "packageManager": "pnpm@10.34.6",
+  "scripts": {
+    "web": "pnpm --filter app web",
+    "android": "pnpm --filter app android",
+    "start": "pnpm --filter app start",
+    "test": "pnpm -r test",
+    "typecheck": "pnpm -r typecheck",
+    "lint": "pnpm --filter app lint"
+  },
+  "devDependencies": {
+    "supabase": "^3.2.0"
+  }
+}

@@ -1,0 +1,12 @@
+# Regras de sincronização do PowerSync: cada usuário recebe só as próprias linhas.
+# Ao criar uma tabela nova (skill migracao-supabase), adicione-a aqui também.
+# Nunca sincronize arquivos binários: só metadados (imagens vão direto ao Storage).
+bucket_definitions:
+  user_data:
+    parameters: select request.user_id() as user_id
+    data:
+      - select * from links where user_id = bucket.user_id
+      - select * from tags where user_id = bucket.user_id
+      - select * from entity_tags where user_id = bucket.user_id
+      - select * from note_folders where user_id = bucket.user_id
+      - select * from notes where user_id = bucket.user_id
