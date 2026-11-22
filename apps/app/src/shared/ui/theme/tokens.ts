@@ -67,7 +67,7 @@ const dark: Palette = {
 export const palettes: Record<ColorScheme, Palette> = { light, dark };
 
 /** Grade de 4 px (0.5 = meio passo, só para respiros mínimos entre linhas de texto) */
-export const space = { 0.5: 2, 1: 4, 2: 8, 3: 12, 4: 16, 6: 24, 8: 32, 12: 48 } as const;
+export const space = { 0: 0, 0.5: 2, 1: 4, 2: 8, 3: 12, 4: 16, 6: 24, 8: 32, 12: 48 } as const;
 export type SpaceKey = keyof typeof space;
 
 export const radius = { field: 8, card: 12, full: 999 } as const;
@@ -94,13 +94,13 @@ export type TypeVariant = keyof typeof typeScale;
 
 export const icon = { size: 20, strokeWidth: 1.5 } as const;
 
-export const touch = { minTarget: 44 } as const;
+export const touch = { minTarget: 44, hitSlop: 6 } as const;
 
 /** Larguras máximas: no web/tablet o conteúdo não se estica pela tela inteira. */
 export const layout = { contentMaxWidth: 720, sheetMaxWidth: 640 } as const;
 
 /** Estados sem mudar cor: pressionado e desabilitado. */
-export const opacity = { pressed: 0.6, disabled: 0.45 } as const;
+export const opacity = { hidden: 0, full: 1, pressed: 0.6, disabled: 0.45 } as const;
 
 /** Medidas fixas de componentes. */
 export const size = {
@@ -112,5 +112,13 @@ export const size = {
 } as const;
 
 export const motion = { fast: 150, base: 200, slow: 250 } as const;
+
+/** Molas por duração perceptiva, criticamente amortecidas e sem ultrapassar o destino. */
+export const spring = {
+  standard: { duration: 300, dampingRatio: 1, overshootClamping: true },
+  snappy: { duration: 200, dampingRatio: 1, overshootClamping: true },
+} as const;
+
+export const pressScale = { rest: 1, pressed: 0.97 } as const;
 
 export const hairlineWidth = 1;

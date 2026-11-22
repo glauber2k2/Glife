@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { StyleSheet, useColorScheme, type ImageStyle, type TextStyle, type ViewStyle } from 'react-native';
+import { AccessibilityInfo, StyleSheet, useColorScheme, type ImageStyle, type TextStyle, type ViewStyle } from 'react-native';
 
 import {
   hairlineWidth,
@@ -8,9 +8,11 @@ import {
   motion,
   opacity,
   palettes,
+  pressScale,
   radius,
   size,
   space,
+  spring,
   touch,
   typeScale,
   type ColorScheme,
@@ -29,6 +31,8 @@ export interface Theme {
   icon: typeof icon;
   touch: typeof touch;
   motion: typeof motion;
+  spring: typeof spring;
+  pressScale: typeof pressScale;
   layout: typeof layout;
   opacity: typeof opacity;
   size: typeof size;
@@ -39,6 +43,7 @@ interface ThemeContextValue {
   theme: Theme;
   preference: ThemePreference;
   setPreference: (p: ThemePreference) => void;
+  reduceMotion: boolean;
 }
 
 const ThemeContext = createContext<ThemeContextValue | null>(null);
@@ -53,6 +58,8 @@ function buildTheme(scheme: ColorScheme): Theme {
     icon,
     touch,
     motion,
+    spring,
+    pressScale,
     layout,
     opacity,
     size,
@@ -70,6 +77,26 @@ export function ThemeProvider({ children, store }: ThemeProviderProps) {
   const system = useColorScheme();
   const [preference, setPreferenceState] = useState<ThemePreference>('system');
   const chosenThisSession = useRef(false);
+  // Até conhecer a preferência de acessibilidade, não inicia animações.
+  const [reduceMotion, setReduceMotion] = useState(true);
+
+  useEffect(() => {
+    let active = true;
+    let changed = false;
+    const subscription = AccessibilityInfo.addEventListener('reduceMotionChanged', (enabled) => {
+      changed = true;
+      if (active) setReduceMotion(enabled);
+    });
+    void AccessibilityInfo.isReduceMotionEnabled().then((enabled) => {
+      if (active && !changed) setReduceMotion(enabled);
+    }).catch(() => {
+      // Se a plataforma não informar a preferência, mantém movimento reduzido.
+    });
+    return () => {
+      active = false;
+      subscription.remove();
+    };
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -94,8 +121,8 @@ export function ThemeProvider({ children, store }: ThemeProviderProps) {
   const scheme: ColorScheme = preference === 'system' ? (system === 'dark' ? 'dark' : 'light') : preference;
 
   const value = useMemo(
-    () => ({ theme: buildTheme(scheme), preference, setPreference }),
-    [scheme, preference, setPreference],
+    () => ({ theme: buildTheme(scheme), preference, setPreference, reduceMotion }),
+    [scheme, preference, setPreference, reduceMotion],
   );
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
 }
@@ -108,6 +135,11 @@ function useThemeContext(): ThemeContextValue {
 
 export function useTheme(): Theme {
   return useThemeContext().theme;
+}
+
+/** Acompanha alterações de acessibilidade também durante a sessão. */
+export function useReduceMotion(): boolean {
+  return useThemeContext().reduceMotion;
 }
 
 export function useThemePreference() {

@@ -1,4 +1,6 @@
 export * from './theme';
+export { useReduceMotion } from './theme/ThemeProvider';
+export { resolveSpring, type SpringKind } from './motion';
 export { Text, type TextProps, type TextTone } from './Text';
 export { Icon, type IconProps } from './Icon';
 export { Button, type ButtonProps, type ButtonVariant } from './Button';

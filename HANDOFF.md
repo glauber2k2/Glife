@@ -29,7 +29,7 @@ do usuário ou são "(só Claude)".
 
 Formato: `- [ ] Título` + Arquivos permitidos · Aceite (verificável) · Cuidados.
 
-- [ ] **T1 — Base do movimento (0.13a)**
+- [x] **T1 — Base do movimento (0.13a)**
   - Arquivos: `apps/app/package.json`, `pnpm-lock.yaml`, `apps/app/src/shared/ui/theme/tokens.ts`,
     `apps/app/src/shared/ui/theme/ThemeProvider.tsx`, `apps/app/src/shared/ui/motion.ts` (novo),
     `apps/app/src/shared/ui/index.ts`, `apps/app/tests/motion.test.ts` (novo).
@@ -84,7 +84,10 @@ Formato: `- [ ] Título` + Arquivos permitidos · Aceite (verificável) · Cuida
 
 - Fase 0: monorepo, design system, navegação, domain (55 testes), ESLint de fronteiras (19 testes no app),
   migrações com RLS/MFA/FKs compostas (20 testes de banco), tema persistido, tokens completos.
-- Último trabalho: configuração do handoff automático (este arquivo, `AGENTS.md`, hooks em `.claude/`).
+- T1 concluída: instalação Expo conferida (Reanimated 4.7.1/Worklets 0.13.0 já presentes), tokens de mola/escala,
+  `resolveSpring` (6 testes) e preferência de movimento acompanhando alterações do sistema. Lint, typecheck,
+  100 testes e build web passaram. Babel configurado automaticamente pelo `babel-preset-expo` do SDK 58.
+- Próximo pedido do usuário: renomear o app/sistema para **Glife**, incluindo arquivos e pastas necessários.
 - Nenhuma tarefa pela metade.
 
 ## Armadilhas conhecidas
