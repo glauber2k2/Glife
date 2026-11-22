@@ -5,7 +5,7 @@
 
 ## Objetivo atual
 
-Concluir a **Fase 0 (fundação)** de `docs/PLANO_DE_IMPLEMENTACAO.md`. Glife, T1–T6 e T9
+Concluir a **Fase 0 (fundação)** de `docs/PLANO_DE_IMPLEMENTACAO.md`. Glife, T1–T7 e T9
 (movimento dos componentes e da navegação, fronteira de dados e hello Deno) estão implementados e
 detalhados em `HANDOFF-arquivo.md`. Restam os contratos/login reservados ao Claude, infraestrutura
 do usuário e validação Android. Não há outra tarefa disponível ao Codex neste handoff.
@@ -36,8 +36,7 @@ do usuário e validação Android. Não há outra tarefa disponível ao Codex ne
 
 Formato: `- [ ] Título` + Arquivos permitidos · Aceite (verificável) · Cuidados.
 
-- [ ] **T7 — Interfaces de repositório no domain (só Claude)**
-  - Decisão de arquitetura (contratos de `NotesRepository`, `LinksRepository`, erros, paginação).
+- [x] **T7 — Interfaces de repositório no domain (só Claude)** — ver "Estado atual".
 - [ ] **T8 — Login e-mail + senha + MFA, sessão aal2 (0.12) (só Claude)**
   - Autenticação. Depende do projeto Supabase hospedado.
 - [ ] **Bloqueadas (dependem do usuário):** 0.8 PowerSync (contas Supabase/PowerSync), 0.11 APK (Android Studio),
@@ -48,7 +47,7 @@ Formato: `- [ ] Título` + Arquivos permitidos · Aceite (verificável) · Cuida
 - Projeto **Glife** em `Glauber/glife/`: pacotes `@glife/*`, esquema `glife://`, IDs `app.glife.pessoal`.
 - T1–T6 concluídas e arquivadas com hashes: movimento em Button/Chip/Sheet/ListItem, demo em Ajustes,
   preferência dinâmica de movimento reduzido, lint de dados e hello usando o domain real.
-- Lint/typecheck verdes; **129 testes** (55 domain, 45 app, 29 Supabase). Build web e verificações de
+- Lint/typecheck verdes (contagem atualizada na linha da T7). Build web e verificações de
   interação no Edge headless passaram nos dois temas; Android e deploy ainda não validados.
 - Hello: Deno check + execução real passaram; do diretório raiz é necessário informar `--config` (abaixo).
 - Planejamento e protótipo na pasta pai renomeados para `Glife — Planejamento do Projeto.md` e
@@ -65,6 +64,12 @@ Formato: `- [ ] Título` + Arquivos permitidos · Aceite (verificável) · Cuida
   temas, preferência dinâmica, quatro abas, modal/Ajustes sem animação ao reduzir movimento, rolagem e texto
   digitado preservados, redimensionamento e trocas rápidas. Sem novas telas ou dependências.
 - Evidências e scripts de validação web preservados no backup, subpasta `retomada-validacao/`.
+- T7 concluída: contratos em `@glife/domain` — `core` (RepositoryError com códigos e mensagem fixa, paginação
+  keyset com cursor opaco validado, Listener/Unsubscribe), `notes` (modelo Zod de notas/pastas, `NotesRepository`,
+  `NoteFoldersRepository`, regra de ciclo de pastas) e `links` (`LinksRepository`, validação de link novo).
+  `@glife/domain/testing` traz suítes de contrato + implementação em memória; **a implementação PowerSync (0.8)
+  deve rodar `notesRepositoryContract`/`linksRepositoryContract`**. ESLint barra `@glife/domain/testing` fora de
+  testes. **187 testes** (106 domain, 52 app, 29 Supabase).
 
 ## Armadilhas conhecidas
 
@@ -84,8 +89,6 @@ Formato: `- [ ] Título` + Arquivos permitidos · Aceite (verificável) · Cuida
 - **0.13 / Android:** dúvida de implementação da navegação resolvida pela T9; falta conferir componentes,
   transições, modal e preferência dinâmica de movimento no Android, quando o SDK/aparelho estiver disponível.
   Não marcar 0.13 completo antes dessa validação.
-- **Próximo passo de arquitetura:** T7 permanece reservada ao Claude conforme AGENTS.md; o anúncio na
-  sessão interrompida não resultou em contratos implementados. Nenhum arquivo desses contratos se perdeu.
 
 ## Comandos
 

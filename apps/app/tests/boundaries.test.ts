@@ -77,3 +77,28 @@ describe.each(['@powersync/react-native', '@supabase/supabase-js'])('acesso a %s
     expect(await violations('src/features/notes/screens/x.ts', code)).toContain('no-restricted-imports');
   });
 });
+
+describe('dublês de @glife/domain/testing ficam fora do app de produção', () => {
+  const code = `import { createInMemoryNotes } from '@glife/domain/testing'; void createInMemoryNotes;`;
+
+  it.each([
+    'src/features/notes/screens/x.ts',
+    'src/features/notes/data/x.ts',
+    'src/shared/lib/x.ts',
+    'src/app/_layout.tsx',
+  ])('barra em %s', async (filePath) => {
+    expect(await violations(filePath, code)).toContain('no-restricted-imports');
+  });
+
+  it.each(['src/features/notes/__tests__/x.test.ts', 'src/features/notes/data/x.test.ts'])(
+    'permite em teste %s',
+    async (filePath) => {
+      expect(await violations(filePath, code)).toEqual([]);
+    },
+  );
+
+  it('contratos do domain continuam livres nas telas', async () => {
+    const ok = `import type { NotesRepository } from '@glife/domain/notes'; export type R = NotesRepository;`;
+    expect(await violations('src/features/notes/screens/x.ts', ok)).toEqual([]);
+  });
+});

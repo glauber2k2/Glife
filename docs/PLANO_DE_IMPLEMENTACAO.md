@@ -30,7 +30,7 @@ Objetivo: o mesmo app abre no Android e no navegador, com login, banco local e s
 
 **Depende de você:** criar contas Supabase e PowerSync (grátis) e instalar Android Studio/SDK.
 
-**Antes da 0.8 (arquitetura):** cada feature acessa dados só por uma interface de repositório (ex.: `NotesRepository`) definida no `domain`; a implementação com PowerSync fica em `features/<f>/data`. O lint deve proibir `@powersync/*` e `@supabase/*` fora de `data/` e `shared/lib` (inversão de dependência: telas não conhecem o banco). O conector de upload trata conflito de unicidade (23505, ex.: link ou tag criados offline em dois aparelhos) como sucesso idempotente, para não travar a fila.
+**Antes da 0.8 (arquitetura) — ✅ contratos prontos (T7: `@glife/domain/{core,notes,links}` + suítes em `@glife/domain/testing`):** cada feature acessa dados só por uma interface de repositório (ex.: `NotesRepository`) definida no `domain`; a implementação com PowerSync fica em `features/<f>/data`. O lint deve proibir `@powersync/*` e `@supabase/*` fora de `data/` e `shared/lib` (inversão de dependência: telas não conhecem o banco). O conector de upload trata conflito de unicidade (23505, ex.: link ou tag criados offline em dois aparelhos) como sucesso idempotente, para não travar a fila.
 
 `tools/` entra na Fase 4 (importador da Bíblia).
 

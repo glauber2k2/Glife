@@ -3,6 +3,16 @@ const { defineConfig } = require('eslint/config');
 const expoConfig = require('eslint-config-expo/flat');
 const boundaries = require('eslint-plugin-boundaries');
 
+const TEST_FILES = ['**/__tests__/**', '**/*.test.{ts,tsx}'];
+const SDK_PATTERN = {
+  group: ['@powersync/*', '@supabase/*'],
+  message: 'Acesse o banco por um repositório. SDKs só em features/*/data ou shared/lib.',
+};
+const TESTING_PATTERN = {
+  group: ['@glife/domain/testing', '@glife/domain/testing/*'],
+  message: 'Dublês e suítes de contrato são só para testes.',
+};
+
 module.exports = defineConfig([
   expoConfig,
   { ignores: ['dist/*', '.expo/*', 'android/*', 'ios/*'] },
@@ -76,19 +86,19 @@ module.exports = defineConfig([
       ],
     },
   },
+  // no-restricted-imports: um bloco posterior substitui o anterior, então cada bloco repete o que vale para ele.
   {
     files: ['src/**/*.{ts,tsx}'],
-    ignores: ['src/features/*/data/**', 'src/shared/lib/**'],
+    ignores: ['src/features/*/data/**', 'src/shared/lib/**', ...TEST_FILES],
     rules: {
-      'no-restricted-imports': [
-        'error',
-        {
-          patterns: [{
-            group: ['@powersync/*', '@supabase/*'],
-            message: 'Acesse o banco por um repositório. SDKs só em features/*/data ou shared/lib.',
-          }],
-        },
-      ],
+      'no-restricted-imports': ['error', { patterns: [SDK_PATTERN, TESTING_PATTERN] }],
+    },
+  },
+  {
+    files: ['src/features/*/data/**/*.{ts,tsx}', 'src/shared/lib/**/*.{ts,tsx}'],
+    ignores: TEST_FILES,
+    rules: {
+      'no-restricted-imports': ['error', { patterns: [TESTING_PATTERN] }],
     },
   },
   {

@@ -16,3 +16,12 @@ export {
   type LinkRow,
   type TitleResolver,
 } from './sync.ts';
+export {
+  desiredLinkSchema,
+  sourceAddressSchema,
+  validateNewLink,
+  type Link,
+  type LinksRepository,
+  type SourceAddress,
+  type SourceType,
+} from './repository.ts';

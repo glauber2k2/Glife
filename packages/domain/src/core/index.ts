@@ -83,3 +83,23 @@ export function restore<T extends BaseEntity>(entity: T, clock?: () => Date): T 
 export function isAlive(entity: Pick<BaseEntity, 'deleted_at'>): boolean {
   return entity.deleted_at === null;
 }
+
+// ---------- Contratos de repositório ----------
+
+export {
+  DEFAULT_PAGE_SIZE,
+  MAX_PAGE_SIZE,
+  RepositoryError,
+  decodeCursor,
+  encodeCursor,
+  isRepositoryError,
+  normalizePageRequest,
+  parseOrThrow,
+  type CursorKey,
+  type ErrorListener,
+  type Listener,
+  type Page,
+  type PageRequest,
+  type RepositoryErrorCode,
+  type Unsubscribe,
+} from './repository.ts';

@@ -1,0 +1,257 @@
+// Implementações em memória dos repositórios: referência executável do contrato e dublês para testes.
+// Não persistem nada; não use em produção.
+import {
+  RepositoryError,
+  encodeCursor,
+  newId,
+  normalizePageRequest,
+  nowIso,
+  parseOrThrow,
+  restore as restoreEntity,
+  softDelete,
+  type CursorKey,
+  type Listener,
+  type Page,
+  type PageRequest,
+  type Unsubscribe,
+} from '../core/index.ts';
+import { validateNewLink, type DesiredLink, type Link, type LinksRepository, type SourceAddress } from '../links/index.ts';
+import {
+  applyNotePatch,
+  folderNameSchema,
+  newNote,
+  newNoteFolder,
+  wouldCreateFolderCycle,
+  type Note,
+  type NoteFolder,
+  type NoteFoldersRepository,
+  type NoteListQuery,
+  type NotesRepository,
+} from '../notes/index.ts';
+
+// ---------- utilidades ----------
+
+/** Ordena por (sort, id) decrescente e devolve a página depois do cursor. */
+function paginate<T extends { id: string }>(
+  rows: T[],
+  sortOf: (row: T) => string | number,
+  req?: PageRequest,
+): Page<T> {
+  const { limit, cursor } = normalizePageRequest(req);
+  const desc = (a: T, b: T) => {
+    const sa = sortOf(a);
+    const sb = sortOf(b);
+    if (sa !== sb) return sa < sb ? 1 : -1;
+    return a.id < b.id ? 1 : a.id > b.id ? -1 : 0;
+  };
+  const after = (row: T, c: CursorKey) => {
+    const s = sortOf(row);
+    return s < c.sort || (s === c.sort && row.id < c.id);
+  };
+  const sorted = rows.slice().sort(desc).filter((r) => !cursor || after(r, cursor));
+  const items = sorted.slice(0, limit).map((r) => ({ ...r }));
+  const last = items.at(-1);
+  return { items, nextCursor: sorted.length > limit && last ? encodeCursor({ sort: sortOf(last), id: last.id }) : null };
+}
+
+class Subscribers {
+  private readonly fns = new Set<() => void>();
+
+  add(fn: () => void): Unsubscribe {
+    this.fns.add(fn);
+    queueMicrotask(() => this.fns.has(fn) && fn());
+    return () => void this.fns.delete(fn);
+  }
+
+  notify(): void {
+    for (const fn of [...this.fns]) queueMicrotask(() => this.fns.has(fn) && fn());
+  }
+}
+
+// ---------- notas ----------
+
+export function createInMemoryNotes(userId: string): { notes: NotesRepository; folders: NoteFoldersRepository } {
+  const notes = new Map<string, Note>();
+  const folders = new Map<string, NoteFolder>();
+  const subs = new Subscribers();
+
+  const aliveNote = (id: string) => {
+    const n = notes.get(id);
+    if (!n || n.deleted_at !== null) throw new RepositoryError('not_found');
+    return n;
+  };
+  const aliveFolder = (id: string) => {
+    const f = folders.get(id);
+    if (!f || f.deleted_at !== null) throw new RepositoryError('not_found');
+    return f;
+  };
+  const save = <T>(map: Map<string, T>, id: string, row: T): T => {
+    map.set(id, row);
+    subs.notify();
+    return { ...row };
+  };
+
+  const matches = (n: Note, q: NoteListQuery) => {
+    if (n.deleted_at !== null) return false;
+    if (q.folderId !== undefined && n.folder_id !== q.folderId) return false;
+    if (q.kind !== undefined && n.kind !== q.kind) return false;
+    if (q.pinned !== undefined && n.pinned !== q.pinned) return false;
+    if (q.search) {
+      const s = q.search.toLowerCase();
+      if (!n.title.toLowerCase().includes(s) && !n.body_md.toLowerCase().includes(s)) return false;
+    }
+    return true;
+  };
+  const list = (q: NoteListQuery = {}, page?: PageRequest) =>
+    paginate([...notes.values()].filter((n) => matches(n, q)), (n) => n.updated_at, page);
+
+  const notesRepo: NotesRepository = {
+    async get(id) {
+      const n = notes.get(id);
+      return n && n.deleted_at === null ? { ...n } : null;
+    },
+    async list(q, page) {
+      return list(q, page);
+    },
+    watch(q, listener: Listener<Note[]>) {
+      return subs.add(() => listener(list(q, { limit: q.limit }).items));
+    },
+    async findIdByTitle(title) {
+      const t = title.trim().toLowerCase();
+      for (const n of notes.values()) if (n.deleted_at === null && n.title.toLowerCase() === t) return n.id;
+      return null;
+    },
+    async create(draft) {
+      const n = newNote(draft, userId);
+      if (n.folder_id) aliveFolder(n.folder_id);
+      return save(notes, n.id, n);
+    },
+    async update(id, patch) {
+      const n = applyNotePatch(aliveNote(id), patch);
+      if (n.folder_id) aliveFolder(n.folder_id);
+      return save(notes, id, n);
+    },
+    async remove(id) {
+      save(notes, id, softDelete(aliveNote(id)));
+    },
+    async restore(id) {
+      const n = notes.get(id);
+      if (!n) throw new RepositoryError('not_found');
+      return save(notes, id, restoreEntity(n));
+    },
+    async listTrash(page) {
+      return paginate([...notes.values()].filter((n) => n.deleted_at !== null), (n) => n.deleted_at ?? '', page);
+    },
+  };
+
+  const foldersRepo: NoteFoldersRepository = {
+    async list() {
+      return [...folders.values()]
+        .filter((f) => f.deleted_at === null)
+        .sort((a, b) => a.name.localeCompare(b.name, 'pt-BR', { sensitivity: 'base' }))
+        .map((f) => ({ ...f }));
+    },
+    async create(draft) {
+      const f = newNoteFolder(draft, userId);
+      if (f.parent_id) aliveFolder(f.parent_id);
+      return save(folders, f.id, f);
+    },
+    async rename(id, name) {
+      const clean = parseOrThrow(folderNameSchema, name);
+      const f = aliveFolder(id);
+      return save(folders, id, { ...f, name: clean, updated_at: nowIso() });
+    },
+    async move(id, parentId) {
+      const f = aliveFolder(id);
+      if (parentId !== null && parentId !== id) aliveFolder(parentId);
+      if (wouldCreateFolderCycle(id, parentId, (x) => folders.get(x)?.parent_id ?? null)) {
+        throw new RepositoryError('validation');
+      }
+      return save(folders, id, { ...f, parent_id: parentId, updated_at: nowIso() });
+    },
+    async remove(id) {
+      const f = aliveFolder(id);
+      const busy =
+        [...notes.values()].some((n) => n.deleted_at === null && n.folder_id === id) ||
+        [...folders.values()].some((c) => c.deleted_at === null && c.parent_id === id);
+      if (busy) throw new RepositoryError('conflict');
+      save(folders, id, softDelete(f));
+    },
+  };
+
+  return { notes: notesRepo, folders: foldersRepo };
+}
+
+// ---------- links ----------
+
+export function createInMemoryLinks(userId: string): LinksRepository {
+  const rows = new Map<string, Link>();
+  const subs = new Subscribers();
+  const alive = () => [...rows.values()].filter((l) => l.deleted_at === null);
+  const fromSource = (s: SourceAddress) => (l: Link) => l.source_type === s.type && l.source_id === s.id;
+  const backlinks = (type: string, ref: string, page?: PageRequest) =>
+    paginate(alive().filter((l) => l.target_type === type && l.target_ref === ref), (l) => l.created_at, page);
+
+  const insert = (source: SourceAddress, link: DesiredLink, origin: Link['origin']): Link => {
+    const existing = alive().find(
+      (l) =>
+        fromSource(source)(l) &&
+        l.target_type === link.target_type &&
+        l.target_ref === link.target_ref &&
+        l.relation === link.relation &&
+        l.origin === origin,
+    );
+    if (existing) return existing;
+    const now = nowIso();
+    const row: Link = {
+      id: newId(),
+      user_id: userId,
+      source_type: source.type,
+      source_id: source.id,
+      ...link,
+      origin,
+      created_at: now,
+      updated_at: now,
+      deleted_at: null,
+    };
+    rows.set(row.id, row);
+    return row;
+  };
+
+  return {
+    async outgoing(source) {
+      return alive().filter(fromSource(source)).map((l) => ({ ...l }));
+    },
+    async backlinks(target, page) {
+      return backlinks(target.type, target.ref, page);
+    },
+    watchBacklinks(target, listener) {
+      return subs.add(() => listener(backlinks(target.type, target.ref).items));
+    },
+    async add(source, link) {
+      const v = validateNewLink(source, link);
+      const row = insert(v.source, v.link, 'manual');
+      subs.notify();
+      return { ...row };
+    },
+    async remove(id) {
+      const l = rows.get(id);
+      if (!l || l.deleted_at !== null) throw new RepositoryError('not_found');
+      rows.set(id, softDelete(l));
+      subs.notify();
+    },
+    async applyMarkdownDiff(source, diff) {
+      // Valida tudo antes de gravar qualquer coisa (atomicidade).
+      const adds = diff.add.map((l) => validateNewLink(source, l));
+      for (const id of diff.remove) {
+        const l = rows.get(id);
+        if (!l || l.deleted_at !== null || l.origin !== 'markdown' || !fromSource(source)(l)) {
+          throw new RepositoryError('validation');
+        }
+      }
+      for (const id of diff.remove) rows.set(id, softDelete(rows.get(id)!));
+      for (const v of adds) insert(v.source, v.link, 'markdown');
+      subs.notify();
+    },
+  };
+}
