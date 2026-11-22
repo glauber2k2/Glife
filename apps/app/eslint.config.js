@@ -77,6 +77,21 @@ module.exports = defineConfig([
     },
   },
   {
+    files: ['src/**/*.{ts,tsx}'],
+    ignores: ['src/features/*/data/**', 'src/shared/lib/**'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [{
+            group: ['@powersync/*', '@supabase/*'],
+            message: 'Acesse o banco por um repositório. SDKs só em features/*/data ou shared/lib.',
+          }],
+        },
+      ],
+    },
+  },
+  {
     files: ['src/shared/ui/theme/tokens.ts'],
     rules: { 'no-restricted-syntax': 'off' },
   },

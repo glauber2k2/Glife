@@ -64,7 +64,7 @@ Formato: `- [ ] Título` + Arquivos permitidos · Aceite (verificável) · Cuida
     na seção "Design system" de Ajustes, uma lista de exemplo com botões "Adicionar" e "Remover" mostra itens
     entrando, saindo e o resto se reorganizando; reduzir movimento = sem animação; lint/typecheck/test/build:web.
   - Cuidados: é só uma demo dentro da tela existente (não criar tela nova). Textos em pt-BR.
-- [ ] **T5 — Lint: banco só na camada de dados**
+- [x] **T5 — Lint: banco só na camada de dados**
   - Arquivos: `apps/app/eslint.config.js`, `apps/app/tests/boundaries.test.ts`.
   - Aceite: import de `@powersync/*` ou `@supabase/*` é erro fora de `src/features/*/data/**` e `src/shared/lib/**`;
     novos casos em `boundaries.test.ts` (barra em `features/notes/screens/x.ts`, permite em
@@ -106,6 +106,8 @@ Formato: `- [ ] Título` + Arquivos permitidos · Aceite (verificável) · Cuida
 - T4 concluída: ListItem com `animated` opcional, fade/LinearTransition e demo Adicionar/Remover em Ajustes.
   Lint/typecheck/102 testes/build web passaram; navegador confirmou reorganização, movimento reduzido,
   temas claro/escuro, lista vazia e botão Remover desabilitado, sem erros de execução.
+- T5 concluída: ESLint bloqueia SDKs Supabase/PowerSync fora de `features/*/data` e `shared/lib`, incluindo
+  imports de tipo e reexportações. Os testes novos falharam antes da regra; lint/typecheck/114 testes passaram.
 - Nenhuma tarefa pela metade.
 
 ## Armadilhas conhecidas

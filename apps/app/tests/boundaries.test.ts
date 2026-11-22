@@ -14,7 +14,7 @@ const eslint = new ESLint({ cwd: appDir });
 async function violations(filePath: string, code: string): Promise<string[]> {
   const [result] = await eslint.lintText(code, { filePath: join(appDir, filePath) });
   return result.messages
-    .filter((m) => m.ruleId === 'boundaries/dependencies' || m.ruleId === 'no-restricted-syntax')
+    .filter((m) => ['boundaries/dependencies', 'no-restricted-syntax', 'no-restricted-imports'].includes(m.ruleId ?? ''))
     .map((m) => m.ruleId as string);
 }
 
@@ -55,5 +55,25 @@ describe('fronteiras entre features', () => {
   it('cor hex solta fora dos tokens é proibida', async () => {
     const v = await violations('src/features/notes/x.ts', `export const c = '#FF0000';`);
     expect(v).toContain('no-restricted-syntax');
+  });
+});
+
+describe.each(['@powersync/react-native', '@supabase/supabase-js'])('acesso a %s só na camada de dados', (sdk) => {
+  it.each([
+    'src/features/notes/screens/x.ts',
+    'src/app/x.ts',
+    'src/shared/ui/x.ts',
+  ])('barra o SDK em %s', async (filePath) => {
+    expect(await violations(filePath, `import * as sdk from '${sdk}'; void sdk;`))
+      .toContain('no-restricted-imports');
+  });
+
+  it.each(['src/features/notes/data/x.ts', 'src/shared/lib/x.ts'])('permite o SDK em %s', async (filePath) => {
+    expect(await violations(filePath, `import * as sdk from '${sdk}'; void sdk;`)).toEqual([]);
+  });
+
+  it('barra também reexportações e imports de tipo em telas', async () => {
+    const code = `import type { Client } from '${sdk}'; export type { Client }; export * from '${sdk}';`;
+    expect(await violations('src/features/notes/screens/x.ts', code)).toContain('no-restricted-imports');
   });
 });
