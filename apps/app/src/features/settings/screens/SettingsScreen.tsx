@@ -1,5 +1,5 @@
 import { FileText, Receipt } from 'lucide-react-native';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { View } from 'react-native';
 
 import {
@@ -28,6 +28,8 @@ export function SettingsScreen() {
   const t = useTheme();
   const { preference, setPreference } = useThemePreference();
   const [sheet, setSheet] = useState(false);
+  const [items, setItems] = useState([1, 2, 3]);
+  const nextItem = useRef(4);
 
   return (
     <Screen title="Ajustes">
@@ -72,6 +74,30 @@ export function SettingsScreen() {
             <ListItem icon={FileText} title="Compras do mês" subtitle="Nota" separator={false} onPress={() => {}} />
           </View>
           <Button label="Abrir folha" variant="secondary" onPress={() => setSheet(true)} />
+          <Text variant="heading">Lista em movimento</Text>
+          <Text variant="small" tone="secondary">
+            Adicione ou remova o primeiro item para ver a lista se reorganizar.
+            A preferência de reduzir movimento do sistema é respeitada.
+          </Text>
+          <View style={s.row}>
+            <Button label="Adicionar" variant="secondary" onPress={() => {
+              const id = nextItem.current;
+              nextItem.current = id + 1;
+              setItems((current) => [id, ...current]);
+            }} />
+            <Button
+              label="Remover"
+              variant="ghost"
+              disabled={items.length === 0}
+              onPress={() => setItems((current) => current.slice(1))}
+            />
+          </View>
+          <View collapsable={false}>
+            {items.map((id, index) => (
+              <ListItem key={id} title={`Exemplo ${id}`} icon={FileText} animated separator={index < items.length - 1} />
+            ))}
+            {items.length === 0 && <Text tone="tertiary">Adicione um item para experimentar.</Text>}
+          </View>
         </View>
       </Section>
 

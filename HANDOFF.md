@@ -58,7 +58,7 @@ Formato: `- [ ] Título` + Arquivos permitidos · Aceite (verificável) · Cuida
   - Aceite: folha entra de baixo (mola `standard`) e o fundo (scrim) faz fade; ao fechar, sai ao contrário;
     reduzir movimento = aparece sem animação; lint/typecheck/test/build:web passam.
   - Cuidados: não bloquear toque durante a animação; manter `accessibilityViewIsModal`/fechamento atuais.
-- [ ] **T4 — Lista que se reorganiza + demo em Ajustes (0.13d)**
+- [x] **T4 — Lista que se reorganiza + demo em Ajustes (0.13d)**
   - Arquivos: `apps/app/src/shared/ui/ListItem.tsx`, `apps/app/src/features/settings/screens/SettingsScreen.tsx`.
   - Aceite: `ListItem` aceita entrar/sair com animação de layout (Reanimated `LinearTransition` + fade);
     na seção "Design system" de Ajustes, uma lista de exemplo com botões "Adicionar" e "Remover" mostra itens
@@ -103,6 +103,9 @@ Formato: `- [ ] Título` + Arquivos permitidos · Aceite (verificável) · Cuida
 - T3 concluída: Sheet com mola `standard`, scrim com fade, saída antes de desmontar e presença modal
   acessível; movimento reduzido é imediato. Lint/typecheck/102 testes/build web passaram; navegador confirmou
   entrada/saída, fechamento durante a entrada e tema escuro com movimento reduzido, sem erros de execução.
+- T4 concluída: ListItem com `animated` opcional, fade/LinearTransition e demo Adicionar/Remover em Ajustes.
+  Lint/typecheck/102 testes/build web passaram; navegador confirmou reorganização, movimento reduzido,
+  temas claro/escuro, lista vazia e botão Remover desabilitado, sem erros de execução.
 - Nenhuma tarefa pela metade.
 
 ## Armadilhas conhecidas
@@ -118,7 +121,11 @@ Formato: `- [ ] Título` + Arquivos permitidos · Aceite (verificável) · Cuida
 
 ## Dúvidas para o Claude
 
-_(nenhuma)_
+- **0.13 / navegação:** T1–T4 cobrem componentes e demo, mas o roadmap também menciona abas deslizando e
+  movimento reduzido em toda navegação. `src/app/_layout.tsx` ainda configura animações de stack sem consultar
+  a preferência e a TabBar não tem transição Reanimated; esses arquivos não eram permitidos nas tarefas.
+  Falta definir tarefa para a navegação (desligar animações com `useReduceMotion` e escolher a transição de abas)
+  e validar no Android. O item 0.13 completo ainda não deve ser marcado como finalizado.
 
 ## Comandos
 
