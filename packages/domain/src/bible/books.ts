@@ -110,7 +110,8 @@ const stripAccents = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '');
 
 /** Converte o nome digitado ("1 Co", "II Coríntios", "Jó", "salmos") no livro. */
 export function findBook(input: string): BibleBook | undefined {
-  const raw = input.trim().toLowerCase().replace(/[ºª.]/g, '');
+  // NFC primeiro: "Jó" colado em NFD (o + acento combinante) viraria "jo" = João.
+  const raw = input.normalize('NFC').trim().toLowerCase().replace(/[ºª.]/g, '');
   if (raw === 'jó') return byCode.get('JOB');
 
   // Numeral romano no início ("II Coríntios") só quando seguido de espaço.

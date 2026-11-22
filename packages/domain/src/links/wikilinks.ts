@@ -17,6 +17,11 @@ export interface Wikilink {
   target: WikilinkTarget;
   label?: string;
   relation: Extract<LinkRelation, 'ref' | 'embed'>;
+  /**
+   * Presente quando o alvo foi deduzido de texto sem prefixo (ex.: `[[Ap 12]]` → Apocalipse 12).
+   * Se existir uma nota com exatamente esse título, ela tem prioridade (ver desiredLinks).
+   */
+  titleFallback?: string;
   start: number;
   end: number;
 }
@@ -26,7 +31,10 @@ const WIKILINK_RE = /(!?)\[\[([^[\]\n]+?)\]\]/g;
 /** Substitui código (cercado e inline) por espaços, mantendo as posições do texto. */
 function maskCode(md: string): string {
   const blank = (s: string) => s.replace(/[^\n]/g, ' ');
-  return md.replace(/```[\s\S]*?(```|$)/g, blank).replace(/`[^`\n]*`/g, blank);
+  return md
+    .replace(/```[\s\S]*?(```|$)/g, blank)
+    .replace(/``[^\n]*?``/g, blank)
+    .replace(/`[^`\n]*`/g, blank);
 }
 
 export function parseTarget(inner: string): WikilinkTarget | null {
@@ -43,9 +51,11 @@ export function parseTarget(inner: string): WikilinkTarget | null {
         const r = parseBibleRef(ref);
         return r ? toOsis(r) : null;
       })();
-      return parsed ? { type: 'bible', ref: parsed } : null;
+      if (parsed) return { type: 'bible', ref: parsed };
+    } else if (isValidRef(type, ref)) {
+      return { type, ref: ref.toLowerCase() };
     }
-    return isValidRef(type, ref) ? { type, ref: ref.toLowerCase() } : null;
+    // Prefixo conhecido com referência inválida ("[[note: reunião]]"): vale como título, não some.
   }
 
   const bible = parseBibleRef(text);
@@ -67,10 +77,13 @@ export function parseWikilinks(markdown: string): Wikilink[] {
     const target = parseTarget(targetText);
     if (!target) continue;
     const start = m.index!;
+    const bare = targetText.trim();
+    const inferred = target.type !== 'note_title' && !bare.startsWith(`${target.type}:`);
     out.push({
       raw,
       target,
       ...(label ? { label } : {}),
+      ...(inferred ? { titleFallback: bare } : {}),
       relation: bang ? 'embed' : 'ref',
       start,
       end: start + raw.length,

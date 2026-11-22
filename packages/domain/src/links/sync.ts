@@ -50,8 +50,10 @@ export function desiredLinks(
       target_type = 'note';
       target_ref = id;
     } else {
-      target_type = w.target.type;
-      target_ref = w.target.ref;
+      // "[[Ap 12]]" sem prefixo: uma nota com esse título exato vence a leitura bíblica.
+      const noteId = w.titleFallback ? resolveTitle(w.titleFallback) : undefined;
+      target_type = noteId ? 'note' : w.target.type;
+      target_ref = noteId ?? w.target.ref;
     }
     const d: DesiredLink = { target_type, target_ref, relation: w.relation };
     seen.set(key(d), d);
@@ -66,11 +68,18 @@ export function diffMarkdownLinks(
 ): LinkDiff {
   const { links, unresolved } = desiredLinks(wikilinks, resolveTitle);
   const current = existing.filter((l) => l.origin === 'markdown' && l.deleted_at === null);
-  const currentKeys = new Set(current.map(key));
   const desiredKeys = new Set(links.map(key));
+  // Vários aparelhos podem ter criado a mesma linha: fica a primeira, as cópias saem.
+  const kept = new Set<string>();
+  const remove: string[] = [];
+  for (const l of current) {
+    const k = key(l);
+    if (desiredKeys.has(k) && !kept.has(k)) kept.add(k);
+    else remove.push(l.id);
+  }
   return {
-    add: links.filter((l) => !currentKeys.has(key(l))),
-    remove: current.filter((l) => !desiredKeys.has(key(l))).map((l) => l.id),
+    add: links.filter((l) => !kept.has(key(l))),
+    remove,
     unresolved,
   };
 }

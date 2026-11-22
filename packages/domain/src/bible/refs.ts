@@ -17,6 +17,7 @@ export interface BibleRef {
  */
 export function parseBibleRef(input: string): BibleRef | null {
   const m = input
+    .normalize('NFC')
     .trim()
     .match(/^((?:[1-3]|i{1,3})?\s*[\p{L}][\p{L}.\s]*?)\s*(\d+)(?:[:.](\d+))?(?:\s*-\s*(\d+)(?:[:.](\d+))?)?$/iu);
   if (!m) return null;

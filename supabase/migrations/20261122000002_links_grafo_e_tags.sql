@@ -12,6 +12,10 @@ create table public.links (
   updated_at timestamptz not null default now(),
   deleted_at timestamptz
 );
+-- Um link ativo por (origem, alvo): duplicatas de vários aparelhos viram conflito em vez de lixo.
+-- O conector do PowerSync (0.8) trata esse conflito (23505) como sucesso idempotente.
+create unique index links_unico_ativo on public.links
+  (user_id, source_type, source_id, target_type, target_ref, relation, origin) where deleted_at is null;
 create index on public.links (target_type, target_ref);   -- backlinks
 create index on public.links (source_type, source_id);
 select public.vida_apply_standard('public.links');

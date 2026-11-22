@@ -77,6 +77,43 @@ describe('isolamento entre usuários', () => {
   });
 });
 
+describe('grafo de links', () => {
+  const insertLink = (tx: { query: PGlite['query'] }, origin = 'markdown') =>
+    tx.query(
+      `insert into public.links (user_id, source_type, source_id, target_type, target_ref, origin)
+       values ($1, 'note', $2, 'bible', 'JHN.3.16', $3)`,
+      [USER_A, NOTE_A, origin],
+    );
+
+  it('não aceita dois links ativos idênticos', async () => {
+    await expect(
+      asUser(db, USER_A, async (tx) => {
+        await insertLink(tx);
+        await insertLink(tx);
+      }),
+    ).rejects.toThrow(/duplicate key/);
+  });
+
+  it('aceita o mesmo alvo com origem diferente (manual × markdown)', async () => {
+    const n = await asUser(db, USER_A, async (tx) => {
+      await insertLink(tx, 'markdown');
+      await insertLink(tx, 'manual');
+      return count(tx, 'select count(*)::int as n from public.links');
+    });
+    expect(n).toBe(2);
+  });
+
+  it('aceita recriar um link que foi para a lixeira', async () => {
+    const n = await asUser(db, USER_A, async (tx) => {
+      await insertLink(tx);
+      await tx.query('update public.links set deleted_at = now()');
+      await insertLink(tx);
+      return count(tx, 'select count(*)::int as n from public.links where deleted_at is null');
+    });
+    expect(n).toBe(1);
+  });
+});
+
 describe('MFA obrigatório (aal2)', () => {
   it('sessão só com senha (aal1) não lê nada', async () => {
     const n = await asUser(db, USER_A, (tx) => count(tx, 'select count(*)::int as n from public.notes'), 'aal1');
