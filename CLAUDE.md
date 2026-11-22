@@ -4,7 +4,7 @@ App único (Expo SDK 58 + Expo Router + TypeScript) para Android, web e futurame
 Local-first: tudo é lido/gravado no SQLite do aparelho e sincronizado com o Supabase via PowerSync.
 Módulos: notas, finanças, investimentos, compras, agenda, dieta, Bíblia/devocionais, galeria, caixa de entrada com IA.
 O coração é o **grafo de links**: toda entidade tem UUID e endereço `glife://<tipo>/<ref>`; qualquer uma aponta para qualquer outra.
-Planejamento: `../Organizador de Vida — Planejamento do Projeto.md` · Plano por fases: `docs/PLANO_DE_IMPLEMENTACAO.md`.
+Planejamento: `../Glife — Planejamento do Projeto.md` · Design: `../Glife — Design System.html` · Plano por fases: `docs/PLANO_DE_IMPLEMENTACAO.md`.
 
 ## Estrutura
 

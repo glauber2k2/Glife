@@ -5,9 +5,10 @@
 
 ## Objetivo atual
 
-Fechar a **Fase 0 (fundação)** de `docs/PLANO_DE_IMPLEMENTACAO.md`: sistema de movimento (0.13), fronteira de dados
-no lint, Edge Function de validação (0.9). PowerSync (0.8), login (0.12) e APK (0.11) dependem de contas/ferramentas
-do usuário ou são "(só Claude)".
+Concluir a **Fase 0 (fundação)** de `docs/PLANO_DE_IMPLEMENTACAO.md`. Glife e as entregas T1–T6
+(componentes de movimento, fronteira de dados e hello Deno) estão prontas e detalhadas em
+`HANDOFF-arquivo.md`. Restam os contratos/login reservados ao Claude, infraestrutura do usuário
+e o escopo de navegação/abas do item 0.13 (ver Dúvidas).
 
 ## Decisões tomadas (não mudar sem motivo)
 
@@ -29,57 +30,6 @@ do usuário ou são "(só Claude)".
 
 Formato: `- [ ] Título` + Arquivos permitidos · Aceite (verificável) · Cuidados.
 
-- [x] **R1 — Renomear o sistema/app para Glife (pedido do usuário)**
-  - Arquivos: configuração Expo/pnpm/Supabase local, imports/exports do domain, esquema de URI e testes,
-    preferência de tema, documentação e hooks; pasta raiz renomeada de `vida/` para `glife/`.
-  - Aceite: nome Glife, slug/esquema `glife`, identificadores `app.glife.pessoal`, pacotes `@glife/*`, links
-    `glife://`; preferência de tema existente preservada; lint/typecheck/test/build:web passam na nova pasta.
-  - Cuidados: manter migrações SQL já commitadas e a função legada `vida_apply_standard` (sem alterar permissões).
-
-- [x] **T1 — Base do movimento (0.13a)**
-  - Arquivos: `apps/app/package.json`, `pnpm-lock.yaml`, `apps/app/src/shared/ui/theme/tokens.ts`,
-    `apps/app/src/shared/ui/theme/ThemeProvider.tsx`, `apps/app/src/shared/ui/motion.ts` (novo),
-    `apps/app/src/shared/ui/index.ts`, `apps/app/tests/motion.test.ts` (novo).
-  - Aceite: `react-native-reanimated` (e `react-native-worklets`, se o SDK 58 exigir) instalados com
-    `npx expo install`; token `spring` (ex.: `{ standard: { damping, stiffness, mass }, snappy: … }`) e
-    `pressScale` em tokens; `motion.ts` exporta função pura `resolveSpring(kind, reduceMotion)` que devolve
-    `null` (sem animação) quando `reduceMotion` é true — coberta por teste; `pnpm test`, `pnpm typecheck`,
-    `pnpm lint` e `pnpm build:web` passam.
-  - Cuidados: confira a instalação em https://docs.expo.dev/versions/v58.0.0/ (plugin Babel/Worklets). Não remova
-    o token `motion` existente (está em uso). Sem dependências além das do Reanimated.
-- [x] **T2 — Botão e Chip que afundam ao toque (0.13b)**
-  - Arquivos: `apps/app/src/shared/ui/Button.tsx`, `apps/app/src/shared/ui/Chip.tsx`.
-  - Aceite: ao pressionar, escala vai a `t.size`/token `pressScale` com mola `snappy` e volta; com reduzir
-    movimento, só a opacidade muda (comportamento atual); `onPress`, `disabled` e acessibilidade inalterados;
-    lint/typecheck/test/build:web passam.
-  - Cuidados: use `Animated.createAnimatedComponent(Pressable)` ou `Animated.View` interno; nenhum número solto.
-- [x] **T3 — Sheet que desliza (0.13c)**
-  - Arquivos: `apps/app/src/shared/ui/Sheet.tsx`.
-  - Aceite: folha entra de baixo (mola `standard`) e o fundo (scrim) faz fade; ao fechar, sai ao contrário;
-    reduzir movimento = aparece sem animação; lint/typecheck/test/build:web passam.
-  - Cuidados: não bloquear toque durante a animação; manter `accessibilityViewIsModal`/fechamento atuais.
-- [x] **T4 — Lista que se reorganiza + demo em Ajustes (0.13d)**
-  - Arquivos: `apps/app/src/shared/ui/ListItem.tsx`, `apps/app/src/features/settings/screens/SettingsScreen.tsx`.
-  - Aceite: `ListItem` aceita entrar/sair com animação de layout (Reanimated `LinearTransition` + fade);
-    na seção "Design system" de Ajustes, uma lista de exemplo com botões "Adicionar" e "Remover" mostra itens
-    entrando, saindo e o resto se reorganizando; reduzir movimento = sem animação; lint/typecheck/test/build:web.
-  - Cuidados: é só uma demo dentro da tela existente (não criar tela nova). Textos em pt-BR.
-- [x] **T5 — Lint: banco só na camada de dados**
-  - Arquivos: `apps/app/eslint.config.js`, `apps/app/tests/boundaries.test.ts`.
-  - Aceite: import de `@powersync/*` ou `@supabase/*` é erro fora de `src/features/*/data/**` e `src/shared/lib/**`;
-    novos casos em `boundaries.test.ts` (barra em `features/notes/screens/x.ts`, permite em
-    `features/notes/data/x.ts` e `shared/lib/x.ts`), vistos falhando antes da regra; `pnpm test` e `pnpm lint` passam.
-  - Cuidados: os pacotes ainda não estão instalados; use `no-restricted-imports` com `patterns` (não depende de
-    resolver o módulo). Não mexa nas políticas de `boundaries/dependencies` existentes.
-- [x] **T6 — Edge Function "hello" usando o domain (0.9)**
-  - Arquivos: `supabase/functions/hello/index.ts`, `supabase/functions/hello/handler.ts`,
-    `supabase/functions/deno.json`, `supabase/tests/hello.test.ts`.
-  - Aceite: `handler(req: Request): Promise<Response>` lê `?ref=Jo 3:16`, usa `parseBibleRef`/`toOsis` do domain
-    e responde `{ "osis": "JHN.3.16" }` (400 com mensagem para ref inválida/ausente); `index.ts` só faz
-    `Deno.serve(handler)`; `deno.json` mapeia o domain por caminho relativo; teste vitest chama `handler` com
-    `new Request(...)` cobrindo válido, inválido e ausente; `pnpm test` passa.
-  - Cuidados: o domain já usa imports com `.ts` (compatível com Deno). Nada de segredos. Se `deno` estiver
-    instalado, rode também `deno check supabase/functions/hello/index.ts`; se não, registre em Dúvidas.
 - [ ] **T7 — Interfaces de repositório no domain (só Claude)**
   - Decisão de arquitetura (contratos de `NotesRepository`, `LinksRepository`, erros, paginação).
 - [ ] **T8 — Login e-mail + senha + MFA, sessão aal2 (0.12) (só Claude)**
@@ -89,29 +39,16 @@ Formato: `- [ ] Título` + Arquivos permitidos · Aceite (verificável) · Cuida
 
 ## Estado atual
 
-- Fase 0: monorepo, design system, navegação, domain (55 testes), ESLint de fronteiras (19 testes no app),
-  migrações com RLS/MFA/FKs compostas (20 testes de banco), tema persistido, tokens completos.
-- T1 concluída: instalação Expo conferida (Reanimated 4.7.1/Worklets 0.13.0 já presentes), tokens de mola/escala,
-  `resolveSpring` (6 testes) e preferência de movimento acompanhando alterações do sistema. Lint, typecheck,
-  100 testes e build web passaram. Babel configurado automaticamente pelo `babel-preset-expo` do SDK 58.
-- R1 concluída: projeto em `Glauber/glife/`, nome **Glife**, pacotes `@glife/*`, esquema `glife://`,
-  identificadores `app.glife.pessoal`, documentação/hooks alinhados e tema anterior preservado. Instalação,
-  lint, typecheck, 102 testes e build web passaram na nova pasta. SQL versionado permanece intacto.
-- T2 concluída: Button/Chip com mola `snappy`, hit area preservada e retorno por opacidade com movimento
-  reduzido. Lint/typecheck/102 testes/build web passaram; Edge headless confirmou escala/retorno, mudança
-  dinâmica de movimento reduzido e seleção/persistência de tema, sem erros de execução.
-- T3 concluída: Sheet com mola `standard`, scrim com fade, saída antes de desmontar e presença modal
-  acessível; movimento reduzido é imediato. Lint/typecheck/102 testes/build web passaram; navegador confirmou
-  entrada/saída, fechamento durante a entrada e tema escuro com movimento reduzido, sem erros de execução.
-- T4 concluída: ListItem com `animated` opcional, fade/LinearTransition e demo Adicionar/Remover em Ajustes.
-  Lint/typecheck/102 testes/build web passaram; navegador confirmou reorganização, movimento reduzido,
-  temas claro/escuro, lista vazia e botão Remover desabilitado, sem erros de execução.
-- T5 concluída: ESLint bloqueia SDKs Supabase/PowerSync fora de `features/*/data` e `shared/lib`, incluindo
-  imports de tipo e reexportações. Os testes novos falharam antes da regra; lint/typecheck/114 testes passaram.
-- T6 concluída: hello usa o domain real com import map, responde OSIS/400 e tem 9 testes (vistos falhando antes).
-  Lint/typecheck/123 testes passaram; Deno 2.9.8 verificou o entrypoint e executou o handler real nos casos
-  válido/inválido/ausente. Vitest resolve o alias para o módulo real por adaptador no teste, sem dependências novas.
-- Nenhuma tarefa pela metade.
+- Projeto **Glife** em `Glauber/glife/`: pacotes `@glife/*`, esquema `glife://`, IDs `app.glife.pessoal`.
+- T1–T6 concluídas e arquivadas com hashes: movimento em Button/Chip/Sheet/ListItem, demo em Ajustes,
+  preferência dinâmica de movimento reduzido, lint de dados e hello usando o domain real.
+- Lint/typecheck verdes; **123 testes** (55 domain, 39 app, 29 Supabase). Build web e verificações de
+  interação no Edge headless passaram nos dois temas; Android e deploy ainda não validados.
+- Hello: Deno check + execução real passaram; do diretório raiz é necessário informar `--config` (abaixo).
+- Planejamento e protótipo na pasta pai renomeados para `Glife — Planejamento do Projeto.md` e
+  `Glife — Design System.html`; referências do repositório alinhadas. R2 concluída: handoff/arquivo e roadmap
+  reconciliados, com verificações finais passando e só pendências no handoff ativo.
+- Nenhuma tarefa de código pela metade. Migrações SQL versionadas permanecem intactas.
 
 ## Armadilhas conhecidas
 

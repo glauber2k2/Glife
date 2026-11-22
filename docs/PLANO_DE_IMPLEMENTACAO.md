@@ -1,6 +1,6 @@
 # Plano de implementação — Glife (Organizador de Vida)
 
-Baseado em `Organizador de Vida — Planejamento do Projeto.md` (22/11/2026).
+Baseado em `../Glife — Planejamento do Projeto.md` (22/11/2026; caminho relativo à raiz do repositório).
 O roadmap original vinha num bloco embutido que não foi exportado; as fases abaixo
 foram reconstruídas a partir da tabela de habilidades por fase e da seção de riscos.
 
@@ -22,11 +22,11 @@ Objetivo: o mesmo app abre no Android e no navegador, com login, banco local e s
 | 0.6 | ESLint com `eslint-plugin-boundaries` aplicando as 6 regras de importação | Import proibido quebra o lint | ✅ testado em `apps/app/tests/boundaries.test.ts` |
 | 0.7 | Supabase: projeto, CLI, primeira migração (`links`, `notes`, `tags`) com RLS, cadastro público desligado, MFA | 2º usuário de teste não enxerga nada | 🟡 local ok (`supabase/tests/rls.test.ts`, 2 usuários + MFA); falta o projeto hospedado |
 | 0.8 | PowerSync: schema local, sync rules por `user_id`, conector Supabase (upload queue) | Editar offline no celular e ver no web ao reconectar | ⏳ |
-| 0.9 | Validar import de `packages/domain` numa Edge Function Deno (import map) | Função “hello” usando uma regra do domain | ⏳ |
+| 0.9 | Validar import de `packages/domain` numa Edge Function Deno (import map) | Função “hello” usando uma regra do domain | ✅ `hello` com 9 testes Vitest, check e execução real em Deno; sem deploy |
 | 0.10 | `CLAUDE.md` + skills `.claude/skills/*` | Arquivos no repo | ✅ |
 | 0.11 | APK local (`npx expo run:android`) | APK instalado no celular | ⏳ depende do Android Studio |
 | 0.12 | Login: e-mail + senha forte + MFA (TOTP); sessão `aal2` obrigatória (o banco recusa `aal1`) | Entrar no web e no Android com MFA | ⏳ |
-| 0.13 | Sistema de movimento: React Native Reanimated, tokens de mola (200–350 ms, amortecidas), componentes base animados (botão que afunda, folhas e abas que deslizam, listas que se reorganizam), respeito a “reduzir movimento” | Demonstração em Ajustes; com “reduzir movimento” ligado nada anima | ⏳ |
+| 0.13 | Sistema de movimento: React Native Reanimated, tokens de mola (200–350 ms, amortecidas), componentes base animados (botão que afunda, folhas e abas que deslizam, listas que se reorganizam), respeito a “reduzir movimento” | Demonstração em Ajustes; com “reduzir movimento” ligado nada anima | 🟡 T1–T4 concluídas: molas, Button/Chip/Sheet/ListItem e demo, movimento reduzido dinâmico; falta navegação/abas e Android |
 
 **Depende de você:** criar contas Supabase e PowerSync (grátis) e instalar Android Studio/SDK.
 
@@ -103,11 +103,15 @@ Objetivo: o mesmo app abre no Android e no navegador, com login, banco local e s
 - [x] 0.1 Monorepo pnpm
 - [x] 0.2 App Expo SDK 58 + Router + TS (build web compilando)
 - [x] 0.3 Design system: tokens, fontes, claro/escuro, componentes base (prévia em Ajustes)
-- [x] 0.4 Navegação: 4 abas + botão da caixa de entrada
-- [x] 0.5 Domain: core, links (URIs, wikilinks, diff), bible (refs pt-BR → OSIS) — 32 testes
+- [~] 0.4 Navegação: 4 abas + botão da caixa de entrada no web; falta validar Android
+- [x] 0.5 Domain: core, links (URIs, wikilinks, diff), bible (refs pt-BR → OSIS) — 55 testes
 - [x] 0.6 ESLint de fronteiras (verificado com violações propositais)
 - [~] 0.7 Supabase: config local + 3 migrações com RLS validadas (PGlite). **Falta:** criar projeto na nuvem e aplicar
 - [~] 0.8 PowerSync: sync rules escritas. **Falta:** conta, SDK no app, conector
-- [ ] 0.9 Edge Function usando o domain
+- [x] 0.9 Edge Function usando o domain, testada com Vitest e executada em Deno (import map local)
 - [x] 0.10 CLAUDE.md + 6 skills
 - [ ] 0.11 APK local (precisa do Android SDK)
+- [ ] 0.12 Login e-mail + senha + MFA (só Claude; depende do Supabase hospedado)
+- [~] 0.13 Componentes e demo de movimento concluídos; falta navegação/abas e validação Android
+- [x] Fronteira de dados no lint: Supabase/PowerSync só em `features/*/data` e `shared/lib`
+- [x] Nome Glife: pasta `glife/`, pacotes `@glife/*`, esquema `glife://` e identificadores `app.glife.pessoal`
