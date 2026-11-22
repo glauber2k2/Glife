@@ -8,7 +8,9 @@
     "start": "pnpm --filter app start",
     "test": "pnpm -r test",
     "typecheck": "pnpm -r typecheck",
-    "lint": "pnpm --filter app lint"
+    "lint": "pnpm --filter app lint",
+    "build:web": "pnpm --filter app exec expo export --platform web",
+    "codex": "codex \"Leia AGENTS.md e HANDOFF.md e continue o trabalho a partir da próxima tarefa pendente.\""
   },
   "devDependencies": {
     "supabase": "^3.2.0"

@@ -65,3 +65,20 @@ cd apps/app && npx expo run:android --variant release   # APK local
 ```
 
 Expo muda a cada SDK: antes de usar uma API do Expo/RN, consulte https://docs.expo.dev/versions/v58.0.0/ (não confie na memória).
+
+## Handoff automático (Claude ⇄ Codex)
+
+O trabalho é dividido com o Codex CLI através do `HANDOFF.md` (plano vivo) e do `AGENTS.md` (regras do Codex).
+
+- **Pedido com mais de uma etapa:** primeiro escreva o plano no `HANDOFF.md`, em tarefas de 15–30 min, cada uma
+  com arquivos permitidos, critério de aceite verificável e cuidados. Escreva os testes antes de implementar
+  quando possível. Não peça aprovação do plano, exceto para decisão de arquitetura importante.
+  (Continua valendo: antes de **tela nova**, liste os protótipos necessários e pergunte se o usuário quer enviá-los.)
+- **Ao concluir cada tarefa:** rode `pnpm lint`, `pnpm typecheck` e `pnpm test`; marque `[x]`; atualize
+  "Estado atual" com edições pontuais; commit `claude: <descrição>`.
+- Tarefas com **autenticação, permissões, pagamentos ou dados sensíveis** levam "(só Claude)" no título.
+- Quando uma funcionalidade terminar, mova as tarefas concluídas para `HANDOFF-arquivo.md`.
+- Hooks (`.claude/settings.json` + `.claude/hooks/`): no início da sessão, se houver commits `codex:` depois do
+  último `claude:`, você recebe a instrução de revisá-los primeiro; ao parar com alterações não commitadas, o hook
+  pede para atualizar o `HANDOFF.md`, testar e commitar.
+- Os hooks valem quando o Claude Code é aberto na pasta `vida/` (raiz do repositório).
