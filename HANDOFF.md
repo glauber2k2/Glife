@@ -71,7 +71,7 @@ Formato: `- [ ] Título` + Arquivos permitidos · Aceite (verificável) · Cuida
     `features/notes/data/x.ts` e `shared/lib/x.ts`), vistos falhando antes da regra; `pnpm test` e `pnpm lint` passam.
   - Cuidados: os pacotes ainda não estão instalados; use `no-restricted-imports` com `patterns` (não depende de
     resolver o módulo). Não mexa nas políticas de `boundaries/dependencies` existentes.
-- [ ] **T6 — Edge Function "hello" usando o domain (0.9)**
+- [x] **T6 — Edge Function "hello" usando o domain (0.9)**
   - Arquivos: `supabase/functions/hello/index.ts`, `supabase/functions/hello/handler.ts`,
     `supabase/functions/deno.json`, `supabase/tests/hello.test.ts`.
   - Aceite: `handler(req: Request): Promise<Response>` lê `?ref=Jo 3:16`, usa `parseBibleRef`/`toOsis` do domain
@@ -108,6 +108,9 @@ Formato: `- [ ] Título` + Arquivos permitidos · Aceite (verificável) · Cuida
   temas claro/escuro, lista vazia e botão Remover desabilitado, sem erros de execução.
 - T5 concluída: ESLint bloqueia SDKs Supabase/PowerSync fora de `features/*/data` e `shared/lib`, incluindo
   imports de tipo e reexportações. Os testes novos falharam antes da regra; lint/typecheck/114 testes passaram.
+- T6 concluída: hello usa o domain real com import map, responde OSIS/400 e tem 9 testes (vistos falhando antes).
+  Lint/typecheck/123 testes passaram; Deno 2.9.8 verificou o entrypoint e executou o handler real nos casos
+  válido/inválido/ausente. Vitest resolve o alias para o módulo real por adaptador no teste, sem dependências novas.
 - Nenhuma tarefa pela metade.
 
 ## Armadilhas conhecidas
@@ -120,6 +123,8 @@ Formato: `- [ ] Título` + Arquivos permitidos · Aceite (verificável) · Cuida
   consulte a documentação v58, não a memória.
 - Testes de banco aplicam todas as migrações num PGlite novo: SQL incompatível quebra `pnpm test`.
 - `packages/domain` não pode importar React/Expo/Supabase/PowerSync (teste `boundaries.test.ts` barra).
+- Deno, na raiz: `deno check --config supabase/functions/deno.json supabase/functions/hello/index.ts`.
+  Sem `--config`, o Deno não descobre o import map dentro de `supabase/functions` a partir da raiz.
 
 ## Dúvidas para o Claude
 

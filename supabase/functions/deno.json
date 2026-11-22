@@ -1,0 +1,5 @@
+{
+  "imports": {
+    "@glife/domain/bible": "../../packages/domain/src/bible/index.ts"
+  }
+}
