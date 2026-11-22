@@ -86,5 +86,5 @@ export function SettingsScreen() {
 const useStyles = makeStyles((t) => ({
   row: { flexDirection: 'row', flexWrap: 'wrap', gap: t.space[2] },
   stack: { gap: t.space[4] },
-  swatch: { width: 32, height: 32, borderRadius: t.radius.field },
+  swatch: { width: t.size.swatch, height: t.size.swatch, borderRadius: t.radius.field },
 }));

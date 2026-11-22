@@ -1,17 +1,22 @@
 import { router } from 'expo-router';
 import type { BottomTabBarProps } from 'expo-router/js-tabs';
-import { BookOpen, NotebookPen, Plus, Sun, Wallet, type LucideIcon } from 'lucide-react-native';
+import { Plus, type LucideIcon } from 'lucide-react-native';
 import { Pressable, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Icon, Text, makeStyles } from '@/shared/ui';
 
-const ICONS: Record<string, LucideIcon> = {
-  index: Sun,
-  notas: NotebookPen,
-  financas: Wallet,
-  biblia: BookOpen,
-};
+/**
+ * Ícone de aba no padrão do design system. Cada rota declara o seu:
+ *   <Tabs.Screen name="notas" options={{ title: 'Notas', tabBarIcon: tabIcon(NotebookPen) }} />
+ * Assim a TabBar não precisa conhecer as rotas (aberta a novas abas sem mudar aqui).
+ */
+export function tabIcon(icon: LucideIcon) {
+  function TabIcon({ focused }: { focused: boolean }) {
+    return <Icon icon={icon} color={focused ? 'accent' : 'textTertiary'} />;
+  }
+  return TabIcon;
+}
 
 /** Quatro abas e, no meio, um botão discreto para a caixa de entrada. */
 export function TabBar({ state, descriptors, navigateToTab }: BottomTabBarProps) {
@@ -20,8 +25,8 @@ export function TabBar({ state, descriptors, navigateToTab }: BottomTabBarProps)
 
   const tabs = state.routes.map((route, index) => {
     const focused = state.index === index;
-    const title = descriptors[route.key]?.options.title ?? route.name;
-    const icon = ICONS[route.name] ?? Sun;
+    const options = descriptors[route.key]?.options;
+    const title = options?.title ?? route.name;
     return (
       <Pressable
         key={route.key}
@@ -33,7 +38,7 @@ export function TabBar({ state, descriptors, navigateToTab }: BottomTabBarProps)
           if (!focused) navigateToTab(route.key);
         }}
       >
-        <Icon icon={icon} color={focused ? 'accent' : 'textTertiary'} />
+        {options?.tabBarIcon?.({ focused, color: '', size: 0 })}
         <Text variant="caption" tone={focused ? 'accent' : 'tertiary'}>
           {title}
         </Text>
@@ -73,11 +78,11 @@ const useStyles = makeStyles((t) => ({
     flexDirection: 'row',
     alignItems: 'center',
     width: '100%',
-    maxWidth: 720,
+    maxWidth: t.layout.contentMaxWidth,
     alignSelf: 'center',
     paddingVertical: t.space[2],
   },
-  tab: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 2, minHeight: t.touch.minTarget },
+  tab: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: t.space[0.5], minHeight: t.touch.minTarget },
   inbox: {
     width: t.touch.minTarget,
     height: t.touch.minTarget,

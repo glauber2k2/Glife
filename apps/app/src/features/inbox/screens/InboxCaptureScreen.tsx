@@ -4,7 +4,11 @@ import { View } from 'react-native';
 
 import { Button, Input, Screen, Text, makeStyles } from '@/shared/ui';
 
-/** Captura rápida. Na Fase 0 só a tela; gravação em inbox_items vem com o banco local. */
+/**
+ * Captura rápida. Ainda não há onde gravar (inbox_items chega com o banco local, item 0.8),
+ * então "Guardar" fica desabilitado: fechar a tela fingindo que salvou perderia o texto.
+ */
+const CAN_SAVE = false;
 export function InboxCaptureScreen() {
   const s = useStyles();
   const [text, setText] = useState('');
@@ -20,17 +24,19 @@ export function InboxCaptureScreen() {
         textAlignVertical="top"
       />
       <Text variant="caption" tone="tertiary">
-        A IA vai transformar isso em gastos, notas e lembretes — você confirma antes.
+        {CAN_SAVE
+          ? 'A IA vai transformar isso em gastos, notas e lembretes — você confirma antes.'
+          : 'Guardar chega junto com o banco local. Por enquanto o texto não é salvo.'}
       </Text>
       <View style={s.actions}>
         <Button label="Cancelar" variant="secondary" onPress={() => router.back()} />
-        <Button label="Guardar" haptic disabled={!text.trim()} onPress={() => router.back()} />
+        <Button label="Guardar" haptic disabled={!CAN_SAVE || !text.trim()} onPress={() => router.back()} />
       </View>
     </Screen>
   );
 }
 
 const useStyles = makeStyles((t) => ({
-  field: { minHeight: 160, paddingTop: t.space[3] },
+  field: { minHeight: t.size.captureFieldMinHeight, paddingTop: t.space[3] },
   actions: { flexDirection: 'row', gap: t.space[3], justifyContent: 'flex-end' },
 }));

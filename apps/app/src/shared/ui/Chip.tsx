@@ -29,7 +29,7 @@ export function Chip({ label, selected, onPress }: ChipProps) {
 const useStyles = makeStyles((t) => ({
   chip: {
     paddingHorizontal: t.space[3],
-    minHeight: 32,
+    minHeight: t.size.chipHeight,
     justifyContent: 'center',
     borderRadius: t.radius.full,
     borderWidth: t.hairline,
@@ -37,5 +37,5 @@ const useStyles = makeStyles((t) => ({
     alignSelf: 'flex-start',
   },
   selected: { backgroundColor: t.colors.accentSoft, borderColor: t.colors.accentSoft },
-  pressed: { opacity: 0.6 },
+  pressed: { opacity: t.opacity.pressed },
 }));

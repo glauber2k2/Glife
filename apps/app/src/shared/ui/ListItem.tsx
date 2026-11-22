@@ -65,9 +65,9 @@ const useStyles = makeStyles((t) => ({
     minHeight: t.touch.minTarget + t.space[2],
     paddingVertical: t.space[3],
   },
-  pressed: { opacity: 0.6 },
+  pressed: { opacity: t.opacity.pressed },
   separator: { borderBottomWidth: t.hairline, borderBottomColor: t.colors.hairline },
   leading: { width: t.icon.size + t.space[1], alignItems: 'center' },
-  texts: { flex: 1, gap: 2 },
+  texts: { flex: 1, gap: t.space[0.5] },
   trailing: { alignItems: 'flex-end' },
 }));

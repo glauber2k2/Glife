@@ -26,10 +26,11 @@ Objetivo: o mesmo app abre no Android e no navegador, com login, banco local e s
 | 0.10 | `CLAUDE.md` + skills `.claude/skills/*` | Arquivos no repo | ✅ |
 | 0.11 | APK local (`npx expo run:android`) | APK instalado no celular | ⏳ depende do Android Studio |
 | 0.12 | Login: e-mail + senha forte + MFA (TOTP); sessão `aal2` obrigatória (o banco recusa `aal1`) | Entrar no web e no Android com MFA | ⏳ |
+| 0.13 | Sistema de movimento: React Native Reanimated, tokens de mola (200–350 ms, amortecidas), componentes base animados (botão que afunda, folhas e abas que deslizam, listas que se reorganizam), respeito a “reduzir movimento” | Demonstração em Ajustes; com “reduzir movimento” ligado nada anima | ⏳ |
 
 **Depende de você:** criar contas Supabase e PowerSync (grátis) e instalar Android Studio/SDK.
 
-**Antes da 0.8 (arquitetura):** cada feature acessa dados só por uma interface de repositório (ex.: `NotesRepository`) definida no `domain`; a implementação com PowerSync fica em `features/<f>/data`. O lint deve proibir `@powersync/*` e `@supabase/*` fora de `data/` e `shared/lib` (inversão de dependência: telas não conhecem o banco).
+**Antes da 0.8 (arquitetura):** cada feature acessa dados só por uma interface de repositório (ex.: `NotesRepository`) definida no `domain`; a implementação com PowerSync fica em `features/<f>/data`. O lint deve proibir `@powersync/*` e `@supabase/*` fora de `data/` e `shared/lib` (inversão de dependência: telas não conhecem o banco). O conector de upload trata conflito de unicidade (23505, ex.: link ou tag criados offline em dois aparelhos) como sucesso idempotente, para não travar a fila.
 
 `tools/` entra na Fase 4 (importador da Bíblia).
 
@@ -43,6 +44,7 @@ Objetivo: o mesmo app abre no Android e no navegador, com login, banco local e s
 - `app-lock`: biometria + senha do app (scrypt/argon2 via `@noble/hashes`, `expo-secure-store`), espera crescente, tela oculta em recentes.
 - Tela **Hoje** (inicialmente: notas recentes e fixadas).
 - Fase 1.5: editor CodeMirror 6 via Expo DOM component (`"use dom"`).
+- Movimento (princípio 6): item de lista que se risca e recolhe ao concluir, card que se expande até a tela de detalhe, transições entre lista e editor.
 
 ## Fase 2 — Finanças, compras e investimentos (≈ 4 semanas)
 

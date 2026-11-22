@@ -1,4 +1,5 @@
 import { Inter_400Regular, Inter_500Medium, Inter_600SemiBold } from '@expo-google-fonts/inter';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SourceSerif4_400Regular, SourceSerif4_600SemiBold } from '@expo-google-fonts/source-serif-4';
 import { ThemeProvider as NavigationThemeProvider, Stack } from 'expo-router';
 import { useFonts } from 'expo-font';
@@ -9,9 +10,11 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { installIdGenerator } from '@/shared/lib/ids';
 import { toNavigationTheme } from '@/shared/navigation/navigationTheme';
-import { ThemeProvider, useTheme } from '@/shared/ui';
+import { ThemeProvider, createThemePreferenceStore, useTheme } from '@/shared/ui';
 
 installIdGenerator();
+// Raiz de composição: aqui as interfaces recebem as implementações concretas.
+const themePreferenceStore = createThemePreferenceStore(AsyncStorage);
 void SplashScreen.preventAutoHideAsync();
 
 function RootStack() {
@@ -53,7 +56,7 @@ export default function RootLayout() {
 
   return (
     <SafeAreaProvider>
-      <ThemeProvider>
+      <ThemeProvider store={themePreferenceStore}>
         <RootStack />
       </ThemeProvider>
     </SafeAreaProvider>

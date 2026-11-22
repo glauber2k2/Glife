@@ -43,6 +43,10 @@ Em `packages/domain`, imports relativos usam extensão `.ts` explícita (compat�
 
 Sofisticada e minimalista: só tokens de `shared/ui/theme/tokens.ts` (lint barra hex soltos),
 uma cor de destaque, sem sombras/gradientes, separação por espaço e hairlines, modo escuro de primeira classe.
+**Movimento como linguagem, com sobriedade:** toda mudança de estado anima (toque que afunda, item que se risca e
+recolhe, card que expande até o detalhe, números que contam, folhas/abas que deslizam, listas que se reorganizam).
+Molas amortecidas de 200–350 ms, sem quique nem enfeite; nada bloqueia o toque; respeitar “reduzir movimento”.
+Implementação com React Native Reanimated (layout + entrada/saída) e haptics leve nas ações importantes (item 0.13).
 Estilos via `makeStyles((t) => ({...}))`; textos via `<Text variant tone>`; ícones Lucide via `<Icon>`.
 Telas usam os componentes de `@/shared/ui` (`Screen`, `Section`, `Text`, `Button`, `Input`, `ListItem`, `Sheet`, `Chip`, `EmptyState`).
 Conferir toda tela nos dois temas (Ajustes → Aparência) e no Android e web.

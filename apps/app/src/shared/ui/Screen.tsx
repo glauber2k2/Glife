@@ -52,6 +52,6 @@ const useStyles = makeStyles((t) => ({
   root: { flex: 1, backgroundColor: t.colors.bg },
   scroll: { paddingHorizontal: t.space[6], paddingTop: t.space[8], paddingBottom: t.space[12] },
   fill: { flex: 1 },
-  column: { width: '100%', maxWidth: 720, alignSelf: 'center', gap: t.space[8] },
+  column: { width: '100%', maxWidth: t.layout.contentMaxWidth, alignSelf: 'center', gap: t.space[8] },
   header: { gap: t.space[1] },
 }));

@@ -87,5 +87,5 @@ const useStyles = makeStyles((t) => ({
   danger: { borderWidth: t.hairline, borderColor: t.colors.hairline, backgroundColor: 'transparent' },
   pressed: { backgroundColor: t.colors.surfacePressed },
   fullWidth: { alignSelf: 'stretch' },
-  disabled: { opacity: 0.45 },
+  disabled: { opacity: t.opacity.disabled },
 }));

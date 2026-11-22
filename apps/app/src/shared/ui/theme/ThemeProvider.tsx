@@ -1,20 +1,24 @@
-import { createContext, useContext, useMemo, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { StyleSheet, useColorScheme, type ImageStyle, type TextStyle, type ViewStyle } from 'react-native';
 
 import {
   hairlineWidth,
   icon,
+  layout,
   motion,
+  opacity,
   palettes,
   radius,
+  size,
   space,
   touch,
   typeScale,
   type ColorScheme,
   type Palette,
 } from './tokens';
+import type { ThemePreference, ThemePreferenceStore } from './preferenceStore';
 
-export type ThemePreference = 'system' | ColorScheme;
+export type { ThemePreference };
 
 export interface Theme {
   scheme: ColorScheme;
@@ -25,6 +29,9 @@ export interface Theme {
   icon: typeof icon;
   touch: typeof touch;
   motion: typeof motion;
+  layout: typeof layout;
+  opacity: typeof opacity;
+  size: typeof size;
   hairline: number;
 }
 
@@ -46,18 +53,49 @@ function buildTheme(scheme: ColorScheme): Theme {
     icon,
     touch,
     motion,
+    layout,
+    opacity,
+    size,
     hairline: hairlineWidth,
   };
 }
 
-export function ThemeProvider({ children }: { children: ReactNode }) {
+interface ThemeProviderProps {
+  children: ReactNode;
+  /** Onde lembrar a escolha do usuário. Sem store, a escolha vale só nesta sessão. */
+  store?: ThemePreferenceStore;
+}
+
+export function ThemeProvider({ children, store }: ThemeProviderProps) {
   const system = useColorScheme();
-  const [preference, setPreference] = useState<ThemePreference>('system');
+  const [preference, setPreferenceState] = useState<ThemePreference>('system');
+  const chosenThisSession = useRef(false);
+
+  useEffect(() => {
+    let active = true;
+    void store?.load().then((saved) => {
+      // Não sobrescreve uma escolha feita antes de a leitura terminar.
+      if (active && saved && !chosenThisSession.current) setPreferenceState(saved);
+    });
+    return () => {
+      active = false;
+    };
+  }, [store]);
+
+  const setPreference = useCallback(
+    (p: ThemePreference) => {
+      chosenThisSession.current = true;
+      setPreferenceState(p);
+      void store?.save(p);
+    },
+    [store],
+  );
+
   const scheme: ColorScheme = preference === 'system' ? (system === 'dark' ? 'dark' : 'light') : preference;
 
   const value = useMemo(
     () => ({ theme: buildTheme(scheme), preference, setPreference }),
-    [scheme, preference],
+    [scheme, preference, setPreference],
   );
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
 }
