@@ -17,6 +17,16 @@ import {
 } from '../core/index.ts';
 import { validateNewLink, type DesiredLink, type Link, type LinksRepository, type SourceAddress } from '../links/index.ts';
 import {
+  newTag,
+  normalizeTagName,
+  tagKey,
+  taggedEntitySchema,
+  type EntityTag,
+  type Tag,
+  type TaggedEntity,
+  type TagsRepository,
+} from '../tags/index.ts';
+import {
   applyNotePatch,
   folderNameSchema,
   newNote,
@@ -142,6 +152,15 @@ export function createInMemoryNotes(userId: string): { notes: NotesRepository; f
     async listTrash(page) {
       return paginate([...notes.values()].filter((n) => n.deleted_at !== null), (n) => n.deleted_at ?? '', page);
     },
+    async countTrash() {
+      return [...notes.values()].filter((n) => n.deleted_at !== null).length;
+    },
+    async emptyTrash() {
+      const trashed = [...notes.values()].filter((n) => n.deleted_at !== null);
+      for (const n of trashed) notes.delete(n.id);
+      if (trashed.length) subs.notify();
+      return trashed.length;
+    },
   };
 
   const foldersRepo: NoteFoldersRepository = {
@@ -251,6 +270,68 @@ export function createInMemoryLinks(userId: string): LinksRepository {
       }
       for (const id of diff.remove) rows.set(id, softDelete(rows.get(id)!));
       for (const v of adds) insert(v.source, v.link, 'markdown');
+      subs.notify();
+    },
+  };
+}
+
+// ---------- tags ----------
+
+export function createInMemoryTags(userId: string): TagsRepository {
+  const tags = new Map<string, Tag>();
+  const links = new Map<string, EntityTag>();
+  const subs = new Subscribers();
+  const byName = (a: Tag, b: Tag) => a.name.localeCompare(b.name, 'pt-BR', { sensitivity: 'base' });
+  const aliveTags = () => [...tags.values()].filter((t) => t.deleted_at === null);
+  const linksOf = (e: TaggedEntity) =>
+    [...links.values()].filter((l) => l.deleted_at === null && l.entity_type === e.type && l.entity_id === e.id);
+  const forEntity = (e: TaggedEntity) => {
+    const ids = new Set(linksOf(e).map((l) => l.tag_id));
+    return aliveTags().filter((t) => ids.has(t.id)).sort(byName).map((t) => ({ ...t }));
+  };
+
+  return {
+    async list() {
+      return aliveTags().sort(byName).map((t) => ({ ...t }));
+    },
+    async forEntity(entity) {
+      return forEntity(parseOrThrow(taggedEntitySchema, entity));
+    },
+    watchForEntity(entity, listener) {
+      return subs.add(() => listener(forEntity(entity)));
+    },
+    async entitiesWithTag(tagId, type) {
+      return [...links.values()]
+        .filter((l) => l.deleted_at === null && l.tag_id === tagId && l.entity_type === type)
+        .map((l) => l.entity_id);
+    },
+    async add(entity, name) {
+      const e = parseOrThrow(taggedEntitySchema, entity);
+      const clean = normalizeTagName(name);
+      let tag = aliveTags().find((t) => tagKey(t.name) === tagKey(clean));
+      if (!tag) {
+        tag = newTag(clean, userId);
+        tags.set(tag.id, tag);
+      }
+      if (!linksOf(e).some((l) => l.tag_id === tag.id)) {
+        const now = nowIso();
+        const row: EntityTag = {
+          id: newId(),
+          user_id: userId,
+          tag_id: tag.id,
+          entity_type: e.type,
+          entity_id: e.id,
+          created_at: now,
+          updated_at: now,
+          deleted_at: null,
+        };
+        links.set(row.id, row);
+      }
+      subs.notify();
+      return { ...tag };
+    },
+    async remove(entity, tagId) {
+      for (const l of linksOf(entity)) if (l.tag_id === tagId) links.set(l.id, softDelete(l));
       subs.notify();
     },
   };

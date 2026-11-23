@@ -1,6 +1,7 @@
-import { linksRepositoryContract, notesRepositoryContract } from '@glife/domain/testing';
+import { linksRepositoryContract, notesRepositoryContract, tagsRepositoryContract } from '@glife/domain/testing';
 
 import { createLocalLinksRepository } from '../src/features/links/data/localLinksRepository';
+import { createLocalTagsRepository } from '../src/features/links/data/localTagsRepository';
 import { linksTables } from '../src/features/links/data/schema';
 import { createLocalNoteFoldersRepository, createLocalNotesRepository } from '../src/features/notes/data/localNotesRepository';
 import { notesTables } from '../src/features/notes/data/schema';
@@ -17,4 +18,9 @@ notesRepositoryContract('SQLite local', async () => {
 linksRepositoryContract('SQLite local', async () => {
   const db = await createSqliteLocalDb(linksTables);
   return { links: createLocalLinksRepository(db, USER), userId: USER };
+});
+
+tagsRepositoryContract('SQLite local', async () => {
+  const db = await createSqliteLocalDb(linksTables);
+  return { tags: createLocalTagsRepository(db, USER), userId: USER };
 });

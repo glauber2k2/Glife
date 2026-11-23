@@ -35,6 +35,10 @@ export interface NotesRepository {
   restore(id: string): Promise<Note>;
   /** Excluídas, da exclusão mais recente para a mais antiga. */
   listTrash(page?: PageRequest): Promise<Page<Note>>;
+  /** Quantas notas estão na lixeira. */
+  countTrash(): Promise<number>;
+  /** Apaga de vez as notas da lixeira (ação explícita do usuário). Devolve quantas apagou. */
+  emptyTrash(): Promise<number>;
 }
 
 export interface NoteFoldersRepository {

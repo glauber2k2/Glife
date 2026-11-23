@@ -210,6 +210,20 @@ export function createLocalNotesRepository(db: LocalDb, userId: string): NotesRe
       );
       return toPage(rows.map(toNote), k.limit, (n) => n.deleted_at ?? '');
     },
+
+    async countTrash() {
+      const row = await db.getOptional<{ n: number }>('SELECT count(*) AS n FROM notes WHERE deleted_at IS NOT NULL');
+      return row?.n ?? 0;
+    },
+
+    async emptyTrash() {
+      // Exclusão definitiva, pedida pelo usuário: o DELETE sobe ao Supabase pela fila do PowerSync.
+      return db.writeTransaction(async (tx) => {
+        const row = await tx.getOptional<{ n: number }>('SELECT count(*) AS n FROM notes WHERE deleted_at IS NOT NULL');
+        await tx.execute('DELETE FROM notes WHERE deleted_at IS NOT NULL');
+        return row?.n ?? 0;
+      });
+    },
   };
 }
 

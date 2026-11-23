@@ -72,6 +72,21 @@ export function notesRepositoryContract(name: string, make: () => Promise<NotesC
       await expectCode(notes.restore(MISSING), 'not_found');
     });
 
+    it('conta e esvazia a lixeira sem tocar nas notas ativas', async () => {
+      const { notes } = await make();
+      const keep = await notes.create({ title: 'fica' });
+      const a = await notes.create({ title: 'a' });
+      const b = await notes.create({ title: 'b' });
+      await notes.remove(a.id);
+      await notes.remove(b.id);
+      expect(await notes.countTrash()).toBe(2);
+      expect(await notes.emptyTrash()).toBe(2);
+      expect(await notes.countTrash()).toBe(0);
+      expect((await notes.listTrash()).items).toEqual([]);
+      await expectCode(notes.restore(a.id), 'not_found');
+      expect(await notes.get(keep.id)).toMatchObject({ id: keep.id });
+    });
+
     it('lista do mais recente para o mais antigo, paginando sem repetir', async () => {
       const { notes } = await make();
       const created: Note[] = [];
