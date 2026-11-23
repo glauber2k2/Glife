@@ -147,6 +147,11 @@ T11 e T12 foram assumidas pelo Claude a pedido do usuário (23/11). **Codex: nã
   Sync Streams (edição 3) publicadas a partir de `supabase/powersync/sync-streams.yaml`: dono + `aal2`;
   `supabase/tests/syncStreams.test.ts` garante que toda tabela publicada está lá com esses filtros.
 
+- GitHub (23/11): `github.com/glauber2k2/Glife`, **público**, branch `master`. Histórico reescrito antes do 1º
+  envio (identificadores fora, autor com e-mail noreply); cópia do histórico antigo só local em
+  `backup/antes-da-publicacao` (não enviar). Hashes citados antes de 23/11 neste arquivo e no arquivo-morto são do
+  histórico antigo.
+
 ## Armadilhas conhecidas
 - CLI do Supabase: use `pnpm sb … --remote` (sem `--remote`, `db push` mira o Docker local). **Não** rode
   `pnpm sb config push`: o `config.toml` tem valores de desenvolvimento (confirmação de e-mail desligada, site
@@ -161,6 +166,8 @@ T11 e T12 foram assumidas pelo Claude a pedido do usuário (23/11). **Codex: nã
   (o `@powersync/react-native` 2.4 aceita 17.1–18.x).
 - PowerSync: o painel usa Sync Streams (não mais `bucket_definitions`). Mudou o YAML? Republique no painel
   (Validate → Deploy). Editor Monaco: cole pela área de transferência; digitar quebra a indentação.
+- **Repositório público:** nada de ref do Supabase, URL do PowerSync, e-mail, IDs de usuário ou senhas em arquivos
+  versionados. Isso vai em `INFRA.local.md` ou `.env*.local` (ignorados). Commits usam o e-mail noreply do GitHub.
 - Windows: rode comandos na raiz `glife/`. Avisos "LF will be replaced by CRLF" do git são inofensivos.
 - `python -m http.server` (ou servidor estático simples) dá 404 ao recarregar rotas como `/notas`; navegue a
   partir de `/`.
