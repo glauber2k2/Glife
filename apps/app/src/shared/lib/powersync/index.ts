@@ -9,3 +9,4 @@ export {
 export { createSyncController, type SyncDatabase, type SyncStage } from './lifecycle';
 export { createLocalSync, type LocalSync } from './localSync';
 export { toLocalDb } from './localDb';
+export { SyncStatusProvider, useSyncOnline } from './SyncStatus';

@@ -16,6 +16,8 @@ export interface LocalSync {
   db: LocalDb;
   /** acompanhe o estado de acesso: conecta em `ready`, pausa na verificação, apaga ao sair */
   apply: (stage: SyncStage) => Promise<void>;
+  /** avisa quando a conexão com o servidor de sincronização muda */
+  onConnectedChange: (listener: (connected: boolean) => void) => () => void;
 }
 
 /**
@@ -46,5 +48,12 @@ export function createLocalSync(tables: Record<string, Table>): LocalSync {
     backend,
     (e) => console.warn('Falha na sincronização', e),
   );
-  return { db: toLocalDb(ps as unknown as PowerSyncLike), apply: controller.apply };
+  return {
+    db: toLocalDb(ps as unknown as PowerSyncLike),
+    apply: controller.apply,
+    onConnectedChange: (listener) => {
+      listener(ps.currentStatus.connected);
+      return ps.registerListener({ statusChanged: (status) => listener(status.connected) });
+    },
+  };
 }

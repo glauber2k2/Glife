@@ -81,11 +81,18 @@ T11 e T12 foram assumidas pelo Claude a pedido do usuário (23/11). **Codex: nã
   Prototipagem pendente: `docs/prototipos/notas.md` (editor escrever/ler, vínculos `[[`, pastas/tags, lixeira).
 - [ ] **Bloqueada (depende do usuário):** 0.11 APK (Android Studio).
 
-### Próximo (Fase 1) — depois do protótipo de notas, ou em versão básica
-- [ ] Vínculos: parser `[[…]]` ao salvar → `links.applyMarkdownDiff`; seção Vínculos/backlinks na nota (só Claude
-  decide o desenho; implementação pode ir ao Codex com tarefa detalhada).
-- [ ] Lixeira de notas (lista + restaurar) e toast com "Desfazer".
-- [ ] Pastas e tags na lista e no editor.
+### Fase 1 — Notas (protótipo "Glife Notas" do Claude Design)
+- [x] **T14 — Notas conforme o protótipo (só Claude)** — lista (busca, filtros por tipo e #tag, linha Pastas com
+  resumo, Lixeira com contagem, linhas que entram em cascata e recolhem), Pastas/Pasta (um nível, tags como filtro,
+  vazios), Lixeira (Restaurar com toast "Desfazer", Esvaziar com confirmação = exclusão definitiva), editor (barra
+  com tipo/Ler-Escrever/fixar/⋮, título vira barra ao rolar, pasta e tags em pílulas, "Salvando… / Salvo / Salvo no
+  aparelho", Ler com markdown e Vínculos/Mencionada em, [[ com sugestões e "Nova nota: …", barra de formatação no
+  Android, folhas Tipo/Mais/Pasta/Tags). Domain: `TagsRepository` + contrato, `countTrash`/`emptyTrash`.
+  `syncNoteLinks` grava os [[ ]] na tabela links ao salvar. **Validado no web com a conta real.** Android não.
+- [ ] Pendências do protótipo: transição "card que vira tela" (lista → editor) com elemento compartilhado; navegação
+  superior no web (≥ 720 px) no lugar da barra de abas; realce dos marcadores markdown no modo Escrever; atalhos de
+  teclado no web (Ctrl+B etc.); "Mover notas para cá" na pasta vazia; chips de vínculo nas linhas da lista;
+  apagar de vez após 30 dias (hoje só "Esvaziar lixeira").
 
 ## Pendências do usuário
 
@@ -168,6 +175,9 @@ T11 e T12 foram assumidas pelo Claude a pedido do usuário (23/11). **Codex: nã
   (Validate → Deploy). Editor Monaco: cole pela área de transferência; digitar quebra a indentação.
 - **Repositório público:** nada de ref do Supabase, URL do PowerSync, e-mail, IDs de usuário ou senhas em arquivos
   versionados. Isso vai em `INFRA.local.md` ou `.env*.local` (ignorados). Commits usam o e-mail noreply do GitHub.
+- Toast (`useToast`): a ação é um `Text` com `onPress` — o `Pressable` não recebia o toque no web ali. Em
+  testes pelo navegador, o toast some em 4 s: dispare o "Desfazer" logo (ou pela página).
+- Telas de notas usam `goBack()` (cai em /notas se a tela foi aberta direto pelo endereço).
 - Windows: rode comandos na raiz `glife/`. Avisos "LF will be replaced by CRLF" do git são inofensivos.
 - `python -m http.server` (ou servidor estático simples) dá 404 ao recarregar rotas como `/notas`; navegue a
   partir de `/`.

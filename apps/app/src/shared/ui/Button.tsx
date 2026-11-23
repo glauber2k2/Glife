@@ -12,7 +12,8 @@ import { makeStyles, useTheme } from './theme';
 import { useReduceMotion } from './theme/ThemeProvider';
 
 /** subtle: ghost em tom secundário, para saídas discretas ("Sair") */
-export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'subtle' | 'danger';
+/** ghostDanger: ação destrutiva discreta ("Esvaziar lixeira"), sem borda */
+export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'subtle' | 'danger' | 'ghostDanger';
 export type ButtonSize = 'md' | 'sm';
 
 export interface ButtonProps extends Omit<PressableProps, 'children' | 'style'> {
@@ -58,7 +59,7 @@ export function Button({
   }, [reduceMotion, isDisabled, scale, restScale]);
 
   const fg = (
-    { primary: 'onAccent', danger: 'danger', ghost: 'accentInk', subtle: 'textSecondary', secondary: 'text' } as const
+    { primary: 'onAccent', danger: 'danger', ghostDanger: 'danger', ghost: 'accentInk', subtle: 'textSecondary', secondary: 'text' } as const
   )[variant];
   const textTone = (
     { onAccent: 'onAccent', danger: 'danger', accentInk: 'accent', textSecondary: 'secondary', text: 'primary' } as const
@@ -132,6 +133,7 @@ const useStyles = makeStyles((t) => ({
   secondary: { borderWidth: t.hairline, borderColor: t.colors.hairline, backgroundColor: 'transparent' },
   ghost: { backgroundColor: 'transparent', paddingHorizontal: t.space[3] + t.space[0.5] },
   subtle: { backgroundColor: 'transparent', paddingHorizontal: t.space[3] + t.space[0.5] },
+  ghostDanger: { backgroundColor: 'transparent', paddingHorizontal: t.space[3] + t.space[0.5] },
   danger: { borderWidth: t.hairline, borderColor: t.colors.hairline, backgroundColor: 'transparent' },
   pressed: { backgroundColor: t.colors.soft },
   reducedPressed: { opacity: t.opacity.pressed },

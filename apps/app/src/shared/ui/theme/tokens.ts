@@ -161,6 +161,12 @@ export const size = {
   tabPillWidth: 56,
   tabPillHeight: 54,
   toast: 40,
+  pill: 32,
+  pillSmall: 26,
+  navRow: 48,
+  navRowTall: 52,
+  editorBar: 56,
+  formatBar: 48,
   swatch: 32,
   grabberWidth: 36,
   grabberHeight: 4,
@@ -195,6 +201,8 @@ export const motion = {
   enterOffset: 12,
   collapseDelay: 650,
   toast: 2200,
+  /** toast com ação ("Desfazer") fica mais tempo */
+  toastLong: 4000,
   spin: 800,
   /** a entrada da etapa seguinte começa depois da saída */
   stepDelay: 90,

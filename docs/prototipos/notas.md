@@ -1,4 +1,9 @@
-# Prototipagem pendente — Notas (Fase 1)
+# Notas (Fase 1) — prototipadas
+
+Protótipo no Claude Design: `Glife Notas.dc.html` (telas em `NotaTela.dc.html`), implementado na T14 (23/11/2026).
+O que ficou de fora está em "Pendências do protótipo" no HANDOFF.md.
+
+## Histórico: pedido de prototipagem
 
 Já implementado em versão básica (`apps/app/src/features/notes`):
 - **Lista** (segue `ui_kits/app/NotasScreen.jsx` do design system): busca, filtros Todas/Fixadas/Diário/Devocionais,

@@ -6,15 +6,13 @@ import { shortStamp } from '@/shared/lib/dates';
 import { Icon, Text, makeStyles, useTheme } from '@/shared/ui';
 
 import { noteExcerpt } from './excerpt';
-
-const KIND_LABEL: Record<Note['kind'], string | null> = { note: null, devotional: 'Devocional', journal: 'Diário' };
+import { KIND_LABEL } from './kinds';
 
 /** Linha da lista: título e data, prévia de 2 linhas e o tipo. Separada por linha fina, nunca uma caixa. */
 export function NoteRow({ note, onPress }: { note: Note; onPress: () => void }) {
   const s = useStyles();
   const t = useTheme();
   const excerpt = noteExcerpt(note.body_md);
-  const kind = KIND_LABEL[note.kind];
   return (
     <Pressable
       accessibilityRole="button"
@@ -26,25 +24,21 @@ export function NoteRow({ note, onPress }: { note: Note; onPress: () => void }) 
         <Text variant="item" numberOfLines={1} style={s.title} tone={note.title ? 'primary' : 'tertiary'}>
           {note.title || 'Sem título'}
         </Text>
-        <Text variant="caption" tone="tertiary" numeric>
-          {shortStamp(note.updated_at)}
-        </Text>
+        <View style={s.date}>
+          {note.pinned && <Icon icon={Pin} size={t.icon.tiny - 1} color="textTertiary" />}
+          <Text variant="caption" tone="tertiary" numeric>
+            {shortStamp(note.updated_at)}
+          </Text>
+        </View>
       </View>
       {!!excerpt && (
         <Text variant="small" tone="secondary" numberOfLines={2}>
           {excerpt}
         </Text>
       )}
-      {(kind || note.pinned) && (
-        <View style={s.meta}>
-          {note.pinned && <Icon icon={Pin} size={t.icon.tiny} color="textTertiary" />}
-          {kind && (
-            <Text variant="label" tone="tertiary">
-              {kind}
-            </Text>
-          )}
-        </View>
-      )}
+      <Text variant="label" tone="tertiary">
+        {KIND_LABEL[note.kind]}
+      </Text>
     </Pressable>
   );
 }
@@ -59,5 +53,5 @@ const useStyles = makeStyles((t) => ({
   pressed: { backgroundColor: t.colors.soft },
   head: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', gap: t.space[2] + t.space[0.5] },
   title: { flex: 1 },
-  meta: { flexDirection: 'row', alignItems: 'center', gap: t.space[1.5] },
+  date: { flexDirection: 'row', alignItems: 'center', gap: t.space[1] },
 }));

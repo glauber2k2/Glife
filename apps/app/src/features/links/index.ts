@@ -1,2 +1,2 @@
 export { linksTables } from './data/schema';
-export { createLocalLinksRepository } from './data/localLinksRepository';
+export { LinksProvider, useLinksData } from './hooks/LinksData';
