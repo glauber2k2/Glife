@@ -21,7 +21,7 @@ export function createSupabaseAuthService(supabase: SupabaseClient): AuthService
   const auth = supabase.auth;
 
   async function stateOf(session: Session | null): Promise<AuthState> {
-    if (!session) return { stage: 'signed_out', email: null };
+    if (!session) return { stage: 'signed_out', email: null, userId: null };
     // Lê o nível da sessão a partir do JWT guardado: funciona offline.
     const { data } = await auth.mfa.getAuthenticatorAssuranceLevel();
     const stage = resolveAuthStage({
@@ -29,7 +29,7 @@ export function createSupabaseAuthService(supabase: SupabaseClient): AuthService
       currentLevel: data?.currentLevel === 'aal2' ? 'aal2' : data?.currentLevel === 'aal1' ? 'aal1' : null,
       verifiedTotpFactors: verifiedTotp(session).length,
     });
-    return { stage, email: session.user.email ?? null };
+    return { stage, email: session.user.email ?? null, userId: session.user.id };
   }
 
   /** Executa uma chamada do Supabase e converte qualquer falha em AuthError. */

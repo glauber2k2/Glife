@@ -67,6 +67,8 @@ export interface AuthState {
   stage: AuthStage;
   /** Só para exibir na interface ("conectado como …"). */
   email: string | null;
+  /** dono dos dados locais (sessão atual); null fora de uma sessão */
+  userId: string | null;
 }
 
 export interface TotpEnrollment {

@@ -21,7 +21,7 @@ Objetivo: o mesmo app abre no Android e no navegador, com login, banco local e s
 | 0.5 | `packages/domain`: base de entidade (UUID, timestamps, `deleted_at`), Zod, `links` (parser de `[[...]]` e URIs `glife://`) com testes | `pnpm test` verde | ✅ |
 | 0.6 | ESLint com `eslint-plugin-boundaries` aplicando as 6 regras de importação | Import proibido quebra o lint | ✅ testado em `apps/app/tests/boundaries.test.ts` |
 | 0.7 | Supabase: projeto, CLI, primeira migração (`links`, `notes`, `tags`) com RLS, cadastro público desligado, MFA | 2º usuário de teste não enxerga nada | 🟡 local ok (`supabase/tests/rls.test.ts`, 2 usuários + MFA); hospedado com as 3 migrações e RLS conferido (23/11) |
-| 0.8 | PowerSync: schema local, sync rules por `user_id`, conector Supabase (upload queue) | Editar offline no celular e ver no web ao reconectar | 🟡 instância, conexão, auth e Sync Streams prontas (23/11); falta o cliente no app |
+| 0.8 | PowerSync: schema local, sync rules por `user_id`, conector Supabase (upload queue) | Editar offline no celular e ver no web ao reconectar | 🟡 web ⇄ Supabase validado com notas (23/11); falta Android |
 | 0.9 | Validar import de `packages/domain` numa Edge Function Deno (import map) | Função “hello” usando uma regra do domain | ✅ `hello` com 9 testes Vitest, check e execução real em Deno; sem deploy |
 | 0.10 | `CLAUDE.md` + skills `.claude/skills/*` | Arquivos no repo | ✅ |
 | 0.11 | APK local (`npx expo run:android`) | APK instalado no celular | ⏳ depende do Android Studio |

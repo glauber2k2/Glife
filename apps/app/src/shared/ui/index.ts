@@ -14,3 +14,4 @@ export { Sheet, type SheetProps } from './Sheet';
 export { Screen, type ScreenProps } from './Screen';
 export { Divider, EmptyState, Section, type SectionProps } from './Section';
 export { noFocusRing } from './webStyles';
+export { SearchField, type SearchFieldProps } from './SearchField';

@@ -15,10 +15,12 @@ export interface ScreenProps {
   scroll?: boolean;
   /** coluna mais estreita (telas de acesso) */
   maxWidth?: number;
+  /** ação à direita do título (ex.: botão de criar) */
+  action?: ReactNode;
 }
 
 /** Contêiner padrão: área segura, margem lateral de 22 px, coluna única centralizada no web. */
-export function Screen({ title, eyebrow, subtitle, children, scroll = true, maxWidth }: ScreenProps) {
+export function Screen({ title, eyebrow, subtitle, children, scroll = true, maxWidth, action }: ScreenProps) {
   const s = useStyles();
   const content = (
     <View style={[s.column, maxWidth !== undefined && { maxWidth }]}>
@@ -30,9 +32,12 @@ export function Screen({ title, eyebrow, subtitle, children, scroll = true, maxW
             </Text>
           )}
           {title && (
-            <Text variant="title" accessibilityRole="header">
-              {title}
-            </Text>
+            <View style={s.titleRow}>
+              <Text variant="title" accessibilityRole="header" style={s.title}>
+                {title}
+              </Text>
+              {action}
+            </View>
           )}
           {subtitle && (
             <Text variant="subtitle" tone="tertiary">
@@ -63,4 +68,6 @@ const useStyles = makeStyles((t) => ({
   fill: { flex: 1 },
   column: { width: '100%', maxWidth: t.layout.contentMaxWidth, alignSelf: 'center', gap: t.space[6] },
   header: { gap: t.space[1.5] },
+  titleRow: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', gap: t.space[3] },
+  title: { flex: 1 },
 }));

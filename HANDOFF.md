@@ -73,9 +73,19 @@ T11 e T12 foram assumidas pelo Claude a pedido do usuário (23/11). **Codex: nã
   implementações locais, como já passam contra as de memória; `pnpm lint`, `pnpm typecheck`, `pnpm test` verdes.
   Cuidados: SQL só com parâmetros (`?`), nunca concatenação; `user_id` sempre gravado; exclusão lógica
   (`deleted_at`); paginação por cursor como no contrato; `@glife/domain/testing` só em testes (o lint barra).
-- [ ] **T13 — Ligar telas de notas aos repositórios locais e validar sync web ⇄ celular (só Claude)** — depois de T11–T12:
-  passar os schemas das features a `createLocalSync`, implementar `LocalDb` sobre o `PowerSyncDatabase`, ligar telas.
+- [x] **T13 — Notas no banco local, sincronizando (só Claude)** — `toLocalDb` (adaptador PowerSync → `LocalDb`),
+  `createLocalSync({ ...notesTables, ...linksTables })` no `_layout` (banco existe mesmo sem URL; só não conecta),
+  `AuthState.userId`, `NotesProvider`/`useNotesData`/`useNoteList`, lista (busca, filtros, `NoteRow`) e editor
+  (`/nota/[id]`, salva sozinho, fixar, lixeira, nota vazia é descartada ao sair). **Validado no web com a conta
+  real**: nota criada e editada chegou ao Supabase; exclusão lógica também. Android não validado.
+  Prototipagem pendente: `docs/prototipos/notas.md` (editor escrever/ler, vínculos `[[`, pastas/tags, lixeira).
 - [ ] **Bloqueada (depende do usuário):** 0.11 APK (Android Studio).
+
+### Próximo (Fase 1) — depois do protótipo de notas, ou em versão básica
+- [ ] Vínculos: parser `[[…]]` ao salvar → `links.applyMarkdownDiff`; seção Vínculos/backlinks na nota (só Claude
+  decide o desenho; implementação pode ir ao Codex com tarefa detalhada).
+- [ ] Lixeira de notas (lista + restaurar) e toast com "Desfazer".
+- [ ] Pastas e tags na lista e no editor.
 
 ## Pendências do usuário
 
