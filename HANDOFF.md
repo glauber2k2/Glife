@@ -101,5 +101,6 @@ pnpm typecheck     # tsc em todos os pacotes
 pnpm test          # vitest: domain, app (lint/tema) e banco (PGlite)
 pnpm build:web     # export web do app (apps/app/dist)
 pnpm web           # app no navegador (dev)
+pnpm sb db push    # CLI do Supabase com as credenciais deste projeto (.env.supabase.local)
 pnpm codex         # abre o Codex já continuando a partir da próxima tarefa
 ```

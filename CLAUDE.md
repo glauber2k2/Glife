@@ -60,6 +60,7 @@ pnpm android          # app no Android (dev build)
 pnpm test             # vitest: domain, fronteiras do ESLint (app) e RLS/MFA do banco (supabase, via PGlite)
 pnpm typecheck        # tsc em todos os pacotes
 pnpm lint             # ESLint + fronteiras de features
+pnpm sb <comando>     # CLI do Supabase com credenciais só deste projeto (.env.supabase.local, fora do git)
 cd apps/app && npx expo install <pkg>   # SEMPRE para libs do Expo/RN (versões compatíveis com o SDK)
 cd apps/app && npx expo run:android --variant release   # APK local
 ```

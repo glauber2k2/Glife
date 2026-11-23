@@ -6,9 +6,11 @@
 import { join } from 'node:path';
 
 import { ESLint } from 'eslint';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 const appDir = join(import.meta.dirname, '..');
+// A primeira chamada carrega o ESLint e os plugins a frio; com os pacotes testando em paralelo passa de 5 s.
+vi.setConfig({ testTimeout: 30_000 });
 const eslint = new ESLint({ cwd: appDir });
 
 async function violations(filePath: string, code: string): Promise<string[]> {

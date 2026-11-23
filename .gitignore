@@ -8,6 +8,7 @@ ios/
 .env
 .env.*
 !.env.example
+!.env.supabase.example
 coverage/
 supabase/.branches
 supabase/.temp

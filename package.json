@@ -10,6 +10,7 @@
     "typecheck": "pnpm -r typecheck",
     "lint": "pnpm --filter app lint",
     "build:web": "pnpm --filter app exec expo export --platform web",
+    "sb": "node supabase/scripts/cli.mjs",
     "codex": "codex \"Leia AGENTS.md e HANDOFF.md e continue o trabalho a partir da próxima tarefa pendente.\""
   },
   "devDependencies": {
