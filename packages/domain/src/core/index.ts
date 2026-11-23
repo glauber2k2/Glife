@@ -103,3 +103,4 @@ export {
   type RepositoryErrorCode,
   type Unsubscribe,
 } from './repository.ts';
+export type { LocalDb, LocalQueries, SqlValue } from './localDb.ts';
