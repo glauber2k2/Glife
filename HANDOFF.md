@@ -42,7 +42,7 @@ Formato: `- [ ] Título` + Arquivos permitidos · Aceite (verificável) · Cuida
 - [x] **T9 — Design system Glaciar/Sinóptico + telas de acesso do protótipo (só Claude)** — ver "Estado atual".
 ### 0.8 — sincronização no app (infraestrutura PowerSync pronta; ver "Estado atual")
 
-T11 e T12 dependem só da interface `LocalDb` e **podem começar já**, em paralelo com a T10.
+T11 e T12 foram assumidas pelo Claude a pedido do usuário (23/11). **Codex: não pegue T11–T13.**
 
 - [x] **T10 — Cliente PowerSync e conector Supabase (só Claude)** — `shared/lib/powersync/`: `database.ts`
   (op-sqlite, Android) / `database.web.ts` (wa-sqlite em worker; `public/@powersync` copiado no postinstall),
@@ -53,7 +53,7 @@ T11 e T12 dependem só da interface `LocalDb` e **podem começar já**, em paral
   no IndexedDB, sem erros. **Conexão real validada no web (23/11)**: logs do PowerSync mostram "Sync stream
   started" com o usuário da conta, bucket `user_data` e checkpoint completo (0 operações: banco ainda vazio).
   O gráfico "Clients Connected Now" do painel atrasa; confira pelos Logs. Android não validado.
-- [ ] **T11 — Interface `LocalDb` e schema local (Codex)**
+- [ ] **T11 — Interface `LocalDb` e schema local (Claude, em andamento desde 23/11)**
   Arquivos: `packages/domain/src/core/localDb.ts` (+ export em `core/index.ts`), `apps/app/src/features/notes/data/schema.ts`,
   `apps/app/src/features/links/data/schema.ts`, `apps/app/tests/localSchema.test.ts`,
   `apps/app/package.json` (só para adicionar `@powersync/common`, via `npx expo install` ou `pnpm add`).
@@ -62,7 +62,7 @@ T11 e T12 dependem só da interface `LocalDb` e **podem começar já**, em paral
   sem importar o SDK no domain) para `notes`, `note_folders`, `links`, `tags`, `entity_tags`; teste que compara as
   colunas de cada schema com o `create table` das migrações (falha se a migração ganhar coluna e o schema não).
   Cuidados: `id` é implícito no PowerSync (não declarar); booleanos viram `integer`, timestamps `text`, JSON `text`.
-- [ ] **T12 — Repositórios de notas e links sobre `LocalDb` (Codex)** — depois da T11.
+- [ ] **T12 — Repositórios de notas e links sobre `LocalDb` (Claude, em andamento desde 23/11)** — depois da T11.
   Arquivos: `apps/app/src/features/notes/data/localNotesRepository.ts`, `apps/app/src/features/links/data/localLinksRepository.ts`,
   `apps/app/tests/support/sqliteLocalDb.ts` (adaptador de teste com `better-sqlite3` ou `sql.js`, dev dependency),
   `apps/app/tests/localRepositories.test.ts`.
