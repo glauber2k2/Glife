@@ -20,12 +20,12 @@ Objetivo: o mesmo app abre no Android e no navegador, com login, banco local e s
 | 0.4 | Navegação: 4 abas (Hoje · Notas · Finanças · Bíblia) + botão central da caixa de entrada | Navega entre abas no web e no Android | 🟡 web ok; falta Android |
 | 0.5 | `packages/domain`: base de entidade (UUID, timestamps, `deleted_at`), Zod, `links` (parser de `[[...]]` e URIs `glife://`) com testes | `pnpm test` verde | ✅ |
 | 0.6 | ESLint com `eslint-plugin-boundaries` aplicando as 6 regras de importação | Import proibido quebra o lint | ✅ testado em `apps/app/tests/boundaries.test.ts` |
-| 0.7 | Supabase: projeto, CLI, primeira migração (`links`, `notes`, `tags`) com RLS, cadastro público desligado, MFA | 2º usuário de teste não enxerga nada | 🟡 local ok (`supabase/tests/rls.test.ts`, 2 usuários + MFA); falta o projeto hospedado |
+| 0.7 | Supabase: projeto, CLI, primeira migração (`links`, `notes`, `tags`) com RLS, cadastro público desligado, MFA | 2º usuário de teste não enxerga nada | 🟡 local ok (`supabase/tests/rls.test.ts`, 2 usuários + MFA); hospedado com as 3 migrações e RLS conferido (23/11) |
 | 0.8 | PowerSync: schema local, sync rules por `user_id`, conector Supabase (upload queue) | Editar offline no celular e ver no web ao reconectar | ⏳ |
 | 0.9 | Validar import de `packages/domain` numa Edge Function Deno (import map) | Função “hello” usando uma regra do domain | ✅ `hello` com 9 testes Vitest, check e execução real em Deno; sem deploy |
 | 0.10 | `CLAUDE.md` + skills `.claude/skills/*` | Arquivos no repo | ✅ |
 | 0.11 | APK local (`npx expo run:android`) | APK instalado no celular | ⏳ depende do Android Studio |
-| 0.12 | Login: e-mail + senha forte + MFA (TOTP); sessão `aal2` obrigatória (o banco recusa `aal1`) | Entrar no web e no Android com MFA | ⏳ |
+| 0.12 | Login: e-mail + senha forte + MFA (TOTP); sessão `aal2` obrigatória (o banco recusa `aal1`) | Entrar no web e no Android com MFA | 🟡 web validado com a conta real (23/11); falta Android |
 | 0.13 | Sistema de movimento: React Native Reanimated, tokens de mola (200–350 ms, amortecidas), componentes base animados (botão que afunda, folhas e abas que deslizam, listas que se reorganizam), respeito a “reduzir movimento” | Demonstração em Ajustes; com “reduzir movimento” ligado nada anima | 🟡 T1–T4 e T9 concluídas: componentes, demo, abas e indicador Reanimated; stack/modal/Ajustes respeitam movimento reduzido dinâmico. Web validado; falta Android |
 
 **Depende de você:** criar contas Supabase e PowerSync (grátis) e instalar Android Studio/SDK.

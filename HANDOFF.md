@@ -37,11 +37,11 @@ do usuário e validação Android. Não há outra tarefa disponível ao Codex ne
 Formato: `- [ ] Título` + Arquivos permitidos · Aceite (verificável) · Cuidados.
 
 - [x] **T7 — Interfaces de repositório no domain (só Claude)** — ver "Estado atual".
-- [x] **T8 — Login e-mail + senha + MFA, sessão aal2 (0.12) (só Claude)** — implementada; falta validar com a
-  conta real (o usuário cria no painel) e no Android. Telas refeitas pelo protótipo "Glife Acesso" (T9).
+- [x] **T8 — Login e-mail + senha + MFA, sessão aal2 (0.12) (só Claude)** — validada no web em 23/11 com a conta
+  real (entrar, cadastrar autenticador pelo QR, código); falta o Android. Telas refeitas pelo protótipo "Glife Acesso" (T9).
 - [x] **T9 — Design system Glaciar/Sinóptico + telas de acesso do protótipo (só Claude)** — ver "Estado atual".
-- [ ] **Bloqueadas (dependem do usuário):** 0.8 PowerSync (contas Supabase/PowerSync), 0.11 APK (Android Studio),
-  aplicar migrações no projeto hospedado.
+- [ ] **Bloqueadas (dependem do usuário):** 0.8 PowerSync (conta e instância PowerSync ligada ao Supabase),
+  0.11 APK (Android Studio).
 
 ## Estado atual
 
@@ -98,6 +98,8 @@ Formato: `- [ ] Título` + Arquivos permitidos · Aceite (verificável) · Cuida
 
 - Reanimated 4.7 na web não registra animações de entrada personalizadas (`Keyframe`, `withInitialValues`):
   o item fica com `visibility: hidden` para sempre. Use `riseIn` de `@/shared/ui` (predefinida na web).
+- QR do MFA no Supabase: `data:img/svg+xml;utf-8,<?xml…?><!-- SVGo --><svg width height>` sem viewBox;
+  `svgFromDataUrl` trata. Contas de Auth: criar no painel **do projeto GLIFE** (o usuário tem vários projetos).
 - Windows: rode comandos na raiz `glife/`. Avisos "LF will be replaced by CRLF" do git são inofensivos.
 - `python -m http.server` (ou servidor estático simples) dá 404 ao recarregar rotas como `/notas`; navegue a
   partir de `/`.
