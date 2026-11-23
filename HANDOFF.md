@@ -50,7 +50,9 @@ T11 e T12 dependem só da interface `LocalDb` e **podem começar já**, em paral
   `lifecycle.ts` (`ready` conecta, verificação pausa, sair apaga o banco local), `localSync.ts` (composição).
   `_layout.tsx` chama `createLocalSync({})` — **as tabelas entram na T13** com os schemas da T11. A implementação
   de `LocalDb` sobre o PowerSync também ficou para a T13 (a interface é da T11). Web conferido: `glife.db` criado
-  no IndexedDB, sem erros. Conexão real com a conta e Android não validados.
+  no IndexedDB, sem erros. **Conexão real validada no web (23/11)**: logs do PowerSync mostram "Sync stream
+  started" com o usuário da conta, bucket `user_data` e checkpoint completo (0 operações: banco ainda vazio).
+  O gráfico "Clients Connected Now" do painel atrasa; confira pelos Logs. Android não validado.
 - [ ] **T11 — Interface `LocalDb` e schema local (Codex)**
   Arquivos: `packages/domain/src/core/localDb.ts` (+ export em `core/index.ts`), `apps/app/src/features/notes/data/schema.ts`,
   `apps/app/src/features/links/data/schema.ts`, `apps/app/tests/localSchema.test.ts`,
