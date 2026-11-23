@@ -40,8 +40,9 @@ Formato: `- [ ] Título` + Arquivos permitidos · Aceite (verificável) · Cuida
 - [x] **T8 — Login e-mail + senha + MFA, sessão aal2 (0.12) (só Claude)** — validada no web em 23/11 com a conta
   real (entrar, cadastrar autenticador pelo QR, código); falta o Android. Telas refeitas pelo protótipo "Glife Acesso" (T9).
 - [x] **T9 — Design system Glaciar/Sinóptico + telas de acesso do protótipo (só Claude)** — ver "Estado atual".
-- [ ] **Bloqueadas (dependem do usuário):** 0.8 PowerSync (conta e instância PowerSync ligada ao Supabase),
-  0.11 APK (Android Studio).
+- [ ] **0.8 PowerSync no app (só Claude)** — infraestrutura pronta (ver "Estado atual"); falta o cliente: schema local,
+  conector Supabase (upload queue), repositórios de notas sobre o SQLite local.
+- [ ] **Bloqueada (depende do usuário):** 0.11 APK (Android Studio).
 
 ## Estado atual
 
@@ -91,6 +92,12 @@ Formato: `- [ ] Título` + Arquivos permitidos · Aceite (verificável) · Cuida
   Entrar conferida no web (claro/escuro); Proteja/Verificação só visíveis com a conta real. Sem a transição de
   elemento compartilhado do wordmark e sem SegmentedControl em Aparência (ainda chips).
 
+- PowerSync (23/11): projeto Glife → instância Production (US), URL em `EXPO_PUBLIC_POWERSYNC_URL`
+  (`https://<instancia-powersync>.powersync.journeyapps.com`). Lê o banco com `powersync_role` (replicação +
+  BYPASSRLS, só SELECT; senha do usuário, fora do repo). Client Auth = "Use Supabase Auth" (JWKS ES256 do projeto).
+  Sync Streams (edição 3) publicadas a partir de `supabase/powersync/sync-streams.yaml`: dono + `aal2`;
+  `supabase/tests/syncStreams.test.ts` garante que toda tabela publicada está lá com esses filtros.
+
 ## Armadilhas conhecidas
 - CLI do Supabase: use `pnpm sb … --remote` (sem `--remote`, `db push` mira o Docker local). **Não** rode
   `pnpm sb config push`: o `config.toml` tem valores de desenvolvimento (confirmação de e-mail desligada, site
@@ -100,6 +107,8 @@ Formato: `- [ ] Título` + Arquivos permitidos · Aceite (verificável) · Cuida
   o item fica com `visibility: hidden` para sempre. Use `riseIn` de `@/shared/ui` (predefinida na web).
 - QR do MFA no Supabase: `data:img/svg+xml;utf-8,<?xml…?><!-- SVGo --><svg width height>` sem viewBox;
   `svgFromDataUrl` trata. Contas de Auth: criar no painel **do projeto GLIFE** (o usuário tem vários projetos).
+- PowerSync: o painel usa Sync Streams (não mais `bucket_definitions`). Mudou o YAML? Republique no painel
+  (Validate → Deploy). Editor Monaco: cole pela área de transferência; digitar quebra a indentação.
 - Windows: rode comandos na raiz `glife/`. Avisos "LF will be replaced by CRLF" do git são inofensivos.
 - `python -m http.server` (ou servidor estático simples) dá 404 ao recarregar rotas como `/notas`; navegue a
   partir de `/`.

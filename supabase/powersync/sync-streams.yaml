@@ -1,0 +1,19 @@
+# Sync Streams do PowerSync (edição 3): cada usuário recebe só as próprias linhas.
+# Publicado no painel do PowerSync (projeto Glife → Production → Sync Streams); este arquivo é a fonte.
+# Ao criar uma tabela nova (skill migracao-supabase), adicione-a aqui e republique no painel.
+# Nunca sincronize arquivos binários: só metadados (imagens vão direto ao Storage).
+#
+# Segurança: o PowerSync lê o banco com powersync_role (BYPASSRLS), então o filtro por usuário é feito aqui.
+# auth.parameter('aal') = 'aal2' repete a regra do banco: sessão só com senha (aal1) não recebe dados.
+config:
+  edition: 3
+
+streams:
+  user_data:
+    auto_subscribe: true
+    queries:
+      - SELECT * FROM links WHERE user_id = auth.user_id() AND auth.parameter('aal') = 'aal2'
+      - SELECT * FROM tags WHERE user_id = auth.user_id() AND auth.parameter('aal') = 'aal2'
+      - SELECT * FROM entity_tags WHERE user_id = auth.user_id() AND auth.parameter('aal') = 'aal2'
+      - SELECT * FROM note_folders WHERE user_id = auth.user_id() AND auth.parameter('aal') = 'aal2'
+      - SELECT * FROM notes WHERE user_id = auth.user_id() AND auth.parameter('aal') = 'aal2'

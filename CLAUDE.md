@@ -12,7 +12,7 @@ Planejamento: `../Glife — Planejamento do Projeto.md` · Design: `docs/design-
 - `apps/app/src/features/<feature>/` — `screens/ components/ hooks/ data/ __tests__/ index.ts`.
 - `apps/app/src/shared/` — `ui/` (design system), `lib/`, `hooks/`, `navigation/`.
 - `packages/domain/src/<feature>/` — regras em TS puro (Zod), usadas pelo app, testes e Edge Functions.
-- `supabase/migrations/` — SQL versionado; `supabase/powersync/sync-rules.yaml`; `supabase/functions/`.
+- `supabase/migrations/` — SQL versionado; `supabase/powersync/sync-streams.yaml`; `supabase/functions/`.
 
 ## Regras de importação (checadas por ESLint / testes)
 
@@ -28,7 +28,7 @@ Em `packages/domain`, imports relativos usam extensão `.ts` explícita (compat�
 ## Regras de dados
 
 - **Dinheiro sempre em centavos** (inteiro), nunca float.
-- **Toda tabela** tem `id uuid`, `user_id`, `created_at`, `updated_at`, `deleted_at` e RLS — use `select public.vida_apply_standard('public.<tabela>')` e adicione à publicação `powersync` e ao `sync-rules.yaml`.
+- **Toda tabela** tem `id uuid`, `user_id`, `created_at`, `updated_at`, `deleted_at` e RLS — use `select public.vida_apply_standard('public.<tabela>')` e adicione à publicação `powersync` e ao `sync-streams.yaml` (filtro por `auth.user_id()` + `aal2`; o PowerSync lê com BYPASSRLS).
 - `vida_apply_standard` também cria a política **restritiva de MFA** (só sessão `aal2` lê/grava) e `unique (id, user_id)`.
 - **FK entre tabelas do usuário é sempre composta**: `foreign key (x_id, user_id) references public.x (id, user_id)`,
   com `on delete set null (x_id)` quando for opcional. FK simples deixaria apontar para linha de outro usuário.

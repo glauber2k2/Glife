@@ -26,7 +26,9 @@ description: Qualquer mudança no banco do Glife (tabela, coluna, índice). Gera
    foreign key (x_id, user_id) references public.x (id, user_id) on delete set null (x_id)  -- ou cascade
    ```
    Função nova: `set search_path = ''`, nomes qualificados (`pg_catalog.now()`), e `revoke execute` se não for API.
-3. Adicione `- select * from <t> where user_id = bucket.user_id` em `supabase/powersync/sync-rules.yaml`.
+3. Adicione `- SELECT * FROM <t> WHERE user_id = auth.user_id() AND auth.parameter('aal') = 'aal2'` em
+   `supabase/powersync/sync-streams.yaml` e republique no painel do PowerSync (Glife → Production → Sync Streams).
+   O teste `supabase/tests/syncStreams.test.ts` falha se a tabela publicada faltar ou vier sem esses filtros.
 4. Atualize o schema local do PowerSync em `apps/app/src/shared/lib/powersync/schema.ts` (ou no `data/` da feature).
 5. Valide: `pnpm test` roda `supabase/tests/rls.test.ts` (Postgres real via PGlite) — o teste genérico cobre toda tabela
    nova; adicione casos de "A não aponta para linha de B" para cada FK nova. No projeto hospedado, rode também

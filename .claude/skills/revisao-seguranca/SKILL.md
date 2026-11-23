@@ -8,7 +8,7 @@ description: Checklist de segurança do Glife antes de cada release.
 Marque cada item com evidência (comando/saída):
 
 - [ ] `supabase/tests/rls_check.sql` retorna zero linhas no banco de produção.
-- [ ] Toda tabela nova está no `sync-rules.yaml` filtrada por `bucket.user_id`.
+- [ ] Toda tabela nova está no `sync-streams.yaml` filtrada por `auth.user_id()` e exigindo `aal2` (e publicada no painel).
 - [ ] Cadastro público desligado (`enable_signup = false`) e MFA TOTP ativo.
 - [ ] `grep -r "service_role\|sk-ant\|SECRET" apps/` não encontra segredos; só `EXPO_PUBLIC_*` no app.
 - [ ] Buckets privados; URLs assinadas com validade de poucos minutos.
