@@ -53,7 +53,8 @@ T11 e T12 dependem só da interface `LocalDb` e **podem começar já**, em paral
   Cuidados: credenciais e sessão = sensível; nenhuma chave além de `EXPO_PUBLIC_*`.
 - [ ] **T11 — Interface `LocalDb` e schema local (Codex)**
   Arquivos: `packages/domain/src/core/localDb.ts` (+ export em `core/index.ts`), `apps/app/src/features/notes/data/schema.ts`,
-  `apps/app/src/features/links/data/schema.ts`, `apps/app/tests/localSchema.test.ts`.
+  `apps/app/src/features/links/data/schema.ts`, `apps/app/tests/localSchema.test.ts`,
+  `apps/app/package.json` (só para adicionar `@powersync/common`, via `npx expo install` ou `pnpm add`).
   Aceite: `LocalDb` em TS puro com `getAll<T>(sql, params)`, `getOptional<T>`, `execute`, `writeTransaction(fn)`
   e `watch(sql, params, onRows, onError): Unsubscribe`; schemas locais (formato `@powersync/common` `Table`/`column`,
   sem importar o SDK no domain) para `notes`, `note_folders`, `links`, `tags`, `entity_tags`; teste que compara as
