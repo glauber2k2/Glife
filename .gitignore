@@ -15,3 +15,6 @@ supabase/.temp
 
 # Worker do PowerSync web, copiado de node_modules no postinstall
 apps/app/public/@powersync/
+
+# Notas locais com identificadores de infraestrutura (nunca publicar)
+*.local.md

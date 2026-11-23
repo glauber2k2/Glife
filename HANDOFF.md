@@ -122,7 +122,7 @@ T11 e T12 foram assumidas pelo Claude a pedido do usuário (23/11). **Codex: nã
   deve rodar `notesRepositoryContract`/`linksRepositoryContract`**. ESLint barra `@glife/domain/testing` fora de
   testes. **187 testes** (106 domain, 52 app, 29 Supabase).
 
-- Supabase hospedado (23/11): projeto GLIFE `<projeto-supabase>` ligado; 3 migrações aplicadas (5 tabelas com RLS
+- Supabase hospedado (23/11): projeto GLIFE `<projeto-supabase>` (ver `INFRA.local.md`) ligado; 3 migrações aplicadas (5 tabelas com RLS
   forçado, 5 políticas cada, na publicação `powersync`). Auth via Management API: cadastro desligado, senha 12+ com
   4 classes, reautenticação para trocar senha, MFA TOTP ligado. `apps/app/.env.local` com URL + anon. Token da CLI
   com escopo só do projeto (90 dias) em `.env.supabase.local`. Falta o usuário criar a própria conta no painel.
@@ -142,7 +142,7 @@ T11 e T12 foram assumidas pelo Claude a pedido do usuário (23/11). **Codex: nã
   elemento compartilhado do wordmark e sem SegmentedControl em Aparência (ainda chips).
 
 - PowerSync (23/11): projeto Glife → instância Production (US), URL em `EXPO_PUBLIC_POWERSYNC_URL`
-  (`https://<instancia-powersync>.powersync.journeyapps.com`). Lê o banco com `powersync_role` (replicação +
+  (`https://<instancia-powersync>.powersync.journeyapps.com`, ver `INFRA.local.md`). Lê o banco com `powersync_role` (replicação +
   BYPASSRLS, só SELECT; senha do usuário, fora do repo). Client Auth = "Use Supabase Auth" (JWKS ES256 do projeto).
   Sync Streams (edição 3) publicadas a partir de `supabase/powersync/sync-streams.yaml`: dono + `aal2`;
   `supabase/tests/syncStreams.test.ts` garante que toda tabela publicada está lá com esses filtros.
