@@ -12,3 +12,6 @@ ios/
 coverage/
 supabase/.branches
 supabase/.temp
+
+# Worker do PowerSync web, copiado de node_modules no postinstall
+apps/app/public/@powersync/

@@ -7,6 +7,11 @@
     "@expo-google-fonts/hanken-grotesk": "^0.4.3",
     "@expo-google-fonts/jetbrains-mono": "^0.4.1",
     "@glife/domain": "workspace:*",
+    "@op-engineering/op-sqlite": "~18.2.5",
+    "@powersync/common": "^2.5.0",
+    "@powersync/react-native": "^2.4.1",
+    "@powersync/shared-internals": "^1.6.0",
+    "@powersync/web": "^2.7.0",
     "@react-native-async-storage/async-storage": "2.2.0",
     "@supabase/supabase-js": "^2.119.2",
     "expo": "~58.0.26",
@@ -52,7 +57,9 @@
     "build:web": "expo export --platform web",
     "lint": "expo lint",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "powersync:assets": "powersync-web copy-assets",
+    "postinstall": "pnpm run powersync:assets"
   },
   "private": true
 }

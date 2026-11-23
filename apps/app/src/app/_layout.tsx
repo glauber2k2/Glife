@@ -16,6 +16,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { AuthProvider, createSupabaseAuthService, useAuth } from '@/features/auth';
 import { installIdGenerator } from '@/shared/lib/ids';
+import { createLocalSync } from '@/shared/lib/powersync';
 import { getSupabase } from '@/shared/lib/supabase';
 import { toNavigationTheme } from '@/shared/navigation/navigationTheme';
 import { resolveNavigationMotion } from '@/shared/navigation/navigationMotion';
@@ -25,6 +26,9 @@ installIdGenerator();
 // Raiz de composição: aqui as interfaces recebem as implementações concretas.
 const themePreferenceStore = createThemePreferenceStore(AsyncStorage);
 const authService = createSupabaseAuthService(getSupabase());
+// Tabelas locais entram com os schemas das features (T11/T13); sem elas, o PowerSync já autentica e guarda o
+// que baixa, mas as telas ainda não leem do banco local.
+const localSync = createLocalSync({});
 void SplashScreen.preventAutoHideAsync();
 
 function RootStack() {
@@ -37,6 +41,10 @@ function RootStack() {
   // Enquanto a sessão guardada é lida, a splash continua na tela.
   useEffect(() => {
     if (stage) void SplashScreen.hideAsync();
+  }, [stage]);
+  // Sincroniza só com MFA concluído; ao sair, apaga o banco local.
+  useEffect(() => {
+    if (stage) void localSync?.apply(stage);
   }, [stage]);
   if (!stage) return null;
 

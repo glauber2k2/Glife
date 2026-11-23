@@ -44,13 +44,13 @@ Formato: `- [ ] Título` + Arquivos permitidos · Aceite (verificável) · Cuida
 
 T11 e T12 dependem só da interface `LocalDb` e **podem começar já**, em paralelo com a T10.
 
-- [ ] **T10 — Cliente PowerSync e conector Supabase (só Claude)**
-  Arquivos: `apps/app/src/shared/lib/powersync*.ts`, `apps/app/src/shared/lib/localDb.ts` (implementação),
-  `apps/app/src/app/_layout.tsx`, `apps/app/package.json`, `apps/app/app.json`, `apps/app/tests/`.
-  Aceite: `@powersync/react-native` (Android) e `@powersync/web` (web) instalados com versões do SDK 58;
-  `fetchCredentials` usa a sessão do Supabase (só `aal2`); `uploadData` aplica a fila de CRUD no Supabase (RLS);
-  conecta quando o estado de acesso é `ready`, desconecta e **apaga o banco local** ao sair; implementa `LocalDb`.
-  Cuidados: credenciais e sessão = sensível; nenhuma chave além de `EXPO_PUBLIC_*`.
+- [x] **T10 — Cliente PowerSync e conector Supabase (só Claude)** — `shared/lib/powersync/`: `database.ts`
+  (op-sqlite, Android) / `database.web.ts` (wa-sqlite em worker; `public/@powersync` copiado no postinstall),
+  `connector.ts` (token só `aal2`; fila de CRUD → Supabase; erros 22xxx/23xxx/42501 descartados, resto repetido),
+  `lifecycle.ts` (`ready` conecta, verificação pausa, sair apaga o banco local), `localSync.ts` (composição).
+  `_layout.tsx` chama `createLocalSync({})` — **as tabelas entram na T13** com os schemas da T11. A implementação
+  de `LocalDb` sobre o PowerSync também ficou para a T13 (a interface é da T11). Web conferido: `glife.db` criado
+  no IndexedDB, sem erros. Conexão real com a conta e Android não validados.
 - [ ] **T11 — Interface `LocalDb` e schema local (Codex)**
   Arquivos: `packages/domain/src/core/localDb.ts` (+ export em `core/index.ts`), `apps/app/src/features/notes/data/schema.ts`,
   `apps/app/src/features/links/data/schema.ts`, `apps/app/tests/localSchema.test.ts`,
@@ -68,7 +68,8 @@ T11 e T12 dependem só da interface `LocalDb` e **podem começar já**, em paral
   implementações locais, como já passam contra as de memória; `pnpm lint`, `pnpm typecheck`, `pnpm test` verdes.
   Cuidados: SQL só com parâmetros (`?`), nunca concatenação; `user_id` sempre gravado; exclusão lógica
   (`deleted_at`); paginação por cursor como no contrato; `@glife/domain/testing` só em testes (o lint barra).
-- [ ] **T13 — Ligar telas de notas aos repositórios locais e validar sync web ⇄ celular (só Claude)** — depois de T10–T12.
+- [ ] **T13 — Ligar telas de notas aos repositórios locais e validar sync web ⇄ celular (só Claude)** — depois de T11–T12:
+  passar os schemas das features a `createLocalSync`, implementar `LocalDb` sobre o `PowerSyncDatabase`, ligar telas.
 - [ ] **Bloqueada (depende do usuário):** 0.11 APK (Android Studio).
 
 ## Pendências do usuário
@@ -140,6 +141,9 @@ T11 e T12 dependem só da interface `LocalDb` e **podem começar já**, em paral
   o item fica com `visibility: hidden` para sempre. Use `riseIn` de `@/shared/ui` (predefinida na web).
 - QR do MFA no Supabase: `data:img/svg+xml;utf-8,<?xml…?><!-- SVGo --><svg width height>` sem viewBox;
   `svgFromDataUrl` trata. Contas de Auth: criar no painel **do projeto GLIFE** (o usuário tem vários projetos).
+- PowerSync web: o Metro não reescreve `new URL('./worker.js', import.meta.url)`; por isso o worker vem de
+  `public/@powersync` (`pnpm --filter app powersync:assets`, roda no postinstall). `op-sqlite` fixo em ~18.2
+  (o `@powersync/react-native` 2.4 aceita 17.1–18.x).
 - PowerSync: o painel usa Sync Streams (não mais `bucket_definitions`). Mudou o YAML? Republique no painel
   (Validate → Deploy). Editor Monaco: cole pela área de transferência; digitar quebra a indentação.
 - Windows: rode comandos na raiz `glife/`. Avisos "LF will be replaced by CRLF" do git são inofensivos.
