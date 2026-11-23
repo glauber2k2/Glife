@@ -37,8 +37,8 @@ do usuário e validação Android. Não há outra tarefa disponível ao Codex ne
 Formato: `- [ ] Título` + Arquivos permitidos · Aceite (verificável) · Cuidados.
 
 - [x] **T7 — Interfaces de repositório no domain (só Claude)** — ver "Estado atual".
-- [ ] **T8 — Login e-mail + senha + MFA, sessão aal2 (0.12) (só Claude)**
-  - Autenticação. Depende do projeto Supabase hospedado.
+- [x] **T8 — Login e-mail + senha + MFA, sessão aal2 (0.12) (só Claude)** — implementada; falta validar com a
+  conta real (o usuário cria no painel) e no Android. Prototipagem pendente: `docs/prototipos/acesso.md`.
 - [ ] **Bloqueadas (dependem do usuário):** 0.8 PowerSync (contas Supabase/PowerSync), 0.11 APK (Android Studio),
   aplicar migrações no projeto hospedado.
 
@@ -75,6 +75,12 @@ Formato: `- [ ] Título` + Arquivos permitidos · Aceite (verificável) · Cuida
   forçado, 5 políticas cada, na publicação `powersync`). Auth via Management API: cadastro desligado, senha 12+ com
   4 classes, reautenticação para trocar senha, MFA TOTP ligado. `apps/app/.env.local` com URL + anon. Token da CLI
   com escopo só do projeto (90 dias) em `.env.supabase.local`. Falta o usuário criar a própria conta no painel.
+
+- T8: `@glife/domain/auth` (etapas signed_out → enroll_mfa/verify_mfa → ready, código TOTP, AuthError, contrato
+  `AuthService`); `features/auth` (serviço Supabase, provider, telas Entrar e Verificação, botão Sair em Ajustes via
+  composição na rota); `shared/lib/supabase.ts` (sessão no SecureStore em pedaços no Android, localStorage no web).
+  Rotas com `Stack.Protected`: o app só abre em `ready` (aal2). Web conferido: sem sessão, `/` e `/ajustes` levam a
+  `/entrar`, sem erros no console. **226 testes**; build web ok. Login real e Android não validados.
 
 ## Armadilhas conhecidas
 - CLI do Supabase: use `pnpm sb … --remote` (sem `--remote`, `db push` mira o Docker local). **Não** rode

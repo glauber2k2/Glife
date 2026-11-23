@@ -8,7 +8,9 @@ import { StatusBar } from 'expo-status-bar';
 import { useEffect, useMemo } from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
+import { AuthProvider, createSupabaseAuthService, useAuth } from '@/features/auth';
 import { installIdGenerator } from '@/shared/lib/ids';
+import { getSupabase } from '@/shared/lib/supabase';
 import { toNavigationTheme } from '@/shared/navigation/navigationTheme';
 import { resolveNavigationMotion } from '@/shared/navigation/navigationMotion';
 import { ThemeProvider, createThemePreferenceStore, useReduceMotion, useTheme } from '@/shared/ui';
@@ -16,6 +18,7 @@ import { ThemeProvider, createThemePreferenceStore, useReduceMotion, useTheme } 
 installIdGenerator();
 // Raiz de composição: aqui as interfaces recebem as implementações concretas.
 const themePreferenceStore = createThemePreferenceStore(AsyncStorage);
+const authService = createSupabaseAuthService(getSupabase());
 void SplashScreen.preventAutoHideAsync();
 
 function RootStack() {
@@ -23,6 +26,14 @@ function RootStack() {
   const reduceMotion = useReduceMotion();
   const animation = resolveNavigationMotion(reduceMotion);
   const navigationTheme = useMemo(() => toNavigationTheme(t), [t]);
+  const { state } = useAuth();
+  const stage = state?.stage;
+  // Enquanto a sessão guardada é lida, a splash continua na tela.
+  useEffect(() => {
+    if (stage) void SplashScreen.hideAsync();
+  }, [stage]);
+  if (!stage) return null;
+
   return (
     <NavigationThemeProvider value={navigationTheme}>
       <StatusBar style={t.scheme === 'dark' ? 'light' : 'dark'} />
@@ -34,9 +45,18 @@ function RootStack() {
           animationDuration: t.motion.base,
         }}
       >
-        <Stack.Screen name="(tabs)" />
-        <Stack.Screen name="caixa-de-entrada" options={{ presentation: 'modal', animation: animation.modal }} />
-        <Stack.Screen name="ajustes" options={{ animation: animation.detail }} />
+        {/* O app só abre com sessão aal2; o banco também recusa qualquer outra (RLS). */}
+        <Stack.Protected guard={stage === 'ready'}>
+          <Stack.Screen name="(tabs)" />
+          <Stack.Screen name="caixa-de-entrada" options={{ presentation: 'modal', animation: animation.modal }} />
+          <Stack.Screen name="ajustes" options={{ animation: animation.detail }} />
+        </Stack.Protected>
+        <Stack.Protected guard={stage === 'signed_out'}>
+          <Stack.Screen name="entrar" />
+        </Stack.Protected>
+        <Stack.Protected guard={stage === 'enroll_mfa' || stage === 'verify_mfa'}>
+          <Stack.Screen name="verificacao" />
+        </Stack.Protected>
       </Stack>
     </NavigationThemeProvider>
   );
@@ -51,16 +71,14 @@ export default function RootLayout() {
     SourceSerif4_600SemiBold,
   });
 
-  useEffect(() => {
-    if (loaded || error) void SplashScreen.hideAsync();
-  }, [loaded, error]);
-
   if (!loaded && !error) return null;
 
   return (
     <SafeAreaProvider>
       <ThemeProvider store={themePreferenceStore}>
-        <RootStack />
+        <AuthProvider service={authService}>
+          <RootStack />
+        </AuthProvider>
       </ThemeProvider>
     </SafeAreaProvider>
   );

@@ -24,6 +24,9 @@ export interface Palette {
   danger: string;
   highlight: { yellow: string; green: string; blue: string; pink: string };
   scrim: string;
+  /** fundo do QR code: claro nos dois temas, para qualquer leitor conseguir ler */
+  qrPaper: string;
+  qrInk: string;
 }
 
 const light: Palette = {
@@ -43,6 +46,8 @@ const light: Palette = {
   danger: '#B42318',
   highlight: { yellow: '#FBEFB4', green: '#D6EED9', blue: '#D7E6F7', pink: '#F6DCE5' },
   scrim: 'rgba(12,12,11,0.32)',
+  qrPaper: '#FFFFFF',
+  qrInk: '#1C1917',
 };
 
 const dark: Palette = {
@@ -62,6 +67,8 @@ const dark: Palette = {
   danger: '#F08A80',
   highlight: { yellow: '#4A4320', green: '#22402A', blue: '#1F3450', pink: '#4A2533' },
   scrim: 'rgba(0,0,0,0.6)',
+  qrPaper: '#EDEDEC',
+  qrInk: '#0C0C0B',
 };
 
 export const palettes: Record<ColorScheme, Palette> = { light, dark };
@@ -97,7 +104,7 @@ export const icon = { size: 20, strokeWidth: 1.5 } as const;
 export const touch = { minTarget: 44, hitSlop: 6 } as const;
 
 /** Larguras máximas: no web/tablet o conteúdo não se estica pela tela inteira. */
-export const layout = { contentMaxWidth: 720, sheetMaxWidth: 640 } as const;
+export const layout = { contentMaxWidth: 720, sheetMaxWidth: 640, authMaxWidth: 400 } as const;
 
 /** Estados sem mudar cor: pressionado e desabilitado. */
 export const opacity = { hidden: 0, full: 1, pressed: 0.6, disabled: 0.45 } as const;
@@ -109,6 +116,7 @@ export const size = {
   grabberWidth: 36,
   grabberHeight: 4,
   captureFieldMinHeight: 160,
+  qrCode: 192,
 } as const;
 
 export const motion = { fast: 150, base: 200, slow: 250 } as const;

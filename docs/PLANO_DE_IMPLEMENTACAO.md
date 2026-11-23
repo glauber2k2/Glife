@@ -111,7 +111,7 @@ Objetivo: o mesmo app abre no Android e no navegador, com login, banco local e s
 - [x] 0.9 Edge Function usando o domain, testada com Vitest e executada em Deno (import map local)
 - [x] 0.10 CLAUDE.md + 6 skills
 - [ ] 0.11 APK local (precisa do Android SDK)
-- [ ] 0.12 Login e-mail + senha + MFA (só Claude; depende do Supabase hospedado)
+- [~] 0.12 Login e-mail + senha + MFA implementado (T8). **Falta:** testar com a conta real e no Android
 - [~] 0.13 Componentes, demo e navegação concluídos e validados no web; falta validação Android
 - [x] Fronteira de dados no lint: Supabase/PowerSync só em `features/*/data` e `shared/lib`
 - [x] Nome Glife: pasta `glife/`, pacotes `@glife/*`, esquema `glife://` e identificadores `app.glife.pessoal`

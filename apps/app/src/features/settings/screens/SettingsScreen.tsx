@@ -1,5 +1,5 @@
 import { FileText, Receipt } from 'lucide-react-native';
-import { useRef, useState } from 'react';
+import { useRef, useState, type ReactNode } from 'react';
 import { View } from 'react-native';
 
 import {
@@ -23,7 +23,8 @@ const THEMES: { value: ThemePreference; label: string }[] = [
   { value: 'dark', label: 'Escuro' },
 ];
 
-export function SettingsScreen() {
+/** `account`: seção de conta composta na rota (Ajustes não conhece a feature de autenticação). */
+export function SettingsScreen({ account }: { account?: ReactNode } = {}) {
   const s = useStyles();
   const t = useTheme();
   const { preference, setPreference } = useThemePreference();
@@ -33,6 +34,12 @@ export function SettingsScreen() {
 
   return (
     <Screen title="Ajustes">
+      {account && (
+        <Section title="Conta">
+          <View style={s.stack}>{account}</View>
+        </Section>
+      )}
+
       <Section title="Aparência">
         <View style={s.row}>
           {THEMES.map((o) => (
