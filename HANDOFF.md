@@ -7,8 +7,8 @@
 
 Concluir a **Fase 0 (fundação)** de `docs/PLANO_DE_IMPLEMENTACAO.md`. Glife, T1–T7 e T9
 (movimento dos componentes e da navegação, fronteira de dados e hello Deno) estão implementados e
-detalhados em `HANDOFF-arquivo.md`. Restam os contratos/login reservados ao Claude, infraestrutura
-do usuário e validação Android. Não há outra tarefa disponível ao Codex neste handoff.
+detalhados em `HANDOFF-arquivo.md`. Login + MFA (T8) e PowerSync hospedado prontos. Agora: **0.8 sincronização
+no app** — T11 e T12 são do Codex; T10 e T13 do Claude. Android (0.11) depende do usuário.
 
 ## Decisões tomadas (não mudar sem motivo)
 
@@ -40,9 +40,41 @@ Formato: `- [ ] Título` + Arquivos permitidos · Aceite (verificável) · Cuida
 - [x] **T8 — Login e-mail + senha + MFA, sessão aal2 (0.12) (só Claude)** — validada no web em 23/11 com a conta
   real (entrar, cadastrar autenticador pelo QR, código); falta o Android. Telas refeitas pelo protótipo "Glife Acesso" (T9).
 - [x] **T9 — Design system Glaciar/Sinóptico + telas de acesso do protótipo (só Claude)** — ver "Estado atual".
-- [ ] **0.8 PowerSync no app (só Claude)** — infraestrutura pronta (ver "Estado atual"); falta o cliente: schema local,
-  conector Supabase (upload queue), repositórios de notas sobre o SQLite local.
+### 0.8 — sincronização no app (infraestrutura PowerSync pronta; ver "Estado atual")
+
+T11 e T12 dependem só da interface `LocalDb` e **podem começar já**, em paralelo com a T10.
+
+- [ ] **T10 — Cliente PowerSync e conector Supabase (só Claude)**
+  Arquivos: `apps/app/src/shared/lib/powersync*.ts`, `apps/app/src/shared/lib/localDb.ts` (implementação),
+  `apps/app/src/app/_layout.tsx`, `apps/app/package.json`, `apps/app/app.json`, `apps/app/tests/`.
+  Aceite: `@powersync/react-native` (Android) e `@powersync/web` (web) instalados com versões do SDK 58;
+  `fetchCredentials` usa a sessão do Supabase (só `aal2`); `uploadData` aplica a fila de CRUD no Supabase (RLS);
+  conecta quando o estado de acesso é `ready`, desconecta e **apaga o banco local** ao sair; implementa `LocalDb`.
+  Cuidados: credenciais e sessão = sensível; nenhuma chave além de `EXPO_PUBLIC_*`.
+- [ ] **T11 — Interface `LocalDb` e schema local (Codex)**
+  Arquivos: `packages/domain/src/core/localDb.ts` (+ export em `core/index.ts`), `apps/app/src/features/notes/data/schema.ts`,
+  `apps/app/src/features/links/data/schema.ts`, `apps/app/tests/localSchema.test.ts`.
+  Aceite: `LocalDb` em TS puro com `getAll<T>(sql, params)`, `getOptional<T>`, `execute`, `writeTransaction(fn)`
+  e `watch(sql, params, onRows, onError): Unsubscribe`; schemas locais (formato `@powersync/common` `Table`/`column`,
+  sem importar o SDK no domain) para `notes`, `note_folders`, `links`, `tags`, `entity_tags`; teste que compara as
+  colunas de cada schema com o `create table` das migrações (falha se a migração ganhar coluna e o schema não).
+  Cuidados: `id` é implícito no PowerSync (não declarar); booleanos viram `integer`, timestamps `text`, JSON `text`.
+- [ ] **T12 — Repositórios de notas e links sobre `LocalDb` (Codex)** — depois da T11.
+  Arquivos: `apps/app/src/features/notes/data/localNotesRepository.ts`, `apps/app/src/features/links/data/localLinksRepository.ts`,
+  `apps/app/tests/support/sqliteLocalDb.ts` (adaptador de teste com `better-sqlite3` ou `sql.js`, dev dependency),
+  `apps/app/tests/localRepositories.test.ts`.
+  Aceite: `notesRepositoryContract` e `linksRepositoryContract` (de `@glife/domain/testing`) passam contra as
+  implementações locais, como já passam contra as de memória; `pnpm lint`, `pnpm typecheck`, `pnpm test` verdes.
+  Cuidados: SQL só com parâmetros (`?`), nunca concatenação; `user_id` sempre gravado; exclusão lógica
+  (`deleted_at`); paginação por cursor como no contrato; `@glife/domain/testing` só em testes (o lint barra).
+- [ ] **T13 — Ligar telas de notas aos repositórios locais e validar sync web ⇄ celular (só Claude)** — depois de T10–T12.
 - [ ] **Bloqueada (depende do usuário):** 0.11 APK (Android Studio).
+
+## Pendências do usuário
+
+- [ ] Trocar a senha do `powersync_role` (foi escrita na conversa e é fraca): no SQL Editor do Supabase GLIFE,
+  `alter role powersync_role password '<nova>';`, depois PowerSync → Database Connection → editar → nova senha →
+  Test Connection → Save. Apagar a consulta do histórico do SQL Editor.
 
 ## Estado atual
 
