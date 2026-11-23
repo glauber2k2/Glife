@@ -71,7 +71,15 @@ Formato: `- [ ] Título` + Arquivos permitidos · Aceite (verificável) · Cuida
   deve rodar `notesRepositoryContract`/`linksRepositoryContract`**. ESLint barra `@glife/domain/testing` fora de
   testes. **187 testes** (106 domain, 52 app, 29 Supabase).
 
+- Supabase hospedado (23/11): projeto GLIFE `<projeto-supabase>` ligado; 3 migrações aplicadas (5 tabelas com RLS
+  forçado, 5 políticas cada, na publicação `powersync`). Auth via Management API: cadastro desligado, senha 12+ com
+  4 classes, reautenticação para trocar senha, MFA TOTP ligado. `apps/app/.env.local` com URL + anon. Token da CLI
+  com escopo só do projeto (90 dias) em `.env.supabase.local`. Falta o usuário criar a própria conta no painel.
+
 ## Armadilhas conhecidas
+- CLI do Supabase: use `pnpm sb … --remote` (sem `--remote`, `db push` mira o Docker local). **Não** rode
+  `pnpm sb config push`: o `config.toml` tem valores de desenvolvimento (confirmação de e-mail desligada, site
+  127.0.0.1). Mudanças de Auth no hospedado vão pela Management API, campo a campo.
 
 - Windows: rode comandos na raiz `glife/`. Avisos "LF will be replaced by CRLF" do git são inofensivos.
 - `python -m http.server` (ou servidor estático simples) dá 404 ao recarregar rotas como `/notas`; navegue a
@@ -101,6 +109,6 @@ pnpm typecheck     # tsc em todos os pacotes
 pnpm test          # vitest: domain, app (lint/tema) e banco (PGlite)
 pnpm build:web     # export web do app (apps/app/dist)
 pnpm web           # app no navegador (dev)
-pnpm sb db push    # CLI do Supabase com as credenciais deste projeto (.env.supabase.local)
+pnpm sb db push --remote  # CLI do Supabase com as credenciais deste projeto (.env.supabase.local)
 pnpm codex         # abre o Codex já continuando a partir da próxima tarefa
 ```
