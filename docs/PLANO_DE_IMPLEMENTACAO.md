@@ -16,7 +16,7 @@ Objetivo: o mesmo app abre no Android e no navegador, com login, banco local e s
 |---|---------|---------------|--------|
 | 0.1 | Monorepo pnpm: `apps/app`, `packages/domain`, `supabase/`, `tools/` | `pnpm install` na raiz funciona | ✅ |
 | 0.2 | App Expo SDK 58 + Expo Router + TypeScript, alias `@/` | `pnpm web` abre no navegador | ✅ |
-| 0.3 | Design system: tokens (`shared/ui/theme`), fontes Inter + Source Serif 4, tema claro/escuro, componentes `Text`, `Button`, `Input`, `ListItem`, `Sheet`, `Chip` | Tela de demonstração nos dois temas | ✅ |
+| 0.3 | Design system: tokens (`shared/ui/theme`), fontes Hanken Grotesk + Crimson Pro + JetBrains Mono (direção Glaciar/Sinóptico, `docs/design-system/`, desde 23/11/2026), tema claro/escuro, componentes `Text`, `Button`, `Input`, `ListItem`, `Sheet`, `Chip` | Tela de demonstração nos dois temas | ✅ |
 | 0.4 | Navegação: 4 abas (Hoje · Notas · Finanças · Bíblia) + botão central da caixa de entrada | Navega entre abas no web e no Android | 🟡 web ok; falta Android |
 | 0.5 | `packages/domain`: base de entidade (UUID, timestamps, `deleted_at`), Zod, `links` (parser de `[[...]]` e URIs `glife://`) com testes | `pnpm test` verde | ✅ |
 | 0.6 | ESLint com `eslint-plugin-boundaries` aplicando as 6 regras de importação | Import proibido quebra o lint | ✅ testado em `apps/app/tests/boundaries.test.ts` |

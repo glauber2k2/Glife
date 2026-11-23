@@ -2,6 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { AccessibilityInfo, StyleSheet, useColorScheme, type ImageStyle, type TextStyle, type ViewStyle } from 'react-native';
 
 import {
+  field,
   hairlineWidth,
   icon,
   layout,
@@ -36,6 +37,7 @@ export interface Theme {
   layout: typeof layout;
   opacity: typeof opacity;
   size: typeof size;
+  field: typeof field;
   hairline: number;
 }
 
@@ -63,6 +65,7 @@ function buildTheme(scheme: ColorScheme): Theme {
     layout,
     opacity,
     size,
+    field,
     hairline: hairlineWidth,
   };
 }

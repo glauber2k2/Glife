@@ -1,20 +1,25 @@
 import * as Haptics from 'expo-haptics';
 import type { LucideIcon } from 'lucide-react-native';
 import { useEffect } from 'react';
-import { ActivityIndicator, Platform, Pressable, View, type PressableProps } from 'react-native';
+import { Platform, Pressable, View, type PressableProps } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 
 import { Icon } from './Icon';
+import { Spinner } from './Spinner';
 import { Text } from './Text';
 import { resolveSpring } from './motion';
 import { makeStyles, useTheme } from './theme';
 import { useReduceMotion } from './theme/ThemeProvider';
 
-export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger';
+/** subtle: ghost em tom secundário, para saídas discretas ("Sair") */
+export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'subtle' | 'danger';
+export type ButtonSize = 'md' | 'sm';
 
 export interface ButtonProps extends Omit<PressableProps, 'children' | 'style'> {
   label: string;
+  /** primary é a única ação de destaque da tela; secondary/ghost para o resto */
   variant?: ButtonVariant;
+  size?: ButtonSize;
   icon?: LucideIcon;
   loading?: boolean;
   /** retorno tátil leve — use em ações importantes (salvar gasto etc.) */
@@ -22,9 +27,11 @@ export interface ButtonProps extends Omit<PressableProps, 'children' | 'style'> 
   fullWidth?: boolean;
 }
 
+/** Botão em pílula (48 / 40 px). Afunda 0,96 no toque com a mola tap. */
 export function Button({
   label,
   variant = 'primary',
+  size = 'md',
   icon,
   loading,
   haptic,
@@ -39,7 +46,7 @@ export function Button({
   const t = useTheme();
   const isDisabled = disabled || loading;
   const reduceMotion = useReduceMotion();
-  const spring = resolveSpring('snappy', reduceMotion);
+  const spring = resolveSpring('tap', reduceMotion);
   const scale = useSharedValue<number>(t.pressScale.rest);
   const restScale = t.pressScale.rest;
   const animatedStyle = useAnimatedStyle(() => ({
@@ -51,9 +58,11 @@ export function Button({
   }, [reduceMotion, isDisabled, scale, restScale]);
 
   const fg = (
-    { primary: 'onAccent', danger: 'danger', ghost: 'accent', secondary: 'text' } as const
+    { primary: 'onAccent', danger: 'danger', ghost: 'accentInk', subtle: 'textSecondary', secondary: 'text' } as const
   )[variant];
-  const textTone = fg === 'text' ? 'primary' : fg;
+  const textTone = (
+    { onAccent: 'onAccent', danger: 'danger', accentInk: 'accent', textSecondary: 'secondary', text: 'primary' } as const
+  )[fg];
 
   return (
     <Pressable
@@ -79,6 +88,7 @@ export function Button({
         <Animated.View
           style={[
             s.base,
+            size === 'sm' ? s.sm : s.md,
             s[variant],
             pressed && (reduceMotion ? s.reducedPressed : variant === 'primary' ? s.primaryPressed : s.pressed),
             fullWidth && s.fullWidth,
@@ -88,11 +98,15 @@ export function Button({
         >
           <View style={s.content}>
             {loading ? (
-              <ActivityIndicator size="small" color={t.colors[fg]} />
+              <Spinner color={fg} />
             ) : (
-              icon && <Icon icon={icon} color={fg} />
+              icon && <Icon icon={icon} size={t.icon.small} color={fg} />
             )}
-            <Text variant="label" tone={textTone}>
+            <Text
+              variant="button"
+              tone={textTone}
+              style={[(variant === 'secondary' || variant === 'subtle') && s.mediumWeight, size === 'sm' && s.smallText]}
+            >
               {label}
             </Text>
           </View>
@@ -105,21 +119,24 @@ export function Button({
 const useStyles = makeStyles((t) => ({
   wrapper: { alignSelf: 'flex-start' },
   base: {
-    minHeight: t.touch.minTarget,
-    paddingHorizontal: t.space[4],
-    borderRadius: t.radius.field,
+    borderRadius: t.radius.full,
     alignItems: 'center',
     justifyContent: 'center',
     alignSelf: 'flex-start',
   },
+  md: { minHeight: t.size.button, paddingHorizontal: t.space[6] },
+  sm: { minHeight: t.size.buttonSmall, paddingHorizontal: t.space[4] },
   content: { flexDirection: 'row', alignItems: 'center', gap: t.space[2] },
   primary: { backgroundColor: t.colors.accent },
   primaryPressed: { backgroundColor: t.colors.accentPressed },
-  secondary: { borderWidth: t.hairline, borderColor: t.colors.hairline, backgroundColor: t.colors.surface },
-  ghost: { backgroundColor: 'transparent', paddingHorizontal: t.space[2] },
+  secondary: { borderWidth: t.hairline, borderColor: t.colors.hairline, backgroundColor: 'transparent' },
+  ghost: { backgroundColor: 'transparent', paddingHorizontal: t.space[3] + t.space[0.5] },
+  subtle: { backgroundColor: 'transparent', paddingHorizontal: t.space[3] + t.space[0.5] },
   danger: { borderWidth: t.hairline, borderColor: t.colors.hairline, backgroundColor: 'transparent' },
-  pressed: { backgroundColor: t.colors.surfacePressed },
+  pressed: { backgroundColor: t.colors.soft },
   reducedPressed: { opacity: t.opacity.pressed },
   fullWidth: { alignSelf: 'stretch' },
   disabled: { opacity: t.opacity.disabled },
+  mediumWeight: { fontFamily: t.type.chip.font },
+  smallText: { fontSize: t.type.chip.fontSize },
 }));

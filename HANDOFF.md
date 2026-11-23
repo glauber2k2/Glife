@@ -38,7 +38,8 @@ Formato: `- [ ] Título` + Arquivos permitidos · Aceite (verificável) · Cuida
 
 - [x] **T7 — Interfaces de repositório no domain (só Claude)** — ver "Estado atual".
 - [x] **T8 — Login e-mail + senha + MFA, sessão aal2 (0.12) (só Claude)** — implementada; falta validar com a
-  conta real (o usuário cria no painel) e no Android. Prototipagem pendente: `docs/prototipos/acesso.md`.
+  conta real (o usuário cria no painel) e no Android. Telas refeitas pelo protótipo "Glife Acesso" (T9).
+- [x] **T9 — Design system Glaciar/Sinóptico + telas de acesso do protótipo (só Claude)** — ver "Estado atual".
 - [ ] **Bloqueadas (dependem do usuário):** 0.8 PowerSync (contas Supabase/PowerSync), 0.11 APK (Android Studio),
   aplicar migrações no projeto hospedado.
 
@@ -81,12 +82,22 @@ Formato: `- [ ] Título` + Arquivos permitidos · Aceite (verificável) · Cuida
   composição na rota); `shared/lib/supabase.ts` (sessão no SecureStore em pedaços no Android, localStorage no web).
   Rotas com `Stack.Protected`: o app só abre em `ready` (aal2). Web conferido: sem sessão, `/` e `/ajustes` levam a
   `/entrar`, sem erros no console. **226 testes**; build web ok. Login real e Android não validados.
+- T9: design system novo em `docs/design-system/` (tokens, guias, componentes de referência). `tokens.ts` migrado
+  (cores Glaciar, Hanken Grotesk/Crimson Pro/JetBrains Mono, pílulas, raio 16/20/30, margem 22, molas tap/standard/
+  emphasis/gentle). Novos em `shared/ui`: `IconButton`, `Spinner`, `Reveal`/`riseIn`, rótulo flutuante no `Input`,
+  `Section` com linha + 18 px, `TabBar` com pílula suave e + contornado. Acesso conforme o protótipo do Claude Design
+  (`Glife Acesso.dc.html`): wordmark, mostrar senha, mensagens com ícone e tom, 6 casas com envio no 6º dígito, QR
+  em papel claro, chave em grupos de 4 com Copiar, cabeçalho com Sair, seção Conta em Ajustes. **253 testes**.
+  Entrar conferida no web (claro/escuro); Proteja/Verificação só visíveis com a conta real. Sem a transição de
+  elemento compartilhado do wordmark e sem SegmentedControl em Aparência (ainda chips).
 
 ## Armadilhas conhecidas
 - CLI do Supabase: use `pnpm sb … --remote` (sem `--remote`, `db push` mira o Docker local). **Não** rode
   `pnpm sb config push`: o `config.toml` tem valores de desenvolvimento (confirmação de e-mail desligada, site
   127.0.0.1). Mudanças de Auth no hospedado vão pela Management API, campo a campo.
 
+- Reanimated 4.7 na web não registra animações de entrada personalizadas (`Keyframe`, `withInitialValues`):
+  o item fica com `visibility: hidden` para sempre. Use `riseIn` de `@/shared/ui` (predefinida na web).
 - Windows: rode comandos na raiz `glife/`. Avisos "LF will be replaced by CRLF" do git são inofensivos.
 - `python -m http.server` (ou servidor estático simples) dá 404 ao recarregar rotas como `/notas`; navegue a
   partir de `/`.

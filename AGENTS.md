@@ -42,8 +42,9 @@ SQLite/PowerSync/Supabase). Arquitetura completa e regras em `CLAUDE.md`; plano 
   entidades passam pela feature `links`. O ESLint barra o resto.
 - **SOLID:** responsabilidade única por módulo; dependa de interfaces (ex.: `ThemePreferenceStore`,
   repositórios), com a implementação concreta injetada na raiz (`src/app/_layout.tsx`).
-- **Interface:** só componentes de `@/shared/ui` (`Screen`, `Section`, `Text`, `Button`, `Input`, `ListItem`,
-  `Sheet`, `Chip`, `EmptyState`, `Icon`); estilos com `makeStyles((t) => ({ … }))` usando apenas tokens
+- **Interface:** design system Glife em `docs/design-system/` (Hanken Grotesk, Crimson Pro só para ler, azul-aço, pílulas).
+  Só componentes de `@/shared/ui` (`Screen`, `Section`, `Text`, `Button`, `IconButton`, `Input`, `ListItem`,
+  `Sheet`, `Chip`, `EmptyState`, `Icon`, `Spinner`, `Reveal`); estilos com `makeStyles((t) => ({ … }))` usando apenas tokens
   (`t.space`, `t.colors`, `t.size`, `t.layout`, `t.opacity`…). **Nada de hex ou número solto** — crie um token.
   Modo claro e escuro sempre. Textos da interface em **português do Brasil**.
 - **Movimento:** Reanimated, molas amortecidas 200–350 ms, sem quique; respeite "reduzir movimento".

@@ -4,7 +4,7 @@ App único (Expo SDK 58 + Expo Router + TypeScript) para Android, web e futurame
 Local-first: tudo é lido/gravado no SQLite do aparelho e sincronizado com o Supabase via PowerSync.
 Módulos: notas, finanças, investimentos, compras, agenda, dieta, Bíblia/devocionais, galeria, caixa de entrada com IA.
 O coração é o **grafo de links**: toda entidade tem UUID e endereço `glife://<tipo>/<ref>`; qualquer uma aponta para qualquer outra.
-Planejamento: `../Glife — Planejamento do Projeto.md` · Design: `../Glife — Design System.html` · Plano por fases: `docs/PLANO_DE_IMPLEMENTACAO.md`.
+Planejamento: `../Glife — Planejamento do Projeto.md` · Design: `docs/design-system/` (tokens, guias e componentes; página em `../Glife — Design System.html`) · Plano por fases: `docs/PLANO_DE_IMPLEMENTACAO.md`.
 
 ## Estrutura
 
@@ -41,14 +41,18 @@ Em `packages/domain`, imports relativos usam extensão `.ts` explícita (compat�
 
 ## Interface
 
-Sofisticada e minimalista: só tokens de `shared/ui/theme/tokens.ts` (lint barra hex soltos),
-uma cor de destaque, sem sombras/gradientes, separação por espaço e hairlines, modo escuro de primeira classe.
+Direção **Glaciar** (cor/forma) + **Sinóptico** (tipo): neutros azulados, um destaque azul-aço, Hanken Grotesk na interface
+(títulos grandes e leves), Crimson Pro só para leitura, controles em pílula, campos raio 16, margem lateral 22.
+Só tokens de `shared/ui/theme/tokens.ts` (lint barra hex soltos), sem sombras/gradientes e **sem caixas para agrupar**:
+blocos separados por 18 px + linha de 1 px. Modo escuro de primeira classe. Sem emoji; Lucide só contorno 1,5.
 **Movimento como linguagem, com sobriedade:** toda mudança de estado anima (toque que afunda, item que se risca e
 recolhe, card que expande até o detalhe, números que contam, folhas/abas que deslizam, listas que se reorganizam).
-Molas amortecidas de 200–350 ms, sem quique nem enfeite; nada bloqueia o toque; respeitar “reduzir movimento”.
+Quatro molas (`tap` 200, `standard` 300, `emphasis` 350, `gentle` 320 ms), toque afunda 0,96, listas em cascata de 40 ms
+(`Reveal`), sem quique nem enfeite; nada bloqueia o toque; respeitar “reduzir movimento”.
+Na web, animações de entrada personalizadas do Reanimated não funcionam: use `riseIn` (esmaece na web, sobe no Android).
 Implementação com React Native Reanimated (layout + entrada/saída) e haptics leve nas ações importantes (item 0.13).
 Estilos via `makeStyles((t) => ({...}))`; textos via `<Text variant tone>`; ícones Lucide via `<Icon>`.
-Telas usam os componentes de `@/shared/ui` (`Screen`, `Section`, `Text`, `Button`, `Input`, `ListItem`, `Sheet`, `Chip`, `EmptyState`).
+Telas usam os componentes de `@/shared/ui` (`Screen`, `Section`, `Text`, `Button`, `IconButton`, `Input`, `ListItem`, `Sheet`, `Chip`, `Spinner`, `Reveal`, `EmptyState`).
 Conferir toda tela nos dois temas (Ajustes → Aparência) e no Android e web.
 
 ## Comandos (na raiz `glife/`)

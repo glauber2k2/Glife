@@ -1,0 +1,64 @@
+/* Cor — direção Glaciar. Neutros azulados frios, um destaque azul-aço, três estados, quatro marca-textos.
+   Claro em :root; escuro em [data-theme="escuro"]. Os dois modos são desenhados juntos, nenhum é inversão do outro. */
+:root{
+  /* Neutros */
+  --bg:#F1F4F7;
+  --soft:#E3EAF1;
+  --line:#D9E1E9;
+  --ink1:#14273B;
+  --ink2:#475A6D;
+  --ink3:#5F7184;
+  /* Destaque */
+  --accent:#3A6690;
+  --accent-ink:#345D84;
+  --on-accent:#FFFFFF;
+  /* Estados */
+  --ok:#2F8A6E;
+  --warn:#B97F1F;
+  --err:#C2453D;
+  /* Marca-texto (só leitura) */
+  --hl1:#CFE3F5; /* gelo  — padrão, promessas */
+  --hl2:#F4E6B5; /* mel   — ordens, ações */
+  --hl3:#D3EBDD; /* menta — gratidão, louvor */
+  --hl4:#E9D6EE; /* lilás — dúvidas, estudar depois */
+  --scrim:rgba(16,28,40,0.32);
+  /* Moldura de aparelho (mockups) */
+  --device-bezel:#0b0d10;
+
+  /* Aliases semânticos */
+  --surface-page:var(--bg);
+  --surface-soft:var(--soft);
+  --surface-inverse:var(--ink1);
+  --border-hairline:var(--line);
+  --border-focus:var(--accent);
+  --text-primary:var(--ink1);
+  --text-secondary:var(--ink2);
+  --text-tertiary:var(--ink3);
+  --text-link:var(--accent-ink);
+  --text-on-inverse:var(--bg);
+  --text-positive:var(--ok);
+  --text-warning:var(--warn);
+  --text-error:var(--err);
+  --icon-default:currentColor;
+  --icon-inactive:var(--ink3);
+  --icon-active:var(--accent-ink);
+}
+[data-theme="escuro"]{
+  --bg:#0F1822;
+  --soft:#192633;
+  --line:#233242;
+  --ink1:#E8EFF5;
+  --ink2:#A3B3C2;
+  --ink3:#7A8DA0;
+  --accent:#7FA9D1;
+  --accent-ink:#8DB5DB;
+  --on-accent:#0F1822;
+  --ok:#5CC2A0;
+  --warn:#E4B260;
+  --err:#EE7F76;
+  --hl1:#24425E;
+  --hl2:#5A4E26;
+  --hl3:#24493A;
+  --hl4:#4A3554;
+  --scrim:rgba(0,0,0,0.55);
+}

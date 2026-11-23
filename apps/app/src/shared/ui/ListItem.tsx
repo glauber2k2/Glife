@@ -1,9 +1,10 @@
 import type { LucideIcon } from 'lucide-react-native';
 import { useMemo, type ReactNode } from 'react';
 import { Platform, Pressable, View } from 'react-native';
-import Animated, { Easing, FadeIn, FadeOut, LinearTransition } from 'react-native-reanimated';
+import Animated, { Easing, FadeOut, LinearTransition } from 'react-native-reanimated';
 
 import { Icon } from './Icon';
+import { riseIn } from './Reveal';
 import { Text } from './Text';
 import { makeStyles, useTheme } from './theme';
 import { useReduceMotion } from './theme/ThemeProvider';
@@ -30,21 +31,21 @@ export function ListItem({ title, subtitle, icon, trailing, onPress, separator =
     return {
       // Reanimated ainda não oferece springify nas animações de layout da web.
       layout: Platform.OS === 'web'
-        ? LinearTransition.duration(t.spring.standard.duration).easing(Easing.out(Easing.cubic))
-        : LinearTransition.springify(t.spring.standard.duration).dampingRatio(t.spring.standard.dampingRatio),
-      entering: FadeIn.duration(t.motion.base),
-      exiting: FadeOut.duration(t.motion.base),
+        ? LinearTransition.duration(t.spring.gentle.duration).easing(Easing.out(Easing.cubic))
+        : LinearTransition.springify(t.spring.gentle.duration).dampingRatio(t.spring.gentle.dampingRatio),
+      entering: riseIn(t.motion.enterOffset, t.motion.standard),
+      exiting: FadeOut.duration(t.motion.tap),
     };
   }, [animated, reduceMotion, t]);
   const body = (
     <>
       {icon && (
         <View style={s.leading}>
-          <Icon icon={icon} color="textSecondary" />
+          <Icon icon={icon} size={t.icon.small} color="textSecondary" />
         </View>
       )}
       <View style={s.texts}>
-        <Text variant="bodyMedium" numberOfLines={1}>
+        <Text variant="item" numberOfLines={1}>
           {title}
         </Text>
         {subtitle && (
@@ -86,11 +87,11 @@ const useStyles = makeStyles((t) => ({
     alignItems: 'center',
     gap: t.space[3],
     minHeight: t.touch.minTarget + t.space[2],
-    paddingVertical: t.space[3],
+    paddingVertical: t.space[3] + t.space[0.5],
   },
-  pressed: { opacity: t.opacity.pressed },
+  pressed: { backgroundColor: t.colors.soft },
   separator: { borderBottomWidth: t.hairline, borderBottomColor: t.colors.hairline },
-  leading: { width: t.icon.size + t.space[1], alignItems: 'center' },
+  leading: { width: t.icon.size, alignItems: 'center' },
   texts: { flex: 1, gap: t.space[0.5] },
   trailing: { alignItems: 'flex-end' },
 }));

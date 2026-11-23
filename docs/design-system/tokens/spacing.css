@@ -1,0 +1,36 @@
+/* Espaço (base 4), raios e linhas. Sem sombras em nenhum nível. */
+:root{
+  --s-1:4px;
+  --s-2:8px;
+  --s-3:12px;
+  --s-4:16px;
+  --s-5:20px;
+  --gutter:22px;   /* margem lateral de tela */
+  --s-6:24px;
+  --s-8:32px;
+  --s-12:48px;
+  --block-gap:18px; /* respiro entre blocos, sempre com uma linha de 1px */
+
+  --r-pill:999px;  /* botões, chips, busca, abas, toolbar */
+  --r-field:16px;  /* campos */
+  --r-card:20px;   /* card em repouso */
+  --r-sheet:30px;  /* topo da bottom sheet */
+  --r-device:48px;
+
+  --hairline:1px;
+  --strike:1.5px;
+  --track:3px;
+  --icon-stroke:1.5;
+
+  --h-btn:48px;
+  --h-btn-s:40px;
+  --h-field:54px;
+  --h-search:46px;
+  --h-chip:34px;
+  --h-chip-s:32px;
+  --h-link:26px;
+  --h-tabbar:70px;
+  --h-toast:40px;
+
+  --shadow-none:none;
+}

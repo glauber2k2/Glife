@@ -1,0 +1,24 @@
+/* Movimento: molas amortecidas (fluido, quase sem overshoot). Curvas geradas por spring(ζ, ms) e exportadas como CSS linear(). */
+:root{
+  /* Toque · ζ 0,9 · 200 ms — afundar no toque, checkbox, chip, troca de cor */
+  --e-tap:linear(0, 0.0164, 0.0584, 0.1174, 0.1865, 0.2606, 0.336, 0.41, 0.4807, 0.5468, 0.6077, 0.6629, 0.7125, 0.7565, 0.7952, 0.829, 0.8582, 0.8833, 0.9047, 0.9227, 0.938, 0.9506, 0.9612, 0.9698, 0.9769, 0.9826, 0.9872, 0.9908, 0.9937, 0.9959, 0.9976, 0.9989, 0.9998, 1.0005, 1.001, 1.0013, 1.0014, 1.0015, 1.0015, 1.0015, 1); /* @kind other */
+  --d-tap:200ms; /* @kind other */
+  /* Padrão · ζ 0,85 · 300 ms — abas, entradas de lista, foco, segmentado */
+  --e-std:linear(0, 0.0184, 0.0654, 0.1312, 0.208, 0.2898, 0.3724, 0.4527, 0.5286, 0.5987, 0.6622, 0.719, 0.7689, 0.8123, 0.8496, 0.8812, 0.9077, 0.9297, 0.9477, 0.9622, 0.9739, 0.983, 0.9901, 0.9954, 0.9994, 1.0022, 1.0041, 1.0053, 1.006, 1.0063, 1.0062, 1.006, 1.0056, 1.0052, 1.0047, 1.0041, 1.0036, 1.0031, 1.0027, 1.0023, 1); /* @kind other */
+  --d-std:300ms; /* @kind other */
+  /* Ênfase · ζ 0,82 · 350 ms — folha, card que vira tela, barra de seleção, números */
+  --e-emph:linear(0, 0.0197, 0.0702, 0.1407, 0.2226, 0.3096, 0.397, 0.4814, 0.5605, 0.6329, 0.6978, 0.7551, 0.8048, 0.8473, 0.8831, 0.9128, 0.937, 0.9566, 0.9721, 0.984, 0.9931, 0.9998, 1.0046, 1.0078, 1.0097, 1.0108, 1.0111, 1.0109, 1.0104, 1.0096, 1.0087, 1.0078, 1.0068, 1.0058, 1.005, 1.0041, 1.0034, 1.0028, 1.0022, 1.0017, 1); /* @kind other */
+  --d-emph:350ms; /* @kind other */
+  /* Suave · ζ 0,95 · 320 ms — recolher, reordenar, pintar o marca-texto */
+  --e-gentle:linear(0, 0.0147, 0.0525, 0.1056, 0.1681, 0.2355, 0.3045, 0.3727, 0.4385, 0.5006, 0.5586, 0.6119, 0.6604, 0.7042, 0.7435, 0.7784, 0.8093, 0.8365, 0.8603, 0.8811, 0.8991, 0.9146, 0.928, 0.9395, 0.9493, 0.9577, 0.9648, 0.9708, 0.9758, 0.9801, 0.9837, 0.9867, 0.9891, 0.9912, 0.9929, 0.9943, 0.9955, 0.9964, 0.9972, 0.9978, 1); /* @kind other */
+  --d-gentle:320ms; /* @kind other */
+  --stagger:40ms; /* @kind other */
+  --enter-y:12px; /* @kind other */
+  --press:0.96; /* @kind other */
+  --press-small:0.9; /* @kind other */
+  --collapse-delay:650ms; /* @kind other */
+  --toast-duration:2200ms; /* @kind other */
+}
+@media (prefers-reduced-motion: reduce){
+  :root{--d-tap:1ms; /* @kind other */--d-std:1ms; /* @kind other */--d-emph:1ms; /* @kind other */--d-gentle:1ms; /* @kind other */--stagger:0ms; /* @kind other */--enter-y:0px; /* @kind other */}
+}

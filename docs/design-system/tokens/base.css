@@ -1,0 +1,4 @@
+/* Base mínima: corpo da página na fonte de interface, com suavização. */
+body{margin:0;background:var(--bg);color:var(--ink1);font-family:var(--font-ui);-webkit-font-smoothing:antialiased;}
+a{color:var(--accent-ink);text-decoration:none;}
+a:hover{color:var(--ink1);}

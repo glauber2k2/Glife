@@ -15,22 +15,23 @@ export interface SheetProps {
   visible: boolean;
   onClose: () => void;
   title?: string;
+  subtitle?: string;
   children: ReactNode;
 }
 
-/** Folha inferior simples. Separação por cor de superfície, sem sombra. */
-export function Sheet({ visible, onClose, title, children }: SheetProps) {
+/** Folha inferior: sobe com a mola de ênfase; separa da página pelo véu e por uma linha de 1 px, sem sombra. */
+export function Sheet({ visible, onClose, title, subtitle, children }: SheetProps) {
   const s = useStyles();
   const t = useTheme();
   const insets = useSafeAreaInsets();
   const reduceMotion = useReduceMotion();
-  const spring = resolveSpring('standard', reduceMotion);
+  const spring = resolveSpring('emphasis', reduceMotion);
   const { height } = useWindowDimensions();
   const [presented, setPresented] = useState(visible);
   const transition = useRef(0);
   const hidden = t.opacity.hidden;
   const full = t.opacity.full;
-  const fadeDuration = t.motion.base;
+  const fadeDuration = t.motion.standard;
   const progress = useSharedValue<number>(hidden);
   const scrimOpacity = useSharedValue<number>(hidden);
   const sheetHeight = useSharedValue(height);
@@ -77,10 +78,19 @@ export function Sheet({ visible, onClose, title, children }: SheetProps) {
         <Animated.View
           accessibilityViewIsModal
           onLayout={(event) => sheetHeight.set(event.nativeEvent.layout.height)}
-          style={[s.sheet, { paddingBottom: t.space[6] + insets.bottom }, sheetStyle]}
+          style={[s.sheet, { paddingBottom: t.space[6] + t.space[1] + insets.bottom }, sheetStyle]}
         >
           <View style={s.grabber} />
-          {title && <Text variant="heading">{title}</Text>}
+          {(title || subtitle) && (
+            <View style={s.titles}>
+              {title && <Text variant="heading">{title}</Text>}
+              {subtitle && (
+                <Text variant="small" tone="tertiary">
+                  {subtitle}
+                </Text>
+              )}
+            </View>
+          )}
           {children}
         </Animated.View>
       </KeyboardAvoidingView>
@@ -96,11 +106,16 @@ const useStyles = makeStyles((t) => ({
     backgroundColor: t.colors.scrim,
   },
   sheet: {
-    backgroundColor: t.colors.surface,
-    borderTopLeftRadius: t.radius.card,
-    borderTopRightRadius: t.radius.card,
-    padding: t.space[6],
-    gap: t.space[4],
+    backgroundColor: t.colors.bg,
+    borderTopWidth: t.hairline,
+    borderLeftWidth: t.hairline,
+    borderRightWidth: t.hairline,
+    borderColor: t.colors.hairline,
+    borderTopLeftRadius: t.radius.sheet,
+    borderTopRightRadius: t.radius.sheet,
+    paddingTop: t.space[2] + t.space[0.5],
+    paddingHorizontal: t.space[5],
+    gap: t.space[3] + t.space[0.5],
     width: '100%',
     maxWidth: t.layout.sheetMaxWidth,
     alignSelf: 'center',
@@ -111,6 +126,7 @@ const useStyles = makeStyles((t) => ({
     height: t.size.grabberHeight,
     borderRadius: t.radius.full,
     backgroundColor: t.colors.hairline,
-    marginTop: -t.space[2],
+    marginBottom: t.space[1],
   },
+  titles: { gap: t.space[1] },
 }));

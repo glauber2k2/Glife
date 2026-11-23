@@ -34,12 +34,6 @@ export function SettingsScreen({ account }: { account?: ReactNode } = {}) {
 
   return (
     <Screen title="Ajustes">
-      {account && (
-        <Section title="Conta">
-          <View style={s.stack}>{account}</View>
-        </Section>
-      )}
-
       <Section title="Aparência">
         <View style={s.row}>
           {THEMES.map((o) => (
@@ -53,20 +47,28 @@ export function SettingsScreen({ account }: { account?: ReactNode } = {}) {
         </View>
       </Section>
 
+      {account && (
+        <Section title="Conta">
+          <View style={s.stack}>{account}</View>
+        </Section>
+      )}
+
       <Section title="Design system">
         <View style={s.stack}>
-          <Text variant="display">Display 32</Text>
-          <Text variant="title">Título 24</Text>
-          <Text variant="heading">Seção 20</Text>
-          <Text>Texto corrido 16, entrelinha generosa para leitura confortável.</Text>
+          <Text variant="display" numeric>R$ 3.184,20</Text>
+          <Text variant="title">Título 34</Text>
+          <Text variant="heading">Subtítulo 20</Text>
+          <Text variant="item">Item 17</Text>
+          <Text>Texto 15 em Hanken Grotesk, para toda a interface.</Text>
           <Text variant="scripture">
-            Porque Deus amou o mundo de tal maneira… (serifa 18, modo leitura)
+            Porque Deus amou o mundo de tal maneira… (Crimson Pro 20, só para ler)
           </Text>
+          <Text variant="label" tone="tertiary">Rótulo de bloco</Text>
           <Text variant="caption" tone="tertiary">
-            Legenda 12
+            Legenda 12,5
           </Text>
           <View style={s.row}>
-            {(['yellow', 'green', 'blue', 'pink'] as const).map((c) => (
+            {(['ice', 'honey', 'mint', 'lilac'] as const).map((c) => (
               <View key={c} style={[s.swatch, { backgroundColor: t.colors.highlight[c] }]} />
             ))}
           </View>
@@ -77,7 +79,7 @@ export function SettingsScreen({ account }: { account?: ReactNode } = {}) {
           </View>
           <Input label="Descrição" placeholder="Mercado" hint="Opcional" />
           <View>
-            <ListItem icon={Receipt} title="Atacadão" subtitle="Mercado · Nubank" trailing={<Text variant="label">R$ 87,50</Text>} onPress={() => {}} />
+            <ListItem icon={Receipt} title="Atacadão" subtitle="Mercado · Nubank" trailing={<Text variant="small" numeric>R$ 87,50</Text>} onPress={() => {}} />
             <ListItem icon={FileText} title="Compras do mês" subtitle="Nota" separator={false} onPress={() => {}} />
           </View>
           <Button label="Abrir folha" variant="secondary" onPress={() => setSheet(true)} />
@@ -109,7 +111,7 @@ export function SettingsScreen({ account }: { account?: ReactNode } = {}) {
       </Section>
 
       <Sheet visible={sheet} onClose={() => setSheet(false)} title="Folha">
-        <Text tone="secondary">Folhas usam superfície e cantos de 12 px, sem sombra.</Text>
+        <Text tone="secondary">A folha sobe com a mola de ênfase; véu e uma linha de 1 px a separam da página, sem sombra.</Text>
         <Button label="Fechar" fullWidth onPress={() => setSheet(false)} />
       </Sheet>
     </Screen>

@@ -1,6 +1,12 @@
-import { Inter_400Regular, Inter_500Medium, Inter_600SemiBold } from '@expo-google-fonts/inter';
+import { CrimsonPro_400Regular, CrimsonPro_400Regular_Italic, CrimsonPro_500Medium } from '@expo-google-fonts/crimson-pro';
+import {
+  HankenGrotesk_300Light,
+  HankenGrotesk_400Regular,
+  HankenGrotesk_500Medium,
+  HankenGrotesk_600SemiBold,
+} from '@expo-google-fonts/hanken-grotesk';
+import { JetBrainsMono_400Regular } from '@expo-google-fonts/jetbrains-mono';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { SourceSerif4_400Regular, SourceSerif4_600SemiBold } from '@expo-google-fonts/source-serif-4';
 import { ThemeProvider as NavigationThemeProvider, Stack } from 'expo-router';
 import { useFonts } from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
@@ -42,7 +48,7 @@ function RootStack() {
           headerShown: false,
           contentStyle: { backgroundColor: t.colors.bg },
           animation: animation.stack,
-          animationDuration: t.motion.base,
+          animationDuration: t.motion.standard,
         }}
       >
         {/* O app só abre com sessão aal2; o banco também recusa qualquer outra (RLS). */}
@@ -64,11 +70,14 @@ function RootStack() {
 
 export default function RootLayout() {
   const [loaded, error] = useFonts({
-    Inter_400Regular,
-    Inter_500Medium,
-    Inter_600SemiBold,
-    SourceSerif4_400Regular,
-    SourceSerif4_600SemiBold,
+    HankenGrotesk_300Light,
+    HankenGrotesk_400Regular,
+    HankenGrotesk_500Medium,
+    HankenGrotesk_600SemiBold,
+    CrimsonPro_400Regular,
+    CrimsonPro_400Regular_Italic,
+    CrimsonPro_500Medium,
+    JetBrainsMono_400Regular,
   });
 
   if (!loaded && !error) return null;

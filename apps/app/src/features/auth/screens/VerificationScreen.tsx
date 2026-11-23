@@ -1,14 +1,20 @@
-import { normalizeTotpCode, type TotpEnrollment } from '@glife/domain/auth';
+import { normalizeTotpCode, type AuthErrorCode, type TotpEnrollment } from '@glife/domain/auth';
+import * as Clipboard from 'expo-clipboard';
+import { Check, CircleUser, Copy, RotateCw } from 'lucide-react-native';
 import { useEffect, useState } from 'react';
 import { View } from 'react-native';
+import Animated, { FadeIn } from 'react-native-reanimated';
 import { SvgXml } from 'react-native-svg';
 
-import { Button, Text, makeStyles, useTheme } from '@/shared/ui';
+import { Button, Icon, Spinner, Text, makeStyles, useReduceMotion, useTheme } from '@/shared/ui';
 
-import { AuthLayout } from '../components/AuthLayout';
+import { AuthBlock, AuthStep } from '../components/AuthLayout';
+import { AuthMessage } from '../components/AuthMessage';
 import { CodeField } from '../components/CodeField';
+import { formatTotpSecret } from '../components/otp';
 import { useAuth } from '../hooks/AuthProvider';
-import { authErrorMessage, useAuthAction } from '../hooks/useAuthAction';
+import { authMessage, errorCodeOf, type AuthContext } from '../hooks/messages';
+import { useAuthAction } from '../hooks/useAuthAction';
 
 /** Segunda etapa: cadastra o autenticador (primeira vez) ou pede o código. */
 export function VerificationScreen() {
@@ -17,84 +23,253 @@ export function VerificationScreen() {
 }
 
 function VerifyTotp() {
+  const s = useStyles();
+  const t = useTheme();
   const { service, state } = useAuth();
-  const { busy, error, run } = useAuthAction();
-  const [code, setCode] = useState('');
-  const submit = () => run(() => service.verifyTotp(code));
+  const action = useAuthAction();
+  const confirm = (code: string) => action.run(() => service.verifyTotp(code));
 
   return (
-    <AuthLayout title="Verificação">
-      <Text tone="secondary">
-        Digite o código que aparece no seu app autenticador{state?.email ? ` para ${state.email}` : ''}.
-      </Text>
-      <CodeField value={code} onChange={setCode} onSubmit={submit} />
-      {error && <Text tone="danger" accessibilityLiveRegion="polite">{error}</Text>}
-      <Button label="Confirmar" onPress={submit} loading={busy} disabled={!normalizeTotpCode(code)} fullWidth />
-      <Button label="Sair" variant="ghost" onPress={() => run(() => service.signOut())} />
-    </AuthLayout>
+    <AuthStep
+      title="Verificação"
+      onSignOut={() => void action.run(() => service.signOut())}
+      intro={
+        <>
+          <Text tone="secondary">Digite o código do seu app autenticador.</Text>
+          {state?.email && (
+            <View style={s.account}>
+              <Icon icon={CircleUser} size={t.icon.tiny} color="textTertiary" />
+              <Text variant="caption" tone="tertiary">
+                {state.email}
+              </Text>
+            </View>
+          )}
+        </>
+      }
+    >
+      <View style={s.codeGap} />
+      <CodeEntry context="verify" action={action} submitLabel={['Confirmar', 'Confirmando']} onSubmit={confirm} autoFocus />
+    </AuthStep>
   );
 }
 
 function EnrollTotp() {
   const s = useStyles();
-  const t = useTheme();
   const { service } = useAuth();
-  const { busy, error, setError, run } = useAuthAction();
+  const action = useAuthAction();
   const [enrollment, setEnrollment] = useState<TotpEnrollment | null>(null);
+  const [failure, setFailure] = useState<AuthErrorCode | null>(null);
   const [attempt, setAttempt] = useState(0);
-  const [code, setCode] = useState('');
 
   useEffect(() => {
     let active = true;
     service.startTotpEnrollment().then(
       (e) => active && setEnrollment(e),
-      (e: unknown) => active && setError(authErrorMessage(e)),
+      (e: unknown) => active && setFailure(errorCodeOf(e)),
     );
     return () => {
       active = false;
     };
-  }, [service, setError, attempt]);
+  }, [service, attempt]);
 
   const retry = () => {
-    setError(null);
+    setFailure(null);
     setAttempt((n) => n + 1);
   };
-  const submit = () => enrollment && run(() => service.confirmTotpEnrollment(enrollment.factorId, code));
+  const activate = (code: string) =>
+    enrollment && action.run(() => service.confirmTotpEnrollment(enrollment.factorId, code));
 
   return (
-    <AuthLayout title="Proteja sua conta">
-      <Text tone="secondary">
-        O Glife exige verificação em duas etapas. Leia o QR code com um app autenticador (Google Authenticator,
-        Microsoft Authenticator, 1Password…) e digite o código gerado.
-      </Text>
-      {enrollment ? (
-        <View style={s.qrBlock}>
-          <View style={s.qrPaper} accessibilityLabel="QR code para o app autenticador">
-            <SvgXml xml={enrollment.qrSvg} width={t.size.qrCode} height={t.size.qrCode} color={t.colors.qrInk} />
-          </View>
-          <Text variant="caption" tone="tertiary">Sem câmera? Digite esta chave no autenticador:</Text>
-          <Text selectable style={s.secret}>{enrollment.secret}</Text>
-        </View>
-      ) : (
-        !error && <Text tone="tertiary">Preparando…</Text>
-      )}
-      <CodeField value={code} onChange={setCode} onSubmit={() => void submit()} />
-      {error && <Text tone="danger" accessibilityLiveRegion="polite">{error}</Text>}
-      <Button
-        label="Ativar verificação"
-        onPress={() => void submit()}
-        loading={busy}
-        disabled={!enrollment || !normalizeTotpCode(code)}
-        fullWidth
+    <AuthStep
+      title="Proteja sua conta"
+      onSignOut={() => void action.run(() => service.signOut())}
+      intro={
+        <Text tone="secondary">
+          O Glife exige verificação em duas etapas: leia o QR code com um app autenticador e digite o código que ele
+          mostrar.
+        </Text>
+      }
+    >
+      <AuthBlock label="1 · Leia o QR code">
+        <Text variant="caption" tone="tertiary" style={s.apps}>
+          Google Authenticator, Microsoft Authenticator ou 1Password
+        </Text>
+        <QrBlock enrollment={enrollment} failure={failure} onRetry={retry} />
+      </AuthBlock>
+      <AuthBlock label="2 · Digite o código" last />
+      <CodeEntry
+        context="enroll"
+        action={action}
+        submitLabel={['Ativar verificação', 'Ativando']}
+        onSubmit={(code) => void activate(code)}
+        disabled={!enrollment}
       />
-      {!enrollment && error && <Button label="Tentar de novo" variant="secondary" onPress={retry} />}
-      <Button label="Sair" variant="ghost" onPress={() => run(() => service.signOut())} />
-    </AuthLayout>
+    </AuthStep>
+  );
+}
+
+function QrBlock({
+  enrollment,
+  failure,
+  onRetry,
+}: {
+  enrollment: TotpEnrollment | null;
+  failure: AuthErrorCode | null;
+  onRetry: () => void;
+}) {
+  const s = useStyles();
+  const t = useTheme();
+  const reduceMotion = useReduceMotion();
+  const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    if (!copied) return;
+    const timer = setTimeout(() => setCopied(false), t.motion.toast);
+    return () => clearTimeout(timer);
+  }, [copied, t.motion.toast]);
+
+  if (failure && !enrollment) {
+    return (
+      <View style={s.qrFailure}>
+        <AuthMessage
+          message={
+            failure === 'network'
+              ? authMessage('network', 'enroll')
+              : { text: 'Não foi possível gerar o QR code.', tone: 'danger', icon: 'alert' }
+          }
+        />
+        <Button label="Tentar de novo" variant="secondary" icon={RotateCw} onPress={onRetry} />
+      </View>
+    );
+  }
+
+  const fade = (delay: number) => (reduceMotion ? undefined : FadeIn.duration(t.motion.standard).delay(delay));
+  const copy = async () => {
+    if (!enrollment) return;
+    await Clipboard.setStringAsync(enrollment.secret);
+    setCopied(true);
+  };
+
+  return (
+    <View style={s.qrRow}>
+      {enrollment ? (
+        <Animated.View entering={fade(0)} style={s.qrPaper} accessibilityLabel="QR code para o app autenticador">
+          <SvgXml xml={enrollment.qrSvg} width={t.size.qrCode} height={t.size.qrCode} color={t.colors.qrInk} />
+        </Animated.View>
+      ) : (
+        <View style={s.qrLoading}>
+          <Spinner color="textTertiary" />
+          <Text variant="caption" tone="tertiary">
+            Preparando
+          </Text>
+        </View>
+      )}
+      <View style={s.keyColumn}>
+        <View style={s.keyText}>
+          <Text variant="caption" tone="tertiary">
+            Sem câmera? Digite a chave:
+          </Text>
+          {enrollment ? (
+            <Animated.View entering={fade(t.motion.stagger)}>
+              <Text variant="mono" selectable accessibilityLabel={`Chave: ${enrollment.secret}`}>
+                {formatTotpSecret(enrollment.secret).join('\n')}
+              </Text>
+            </Animated.View>
+          ) : (
+            <Text variant="small" tone="tertiary">
+              Gerando chave
+            </Text>
+          )}
+        </View>
+        <Button
+          label={copied ? 'Copiada' : 'Copiar'}
+          variant="secondary"
+          icon={copied ? Check : Copy}
+          disabled={!enrollment}
+          onPress={() => void copy()}
+        />
+      </View>
+    </View>
+  );
+}
+
+/** Seis casas, mensagem e botão. Envia sozinho no 6º dígito; o botão fica para quem prefere confirmar. */
+function CodeEntry({
+  context,
+  action,
+  submitLabel: [idle, working],
+  onSubmit,
+  disabled,
+  autoFocus,
+}: {
+  context: AuthContext;
+  action: ReturnType<typeof useAuthAction>;
+  submitLabel: [string, string];
+  onSubmit: (code: string) => void;
+  disabled?: boolean;
+  autoFocus?: boolean;
+}) {
+  const s = useStyles();
+  const { busy, error, setError } = action;
+  const [code, setCode] = useState('');
+  const valid = normalizeTotpCode(code);
+  const invalid = error === 'invalid_code';
+
+  const submit = (value: string) => {
+    if (!busy && normalizeTotpCode(value)) onSubmit(value);
+  };
+
+  return (
+    <View style={s.codeEntry}>
+      <CodeField
+        value={code}
+        onChange={(v) => {
+          setCode(v);
+          if (error) setError(null);
+        }}
+        onComplete={submit}
+        invalid={invalid}
+        disabled={disabled || busy}
+        autoFocus={autoFocus}
+      />
+      {error && <AuthMessage message={authMessage(error, context)} />}
+      <View style={s.action}>
+        <Button
+          label={busy ? working : idle}
+          loading={busy}
+          disabled={disabled || !valid}
+          onPress={() => submit(code)}
+          fullWidth
+        />
+      </View>
+    </View>
   );
 }
 
 const useStyles = makeStyles((t) => ({
-  qrBlock: { alignItems: 'center', gap: t.space[3] },
-  qrPaper: { padding: t.space[3], borderRadius: t.radius.card, backgroundColor: t.colors.qrPaper },
-  secret: { letterSpacing: t.space[0.5], textAlign: 'center' },
+  apps: { marginTop: t.space[2] },
+  account: { flexDirection: 'row', alignItems: 'center', gap: t.space[1.5] },
+  codeGap: { height: t.space[4] },
+  qrRow: { flexDirection: 'row', gap: t.space[5], marginTop: t.space[5], alignItems: 'stretch' },
+  qrPaper: {
+    width: t.size.qrBox,
+    height: t.size.qrBox,
+    padding: t.space[3],
+    borderRadius: t.radius.field,
+    backgroundColor: t.colors.qrPaper,
+  },
+  qrLoading: {
+    width: t.size.qrBox,
+    height: t.size.qrBox,
+    borderRadius: t.radius.field,
+    backgroundColor: t.colors.soft,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: t.space[2],
+  },
+  qrFailure: { marginTop: t.space[5], minHeight: t.size.qrBox, gap: t.space[4], alignItems: 'flex-start' },
+  keyColumn: { flex: 1, minWidth: 0, justifyContent: 'space-between', gap: t.space[3] },
+  keyText: { gap: t.space[2] },
+  codeEntry: { gap: t.space[4] },
+  action: { marginTop: t.space[4] },
 }));

@@ -9,25 +9,34 @@ export interface ScreenProps {
   title?: string;
   /** texto pequeno acima do título (ex.: data de hoje) */
   eyebrow?: string;
+  /** frase em serifa itálica abaixo do título */
+  subtitle?: string;
   children: ReactNode;
   scroll?: boolean;
+  /** coluna mais estreita (telas de acesso) */
+  maxWidth?: number;
 }
 
-/** Contêiner padrão: área segura, margens largas, coluna única centralizada no web. */
-export function Screen({ title, eyebrow, children, scroll = true }: ScreenProps) {
+/** Contêiner padrão: área segura, margem lateral de 22 px, coluna única centralizada no web. */
+export function Screen({ title, eyebrow, subtitle, children, scroll = true, maxWidth }: ScreenProps) {
   const s = useStyles();
   const content = (
-    <View style={s.column}>
+    <View style={[s.column, maxWidth !== undefined && { maxWidth }]}>
       {(title || eyebrow) && (
         <View style={s.header}>
           {eyebrow && (
-            <Text variant="caption" tone="tertiary">
-              {eyebrow.toUpperCase()}
+            <Text variant="eyebrow" tone="tertiary">
+              {eyebrow}
             </Text>
           )}
           {title && (
-            <Text variant="display" accessibilityRole="header">
+            <Text variant="title" accessibilityRole="header">
               {title}
+            </Text>
+          )}
+          {subtitle && (
+            <Text variant="subtitle" tone="tertiary">
+              {subtitle}
             </Text>
           )}
         </View>
@@ -50,8 +59,8 @@ export function Screen({ title, eyebrow, children, scroll = true }: ScreenProps)
 
 const useStyles = makeStyles((t) => ({
   root: { flex: 1, backgroundColor: t.colors.bg },
-  scroll: { paddingHorizontal: t.space[6], paddingTop: t.space[8], paddingBottom: t.space[12] },
+  scroll: { flexGrow: 1, paddingHorizontal: t.layout.gutter, paddingTop: t.space[6], paddingBottom: t.space[12] },
   fill: { flex: 1 },
-  column: { width: '100%', maxWidth: t.layout.contentMaxWidth, alignSelf: 'center', gap: t.space[8] },
-  header: { gap: t.space[1] },
+  column: { width: '100%', maxWidth: t.layout.contentMaxWidth, alignSelf: 'center', gap: t.space[6] },
+  header: { gap: t.space[1.5] },
 }));

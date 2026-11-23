@@ -6,7 +6,7 @@ import { Pressable, View } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { Icon, Text, makeStyles, resolveSpring, useReduceMotion, useTheme } from '@/shared/ui';
+import { Icon, IconButton, Text, makeStyles, resolveSpring, useReduceMotion, useTheme } from '@/shared/ui';
 
 import { getTabIndicatorOffset } from './navigationMotion';
 
@@ -17,19 +17,19 @@ import { getTabIndicatorOffset } from './navigationMotion';
  */
 export function tabIcon(icon: LucideIcon) {
   function TabIcon({ focused }: { focused: boolean }) {
-    return <Icon icon={icon} color={focused ? 'accent' : 'textTertiary'} />;
+    return <Icon icon={icon} color={focused ? 'accentInk' : 'textTertiary'} />;
   }
   return TabIcon;
 }
 
-/** Quatro abas e, no meio, um botão discreto para a caixa de entrada. */
+/** 70 px: quatro abas em volta de um + contornado; uma pílula suave desliza para trás da aba ativa. */
 export function TabBar({ state, descriptors, navigateToTab }: BottomTabBarProps) {
   const s = useStyles();
   const insets = useSafeAreaInsets();
   const t = useTheme();
   const reduceMotion = useReduceMotion();
   const [barWidth, setBarWidth] = useState<number>(t.space[0]);
-  const offset = getTabIndicatorOffset(state.index, state.routes.length, barWidth, t.space[6]);
+  const offset = getTabIndicatorOffset(state.index, state.routes.length, barWidth, t.size.tabPillWidth);
   const target = offset ?? t.space[0];
   const indicatorX = useSharedValue(target);
   const spring = resolveSpring('standard', reduceMotion);
@@ -59,7 +59,7 @@ export function TabBar({ state, descriptors, navigateToTab }: BottomTabBarProps)
         }}
       >
         {options?.tabBarIcon?.({ focused, color: '', size: 0 })}
-        <Text variant="caption" tone={focused ? 'accent' : 'tertiary'}>
+        <Text variant="tab" tone={focused ? 'accent' : 'tertiary'} style={focused && s.tabActive}>
           {title}
         </Text>
       </Pressable>
@@ -81,14 +81,12 @@ export function TabBar({ state, descriptors, navigateToTab }: BottomTabBarProps)
         )}
         {tabs.slice(0, middle)}
         <View style={s.tab}>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Caixa de entrada"
+          <IconButton
+            icon={Plus}
+            label="Caixa de entrada"
+            color="textSecondary"
             onPress={() => router.push('/caixa-de-entrada')}
-            style={({ pressed }) => [s.inbox, pressed && s.inboxPressed]}
-          >
-            <Icon icon={Plus} color="onAccent" />
-          </Pressable>
+          />
         </View>
         {tabs.slice(middle)}
       </View>
@@ -108,25 +106,17 @@ const useStyles = makeStyles((t) => ({
     width: '100%',
     maxWidth: t.layout.contentMaxWidth,
     alignSelf: 'center',
-    paddingVertical: t.space[2],
+    height: t.size.tabBar,
   },
-  tab: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: t.space[0.5], minHeight: t.touch.minTarget },
+  tab: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: t.space[1], height: t.size.tabBar },
+  tabActive: { fontFamily: t.type.label.font },
   indicator: {
     position: 'absolute',
     left: t.space[0],
-    bottom: t.space[0],
-    width: t.space[6],
-    height: t.space[0.5],
+    top: (t.size.tabBar - t.size.tabPillHeight) / 2,
+    width: t.size.tabPillWidth,
+    height: t.size.tabPillHeight,
     borderRadius: t.radius.full,
-    backgroundColor: t.colors.accent,
+    backgroundColor: t.colors.soft,
   },
-  inbox: {
-    width: t.touch.minTarget,
-    height: t.touch.minTarget,
-    borderRadius: t.radius.full,
-    backgroundColor: t.colors.accent,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  inboxPressed: { backgroundColor: t.colors.accentPressed },
 }));
