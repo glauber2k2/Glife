@@ -1,11 +1,21 @@
-import { router } from 'expo-router';
+import { router, type Href } from 'expo-router';
 import { ChevronLeft } from 'lucide-react-native';
 import { View } from 'react-native';
 
-import { IconButton, Text, makeStyles, useTheme } from '@/shared/ui';
+import { IconButton } from './IconButton';
+import { Text } from './Text';
+import { makeStyles, useTheme } from './theme';
 
-/** Voltar (44 px) e título 34/300 das subtelas de Segurança. */
-export function BackHeader({ title, backLabel = 'Voltar' }: { title: string; backLabel?: string }) {
+export interface BackHeaderProps {
+  title: string;
+  /** o que o leitor de tela anuncia no botão (ex.: o nome da tela anterior) */
+  backLabel?: string;
+  /** para onde ir quando não há histórico (tela aberta direto pelo endereço) */
+  fallback?: Href;
+}
+
+/** Voltar (44 px) e título 34/300 das telas empilhadas (Ajustes, Segurança, Trocar a senha). */
+export function BackHeader({ title, backLabel = 'Voltar', fallback = '/ajustes' }: BackHeaderProps) {
   const s = useStyles();
   const t = useTheme();
   return (
@@ -17,7 +27,7 @@ export function BackHeader({ title, backLabel = 'Voltar' }: { title: string; bac
             label={backLabel}
             variant="ghost"
             size={t.touch.minTarget}
-            onPress={() => (router.canGoBack() ? router.back() : router.replace('/ajustes'))}
+            onPress={() => (router.canGoBack() ? router.back() : router.replace(fallback))}
           />
         </View>
       </View>

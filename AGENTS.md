@@ -84,7 +84,7 @@ O Claude é o agente principal; o Codex só assume quando os créditos do Claude
   por 18 px + linha de 1 px. Modo escuro de primeira classe. Sem emoji; Lucide só contorno 1,5. Textos em português do Brasil.
 - Estilos via `makeStyles((t) => ({...}))`; textos via `<Text variant tone>`; ícones via `<Icon>`. Componentes de
   `@/shared/ui`: `Screen`, `Section`, `Text`, `Button`, `IconButton`, `Input`, `ListItem`, `Sheet`, `Chip`, `Spinner`,
-  `Reveal`, `EmptyState`, `Switch`.
+  `Reveal`, `EmptyState`, `Switch`, `SegmentedControl`, `BackHeader`.
 - **Movimento como linguagem, com sobriedade** (Reanimated): toda mudança de estado anima; molas `tap` 200, `standard` 300,
   `emphasis` 350, `gentle` 320 ms; toque afunda 0,96; listas em cascata de 40 ms (`Reveal`); sem quique; nada bloqueia o
   toque; respeite "reduzir movimento"; haptics leve nas ações importantes.

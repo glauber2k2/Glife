@@ -7,9 +7,8 @@ import { Check, ChevronRight, Lock } from 'lucide-react-native';
 import { useState } from 'react';
 import { Platform, Pressable, View } from 'react-native';
 
-import { Icon, Screen, Section, Switch, Text, makeStyles, useTheme, useToast } from '@/shared/ui';
+import { BackHeader, Icon, Screen, Section, Switch, Text, makeStyles, useTheme, useToast } from '@/shared/ui';
 
-import { BackHeader } from '../components/BackHeader';
 import { useAppLock } from '../hooks/AppLockProvider';
 import { timeoutLabel } from '../hooks/lockText';
 

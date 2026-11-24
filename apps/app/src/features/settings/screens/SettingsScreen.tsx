@@ -3,12 +3,13 @@ import { useRef, useState, type ReactNode } from 'react';
 import { View } from 'react-native';
 
 import {
+  BackHeader,
   Button,
-  Chip,
   Input,
   ListItem,
   Screen,
   Section,
+  SegmentedControl,
   Sheet,
   Text,
   makeStyles,
@@ -17,10 +18,11 @@ import {
   type ThemePreference,
 } from '@/shared/ui';
 
+// Ordem do protótipo "Glife Acesso" (Ajustes › Aparência): Claro, Escuro, Sistema.
 const THEMES: { value: ThemePreference; label: string }[] = [
-  { value: 'system', label: 'Sistema' },
   { value: 'light', label: 'Claro' },
   { value: 'dark', label: 'Escuro' },
+  { value: 'system', label: 'Sistema' },
 ];
 
 /** `account` e `security`: compostas na rota (Ajustes não conhece as features de autenticação e bloqueio). */
@@ -33,17 +35,14 @@ export function SettingsScreen({ account, security }: { account?: ReactNode; sec
   const nextItem = useRef(4);
 
   return (
-    <Screen title="Ajustes">
+    <Screen>
+      <View style={s.header}>
+        <BackHeader title="Ajustes" fallback="/" />
+      </View>
       <Section title="Aparência">
-        <View style={s.row}>
-          {THEMES.map((o) => (
-            <Chip
-              key={o.value}
-              label={o.label}
-              selected={preference === o.value}
-              onPress={() => setPreference(o.value)}
-            />
-          ))}
+        <View style={s.theme}>
+          <Text>Tema</Text>
+          <SegmentedControl label="Tema" options={THEMES} value={preference} onChange={setPreference} />
         </View>
       </Section>
 
@@ -121,6 +120,15 @@ export function SettingsScreen({ account, security }: { account?: ReactNode; sec
 }
 
 const useStyles = makeStyles((t) => ({
+  // título → primeira seção: 32 px, como no protótipo
+  header: { marginBottom: t.space[2] },
+  theme: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    gap: t.space[3],
+    paddingBottom: t.space[2],
+  },
   row: { flexDirection: 'row', flexWrap: 'wrap', gap: t.space[2] },
   stack: { gap: t.space[4] },
   swatch: { width: t.size.swatch, height: t.size.swatch, borderRadius: t.radius.field },

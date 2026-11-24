@@ -1,7 +1,10 @@
-# Bloqueio do app (Fase 1) — prototipagem pedida
+# Bloqueio do app (Fase 1) — prototipado
 
-O núcleo (regras de espera, hash da senha, armazenamento seguro e quando bloquear) é implementado sem protótipo;
-as telas aguardam este protótipo. Regras completas em `../Glife — Planejamento do Projeto.md`, seção
+Protótipo no Claude Design: `Glife Bloqueio.dc.html` (telas em `BloqueioTela.dc.html`). Implementado em
+`apps/app/src/features/app-lock` (T26, 24/11/2026). Revisão de 24/11/2026 contra o protótipo atualizado: bloqueio,
+criar/trocar a senha, oferta da biometria e Ajustes › Segurança já batiam (textos, espaços, ícones e estados); só o
+`BackHeader` mudou de lugar (`shared/ui`). A seção "Privacidade › Esconder conteúdo nos apps recentes" do protótipo
+fica de fora por decisão do usuário (ver AGENTS.md, "Decisões tomadas"). Regras completas em `../Glife — Planejamento do Projeto.md`, seção
 "Bloqueio do app: biometria, e senha se falhar". Cole o prompt no Claude Design (projeto do Glife, com o design
 system `Glife Design System` anexado) e traga o resultado.
 

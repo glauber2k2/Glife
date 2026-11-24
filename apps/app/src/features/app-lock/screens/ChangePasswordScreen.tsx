@@ -5,10 +5,9 @@ import { router } from 'expo-router';
 import { useState } from 'react';
 import { View } from 'react-native';
 
-import { Button, Screen, makeStyles, useToast } from '@/shared/ui';
+import { BackHeader, Button, Screen, makeStyles, useToast } from '@/shared/ui';
 
 import { AccountSheet } from '../components/AccountSheet';
-import { BackHeader } from '../components/BackHeader';
 import { LengthRule, LockMessage, PasswordInput } from '../components/PasswordParts';
 import { useAppLock } from '../hooks/AppLockProvider';
 import { formatClock, triesText } from '../hooks/lockText';

@@ -13,5 +13,11 @@ Decisões trazidas do protótipo:
 - QR sempre em papel claro (`qrPaper`/`qrInk` iguais nos dois temas); chave em mono, grupos de 4, com "Copiar"
   que vira "Copiada" por 2,2 s.
 - "Sair deste aparelho" em Ajustes é secundário, sem cor de alerta, abaixo de Aparência.
+- Ajustes (revisão de 24/11/2026, protótipo atualizado): "Voltar" de 44 px + título 34/300 (`BackHeader`, agora em
+  `shared/ui`), 32 px até a primeira seção; Aparência é a linha "Tema" com `SegmentedControl` Claro · Escuro · Sistema
+  (pílula de 32 px, casas iguais, indicador `soft` deslizando na mola standard, rótulos 12,5/600).
+- Conferido na web (390 × 808, claro e escuro) contra páginas avulsas de cada estado do protótipo: Entrar igual.
+  O canvas desenha 16 px entre a senha e "Entrar" e o "Sair deste aparelho" em largura total porque o
+  `style` do `x-import` não chega ao componente; vale a tabela de especificação (32 px; botão à esquerda).
 
-Pendentes do protótipo: transição compartilhada do wordmark (44 → 20 px) e `SegmentedControl` em Aparência.
+Pendente do protótipo: transição compartilhada do wordmark (44 → 20 px).
