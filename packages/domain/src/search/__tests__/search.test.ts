@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { matchActions, mergeResults, normalizeText, toFtsQuery, type SearchAction, type SearchHit } from '../index.ts';
+import { matchActions, matchesWords, mergeResults, normalizeText, toFtsQuery, type SearchAction, type SearchHit } from '../index.ts';
 
 describe('normalizeText', () => {
   it('tira acentos e maiúsculas e junta espaços', () => {
@@ -34,6 +34,14 @@ describe('toFtsQuery', () => {
 
   it('limita a 8 palavras', () => {
     expect(toFtsQuery('a b c d e f g h i j')!.split(' AND ')).toHaveLength(8);
+  });
+});
+
+describe('matchesWords', () => {
+  it('toda palavra digitada é início de alguma palavra do texto, sem acento nem maiúscula', () => {
+    expect(matchesWords('Estudos Bíblicos', 'bib est')).toBe(true);
+    expect(matchesWords('Estudos Bíblicos', 'blicos')).toBe(false);
+    expect(matchesWords('Estudos', '  ')).toBe(true);
   });
 });
 

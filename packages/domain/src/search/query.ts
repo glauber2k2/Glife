@@ -33,16 +33,19 @@ export function toFtsQuery(input: string): string | null {
   return list.map((t) => `"${t.replace(/"/g, '""')}"*`).join(' AND ');
 }
 
-/** Toda palavra digitada precisa ser início de alguma palavra do rótulo ou das palavras-chave. */
+const words = (s: string) => normalizeText(s).split(/[^\p{L}\p{N}]+/u).filter(Boolean);
+
+/** Toda palavra digitada é início de alguma palavra do texto (sem acento nem maiúscula). Vazio casa tudo. */
+export function matchesWords(text: string, input: string): boolean {
+  const have = words(text);
+  return words(input).every((w) => have.some((word) => word.startsWith(w)));
+}
+
+/** Casa pelo rótulo e pelas palavras-chave; `anyQuery` aparece sempre. */
 export function matchActions(actions: SearchAction[], input: string): SearchHit[] {
   const query = input.trim();
-  const wanted = normalizeText(query).split(' ').filter(Boolean);
   return actions
-    .filter((a) => {
-      if (wanted.length === 0 || a.anyQuery) return true;
-      const words = normalizeText([a.label(''), ...a.keywords].join(' ')).split(' ');
-      return wanted.every((w) => words.some((word) => word.startsWith(w)));
-    })
+    .filter((a) => a.anyQuery || matchesWords([a.label(''), ...a.keywords].join(' '), query))
     .map((a) => ({ group: 'actions', id: a.id, title: a.label(query), href: a.href(query) }));
 }
 
