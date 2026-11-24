@@ -94,6 +94,35 @@ T11 e T12 foram assumidas pelo Claude a pedido do usuário (23/11). **Codex: nã
   teclado no web (Ctrl+B etc.); "Mover notas para cá" na pasta vazia; chips de vínculo nas linhas da lista;
   apagar de vez após 30 dias (hoje só "Esvaziar lixeira").
 
+### Fase 1 — Busca universal (desenho: `docs/superpowers/specs/2026-11-23-busca-universal-design.md`)
+
+Ordem obrigatória (cada uma usa a anterior). **Codex: não pegue T15–T19** (Claude em andamento, 23/11).
+
+- [ ] **T15 — Domain `search`** — `packages/domain/src/search/{index,query,model}.ts` + `__tests__/search.test.ts`.
+  Aceite: `normalizeText('Café ÇÃO')==='cafe cao'`; `toFtsQuery('café  com')==='"café"* AND "com"*'`,
+  `toFtsQuery('  ')===null`, aspas viram `""`, `-`/`OR`/`*`/`(` não viram operadores; `matchActions(actions, 'fin')`
+  acha "Ir para Finanças" sem acento/maiúscula, campo vazio devolve todas; `mergeResults` agrupa na ordem
+  Ações → Notas → Pastas → Tags, cada grupo com limite. Tipos `SearchHit {group,id,title,snippet?,meta?,href}`,
+  `SearchSource {group, search(q, limit), recent?(limit)}`, `SearchAction {id,label(q),keywords,href(q)}`.
+  Cuidados: TS puro, imports com `.ts`.
+- [ ] **T16 — SQLite dos testes com FTS5** — `apps/app/tests/support/sqliteLocalDb.ts` passa a `node:sqlite` e
+  imita o PowerSync: `ps_data__<t>(id TEXT PRIMARY KEY NOT NULL, data TEXT)` + view `<t>` com `json_extract` e
+  gatilhos INSTEAD OF; tira `sql.js`/`@types/sql.js`. Aceite: contratos de notas/links/tags seguem verdes.
+- [ ] **T17 — Índice FTS5 no banco local (só Claude)** — `shared/lib/powersync/searchIndex.ts`
+  (`FtsIndexSpec`, `ensureSearchIndexes(db, specs) → {available}`, `dropSearchIndexes(db, specs)`), chamado em
+  `localSync.apply` (`ready` instala; `signed_out` apaga), `"op-sqlite": {"fts5": true}` no `apps/app/package.json`,
+  `tests/searchIndex.test.ts`. Aceite: insere/edita/apaga/`REPLACE` em `ps_data__notes` refletem no índice;
+  "cafe" acha "Café"; repetir não duplica; gatilho faltando → recria e repreenche; drop não deixa tabela.
+  Cuidados: nenhum texto pessoal sobrevive ao sair; sem FTS5 → `available:false`, sem erro.
+- [ ] **T18 — Fontes de busca** — notes: `features/notes/data/notesSearch.ts` (`createNotesSearchSource`,
+  `createFoldersSearchSource`, `notesSearchIndex`); links: `features/links/data/tagsSearch.ts`
+  (`createTagsSearchSource`); `tests/searchSources.test.ts`. Aceite: título pesa mais que o corpo, excluídas não
+  aparecem, trecho com o termo marcado, sem índice cai para `notes.list({search})`, `recent` = mais recentes.
+- [ ] **T19 — Tela de busca + Ctrl+K** — `features/search/` (`SearchScreen`, `SearchProvider`, `useSearchShortcut`),
+  rota `app/busca.tsx` (modal), `app/nota/nova.tsx` (`?titulo=`), `/notas?tag=<id>`, lupa em Hoje e Notas,
+  composição no `_layout`. `docs/prototipos/busca.md` (prototipagem pendente). Aceite: no web, Ctrl+K abre,
+  digitar acha nota com/sem acento, Enter abre o primeiro, Esc fecha; "Nova nota: x" cria com título x; dois temas.
+
 ## Pendências do usuário
 
 - [ ] Trocar a senha do `powersync_role` (foi escrita na conversa e é fraca): no SQL Editor do Supabase GLIFE,
