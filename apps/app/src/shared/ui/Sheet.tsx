@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
-import { KeyboardAvoidingView, Modal, Platform, Pressable, View, useWindowDimensions } from 'react-native';
+import { Modal, Pressable, View, useWindowDimensions } from 'react-native';
+import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 import Animated, { cancelAnimation, useAnimatedStyle, useSharedValue, withSpring, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { scheduleOnRN } from 'react-native-worklets';
@@ -73,7 +74,7 @@ export function Sheet({ visible, onClose, title, subtitle, children }: SheetProp
 
   return (
     <Modal visible={visible || presented} transparent animationType="none" onRequestClose={onClose} statusBarTranslucent>
-      <KeyboardAvoidingView style={s.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <KeyboardAvoidingView style={s.flex} behavior="padding">
         <AnimatedPressable style={[s.scrim, scrimStyle]} onPress={onClose} accessibilityLabel="Fechar" />
         <Animated.View
           accessibilityViewIsModal

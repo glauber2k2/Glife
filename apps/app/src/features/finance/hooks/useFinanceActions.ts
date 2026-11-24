@@ -192,32 +192,35 @@ export function useFinanceActions() {
         payment_account_id: f.payerId,
       });
       if (f.existing) {
-        const rows = [
-          ...(f.existing.openCents > 0
-            ? [
-                planPreviousBalance({
-                  card,
-                  amountCents: f.existing.openCents,
-                  today,
-                }),
-              ]
-            : []),
-          ...f.existing.parcels.flatMap((p) =>
-            planOngoingInstallments({
-              card,
-              description: p.description,
-              category_id: null,
-              installmentCents: p.cents,
-              currentIndex: p.index,
-              count: p.count,
-              today,
-            }),
-          ),
-        ];
-        if (rows.length > 0) await repos.transactions.createMany(rows);
+        try {
+          await addExisting(card, f.existing, today);
+        } catch (e) {
+          // Tudo ou nada: sem o histórico, o cartão também não fica (senão uma nova tentativa duplicaria).
+          await repos.accounts.remove(card.id).catch(() => undefined);
+          throw e;
+        }
       }
       await refresh();
       return card;
+    }
+
+    /** Fatura em aberto ("Saldo anterior") e parcelamentos em andamento de um cartão já em uso. */
+    async function addExisting(card: Account, existing: NonNullable<CardForm['existing']>, today: IsoDate) {
+      const rows = [
+        ...(existing.openCents > 0 ? [planPreviousBalance({ card, amountCents: existing.openCents, today })] : []),
+        ...existing.parcels.flatMap((p) =>
+          planOngoingInstallments({
+            card,
+            description: p.description,
+            category_id: null,
+            installmentCents: p.cents,
+            currentIndex: p.index,
+            count: p.count,
+            today,
+          }),
+        ),
+      ];
+      if (rows.length > 0) await repos.transactions.createMany(rows);
     }
 
     async function setBudget(categoryId: string, month: Month, cents: number) {

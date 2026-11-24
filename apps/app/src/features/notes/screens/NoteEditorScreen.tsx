@@ -28,7 +28,6 @@ import {
 import { useCallback, useEffect, useRef, useState, type ComponentRef } from 'react';
 import {
   Keyboard,
-  KeyboardAvoidingView,
   Platform,
   Pressable,
   ScrollView,
@@ -36,6 +35,7 @@ import {
   View,
   type TextInputSelectionChangeEvent,
 } from 'react-native';
+import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -284,7 +284,7 @@ export function NoteEditorScreen() {
 
   return (
     <SafeAreaView style={s.root} edges={['top', 'left', 'right', 'bottom']}>
-      <KeyboardAvoidingView style={s.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <KeyboardAvoidingView style={s.flex} behavior="padding">
         {/* Barra: voltar, tipo (ou título ao rolar), Ler/Escrever, fixar, mais ações */}
         <View style={[s.barWrap, scrolled && s.barLine]}>
           <View style={[s.column, s.bar]}>
@@ -626,7 +626,10 @@ function OptionRow({
           </Text>
         )}
       </View>
-      {selected && <Icon icon={Check} color="accentInk" />}
+      {/* espaço do check sempre reservado: marcar não muda a quebra de linha da descrição */}
+      <View style={[s.optionCheck, !selected && s.hidden]} importantForAccessibility="no-hide-descendants">
+        <Icon icon={Check} color="accentInk" />
+      </View>
     </Pressable>
   );
 }
@@ -726,6 +729,8 @@ const useStyles = makeStyles((t) => {
     },
     optionTexts: { flex: 1, gap: t.space[0.5] },
     optionLabel: { fontFamily: t.type.item.font },
+    optionCheck: { width: t.icon.size, alignItems: 'center' },
+    hidden: { opacity: t.opacity.hidden },
     tagForm: { flexDirection: 'row', alignItems: 'center', gap: t.space[2] },
     tagRow: {
       flexDirection: 'row',

@@ -31,20 +31,31 @@ export function Chip({ label, selected, onPress, size = 'md', icon, numeric }: C
   const scale = useSharedValue<number>(t.pressScale.rest);
   const restScale = t.pressScale.rest;
   const showCheck = size === 'md';
-  const checkWidth = useSharedValue<number>(selected && showCheck ? t.icon.tiny : t.space[0]);
+  // Largura constante: o check (13 + 4 px) nasce dentro do respiro lateral, que encolhe na mesma medida.
+  // Assim marcar um chip nunca muda a largura dele nem quebra a linha dos vizinhos.
+  const padding = t.space[3] + t.space[0.5];
+  const checkSpace = t.icon.tiny + t.space[1];
+  const progress = useSharedValue<number>(selected ? 1 : 0);
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: reduceMotion ? restScale : scale.get() }],
   }));
-  const checkStyle = useAnimatedStyle(() => ({ width: checkWidth.get() }));
+  const checkStyle = useAnimatedStyle(() => ({
+    width: t.icon.tiny * progress.get(),
+    marginRight: t.space[1] * progress.get(),
+  }));
+  const paddingStyle = useAnimatedStyle(() => {
+    const side = padding + (checkSpace / 2) * (1 - progress.get());
+    return { paddingLeft: side, paddingRight: side };
+  });
 
   useEffect(() => {
     if (reduceMotion || !onPress) scale.set(restScale);
   }, [reduceMotion, onPress, scale, restScale]);
 
   useEffect(() => {
-    const target = selected && showCheck ? t.icon.tiny : t.space[0];
-    checkWidth.set(checkSpring ? withSpring(target, checkSpring) : target);
-  }, [selected, showCheck, checkSpring, checkWidth, t]);
+    const target = selected ? 1 : 0;
+    progress.set(checkSpring ? withSpring(target, checkSpring) : target);
+  }, [selected, checkSpring, progress]);
 
   return (
     <Pressable
@@ -67,6 +78,7 @@ export function Chip({ label, selected, onPress, size = 'md', icon, numeric }: C
             size === 'sm' && s.small,
             selected && s.selected,
             pressed && !selected && s.pressed,
+            showCheck && paddingStyle,
             animatedStyle,
           ]}
         >
@@ -77,7 +89,11 @@ export function Chip({ label, selected, onPress, size = 'md', icon, numeric }: C
               </View>
             </Animated.View>
           )}
-          {icon && <Icon icon={icon} size={t.icon.small - t.space[0.5]} color={selected ? 'onAccent' : 'text'} />}
+          {icon && (
+            <View style={s.icon}>
+              <Icon icon={icon} size={t.icon.small - t.space[0.5]} color={selected ? 'onAccent' : 'text'} />
+            </View>
+          )}
           <Text variant="chip" tone={selected ? 'onAccent' : 'primary'} numeric={numeric}>
             {label}
           </Text>
@@ -92,7 +108,6 @@ const useStyles = makeStyles((t) => ({
   chip: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: t.space[1],
     paddingHorizontal: t.space[3] + t.space[0.5],
     minHeight: t.size.chipHeight,
     borderRadius: t.radius.full,
@@ -104,5 +119,6 @@ const useStyles = makeStyles((t) => ({
   selected: { backgroundColor: t.colors.accent, borderColor: t.colors.accent },
   pressed: { backgroundColor: t.colors.soft },
   check: { overflow: 'hidden' },
+  icon: { marginRight: t.space[1] },
   checkInner: { width: t.icon.tiny },
 }));

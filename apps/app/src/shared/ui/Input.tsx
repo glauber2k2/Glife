@@ -60,8 +60,11 @@ export function Input({
     <View style={s.root}>
       <View style={[s.box, focused && s.focused, hasError && s.errorField]}>
         {label && (
-          <Animated.View pointerEvents="none" style={[s.label, labelStyle]}>
-            <Text tone={hasError ? 'danger' : focused ? 'accent' : 'tertiary'}>{label}</Text>
+          <Animated.View pointerEvents="none" style={[s.label, !!trailing && s.labelWithTrailing, labelStyle]}>
+            {/* uma linha só: em campo estreito o rótulo corta com reticências em vez de vazar a borda */}
+            <Text tone={hasError ? 'danger' : focused ? 'accent' : 'tertiary'} numberOfLines={1}>
+              {label}
+            </Text>
           </Animated.View>
         )}
         <TextInput
@@ -78,7 +81,7 @@ export function Input({
             setFocused(false);
             onBlur?.(e);
           }}
-          style={[s.field, noFocusRing, !label && s.fieldNoLabel, !!trailing && s.withTrailing, style]}
+          style={[s.field, noFocusRing, !label && s.fieldNoLabel, !!trailing && s.withTrailing, rest.multiline && s.multiline, style]}
           accessibilityLabel={label}
           {...rest}
         />
@@ -106,6 +109,7 @@ const useStyles = makeStyles((t) => {
     label: {
       position: 'absolute',
       left: t.field.paddingX,
+      right: t.field.paddingX,
       top: t.field.labelTop - (t.type.body.lineHeight - t.type.body.fontSize) / 2,
       // Escala a partir do canto, como no design system.
       transformOrigin: 'left top',
@@ -120,7 +124,12 @@ const useStyles = makeStyles((t) => {
       fontFamily: t.type.body.font,
       fontSize: t.type.body.fontSize,
       borderRadius: t.radius.field,
+      // Android: sem o respiro extra da fonte e centrado na área de digitação; senão o texto desce e encosta na borda.
+      includeFontPadding: false,
+      textAlignVertical: 'center',
     },
+    labelWithTrailing: { right: t.touch.minTarget + t.space[2] },
+    multiline: { textAlignVertical: 'top' },
     fieldNoLabel: { paddingTop: t.space[4], paddingBottom: t.space[4] },
     withTrailing: { paddingRight: t.touch.minTarget + t.space[2] },
     trailing: { position: 'absolute', right: t.space[1], top: t.space[1] },

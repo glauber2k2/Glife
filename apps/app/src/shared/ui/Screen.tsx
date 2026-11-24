@@ -1,9 +1,10 @@
 import type { ReactNode } from 'react';
-import { ScrollView, View } from 'react-native';
+import { View } from 'react-native';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Text } from './Text';
-import { makeStyles } from './theme';
+import { makeStyles, useTheme } from './theme';
 
 export interface ScreenProps {
   title?: string;
@@ -22,6 +23,7 @@ export interface ScreenProps {
 /** Contêiner padrão: área segura, margem lateral de 22 px, coluna única centralizada no web. */
 export function Screen({ title, eyebrow, subtitle, children, scroll = true, maxWidth, action }: ScreenProps) {
   const s = useStyles();
+  const t = useTheme();
   const content = (
     <View style={[s.column, maxWidth !== undefined && { maxWidth }]}>
       {(title || eyebrow) && (
@@ -52,9 +54,10 @@ export function Screen({ title, eyebrow, subtitle, children, scroll = true, maxW
   return (
     <SafeAreaView style={s.root} edges={['top', 'left', 'right']}>
       {scroll ? (
-        <ScrollView contentContainerStyle={s.scroll} keyboardShouldPersistTaps="handled">
+        // Ao focar um campo, rola até ele ficar acima do teclado (com folga para o texto de ajuda).
+        <KeyboardAwareScrollView contentContainerStyle={s.scroll} keyboardShouldPersistTaps="handled" bottomOffset={t.layout.blockGap * 2}>
           {content}
-        </ScrollView>
+        </KeyboardAwareScrollView>
       ) : (
         <View style={[s.scroll, s.fill]}>{content}</View>
       )}

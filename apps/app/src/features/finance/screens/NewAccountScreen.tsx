@@ -1,5 +1,6 @@
 // Tela 5 do protótipo: Nova conta ou cartão. Tipo em chips; conta pede nome e saldo inicial; cartão pede dias de
 // fechamento e vencimento, limite e conta pagadora e, depois, "Este cartão já está em uso?".
+import { isRepositoryError } from '@glife/domain/core';
 import { currentInvoiceMonth, invoiceDates } from '@glife/domain/finance';
 import { router } from 'expo-router';
 import { Plus, X } from 'lucide-react-native';
@@ -20,6 +21,16 @@ const KINDS: { value: Kind; label: string }[] = [
   { value: 'cash', label: 'Carteira' },
   { value: 'credit_card', label: 'Cartão de crédito' },
 ];
+
+/** Motivo curto para o aviso (sem dados pessoais): o que deu errado e onde olhar. */
+function failureReason(e: unknown): string {
+  if (isRepositoryError(e, 'validation')) return 'confira o valor e os números das parcelas.';
+  if (isRepositoryError(e, 'unavailable')) {
+    const cause = (e as { cause?: unknown }).cause;
+    return `o banco do aparelho recusou (${cause instanceof Error ? cause.message.slice(0, 80) : 'sem detalhe'}).`;
+  }
+  return e instanceof Error ? `${e.message.slice(0, 80)}.` : 'erro desconhecido.';
+}
 
 interface Parcel {
   description: string;
@@ -114,8 +125,8 @@ export function NewAccountScreen() {
       if (router.canGoBack()) router.back();
       else router.replace('/financas');
     } catch (e) {
-      console.warn('Falha ao criar o cartão', e);
-      toast({ message: 'Não foi possível criar o cartão.' });
+      console.warn('Falha ao criar o cartão', e, (e as { cause?: unknown })?.cause);
+      toast({ message: `Não foi possível criar o cartão: ${failureReason(e)}` });
     } finally {
       setSaving(false);
     }
@@ -272,10 +283,8 @@ export function NewAccountScreen() {
                 {adding && (
                   <View style={[s.adding, s.divider]}>
                     <Input label="Descrição" value={nd} onChangeText={setNd} placeholder="Ex.: Celular" maxLength={200} />
+                    <MoneyField label="Valor da parcela" cents={nv} onChange={setNv} />
                     <View style={s.twoCols}>
-                      <View style={s.wide}>
-                        <MoneyField label="Valor da parcela" cents={nv} onChange={setNv} />
-                      </View>
                       <View style={s.col}>
                         <DayField label="Parcela" value={ni} max={120} onChange={(v) => setNi(v)} />
                       </View>
@@ -338,7 +347,6 @@ const useStyles = makeStyles((t) => ({
   actions: { flexDirection: 'row', marginTop: t.space[3] },
   twoCols: { flexDirection: 'row', gap: t.space[3] },
   col: { flex: 1 },
-  wide: { flex: 1.4 },
   hint: { paddingLeft: t.field.paddingX },
   payerLabel: { marginTop: t.space[2] },
   question: { paddingBottom: t.space[3] },

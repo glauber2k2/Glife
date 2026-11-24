@@ -16,6 +16,7 @@ import { useFonts } from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useMemo, type ReactNode } from 'react';
+import { KeyboardProvider } from 'react-native-keyboard-controller';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { AppLockGate, AppLockProvider, createDeviceAppLock, deviceBiometrics, useAppLock } from '@/features/app-lock';
@@ -154,11 +155,14 @@ export default function RootLayout() {
 
   return (
     <SafeAreaProvider>
-      <ThemeProvider store={themePreferenceStore}>
-        <AuthProvider service={authService}>
-          <RootStack />
-        </AuthProvider>
-      </ThemeProvider>
+      {/* Teclado: telas e folhas sobem para o campo focado não ficar escondido (Android edge-to-edge incluso). */}
+      <KeyboardProvider>
+        <ThemeProvider store={themePreferenceStore}>
+          <AuthProvider service={authService}>
+            <RootStack />
+          </AuthProvider>
+        </ThemeProvider>
+      </KeyboardProvider>
     </SafeAreaProvider>
   );
 }
