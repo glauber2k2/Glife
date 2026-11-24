@@ -125,6 +125,19 @@ Ordem obrigatória (cada uma usa a anterior). **Codex: não pegue T15–T19** (C
   rota `app/busca.tsx` (modal), `app/nota/nova.tsx` (`?titulo=`), `/notas?tag=<id>`, lupa em Hoje e Notas,
   composição no `_layout`. `docs/prototipos/busca.md` (prototipagem pendente). Aceite: no web, Ctrl+K abre,
   digitar acha nota com/sem acento, Enter abre o primeiro, Esc fecha; "Nova nota: x" cria com título x; dois temas.
+  **Código commitado (`fc8acc3`); falta validar no web com login do usuário.**
+
+### Fase 1 — Tela Hoje (protótipo "Glife Hoje" do Claude Design, variante 2a "Recolhido")
+
+- [ ] **T20 — Hoje conforme o protótipo** — `features/today` (tela, linha "módulos não configurados",
+  `shouldReplayEntrance`), `features/notes` (`TodayNotesBlock`, `useTodayNotes`, `pickTodayNotes`),
+  `features/inbox` (`TodayInboxBlock`), `shared/lib/dates.ts` (`relativeDay`); testes em `apps/app/tests`.
+  Aceite: cabeçalho com data, "Hoje", lupa (web: pílula "Buscar Ctrl K") e ajustes; primeiro uso mostra a frase de
+  contexto; Caixa ("Nada pendente." + "Anotar algo"); Notas (fixadas primeiro, depois recentes, até 5; título,
+  data "hoje/ontem/há N dias/12 nov", prévia de 1 linha; "Ver todas" ou "Nova nota"); linha final dos módulos
+  → Ajustes; cascata de 40 ms ao abrir e ao voltar à aba depois de 30 min. Fora (pendente): card que expande até a
+  nota, navegação superior no web, blocos de agenda/refeição/gastos/devocional (chegam com os módulos), itens da caixa
+  (sem tabela ainda).
 
 ## Pendências do usuário
 
