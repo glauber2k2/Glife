@@ -27,6 +27,8 @@ export interface Palette {
   /** marca-textos, só na leitura */
   highlight: { ice: string; honey: string; mint: string; lilac: string };
   scrim: string;
+  /** valor previsto nas barras (orçamento): cinza mais claro que o realizado */
+  planned: string;
   /** fundo do QR code: claro nos dois temas, para qualquer leitor conseguir ler */
   qrPaper: string;
   qrInk: string;
@@ -48,6 +50,7 @@ const light: Palette = {
   danger: '#C2453D',
   highlight: { ice: '#CFE3F5', honey: '#F4E6B5', mint: '#D3EBDD', lilac: '#E9D6EE' },
   scrim: 'rgba(16,28,40,0.32)',
+  planned: '#A8B4C1',
   qrPaper: '#FFFFFF',
   qrInk: '#14273B',
 };
@@ -68,6 +71,7 @@ const dark: Palette = {
   danger: '#EE7F76',
   highlight: { ice: '#24425E', honey: '#5A4E26', mint: '#24493A', lilac: '#4A3554' },
   scrim: 'rgba(0,0,0,0.55)',
+  planned: '#4A5B6C',
   qrPaper: '#FFFFFF',
   qrInk: '#14273B',
 };
@@ -121,6 +125,10 @@ export const typeScale = {
   readingTitle: { fontSize: 23, lineHeight: 28, font: fonts.serif.medium, letterSpacing: 0 },
   scripture: { fontSize: 20, lineHeight: 31, font: fonts.serif.regular, letterSpacing: 0 },
   reading: { fontSize: 18, lineHeight: 28, font: fonts.serif.regular, letterSpacing: 0 },
+  /** valor digitado em destaque (confirmar previsto, pagar fatura) */
+  amountField: { fontSize: 32, lineHeight: 38, font: fonts.sans.light, letterSpacing: -1 },
+  /** tecla do teclado numérico */
+  keypad: { fontSize: 24, lineHeight: 28, font: fonts.sans.light, letterSpacing: 0 },
   subtitle: { fontSize: 17, lineHeight: 24, font: fonts.serif.italic, letterSpacing: 0 },
   mono: { fontSize: 13.5, lineHeight: 22, font: fonts.mono.regular, letterSpacing: 0 },
 } as const satisfies Record<string, TypeStyle>;
@@ -145,7 +153,7 @@ export const layout = {
 } as const;
 
 /** Estados sem mudar cor: pressionado (sem movimento) e desabilitado. */
-export const opacity = { hidden: 0, full: 1, pressed: 0.6, disabled: 0.6, fieldDisabled: 0.55 } as const;
+export const opacity = { hidden: 0, full: 1, pressed: 0.6, disabled: 0.6, fieldDisabled: 0.55, faint: 0.35 } as const;
 
 /** Medidas fixas de componentes. */
 export const size = {
@@ -177,6 +185,26 @@ export const size = {
   strike: 1.5,
   track: 3,
   trackThin: 2,
+  /** círculo de 34 px com o ícone da categoria (listas de Finanças) */
+  disc: 34,
+  /** coluna da data (dia e mês) em Próximos */
+  dateColumn: 30,
+  /** rótulo do seletor de mês entre as setas */
+  monthLabel: 78,
+  /** campo do valor em destaque (confirmar, pagar) */
+  fieldLarge: 78,
+  /** campo de orçamento editável na linha */
+  budgetInputWidth: 116,
+  budgetInputHeight: 36,
+  /** menu flutuante de ações de uma linha */
+  menuWidth: 220,
+  menuItem: 44,
+  /** marca do limite na barra do orçamento */
+  limitTick: 9,
+  /** rádio 20 com ponto de 10 */
+  radio: 20,
+  radioDot: 10,
+  radioBorder: 1.5,
   /** interruptor 46 × 28, bolinha de 22 a 3 px da borda */
   switchWidth: 46,
   switchHeight: 28,

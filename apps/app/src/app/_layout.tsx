@@ -20,7 +20,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { AppLockGate, AppLockProvider, createDeviceAppLock, deviceBiometrics, useAppLock } from '@/features/app-lock';
 import { AuthProvider, createSupabaseAuthService, useAuth } from '@/features/auth';
-import { financeTables } from '@/features/finance';
+import { FinanceProvider, financeTables } from '@/features/finance';
 import { LinksProvider, linksTables, useLinksSearchSources } from '@/features/links';
 import { NotesProvider, notesSearchIndex, notesTables, useNotesSearchSources } from '@/features/notes';
 import { SearchProvider, useSearchShortcut } from '@/features/search';
@@ -81,6 +81,7 @@ function RootStack() {
     <SyncStatusProvider subscribe={localSync.onConnectedChange}>
       <NotesProvider db={localSync.db} userId={userId}>
         <LinksProvider db={localSync.db} userId={userId}>
+          <FinanceProvider db={localSync.db} userId={userId}>
           <SearchComposition enabled={stage === 'ready'}>
           <ToastProvider>
             <NavigationThemeProvider value={navigationTheme}>
@@ -109,6 +110,12 @@ function RootStack() {
                   <Stack.Screen name="pastas" options={{ animation: animation.detail }} />
                   <Stack.Screen name="pasta/[id]" options={{ animation: animation.detail }} />
                   <Stack.Screen name="lixeira" options={{ animation: animation.detail }} />
+                  <Stack.Screen name="financas/fatura/[id]" options={{ animation: animation.detail }} />
+                  <Stack.Screen name="financas/conta/[id]" options={{ animation: animation.detail }} />
+                  <Stack.Screen name="financas/nova-conta" options={{ animation: animation.detail }} />
+                  <Stack.Screen name="financas/recorrentes" options={{ animation: animation.detail }} />
+                  <Stack.Screen name="financas/recorrente/[id]" options={{ animation: animation.detail }} />
+                  <Stack.Screen name="financas/orcamentos" options={{ animation: animation.detail }} />
                   <Stack.Screen name="seguranca" options={{ animation: animation.detail }} />
                   <Stack.Screen name="trocar-senha" options={{ animation: animation.detail }} />
                 </Stack.Protected>
@@ -123,6 +130,7 @@ function RootStack() {
             </NavigationThemeProvider>
           </ToastProvider>
           </SearchComposition>
+          </FinanceProvider>
         </LinksProvider>
       </NotesProvider>
     </SyncStatusProvider>

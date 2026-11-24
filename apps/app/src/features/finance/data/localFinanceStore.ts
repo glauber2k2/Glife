@@ -109,7 +109,10 @@ function storeOn(q: LocalQueries, userId: string): FinanceStoreTx {
         // As tabelas do PowerSync são views: nada de ON CONFLICT; atualiza se existe, senão insere.
         const exists = await q.getOptional<{ id: string }>(`SELECT id FROM ${name} WHERE id = ?`, [row.id]);
         if (exists) {
-          const sets = cols.slice(1).map((c) => `${c} = ?`).join(', ');
+          const sets = cols
+            .slice(1)
+            .map((c) => `${c} = ?`)
+            .join(', ');
           await q.execute(`UPDATE ${name} SET ${sets} WHERE id = ?`, [...values.slice(1), row.id]);
         } else {
           await q.execute(`INSERT INTO ${name} (${cols.join(', ')}) VALUES (${cols.map(() => '?').join(', ')})`, values);

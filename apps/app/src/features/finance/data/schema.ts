@@ -2,7 +2,12 @@
 // `id` é implícito; booleano e números (centavos, dias) viram integer; datas, meses e uuids são texto.
 import { Table, column } from '@powersync/common';
 
-const base = { user_id: column.text, created_at: column.text, updated_at: column.text, deleted_at: column.text };
+const base = {
+  user_id: column.text,
+  created_at: column.text,
+  updated_at: column.text,
+  deleted_at: column.text,
+};
 const movement = {
   type: column.text,
   amount_cents: column.integer,
@@ -53,7 +58,13 @@ export const financeTables = {
       recurrence_id: column.text,
       occurrence_date: column.text,
     },
-    { indexes: { by_date: ['date'], by_invoice: ['account_id', 'invoice_month'], by_target: ['to_account_id'] } },
+    {
+      indexes: {
+        by_date: ['date'],
+        by_invoice: ['account_id', 'invoice_month'],
+        by_target: ['to_account_id'],
+      },
+    },
   ),
   budgets: new Table({
     ...base,

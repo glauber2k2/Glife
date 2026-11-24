@@ -1,0 +1,382 @@
+// Tela 2 do protótipo: Novo lançamento (folha). Valor pelo teclado em centavos; tipo em segmentado; categoria,
+// conta ou cartão em chips; "Parcelar" só no cartão; "É previsto" e "Repetir".
+import {
+  addMonths,
+  cycleOf,
+  invoiceDates,
+  invoiceMonthFor,
+  splitInstallments,
+  type Account,
+  type Frequency,
+  type IsoDate,
+  type TxType,
+} from '@glife/domain/finance';
+import { ArrowLeftRight, CreditCard, X } from 'lucide-react-native';
+import { useMemo, useState } from 'react';
+import { ScrollView, View, useWindowDimensions } from 'react-native';
+
+import { Button, Chip, Icon, IconButton, Input, SegmentedControl, Sheet, Switch, Text, makeStyles, useTheme, useToast } from '@/shared/ui';
+
+import { useFinance } from '../hooks/FinanceData';
+import { useFinanceActions } from '../hooks/useFinanceActions';
+import { accountIcon, categoryIcon } from './categories';
+import { MONTH_NAMES, dayLabel, dm, dmy, money, weekday } from './format';
+import { DateRow, Keypad, Stepper, SwitchRow } from './ui';
+
+type Freq = 'weekly' | 'monthly' | 'yearly' | 'every';
+const PARCS = [1, 2, 3, 4, 5, 6, 8, 10, 12, 18, 24] as const;
+const TYPES = [
+  { value: 'expense', label: 'Gasto' },
+  { value: 'income', label: 'Receita' },
+  { value: 'transfer', label: 'Transferência' },
+] as const;
+
+export interface NewEntryPreset {
+  repeat?: boolean;
+  planned?: boolean;
+}
+
+const monthLabel = (m: string) => MONTH_NAMES[Number(m.slice(5, 7)) - 1]!;
+const monthYear = (m: string, today: IsoDate) =>
+  m.slice(0, 4) === today.slice(0, 4) ? monthLabel(m) : `${monthLabel(m)} de ${m.slice(0, 4)}`;
+
+type Props = {
+  visible: boolean;
+  onClose: () => void;
+  today: IsoDate;
+  preset?: NewEntryPreset;
+};
+
+/** Cada abertura começa do zero: o formulário remonta com uma chave nova. */
+export function NewEntrySheet(props: Props) {
+  const [session, setSession] = useState(0);
+  const [wasVisible, setWasVisible] = useState(props.visible);
+  if (props.visible !== wasVisible) {
+    setWasVisible(props.visible);
+    if (props.visible) setSession((n) => n + 1);
+  }
+  return (
+    <Sheet visible={props.visible} onClose={props.onClose}>
+      <EntryForm key={session} {...props} />
+    </Sheet>
+  );
+}
+
+function EntryForm({ onClose, today, preset }: Props) {
+  const s = useStyles();
+  const t = useTheme();
+  const toast = useToast();
+  const { height } = useWindowDimensions();
+  const { data } = useFinance();
+  const { createEntry } = useFinanceActions();
+
+  const accounts = useMemo(() => (data?.accounts ?? []).filter((a) => !a.archived), [data]);
+  const banks = accounts.filter((a) => a.kind !== 'credit_card');
+  const cards = accounts.filter((a) => a.kind === 'credit_card');
+  const categories = (data?.categories ?? []).filter((c) => !c.archived);
+
+  const [type, setType] = useState<TxType>('expense');
+  const [cents, setCents] = useState(0);
+  const [desc, setDesc] = useState('');
+  const [catId, setCatId] = useState<string | null>(() => categories.find((c) => c.kind === 'expense')?.id ?? null);
+  const [acctId, setAcctId] = useState<string | null>(() => banks[0]?.id ?? null);
+  const [toId, setToId] = useState<string | null>(null);
+  const [parc, setParc] = useState(1);
+  const [planned, setPlanned] = useState(!!preset?.planned);
+  const [repeat, setRepeat] = useState(!!preset?.repeat);
+  const [freq, setFreq] = useState<Freq>('monthly');
+  const [every, setEvery] = useState(2);
+  const [ends, setEnds] = useState<'never' | 'date'>('never');
+  const [endDate, setEndDate] = useState<IsoDate>(`${Number(today.slice(0, 4)) + 1}${today.slice(4)}`);
+  const [date, setDate] = useState<IsoDate>(today);
+  const [saving, setSaving] = useState(false);
+
+  const account: Account | undefined = accounts.find((a) => a.id === acctId);
+  const isCard = type === 'expense' && account?.kind === 'credit_card';
+  const sources = type === 'expense' ? [...banks, ...cards] : banks;
+  const targets = accounts.filter((a) => a.id !== acctId);
+  const target = accounts.find((a) => a.id === toId);
+  const catsForType = categories.filter((c) => c.kind === (type === 'income' ? 'income' : 'expense'));
+
+  const changeType = (next: TxType) => {
+    setType(next);
+    setParc(1);
+    setCatId(categories.find((c) => c.kind === (next === 'income' ? 'income' : 'expense'))?.id ?? null);
+    if (next !== 'expense' && account?.kind === 'credit_card') setAcctId(banks[0]?.id ?? null);
+    if (next === 'transfer') setToId(accounts.find((a) => a.id !== (acctId ?? banks[0]?.id))?.id ?? null);
+  };
+
+  const day = Number(date.slice(8, 10));
+  const repSub = !repeat
+    ? 'Não se repete'
+    : {
+        weekly: `Toda semana, às ${weekday(date)}s`,
+        monthly: `Todo mês, no dia ${day}`,
+        yearly: `Todo ano, em ${dm(date)}`,
+        every: `A cada ${every} meses, no dia ${day}`,
+      }[freq];
+
+  let invoiceTxt = '';
+  if (isCard && account) {
+    const cycle = cycleOf(account);
+    const first = invoiceMonthFor(date, cycle);
+    invoiceTxt =
+      parc > 1 && !repeat
+        ? `1ª parcela na fatura de ${monthYear(first, today)} · última na de ${monthYear(addMonths(first, parc - 1), today)}`
+        : `Cai na fatura de ${monthYear(first, today)} · vence ${dm(invoiceDates(first, cycle).dueDate)}`;
+  }
+
+  const amountSub =
+    isCard && parc > 1 && cents > 0 && !repeat
+      ? `${parc} × ${money(splitInstallments(cents, parc)[0]!)}`
+      : planned
+        ? 'Previsto · confirma no dia'
+        : ' ';
+
+  const transferNote =
+    target?.kind === 'credit_card' ? 'Pagamento de fatura: é transferência, não é gasto.' : 'Transferência não conta no orçamento.';
+  const canSave = cents > 0 && !!acctId && (type !== 'transfer' || !!toId) && !saving;
+  const saveLabel =
+    planned || repeat ? 'Agendar' : type === 'expense' ? 'Salvar gasto' : type === 'income' ? 'Salvar receita' : 'Salvar transferência';
+
+  const save = async () => {
+    if (!canSave || !acctId) return;
+    setSaving(true);
+    try {
+      await createEntry({
+        type,
+        cents,
+        description: desc,
+        categoryId: type === 'transfer' ? null : catId,
+        accountId: acctId,
+        toAccountId: type === 'transfer' ? toId : null,
+        installments: isCard ? parc : 1,
+        date,
+        planned,
+        repeat: repeat
+          ? {
+              frequency: (freq === 'every' ? 'monthly' : freq) as Frequency,
+              interval: freq === 'every' ? every : 1,
+              endDate: ends === 'date' ? endDate : null,
+            }
+          : null,
+      });
+      onClose();
+      toast({
+        message:
+          planned || repeat
+            ? 'Previsto agendado'
+            : type === 'expense'
+              ? 'Gasto salvo'
+              : type === 'income'
+                ? 'Receita salva'
+                : 'Transferência salva',
+      });
+    } catch (e) {
+      console.warn('Falha ao salvar o lançamento', e);
+      toast({ message: 'Não foi possível salvar. Confira os campos.' });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <View style={[s.root, { height: height - t.space[12] - t.space[8] }]}>
+      <View style={s.header}>
+        <Text variant="heading">Novo lançamento</Text>
+        <IconButton icon={X} label="Fechar" variant="ghost" color="textSecondary" onPress={onClose} />
+      </View>
+      <SegmentedControl label="Tipo de lançamento" options={TYPES} value={type} onChange={changeType} />
+      <View>
+        <Text variant="display" numeric tone={cents ? 'primary' : 'tertiary'} accessibilityLiveRegion="polite">
+          {money(cents)}
+        </Text>
+        <Text variant="small" tone="tertiary" numeric>
+          {amountSub}
+        </Text>
+      </View>
+
+      <ScrollView
+        style={s.scroll}
+        contentContainerStyle={s.scrollContent}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
+        <Input label="Descrição" value={desc} onChangeText={setDesc} placeholder="Ex.: Mercado" maxLength={200} />
+
+        {type !== 'transfer' && (
+          <>
+            <Text variant="label" tone="tertiary">
+              Categoria
+            </Text>
+            <View style={s.chips}>
+              {catsForType.map((c) => (
+                <Chip
+                  key={c.id}
+                  size="sm"
+                  label={c.name}
+                  icon={categoryIcon(c.icon)}
+                  selected={catId === c.id}
+                  onPress={() => setCatId(c.id)}
+                />
+              ))}
+            </View>
+          </>
+        )}
+
+        <Text variant="label" tone="tertiary">
+          {type === 'transfer' ? 'De' : type === 'income' ? 'Conta' : 'Conta ou cartão'}
+        </Text>
+        <View style={s.chips}>
+          {sources.map((a) => (
+            <Chip
+              key={a.id}
+              size="sm"
+              label={a.name}
+              icon={accountIcon(a.kind)}
+              selected={acctId === a.id}
+              onPress={() => {
+                setAcctId(a.id);
+                if (a.kind !== 'credit_card') setParc(1);
+                if (toId === a.id) setToId(null);
+              }}
+            />
+          ))}
+        </View>
+
+        {type === 'transfer' && (
+          <>
+            <Text variant="label" tone="tertiary">
+              Para
+            </Text>
+            <View style={s.chips}>
+              {targets.map((a) => (
+                <Chip
+                  key={a.id}
+                  size="sm"
+                  label={a.name}
+                  icon={accountIcon(a.kind)}
+                  selected={toId === a.id}
+                  onPress={() => setToId(a.id)}
+                />
+              ))}
+            </View>
+            <View style={s.note}>
+              <Icon icon={ArrowLeftRight} size={t.icon.tiny} color="textTertiary" />
+              <Text variant="caption" tone="tertiary">
+                {transferNote}
+              </Text>
+            </View>
+          </>
+        )}
+
+        {isCard && !repeat && (
+          <>
+            <Text variant="label" tone="tertiary">
+              Parcelar
+            </Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.parcs}>
+              {PARCS.map((n) => (
+                <Chip key={n} size="sm" numeric label={`${n}×`} selected={parc === n} onPress={() => setParc(n)} />
+              ))}
+            </ScrollView>
+          </>
+        )}
+        {isCard && (
+          <View style={s.note}>
+            <Icon icon={CreditCard} size={t.icon.small - t.space[0.5]} color="textSecondary" />
+            <Text variant="small" tone="secondary" numeric style={s.flex}>
+              {invoiceTxt}
+            </Text>
+          </View>
+        )}
+
+        <DateRow date={date} display={dayLabel(date, today)} onChange={setDate} />
+        <SwitchRow
+          title="É previsto"
+          sub="Fica agendado e só muda o saldo quando confirmado."
+          control={<Switch label="É previsto" value={planned} onChange={setPlanned} />}
+        />
+        <SwitchRow title="Repetir" sub={repSub} control={<Switch label="Repetir" value={repeat} onChange={setRepeat} />} />
+        {repeat && (
+          <View style={s.repeat}>
+            <View style={s.chips}>
+              {(
+                [
+                  ['weekly', 'Semanal'],
+                  ['monthly', 'Mensal'],
+                  ['yearly', 'Anual'],
+                  ['every', 'A cada N meses'],
+                ] as const
+              ).map(([v, l]) => (
+                <Chip key={v} size="sm" label={l} selected={freq === v} onPress={() => setFreq(v)} />
+              ))}
+            </View>
+            {freq === 'every' && (
+              <View style={s.inline}>
+                <Text variant="chip" tone="secondary">
+                  A cada
+                </Text>
+                <Stepper label="Intervalo em meses" value={every} min={2} onChange={setEvery} />
+                <Text variant="chip" tone="secondary">
+                  meses
+                </Text>
+              </View>
+            )}
+            <View style={s.inline}>
+              <Text variant="chip" tone="secondary">
+                Termina
+              </Text>
+              <SegmentedControl
+                label="Quando termina"
+                options={[
+                  { value: 'never', label: 'Nunca' },
+                  { value: 'date', label: 'Em data' },
+                ]}
+                value={ends}
+                onChange={setEnds}
+              />
+            </View>
+            {ends === 'date' && <DateRow label="Última" date={endDate} display={dmy(endDate)} onChange={setEndDate} />}
+          </View>
+        )}
+      </ScrollView>
+
+      <Keypad cents={cents} onChange={setCents} />
+      <Button label={saveLabel} fullWidth haptic disabled={!canSave} loading={saving} onPress={save} />
+    </View>
+  );
+}
+
+const useStyles = makeStyles((t) => ({
+  root: { gap: t.space[3] + t.space[0.5], maxHeight: '100%' },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: -t.space[1.5],
+    marginRight: -t.space[2],
+  },
+  scroll: { flex: 1, marginHorizontal: -t.space[5] },
+  scrollContent: {
+    gap: t.space[3] + t.space[0.5],
+    paddingHorizontal: t.space[5],
+    paddingBottom: t.space[2],
+  },
+  chips: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: t.space[2],
+    marginTop: -t.space[1],
+  },
+  parcs: { gap: t.space[1.5] },
+  note: { flexDirection: 'row', alignItems: 'center', gap: t.space[2] },
+  flex: { flex: 1 },
+  repeat: { gap: t.space[3] },
+  inline: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: t.space[2] + t.space[0.5],
+    flexWrap: 'wrap',
+  },
+}));

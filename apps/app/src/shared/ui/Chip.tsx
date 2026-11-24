@@ -1,4 +1,4 @@
-import { Check } from 'lucide-react-native';
+import { Check, type LucideIcon } from 'lucide-react-native';
 import { useEffect } from 'react';
 import { Pressable, View } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
@@ -15,10 +15,14 @@ export interface ChipProps {
   onPress?: () => void;
   /** sm (32 px) esconde o check */
   size?: 'md' | 'sm';
+  /** ícone antes do texto (categoria, conta); acompanha a cor do texto */
+  icon?: LucideIcon;
+  /** algarismos tabulares (ex.: "10×") */
+  numeric?: boolean;
 }
 
 /** Chip de filtro em pílula. Selecionado = preenchido com o destaque; no tamanho md mostra um check. */
-export function Chip({ label, selected, onPress, size = 'md' }: ChipProps) {
+export function Chip({ label, selected, onPress, size = 'md', icon, numeric }: ChipProps) {
   const s = useStyles();
   const t = useTheme();
   const reduceMotion = useReduceMotion();
@@ -73,7 +77,8 @@ export function Chip({ label, selected, onPress, size = 'md' }: ChipProps) {
               </View>
             </Animated.View>
           )}
-          <Text variant="chip" tone={selected ? 'onAccent' : 'primary'}>
+          {icon && <Icon icon={icon} size={t.icon.small - t.space[0.5]} color={selected ? 'onAccent' : 'text'} />}
+          <Text variant="chip" tone={selected ? 'onAccent' : 'primary'} numeric={numeric}>
             {label}
           </Text>
         </Animated.View>

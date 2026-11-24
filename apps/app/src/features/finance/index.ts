@@ -1,3 +1,9 @@
 export { FinanceHomeScreen } from './screens/FinanceHomeScreen';
+export { InvoiceScreen } from './screens/InvoiceScreen';
+export { NewAccountScreen } from './screens/NewAccountScreen';
+export { StatementScreen } from './screens/StatementScreen';
+export { RecurrenceScreen, RecurrencesScreen } from './screens/RecurrencesScreen';
+export { BudgetsScreen } from './screens/BudgetsScreen';
+export { FinanceProvider } from './hooks/FinanceData';
 export { financeTables } from './data/schema';
 export { createLocalFinance } from './data/localFinanceStore';
