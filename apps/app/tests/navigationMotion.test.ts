@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { getTabIndicatorOffset, resolveNavigationMotion } from '../src/shared/navigation/navigationMotion';
+import { getTabIndicatorOffset, resolveNavigationMotion, tabSceneEnterFrom } from '../src/shared/navigation/navigationMotion';
 
 describe('acessibilidade da navegação', () => {
   it('desliga todas as transições, incluindo opções específicas de modal e detalhe', () => {
@@ -18,6 +18,16 @@ describe('acessibilidade da navegação', () => {
       modal: 'slide_from_bottom',
       detail: 'slide_from_right',
     });
+  });
+});
+
+describe('troca de aba', () => {
+  it('a aba nova só esmaece: nunca começa deslocada para o lado', () => {
+    expect(tabSceneEnterFrom(false)).toEqual({ opacity: 0, translateX: 0 });
+  });
+
+  it('com "reduzir movimento" aparece direto', () => {
+    expect(tabSceneEnterFrom(true)).toEqual({ opacity: 1, translateX: 0 });
   });
 });
 

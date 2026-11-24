@@ -1,27 +1,26 @@
 import { useIsFocused } from 'expo-router';
 import { useLayoutEffect, type ReactNode } from 'react';
-import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
+import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 
-import { makeStyles, resolveSpring, useReduceMotion, useTheme } from '@/shared/ui';
+import { makeStyles, useReduceMotion, useTheme } from '@/shared/ui';
 
-/** Mantém a tela montada: a troca de aba anima sem apagar seu estado local. */
+import { tabSceneEnterFrom } from './navigationMotion';
+
+/** Mantém a tela montada: a troca de aba esmaece sem apagar seu estado local nem deslocar a tela. */
 export function TabScene({ children }: { children: ReactNode }) {
   const s = useStyles();
   const t = useTheme();
   const focused = useIsFocused();
   const reduceMotion = useReduceMotion();
-  const distance = t.space[6];
-  const offset = useSharedValue(reduceMotion ? t.space[0] : distance);
-  const spring = resolveSpring('standard', reduceMotion);
+  const from = tabSceneEnterFrom(reduceMotion);
+  const opacity = useSharedValue(from.opacity);
 
   useLayoutEffect(() => {
-    if (focused && spring) offset.set(withSpring(t.space[0], spring));
-    else offset.set(reduceMotion ? t.space[0] : distance);
-  }, [focused, reduceMotion, spring, offset, distance, t.space]);
+    if (focused && !reduceMotion) opacity.set(withTiming(1, { duration: t.motion.tap }));
+    else opacity.set(focused ? 1 : from.opacity);
+  }, [focused, reduceMotion, opacity, from.opacity, t.motion.tap]);
 
-  const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ translateX: reduceMotion ? t.space[0] : offset.get() }],
-  }));
+  const animatedStyle = useAnimatedStyle(() => ({ opacity: opacity.get() }));
 
   return (
     <Animated.View testID="tab-scene" style={[s.scene, animatedStyle]}>

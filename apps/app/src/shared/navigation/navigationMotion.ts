@@ -5,6 +5,14 @@ export function resolveNavigationMotion(reduceMotion: boolean) {
     : { stack: 'fade', modal: 'slide_from_bottom', detail: 'slide_from_right' } as const;
 }
 
+/**
+ * Estado inicial da aba que ganha foco. Só esmaece: deslocar para o lado fazia a tela "arrastar" a cada troca.
+ * Com "reduzir movimento" aparece direto.
+ */
+export function tabSceneEnterFrom(reduceMotion: boolean) {
+  return { opacity: reduceMotion ? 1 : 0, translateX: 0 } as const;
+}
+
 /** A caixa de entrada ocupa um espaço no centro, mas nunca recebe o indicador de aba. */
 export function getTabIndicatorOffset(index: number, tabCount: number, barWidth: number, indicatorWidth: number) {
   if (barWidth <= 0 || tabCount <= 0 || index < 0 || index >= tabCount) return null;
