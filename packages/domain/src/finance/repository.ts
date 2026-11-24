@@ -42,7 +42,7 @@ import {
   type TransactionDraft,
   type TransactionPatch,
 } from './model.ts';
-import { budgetId, occurrenceId, splitRecurrence } from './recurrence.ts';
+import { budgetId, defaultCategoryId, occurrenceId, splitRecurrence } from './recurrence.ts';
 
 // ---------- Interfaces usadas pelas telas ----------
 
@@ -64,6 +64,11 @@ export interface CategoriesRepository {
   create(draft: CategoryDraft): Promise<Category>;
   update(id: string, patch: CategoryPatch): Promise<Category>;
   archive(id: string): Promise<Category>;
+  /**
+   * Garante as categorias padrão, cada uma com id fixo por dono e `key`. Nunca recria uma que já existiu (mesmo
+   * excluída ou editada): a pessoa manda nas próprias categorias. Devolve as que foram criadas agora.
+   */
+  ensureDefaults(defaults: readonly (CategoryDraft & { key: string })[]): Promise<Category[]>;
 }
 
 export interface TransactionRangeQuery {
@@ -298,6 +303,20 @@ export function createFinanceRepositories(store: FinanceStore, userId: string, c
         }),
       ),
     archive: (id) => categories.update(id, { archived: true }),
+    ensureDefaults: (defaults) =>
+      guard(() =>
+        store.transaction(async (db) => {
+          const created: Category[] = [];
+          for (const { key, ...draft } of defaults) {
+            const id = defaultCategoryId(userId, key);
+            if (await db.get('categories', id)) continue;
+            const c = { ...newCategory(draft, userId, clock), id };
+            await db.put('categories', c);
+            created.push(c);
+          }
+          return created;
+        }),
+      ),
   };
 
   const transactions: TransactionsRepository = {

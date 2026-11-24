@@ -14,6 +14,14 @@ export const FINANCE_OCCURRENCE_NAMESPACE = '6f1d2c3e-8a4b-5c6d-9e7f-0a1b2c3d4e5
 /** Namespace fixo do UUID v5 dos orçamentos (um por categoria e mês). Nunca mudar. */
 export const FINANCE_BUDGET_NAMESPACE = '0b7e4a52-3c1d-5e8f-a9b0-c1d2e3f4a5b6';
 
+/** Namespace fixo do UUID v5 das categorias padrão (uma por dono e chave). Nunca mudar. */
+export const FINANCE_CATEGORY_NAMESPACE = '4d2e8f10-6b3a-5c7d-8e9f-a1b2c3d4e5f6';
+
+/** Id fixo de uma categoria padrão: dois aparelhos que semeiam offline gravam a mesma linha. */
+export function defaultCategoryId(userId: string, key: string): string {
+  return uuidV5(FINANCE_CATEGORY_NAMESPACE, `${userId}|${key}`);
+}
+
 /** UUID v5 (RFC 9562) de `recurrenceId|date` no namespace das ocorrências. */
 export function occurrenceId(recurrenceId: string, date: IsoDate): string {
   return uuidV5(FINANCE_OCCURRENCE_NAMESPACE, `${recurrenceId}|${date}`);

@@ -78,6 +78,8 @@ export {
 } from './installments.ts';
 export {
   FINANCE_BUDGET_NAMESPACE,
+  FINANCE_CATEGORY_NAMESPACE,
+  defaultCategoryId,
   FINANCE_OCCURRENCE_NAMESPACE,
   budgetId,
   expandRecurrence,

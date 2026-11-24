@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 
 import { isRepositoryError } from '../core/index.ts';
 import {
+  defaultCategoryId,
   occurrenceId,
   planInstallmentPurchase,
   type Account,
@@ -71,6 +72,20 @@ export function financeRepositoryContract(name: string, make: () => Promise<Fina
       expect((await finance.categories.list({ kind: 'expense' })).map((c) => c.id)).toEqual([mercado.id]);
       await finance.categories.archive(mercado.id);
       expect(await finance.categories.list({ kind: 'expense' })).toEqual([]);
+    });
+
+    it('categorias padrão: id fixo, criadas uma vez e nunca recriadas', async () => {
+      const { finance, userId } = await make();
+      const defaults = [
+        { key: 'moradia', name: 'Moradia', kind: 'expense' as const, color: 'slate' as const, icon: 'house' },
+        { key: 'salario', name: 'Salário', kind: 'income' as const, color: 'sage' as const, icon: 'briefcase' },
+      ];
+      const first = await finance.categories.ensureDefaults(defaults);
+      expect(first.map((c) => c.id)).toEqual([defaultCategoryId(userId, 'moradia'), defaultCategoryId(userId, 'salario')]);
+      await finance.categories.update(first[0]!.id, { name: 'Casa e contas' });
+      await finance.categories.archive(first[1]!.id);
+      expect(await finance.categories.ensureDefaults(defaults)).toEqual([]);
+      expect((await finance.categories.list({ includeArchived: true })).map((c) => c.name)).toEqual(['Casa e contas', 'Salário']);
     });
   });
 
