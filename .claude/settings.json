@@ -7,18 +7,7 @@
             "type": "command",
             "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/session-start.mjs\"",
             "timeout": 30,
-            "statusMessage": "Verificando trabalho do Codex…"
-          }
-        ]
-      }
-    ],
-    "Stop": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/stop.mjs\"",
-            "timeout": 30
+            "statusMessage": "Conferindo commits desde o STATUS.md…"
           }
         ]
       }

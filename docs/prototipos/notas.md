@@ -1,7 +1,7 @@
 # Notas (Fase 1) — prototipadas
 
 Protótipo no Claude Design: `Glife Notas.dc.html` (telas em `NotaTela.dc.html`), implementado na T14 (23/11/2026).
-O que ficou de fora está em "Pendências do protótipo" no HANDOFF.md.
+O que ficou de fora está em "Falta" no STATUS.md (histórico em `docs/arquivo/HANDOFF_antigo_2026-11-24.md`).
 
 ## Histórico: pedido de prototipagem
 
