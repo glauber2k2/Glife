@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.3 — 2026-11-24
+
+- Notas: na barra do editor, "Ler/Escrever" fica na mesma linha do seletor de tipo e dos botões (estava mais alto).
+
 ## 0.2.2 — 2026-11-24
 
 - Teclado: ao tocar num campo, a tela (ou a folha) sobe e rola até ele; o teclado não cobre mais o conteúdo no Android.
