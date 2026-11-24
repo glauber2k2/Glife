@@ -107,7 +107,8 @@ O Claude é o agente principal; o Codex só assume quando os créditos do Claude
   no projeto **GLIFE** (o usuário tem vários).
 - QR do MFA do Supabase vem como data URL SVG sem viewBox: `svgFromDataUrl` trata.
 - PowerSync web: o worker vem de `public/@powersync` (`pnpm --filter app powersync:assets`, roda no postinstall).
-  `op-sqlite` fixo em ~18.2. Mudou o `sync-streams.yaml`? Republique no painel (Validate → Deploy; cole, não digite).
+  `op-sqlite` fixo em ~18.2. No navegador embutido do app Claude o banco local não abre ("Client has already been
+  closed": lá o shared worker não cria worker aninhado); teste o web no Chrome. Mudou o `sync-streams.yaml`? Republique no painel (Validate → Deploy; cole, não digite).
 - Toast: a ação é um `Text` com `onPress` (o `Pressable` não recebia o toque no web); some em 4 s nos testes pelo navegador.
 - Telas de notas usam `goBack()`. Servidor estático simples dá 404 ao recarregar rotas: navegue a partir de `/`.
 - Screenshots logo após trocar de aba pegam a transição: espere ~1 s.
