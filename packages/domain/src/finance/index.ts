@@ -69,3 +69,9 @@ export {
   type TxStatus,
   type TxType,
 } from './model.ts';
+export {
+  planInstallmentPurchase,
+  planOngoingInstallments,
+  planPreviousBalance,
+  type PlannedTransaction,
+} from './installments.ts';
