@@ -7,6 +7,7 @@ import { createSupabaseConnector, type UploadClient } from './connector';
 import { createPowerSyncDatabase } from './database';
 import { createSyncController, type SyncStage } from './lifecycle';
 import { toLocalDb, type PowerSyncLike } from './localDb';
+import { dropSearchIndexes, ensureSearchIndexes, type FtsIndexSpec } from './searchIndex';
 
 // Acesso estático: o Expo só embute variáveis escritas literalmente.
 const endpoint = process.env.EXPO_PUBLIC_POWERSYNC_URL;
@@ -24,7 +25,7 @@ export interface LocalSync {
  * Cria o banco local com as tabelas das features (composição na raiz do app).
  * Sem EXPO_PUBLIC_POWERSYNC_URL o banco funciona só neste aparelho (não sincroniza).
  */
-export function createLocalSync(tables: Record<string, Table>): LocalSync {
+export function createLocalSync(tables: Record<string, Table>, searchIndexes: FtsIndexSpec[] = []): LocalSync {
   const ps = createPowerSyncDatabase(new Schema(tables));
   const online = !!endpoint?.startsWith('https://');
   if (!online) console.warn('Sincronização desligada: configure EXPO_PUBLIC_POWERSYNC_URL em apps/app/.env.local.');
@@ -48,9 +49,15 @@ export function createLocalSync(tables: Record<string, Table>): LocalSync {
     backend,
     (e) => console.warn('Falha na sincronização', e),
   );
+  const db = toLocalDb(ps as unknown as PowerSyncLike);
   return {
-    db: toLocalDb(ps as unknown as PowerSyncLike),
-    apply: controller.apply,
+    db,
+    apply: async (stage) => {
+      await controller.apply(stage);
+      // Índice de busca só com acesso completo; ao sair, apagado junto com o banco local.
+      if (stage === 'ready') await ensureSearchIndexes(db, searchIndexes);
+      else if (stage === 'signed_out') await dropSearchIndexes(db, searchIndexes).catch((e) => console.warn(e));
+    },
     onConnectedChange: (listener) => {
       listener(ps.currentStatus.connected);
       return ps.registerListener({ statusChanged: (status) => listener(status.connected) });

@@ -61,5 +61,8 @@
     "powersync:assets": "powersync-web copy-assets",
     "postinstall": "pnpm run powersync:assets"
   },
-  "private": true
+  "private": true,
+  "op-sqlite": {
+    "fts5": true
+  }
 }
