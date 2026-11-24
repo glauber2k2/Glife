@@ -89,6 +89,15 @@ O Claude é o agente principal; o Codex só assume quando os créditos do Claude
   `emphasis` 350, `gentle` 320 ms; toque afunda 0,96; listas em cascata de 40 ms (`Reveal`); sem quique; nada bloqueia o
   toque; respeite "reduzir movimento"; haptics leve nas ações importantes.
 - Conferir toda tela nos dois temas (Ajustes → Aparência) e no Android e web.
+- **Teclado nunca cobre o campo:** tela com campos usa `Screen` (rola até o campo focado) ou `Sheet`; tela própria usa
+  `KeyboardAvoidingView`/`KeyboardAwareScrollView` de `react-native-keyboard-controller`, **nunca** o `KeyboardAvoidingView`
+  do React Native (no Android edge-to-edge ele não faz nada).
+- **Campos:** sempre `Input` (texto centrado, rótulo de uma linha). No máximo 2 campos por linha; valor em dinheiro em
+  linha própria. Telas estreitas (360 dp) são o caso de teste.
+- **Marcar/selecionar não mexe no layout:** chip, opção ou linha selecionável mantém a mesma largura e altura nos dois
+  estados (reserve o espaço do check; esconda com opacidade). Nada de quebra de linha nova ao tocar.
+- **Ação que grava várias coisas é tudo ou nada:** se uma parte falhar, desfaça a anterior (nada pela metade, nada
+  duplicado ao tentar de novo) e o aviso de erro diz o motivo, não só "Não foi possível…".
 
 ## Decisões tomadas (não mudar sem motivo)
 
@@ -114,6 +123,8 @@ O Claude é o agente principal; o Codex só assume quando os créditos do Claude
 - Screenshots logo após trocar de aba pegam a transição: espere ~1 s.
 - Testes de banco aplicam todas as migrações num PGlite novo: SQL incompatível quebra `pnpm test`.
 - Windows: comandos na raiz `glife/`; avisos "LF will be replaced by CRLF" são inofensivos.
+- Lib nativa nova (ex.: keyboard-controller): reinicie o dev server (o antigo não a encontra) e gere APK novo com
+  `prebuild --clean`. Ao editar `build.gradle` pelo PowerShell, grave **sem BOM** (o Gradle recusa o arquivo).
 
 ## Comandos (na raiz `glife/`)
 
