@@ -137,7 +137,24 @@ Ordem obrigatória (cada uma usa a anterior). **Codex: não pegue T15–T19** (C
   data "hoje/ontem/há N dias/12 nov", prévia de 1 linha; "Ver todas" ou "Nova nota"); linha final dos módulos
   → Ajustes; cascata de 40 ms ao abrir e ao voltar à aba depois de 30 min. Fora (pendente): card que expande até a
   nota, navegação superior no web, blocos de agenda/refeição/gastos/devocional (chegam com os módulos), itens da caixa
-  (sem tabela ainda).
+  (sem tabela ainda). **Código commitado (`05c0949`); falta validar no web com login do usuário.**
+
+### Fase 1 — Bloqueio do app (regras no planejamento, seção "Bloqueio do app"; telas aguardam `docs/prototipos/bloqueio.md`)
+
+**Codex: não pegue T21–T23** (segurança; Claude em andamento, 24/11).
+
+- [ ] **T21 — Domain `applock` (só Claude)** — `packages/domain/src/applock/` + testes. `appPasswordSchema` (6–128),
+  `lockoutFor(falhas)` (5–6 → 30 s; 7–9 → 5 min; ≥ 10 → só com login da conta), `shouldLockOnReturn`, registro
+  `AppLockRecord` (zod), interfaces `AppLockStore`/`PasswordHasher` e serviço `createAppLock` (definir, trocar
+  confirmando a atual, desbloquear por senha, redefinir após login da conta, biometria liga/desliga, tempo para
+  bloquear, "pedir a senha uma vez" após digital nova). Aceite: testes com loja em memória e hasher falso cobrem
+  esperas, trava em 10, sucesso zera erros, troca exige a atual, senha nunca guardada em texto.
+- [ ] **T22 — Hash scrypt e loja segura (só Claude)** — `features/app-lock/data/` (`createScryptHasher` com
+  `@noble/hashes`, sal aleatório de 16 bytes, comparação em tempo constante; `createSecureAppLockStore`:
+  SecureStore no Android, localStorage no web). Aceite: verifica a senha certa, recusa a errada, sais diferentes
+  geram hashes diferentes, parâmetros vão no registro.
+- [ ] **T23 — Lixeira apaga de vez após 30 dias** — `NotesRepository.purgeTrash(olderThanDays)` no contrato,
+  memória e SQLite local; chamado quando o acesso fica `ready`. Aceite: nota excluída há 31 dias some, há 29 fica.
 
 ## Pendências do usuário
 

@@ -1,0 +1,21 @@
+export {
+  ACCOUNT_LOCK_FAILURES,
+  APP_PASSWORD_MAX,
+  APP_PASSWORD_MIN,
+  DEFAULT_LOCK_TIMEOUT_MS,
+  LOCK_TIMEOUT_OPTIONS,
+  appLockRecordSchema,
+  appPasswordSchema,
+  lockTimeoutSchema,
+  lockoutFor,
+  passwordDigestSchema,
+  shouldLockOnReturn,
+  type AppLockRecord,
+  type AppLockStatus,
+  type AppLockStore,
+  type Lockout,
+  type PasswordDigest,
+  type PasswordHasher,
+  type UnlockResult,
+} from './model.ts';
+export { createAppLock, type AppLock, type AppLockDeps } from './service.ts';
