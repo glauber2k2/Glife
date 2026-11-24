@@ -41,7 +41,7 @@ Objetivo: o mesmo app abre no Android e no navegador, com login, banco local e s
 - Registro de tipos (`glife://note` …) na feature `links`.
 - Busca universal com FTS5 (Ctrl+K no web), incluindo ações (“nova nota”).
 - Lixeira (exclusão lógica).
-- `app-lock`: biometria + senha do app (scrypt/argon2 via `@noble/hashes`, `expo-secure-store`), espera crescente, tela oculta em recentes.
+- `app-lock`: biometria + senha do app (scrypt/argon2 via `@noble/hashes`, `expo-secure-store`), espera crescente (sem esconder em recentes: decisão de 24/11/2026).
 - Tela **Hoje** (inicialmente: notas recentes e fixadas).
 - Fase 1.5: editor CodeMirror 6 via Expo DOM component (`"use dom"`).
 - Movimento (princípio 6): item de lista que se risca e recolhe ao concluir, card que se expande até a tela de detalhe, transições entre lista e editor.

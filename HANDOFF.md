@@ -22,6 +22,7 @@ no app** — T11 e T12 são do Codex; T10 e T13 do Claude. Android (0.11) depend
   `unique (id, user_id)`); FK entre tabelas do usuário é **sempre composta** `(x_id, user_id)`; funções com
   `search_path = ''`. Migração já commitada **nunca** é editada: crie outra.
 - Dinheiro em centavos (inteiro). Exclusão lógica (`deleted_at`). Texto da Bíblia é somente leitura.
+- Bloqueio: o app **não** se esconde na lista de apps recentes e prints ficam liberados (usuário, 24/11/2026).
 - Movimento: React Native **Reanimated**, molas amortecidas 200–350 ms, respeitar "reduzir movimento".
 - Testes: vitest em todos os pacotes; banco testado em Postgres real via PGlite (`supabase/tests`).
 - **Telas novas** só depois de perguntar ao usuário se ele quer enviar protótipo (o Claude faz essa pergunta).

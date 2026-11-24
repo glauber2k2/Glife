@@ -35,8 +35,7 @@ Telas e estados:
    ligar a biometria.
 3. Trocar a senha (em Ajustes): senha atual, nova, confirmação.
 4. Ajustes › Segurança: bloqueio (sempre ligado, explicado), usar biometria (liga/desliga), "Bloquear depois de"
-   (imediatamente, 1 min, 5 min, 15 min), trocar a senha do app, esconder conteúdo nos apps recentes (sempre ligado).
-5. Como o app aparece na lista de apps recentes do Android (conteúdo escondido, só o nome/ícone sobre o fundo).
+   (imediatamente, 1 min, 5 min, 15 min), trocar a senha do app.
 
 Movimento (sóbrio, molas tap/std/emph/gentle, respeitando "reduzir movimento"): a tela de bloqueio entra sem
 animar o conteúdo por trás; senha errada faz o campo tremer de leve uma vez (curto, sem quique exagerado) ou outra
