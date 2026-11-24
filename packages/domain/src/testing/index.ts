@@ -6,3 +6,4 @@ export { notesRepositoryContract, type NotesContractSubject } from './notesContr
 export { tagsRepositoryContract, type TagsContractSubject } from './tagsContract.ts';
 export { createInMemoryFinance, createInMemoryFinanceStore } from './financeMemory.ts';
 export { financeRepositoryContract, type FinanceContractSubject } from './financeContract.ts';
+export { financeReviewContract } from './financeReviewContract.ts';

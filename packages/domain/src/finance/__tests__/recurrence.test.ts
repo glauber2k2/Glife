@@ -144,3 +144,10 @@ describe('splitRecurrence', () => {
     expect(() => splitRecurrence(salary(), '2026-12-10', {})).toThrow(RangeError);
   });
 });
+
+describe('revisão: created_at ilegível', () => {
+  it('não some com as ocorrências; conta a partir do início da regra', () => {
+    const rule = { ...salary(), created_at: 'lixo' };
+    expect(dates(rule, '2026-12-01', '2027-01-31')).toEqual(['2026-12-10', '2027-01-10']);
+  });
+});

@@ -87,3 +87,17 @@ describe('só para cartão', () => {
     expect(() => planPreviousBalance({ card: checking, amountCents: 1, today: '2026-11-24' })).toThrow(RangeError);
   });
 });
+
+describe('revisão: cartão cadastrado entre o fechamento e o vencimento', () => {
+  it('saldo anterior e parcelas começam na fatura fechada ainda não vencida', () => {
+    expect(planPreviousBalance({ card, amountCents: 1000, today: '2026-12-05' }).invoice_month).toBe('2026-12');
+    const rows = planOngoingInstallments({ ...base, installmentCents: 100, currentIndex: 4, count: 10, today: '2026-12-05' });
+    expect(rows[0]!.invoice_month).toBe('2026-12');
+  });
+
+  it('aceita escolher a fatura', () => {
+    expect(planPreviousBalance({ card, amountCents: 1000, today: '2026-12-05', invoiceMonth: '2027-01' }).invoice_month).toBe('2027-01');
+    const rows = planOngoingInstallments({ ...base, installmentCents: 100, currentIndex: 9, count: 10, today: '2026-12-05', invoiceMonth: '2027-01' });
+    expect(rows.map((r) => r.invoice_month)).toEqual(['2027-01', '2027-02']);
+  });
+});

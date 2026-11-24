@@ -91,6 +91,16 @@ function storeOn(q: LocalQueries, userId: string): FinanceStoreTx {
           )
         ).map((r) => fromRow<'transactions'>(r) as Transaction),
       ),
+    transactionsForRecurrences: (ids) =>
+      unavailable(async () =>
+        (
+          await q.getAll<Record<string, unknown>>(
+            `SELECT ${TX_COLUMNS} FROM transactions WHERE user_id = ? AND deleted_at IS NULL
+             AND recurrence_id IN (${ids.map(() => '?').join(', ')}) ORDER BY occurrence_date, id`,
+            [userId, ...ids],
+          )
+        ).map((r) => fromRow<'transactions'>(r) as Transaction),
+      ),
     put: (table, row) =>
       unavailable(async () => {
         const name = tableName(table);

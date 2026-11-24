@@ -2,7 +2,7 @@
 // (cadastro de cartão que já está em uso). Cada parcela cai numa fatura seguida; todas apontam para a primeira.
 import { newId } from '../core/index.ts';
 import { addMonths, dateInMonth, monthOf, type IsoDate } from './calendar.ts';
-import { invoiceMonthFor, type CardCycle } from './invoice.ts';
+import { invoiceDates, invoiceMonthFor, type CardCycle } from './invoice.ts';
 import type { Account, TransactionDraft } from './model.ts';
 import { INSTALLMENTS_MAX, splitInstallments } from './money.ts';
 
@@ -40,6 +40,13 @@ function row(base: PurchaseBase, fields: Partial<PlannedTransaction> & Pick<Plan
   };
 }
 
+/** Fatura mais antiga ainda não vencida: a fechada (entre o fechamento e o vencimento) ou a aberta. */
+export function currentInvoiceMonth(today: IsoDate, card: CardCycle): string {
+  const open = invoiceMonthFor(today, card);
+  const closed = addMonths(open, -1);
+  return invoiceDates(closed, card).dueDate >= today ? closed : open;
+}
+
 /** Mesmo dia `n` meses depois (dia inexistente vira o último dia do mês). */
 const shiftMonths = (date: IsoDate, n: number) => dateInMonth(addMonths(monthOf(date), n), Number(date.slice(8, 10)));
 
@@ -69,7 +76,7 @@ export function planInstallmentPurchase(
 
 /** Parcelamento que já estava correndo: cria da parcela atual até a última, a atual na fatura em aberto. */
 export function planOngoingInstallments(
-  input: PurchaseBase & { installmentCents: number; currentIndex: number; count: number; today: IsoDate },
+  input: PurchaseBase & { installmentCents: number; currentIndex: number; count: number; today: IsoDate; invoiceMonth?: string },
 ): PlannedTransaction[] {
   const cycle = cycleOf(input.card);
   const { currentIndex, count } = input;
@@ -78,12 +85,15 @@ export function planOngoingInstallments(
   // splitInstallments valida o valor (centavos inteiros); aqui todas as parcelas têm o mesmo valor.
   splitInstallments(input.installmentCents, 1);
   const amounts = Array.from({ length: count - currentIndex + 1 }, () => input.installmentCents);
-  return series(input, amounts, currentIndex, count, input.today, invoiceMonthFor(input.today, cycle));
+  return series(input, amounts, currentIndex, count, input.today, input.invoiceMonth ?? currentInvoiceMonth(input.today, cycle));
 }
 
-/** Valor da fatura atual em aberto ao cadastrar um cartão já em uso. */
-export function planPreviousBalance(input: { card: Account; amountCents: number; today: IsoDate }): PlannedTransaction {
-  const invoice_month = invoiceMonthFor(input.today, cycleOf(input.card));
+/**
+ * Valor da fatura em aberto ao cadastrar um cartão já em uso. Padrão: a fatura mais antiga ainda não vencida
+ * (entre o fechamento e o vencimento, a fechada); `invoiceMonth` escolhe outra.
+ */
+export function planPreviousBalance(input: { card: Account; amountCents: number; today: IsoDate; invoiceMonth?: string }): PlannedTransaction {
+  const invoice_month = input.invoiceMonth ?? currentInvoiceMonth(input.today, cycleOf(input.card));
   return row(
     { card: input.card, description: 'Saldo anterior', category_id: null },
     { amount_cents: input.amountCents, date: input.today, invoice_month },

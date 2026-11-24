@@ -34,3 +34,10 @@ financeRepositoryContract('SQLite local', async () => {
   const db = await createSqliteLocalDb(financeTables);
   return { finance: createLocalFinance(db, USER), userId: USER };
 });
+
+import { financeReviewContract } from '@glife/domain/testing';
+
+financeReviewContract('SQLite local', async () => {
+  const db = await createSqliteLocalDb(financeTables);
+  return { finance: createLocalFinance(db, USER), userId: USER };
+});

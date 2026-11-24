@@ -42,7 +42,7 @@ import {
   type TransactionDraft,
   type TransactionPatch,
 } from './model.ts';
-import { occurrenceId, splitRecurrence } from './recurrence.ts';
+import { budgetId, occurrenceId, splitRecurrence } from './recurrence.ts';
 
 // ---------- Interfaces usadas pelas telas ----------
 
@@ -81,6 +81,8 @@ export interface TransactionsRepository {
   listRange(query: TransactionRangeQuery): Promise<Transaction[]>;
   /** Compras, estornos e pagamentos de uma fatura do cartão. */
   listByInvoice(cardId: string, month: Month): Promise<Transaction[]>;
+  /** Ocorrências gravadas das regras (pela regra, não pela data): é o `materialized` de `expandRecurrence`. */
+  listForRecurrences(recurrenceIds: readonly string[]): Promise<Transaction[]>;
   watchRange(query: TransactionRangeQuery, listener: Listener<Transaction[]>, onError?: ErrorListener): Unsubscribe;
   /**
    * Compra/estorno no cartão sem `invoice_month` ganha o mês da fatura pela data. Pagamento de fatura (transferência
@@ -146,6 +148,8 @@ export interface FinanceStoreReads {
   transactionsInRange(query: TransactionRangeQuery): Promise<Transaction[]>;
   /** Transações não excluídas da fatura: do cartão ou para o cartão, com aquele `invoice_month`. */
   transactionsByInvoice(cardId: string, month: Month): Promise<Transaction[]>;
+  /** Transações não excluídas ligadas a estas regras, por `occurrence_date` e `id`. */
+  transactionsForRecurrences(recurrenceIds: readonly string[]): Promise<Transaction[]>;
 }
 
 export interface FinanceStoreTx extends FinanceStoreReads {
@@ -202,7 +206,11 @@ export function createFinanceRepositories(store: FinanceStore, userId: string, c
     const target = row.to_account_id ? await aliveOrInvalid(db, 'accounts', row.to_account_id) : null;
     const category = row.category_id ? await aliveOrInvalid(db, 'categories', row.category_id) : null;
     if (!checkCategoryFits(row.type, account.kind, category)) throw invalid();
-    if (!('invoice_month' in row)) return row;
+    // Pagamento de fatura é avulso e ligado a uma fatura; não existe como regra recorrente.
+    if (!('invoice_month' in row)) {
+      if (target?.kind === 'credit_card') throw invalid();
+      return row;
+    }
     const tx = row as Transaction;
     if (account.kind === 'credit_card' && tx.type !== 'transfer' && tx.invoice_month === null) {
       return { ...row, invoice_month: invoiceMonthFor(tx.date, { closing_day: account.closing_day!, due_day: account.due_day! }) };
@@ -211,8 +219,10 @@ export function createFinanceRepositories(store: FinanceStore, userId: string, c
     return row;
   }
 
-  async function buildTransaction(db: FinanceStoreReads, input: TransactionInput): Promise<Transaction> {
+  /** Campos de ocorrência (`recurrence_id`, `occurrence_date`) só entram por `upsertOccurrence`. */
+  async function buildTransaction(db: FinanceStoreReads, input: TransactionInput, occurrence = false): Promise<Transaction> {
     const { id, ...draft } = input;
+    if (!occurrence && (draft.recurrence_id != null || draft.occurrence_date != null)) throw invalid();
     const base = newTransaction(draft, userId, clock);
     return checkMovement(db, id ? { ...base, id } : base);
   }
@@ -220,8 +230,12 @@ export function createFinanceRepositories(store: FinanceStore, userId: string, c
   async function changeTransaction(id: string, patch: TransactionPatch) {
     return guard(() =>
       store.transaction(async (db) => {
+        if (patch.recurrence_id !== undefined || patch.occurrence_date !== undefined) throw invalid();
         const current = await alive(db, 'transactions', id);
-        const next = await checkMovement(db, applyTransactionPatch(current, patch, clock));
+        // Trocou a conta: o mês da fatura é recalculado (cartão) ou some (outra conta).
+        const accountChanged = patch.account_id !== undefined && patch.account_id !== current.account_id;
+        const changes = accountChanged && patch.invoice_month === undefined && current.type !== 'transfer' ? { ...patch, invoice_month: null } : patch;
+        const next = await checkMovement(db, applyTransactionPatch(current, changes, clock));
         await db.put('transactions', next);
         return next;
       }),
@@ -290,6 +304,7 @@ export function createFinanceRepositories(store: FinanceStore, userId: string, c
     get: (id) => guard(async () => ((r) => (r && r.deleted_at === null ? r : null))(await store.get('transactions', id))),
     listRange: (query) => guard(() => store.transactionsInRange(query)),
     listByInvoice: (cardId, month) => guard(() => store.transactionsByInvoice(cardId, month)),
+    listForRecurrences: (ids) => guard(async () => (ids.length === 0 ? [] : store.transactionsForRecurrences(ids))),
     watchRange: (query, listener, onError) =>
       store.watchTransactions(query, listener, (e) => onError?.(isRepositoryError(e) ? e : new RepositoryError('unavailable', { cause: e }))),
     create: (input) =>
@@ -319,7 +334,7 @@ export function createFinanceRepositories(store: FinanceStore, userId: string, c
           if (!input.recurrence_id || !input.occurrence_date) throw invalid();
           if (input.id !== occurrenceId(input.recurrence_id, input.occurrence_date)) throw invalid();
           await aliveOrInvalid(db, 'recurrences', input.recurrence_id);
-          const built = await buildTransaction(db, input);
+          const built = await buildTransaction(db, input, true);
           const existing = await db.get('transactions', input.id);
           const row = existing ? { ...built, created_at: existing.created_at, updated_at: nowIso(clock) } : built;
           await db.put('transactions', row);
@@ -375,9 +390,17 @@ export function createFinanceRepositories(store: FinanceStore, userId: string, c
           const current = await alive(db, 'recurrences', id);
           const { endedPatch, next } = splitRecurrence(current, from, changes);
           const ended = applyRecurrencePatch(current, endedPatch, clock);
-          const created = await checkMovement(db, newRecurrence(next, userId, clock));
+          // A regra nova herda a data de cadastro: um atrasado a partir de `from` continua aparecendo.
+          const created = { ...(await checkMovement(db, newRecurrence(next, userId, clock))), created_at: current.created_at };
           await db.put('recurrences', ended);
           await db.put('recurrences', created);
+          // Linhas já gravadas dali em diante passam para a regra nova (sem órfãs e sem contar duas vezes).
+          for (const row of await db.transactionsForRecurrences([current.id])) {
+            if (row.occurrence_date === null || row.occurrence_date < from) continue;
+            const movedId = occurrenceId(created.id, row.occurrence_date);
+            await db.put('transactions', { ...row, id: movedId, recurrence_id: created.id, updated_at: nowIso(clock) });
+            await db.put('transactions', softDelete(row, clock));
+          }
           return { ended, next: created };
         }),
       ),
@@ -395,9 +418,13 @@ export function createFinanceRepositories(store: FinanceStore, userId: string, c
         store.transaction(async (db) => {
           const category = await aliveOrInvalid(db, 'categories', categoryId);
           if (category.kind !== 'expense') throw invalid();
-          const candidate = newBudget({ category_id: categoryId, starts_month: startsMonth, amount_cents: amountCents }, userId, clock);
-          const existing = (await db.listAlive('budgets')).find((b) => b.category_id === categoryId && b.starts_month === startsMonth);
-          const row = existing ? { ...existing, amount_cents: candidate.amount_cents, updated_at: nowIso(clock) } : candidate;
+          // Id fixo por categoria e mês: dois aparelhos offline gravam a mesma linha (sem esbarrar no índice único).
+          const id = budgetId(categoryId, startsMonth);
+          const candidate = { ...newBudget({ category_id: categoryId, starts_month: startsMonth, amount_cents: amountCents }, userId, clock), id };
+          const existing = await db.get('budgets', id);
+          const row = existing
+            ? { ...existing, amount_cents: candidate.amount_cents, deleted_at: null, updated_at: nowIso(clock) }
+            : candidate;
           await db.put('budgets', row);
           return row;
         }),

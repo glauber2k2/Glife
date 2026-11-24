@@ -10,3 +10,7 @@ tagsRepositoryContract('memória', async () => ({ tags: createInMemoryTags(USER)
 import { createInMemoryFinance, financeRepositoryContract } from '../index.ts';
 
 financeRepositoryContract('memória', async () => ({ finance: createInMemoryFinance(USER), userId: USER }));
+
+import { financeReviewContract } from '../index.ts';
+
+financeReviewContract('memória', async () => ({ finance: createInMemoryFinance(USER), userId: USER }));

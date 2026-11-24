@@ -8,6 +8,7 @@ import {
   invoiceDates,
   invoiceMonthFor,
   isoDateSchema,
+  localDateOf,
   monthOf,
   monthSchema,
   type CardCycle,
@@ -85,5 +86,16 @@ describe('invoiceDates', () => {
       expect(compareDates(previous, d)).toBeLessThanOrEqual(0);
       d = addDays(d, 1);
     }
+  });
+});
+
+describe('localDateOf (revisão: formato do Postgres e data inválida)', () => {
+  it('lê o formato do Postgres igual ao ISO', () => {
+    expect(localDateOf('2026-11-24 12:00:00.123456+00')).toBe(localDateOf('2026-11-24T12:00:00.123Z'));
+    expect(localDateOf('2026-11-24 12:00:00+00:00')).toBe(localDateOf('2026-11-24T12:00:00Z'));
+  });
+
+  it('texto inválido vira null, nunca NaN', () => {
+    expect(localDateOf('lixo')).toBeNull();
   });
 });

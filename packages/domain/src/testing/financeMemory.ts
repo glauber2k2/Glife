@@ -57,6 +57,12 @@ export function createInMemoryFinanceStore(userId: string): FinanceStore {
         .sort(byDate)
         .map((t) => structuredClone(t));
     },
+    async transactionsForRecurrences(ids) {
+      return [...get().transactions.values()]
+        .filter((t) => t.user_id === userId && t.deleted_at === null && t.recurrence_id !== null && ids.includes(t.recurrence_id))
+        .sort((a, b) => (a.occurrence_date! !== b.occurrence_date! ? (a.occurrence_date! < b.occurrence_date! ? -1 : 1) : a.id < b.id ? -1 : 1))
+        .map((t) => structuredClone(t));
+    },
     async put(table, row) {
       (get()[table] as Map<string, unknown>).set(row.id, structuredClone(row));
     },

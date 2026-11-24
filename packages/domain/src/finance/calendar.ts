@@ -73,8 +73,17 @@ export function compareDates(a: IsoDate, b: IsoDate): number {
   return a < b ? -1 : a > b ? 1 : 0;
 }
 
-/** Data de calendário de um instante ISO no fuso local do aparelho. */
-export function localDateOf(iso: string): IsoDate {
+/**
+ * Data de calendário de um instante no fuso local do aparelho. Aceita ISO e o formato do Postgres
+ * ("2026-11-24 12:00:00.123456+00"), que o Hermes não lê; texto ilegível devolve null (nunca NaN).
+ */
+export function localDateOf(timestamp: string): IsoDate | null {
+  const iso = timestamp
+    .trim()
+    .replace(' ', 'T')
+    .replace(/(\.\d{3})\d+/, '$1')
+    .replace(/([+-]\d{2})$/, '$1:00');
   const t = new Date(iso);
+  if (Number.isNaN(t.getTime())) return null;
   return `${pad(t.getFullYear(), 4)}-${pad(t.getMonth() + 1)}-${pad(t.getDate())}`;
 }

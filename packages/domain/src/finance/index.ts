@@ -70,13 +70,16 @@ export {
   type TxType,
 } from './model.ts';
 export {
+  currentInvoiceMonth,
   planInstallmentPurchase,
   planOngoingInstallments,
   planPreviousBalance,
   type PlannedTransaction,
 } from './installments.ts';
 export {
+  FINANCE_BUDGET_NAMESPACE,
   FINANCE_OCCURRENCE_NAMESPACE,
+  budgetId,
   expandRecurrence,
   materializeOccurrence,
   occurrenceId,

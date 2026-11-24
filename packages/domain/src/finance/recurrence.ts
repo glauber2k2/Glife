@@ -11,10 +11,22 @@ import type { Account, Recurrence, RecurrenceDraft, Transaction, TxStatus } from
 /** Namespace fixo do UUID v5 das ocorrências (nunca mudar: mudaria os ids já gravados). */
 export const FINANCE_OCCURRENCE_NAMESPACE = '6f1d2c3e-8a4b-5c6d-9e7f-0a1b2c3d4e5f';
 
+/** Namespace fixo do UUID v5 dos orçamentos (um por categoria e mês). Nunca mudar. */
+export const FINANCE_BUDGET_NAMESPACE = '0b7e4a52-3c1d-5e8f-a9b0-c1d2e3f4a5b6';
+
 /** UUID v5 (RFC 9562) de `recurrenceId|date` no namespace das ocorrências. */
 export function occurrenceId(recurrenceId: string, date: IsoDate): string {
-  const ns = hexToBytes(FINANCE_OCCURRENCE_NAMESPACE.replaceAll('-', ''));
-  const name = utf8ToBytes(`${recurrenceId}|${date}`);
+  return uuidV5(FINANCE_OCCURRENCE_NAMESPACE, `${recurrenceId}|${date}`);
+}
+
+/** Id fixo do orçamento de uma categoria num mês: dois aparelhos offline gravam a mesma linha. */
+export function budgetId(categoryId: string, startsMonth: string): string {
+  return uuidV5(FINANCE_BUDGET_NAMESPACE, `${categoryId}|${startsMonth}`);
+}
+
+function uuidV5(namespace: string, value: string): string {
+  const ns = hexToBytes(namespace.replaceAll('-', ''));
+  const name = utf8ToBytes(value);
   const input = new Uint8Array(ns.length + name.length);
   input.set(ns);
   input.set(name, ns.length);
@@ -46,14 +58,19 @@ function nthDate(rule: Recurrence, n: number): IsoDate {
   return dateInMonth(addMonths(monthOf(rule.start_date), months), day);
 }
 
-/** Ocorrências da regra entre `from` e `to` (inclusive), a partir do cadastro da regra (sem passado fantasma). */
+/**
+ * Ocorrências da regra entre `from` e `to` (inclusive), a partir do cadastro da regra (sem passado fantasma).
+ * `materialized` deve vir de `transactions.listForRecurrences` (pela regra, não pelo período): uma ocorrência
+ * confirmada com outra data pode estar fora do período.
+ */
 export function expandRecurrence(
   rule: Recurrence,
   from: IsoDate,
   to: IsoDate,
   materialized: readonly Transaction[],
 ): Occurrence[] {
-  const createdOn = localDateOf(rule.created_at);
+  // Sem passado fantasma: conta a partir do cadastro; cadastro ilegível cai no início da regra.
+  const createdOn = localDateOf(rule.created_at) ?? rule.start_date;
   const start = [rule.start_date, createdOn, from].sort().at(-1)!;
   const end = rule.end_date !== null && compareDates(rule.end_date, to) < 0 ? rule.end_date : to;
   const rows = new Map(
