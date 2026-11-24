@@ -1,2 +1,2 @@
 export { linksTables } from './data/schema';
-export { LinksProvider, useLinksData } from './hooks/LinksData';
+export { LinksProvider, useLinksData, useLinksSearchSources } from './hooks/LinksData';

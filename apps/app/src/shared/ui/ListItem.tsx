@@ -11,7 +11,8 @@ import { useReduceMotion } from './theme/ThemeProvider';
 
 export interface ListItemProps {
   title: string;
-  subtitle?: string;
+  /** texto ou trecho com partes destacadas (Text aninhado) */
+  subtitle?: ReactNode;
   icon?: LucideIcon;
   /** conteúdo à direita (valor, data, chevron…) */
   trailing?: ReactNode;

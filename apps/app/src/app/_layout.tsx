@@ -15,17 +15,19 @@ import { ThemeProvider as NavigationThemeProvider, Stack } from 'expo-router';
 import { useFonts } from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, type ReactNode } from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { AuthProvider, createSupabaseAuthService, useAuth } from '@/features/auth';
-import { LinksProvider, linksTables } from '@/features/links';
-import { NotesProvider, notesTables } from '@/features/notes';
+import { LinksProvider, linksTables, useLinksSearchSources } from '@/features/links';
+import { NotesProvider, notesSearchIndex, notesTables, useNotesSearchSources } from '@/features/notes';
+import { SearchProvider, useSearchShortcut } from '@/features/search';
 import { installIdGenerator } from '@/shared/lib/ids';
 import { SyncStatusProvider, createLocalSync } from '@/shared/lib/powersync';
 import { getSupabase } from '@/shared/lib/supabase';
 import { toNavigationTheme } from '@/shared/navigation/navigationTheme';
 import { resolveNavigationMotion } from '@/shared/navigation/navigationMotion';
+import { SEARCH_ACTIONS } from '@/shared/navigation/searchActions';
 import { ThemeProvider, ToastProvider, createThemePreferenceStore, useReduceMotion, useTheme } from '@/shared/ui';
 
 installIdGenerator();
@@ -33,8 +35,21 @@ installIdGenerator();
 const themePreferenceStore = createThemePreferenceStore(AsyncStorage);
 const authService = createSupabaseAuthService(getSupabase());
 // Banco local com as tabelas das features; sincroniza com o Supabase via PowerSync.
-const localSync = createLocalSync({ ...notesTables, ...linksTables });
+const localSync = createLocalSync({ ...notesTables, ...linksTables }, [notesSearchIndex]);
 void SplashScreen.preventAutoHideAsync();
+
+/** Busca universal: cada feature entrega as suas fontes; Ctrl+K só com acesso completo. */
+function SearchComposition({ enabled, children }: { enabled: boolean; children: ReactNode }) {
+  const notes = useNotesSearchSources();
+  const links = useLinksSearchSources();
+  const sources = useMemo(() => [...notes, ...links], [notes, links]);
+  useSearchShortcut(enabled);
+  return (
+    <SearchProvider sources={sources} actions={SEARCH_ACTIONS}>
+      {children}
+    </SearchProvider>
+  );
+}
 
 function RootStack() {
   const t = useTheme();
@@ -59,6 +74,7 @@ function RootStack() {
     <SyncStatusProvider subscribe={localSync.onConnectedChange}>
       <NotesProvider db={localSync.db} userId={userId}>
         <LinksProvider db={localSync.db} userId={userId}>
+          <SearchComposition enabled={stage === 'ready'}>
           <ToastProvider>
             <NavigationThemeProvider value={navigationTheme}>
               <StatusBar style={t.scheme === 'dark' ? 'light' : 'dark'} />
@@ -78,6 +94,8 @@ function RootStack() {
                     options={{ presentation: 'modal', animation: animation.modal }}
                   />
                   <Stack.Screen name="ajustes" options={{ animation: animation.detail }} />
+                  <Stack.Screen name="busca" options={{ presentation: 'modal', animation: animation.modal }} />
+                  <Stack.Screen name="nota/nova" options={{ animation: 'none' }} />
                   <Stack.Screen name="nota/[id]" options={{ animation: animation.detail }} />
                   <Stack.Screen name="pastas" options={{ animation: animation.detail }} />
                   <Stack.Screen name="pasta/[id]" options={{ animation: animation.detail }} />
@@ -92,6 +110,7 @@ function RootStack() {
               </Stack>
             </NavigationThemeProvider>
           </ToastProvider>
+          </SearchComposition>
         </LinksProvider>
       </NotesProvider>
     </SyncStatusProvider>

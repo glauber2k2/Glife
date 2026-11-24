@@ -10,10 +10,13 @@ export interface SearchFieldProps {
   value: string;
   onChangeText: (v: string) => void;
   placeholder?: string;
+  autoFocus?: boolean;
+  /** Enter / botão de busca do teclado */
+  onSubmit?: () => void;
 }
 
 /** Busca em pílula (46 px) com ícone à esquerda; a borda e o ícone ganham o destaque no foco. */
-export function SearchField({ value, onChangeText, placeholder = 'Buscar' }: SearchFieldProps) {
+export function SearchField({ value, onChangeText, placeholder = 'Buscar', autoFocus, onSubmit }: SearchFieldProps) {
   const s = useStyles();
   const t = useTheme();
   const [focused, setFocused] = useState(false);
@@ -30,6 +33,8 @@ export function SearchField({ value, onChangeText, placeholder = 'Buscar' }: Sea
         onBlur={() => setFocused(false)}
         accessibilityLabel={placeholder}
         returnKeyType="search"
+        autoFocus={autoFocus}
+        onSubmitEditing={onSubmit}
         autoCorrect={false}
         style={[s.input, noFocusRing]}
       />

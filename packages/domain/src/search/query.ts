@@ -2,7 +2,10 @@
 import {
   DEFAULT_GROUP_LIMITS,
   SEARCH_GROUPS,
+  SNIPPET_MARK_END,
+  SNIPPET_MARK_START,
   type SearchAction,
+  type SearchSource,
   type SearchGroup,
   type SearchHit,
   type SearchSection,
@@ -47,6 +50,51 @@ export function matchActions(actions: SearchAction[], input: string): SearchHit[
   return actions
     .filter((a) => a.anyQuery || matchesWords([a.label(''), ...a.keywords].join(' '), query))
     .map((a) => ({ group: 'actions', id: a.id, title: a.label(query), href: a.href(query) }));
+}
+
+export interface SnippetPart {
+  text: string;
+  mark: boolean;
+}
+
+/** Trecho do FTS → partes para a tela destacar. Marcas soltas nunca aparecem como texto. */
+export function snippetParts(snippet: string): SnippetPart[] {
+  const parts: SnippetPart[] = [];
+  let mark = false;
+  let text = '';
+  const flush = () => {
+    if (text) parts.push({ text, mark });
+    text = '';
+  };
+  for (const ch of snippet) {
+    if (ch === SNIPPET_MARK_START || ch === SNIPPET_MARK_END) {
+      flush();
+      mark = ch === SNIPPET_MARK_START;
+    } else text += ch;
+  }
+  flush();
+  return parts;
+}
+
+/**
+ * Consulta todas as fontes em paralelo. Campo vazio: todas as ações + sugestões (`recent`).
+ * Uma fonte com erro não derruba as outras.
+ */
+export async function runSearch(
+  sources: SearchSource[],
+  actions: SearchAction[],
+  input: string,
+  limits: Partial<Record<SearchGroup, number>> = {},
+): Promise<SearchSection[]> {
+  const query = input.trim();
+  const limitOf = (g: SearchGroup) => limits[g] ?? DEFAULT_GROUP_LIMITS[g];
+  const results = await Promise.allSettled(
+    sources.map((s) =>
+      query ? s.search(query, limitOf(s.group)) : (s.recent?.(limitOf(s.group)) ?? Promise.resolve([])),
+    ),
+  );
+  const found = results.flatMap((r) => (r.status === 'fulfilled' ? r.value : []));
+  return mergeResults([...matchActions(actions, query), ...found], limits);
 }
 
 /** Agrupa na ordem de SEARCH_GROUPS, sem repetir item e com limite por grupo. */

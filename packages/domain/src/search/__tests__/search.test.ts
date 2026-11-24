@@ -1,6 +1,19 @@
 import { describe, expect, it } from 'vitest';
 
-import { matchActions, matchesWords, mergeResults, normalizeText, toFtsQuery, type SearchAction, type SearchHit } from '../index.ts';
+import {
+  SNIPPET_MARK_END,
+  SNIPPET_MARK_START,
+  matchActions,
+  matchesWords,
+  mergeResults,
+  normalizeText,
+  runSearch,
+  snippetParts,
+  toFtsQuery,
+  type SearchAction,
+  type SearchHit,
+  type SearchSource,
+} from '../index.ts';
 
 describe('normalizeText', () => {
   it('tira acentos e maiúsculas e junta espaços', () => {
@@ -89,6 +102,48 @@ describe('matchActions', () => {
 });
 
 const hit = (group: SearchHit['group'], id: string): SearchHit => ({ group, id, title: id, href: `/${id}` });
+
+describe('snippetParts', () => {
+  it('separa o trecho em partes marcadas e não marcadas', () => {
+    expect(snippetParts(`li o ${SNIPPET_MARK_START}salmo${SNIPPET_MARK_END} hoje`)).toEqual([
+      { text: 'li o ', mark: false },
+      { text: 'salmo', mark: true },
+      { text: ' hoje', mark: false },
+    ]);
+  });
+
+  it('marca sem fechamento não vaza caracteres de controle', () => {
+    expect(snippetParts(`a${SNIPPET_MARK_START}b`)).toEqual([
+      { text: 'a', mark: false },
+      { text: 'b', mark: true },
+    ]);
+  });
+});
+
+describe('runSearch', () => {
+  const notesSource: SearchSource = {
+    group: 'notes',
+    search: async (q, limit) => [hit('notes', `n:${q}:${limit}`)],
+    recent: async () => [hit('notes', 'recente')],
+  };
+  const broken: SearchSource = { group: 'tags', search: () => Promise.reject(new Error('x')) };
+
+  it('campo vazio: todas as ações e as sugestões das fontes', async () => {
+    const sections = await runSearch([notesSource, broken], actions, ' ');
+    expect(sections.map((s) => [s.group, s.hits.map((h) => h.id)])).toEqual([
+      ['actions', ['new-note', 'finance', 'trash']],
+      ['notes', ['recente']],
+    ]);
+  });
+
+  it('com texto: ações que casam e o resultado de cada fonte; fonte com erro é ignorada', async () => {
+    const sections = await runSearch([notesSource, broken], actions, ' fin ');
+    expect(sections.map((s) => [s.group, s.hits.map((h) => h.id)])).toEqual([
+      ['actions', ['new-note', 'finance']],
+      ['notes', ['n:fin:20']],
+    ]);
+  });
+});
 
 describe('mergeResults', () => {
   it('ordena os grupos em Ações → Notas → Pastas → Tags e omite grupos vazios', () => {

@@ -1,4 +1,4 @@
-﻿// Contrato do banco local (SQLite no aparelho). Implementado sobre o PowerSync no app e sobre node:sqlite nos testes.
+// Contrato do banco local (SQLite no aparelho). Implementado sobre o PowerSync no app e sobre node:sqlite nos testes.
 // TS puro: os repositórios locais dependem só disto, nunca do SDK.
 import type { Unsubscribe } from './repository.ts';
 

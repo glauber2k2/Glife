@@ -9,4 +9,13 @@ export {
   type SearchSection,
   type SearchSource,
 } from './model.ts';
-export { matchActions, matchesWords, mergeResults, normalizeText, toFtsQuery } from './query.ts';
+export {
+  matchActions,
+  matchesWords,
+  mergeResults,
+  normalizeText,
+  runSearch,
+  snippetParts,
+  toFtsQuery,
+  type SnippetPart,
+} from './query.ts';

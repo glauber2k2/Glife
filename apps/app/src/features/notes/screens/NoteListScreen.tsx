@@ -1,6 +1,6 @@
 import type { NoteListQuery } from '@glife/domain/notes';
-import { router } from 'expo-router';
-import { Folder, Plus, Trash2 } from 'lucide-react-native';
+import { router, useLocalSearchParams } from 'expo-router';
+import { Folder, Plus, Search, Trash2 } from 'lucide-react-native';
 import { useEffect, useState } from 'react';
 import { ScrollView, View } from 'react-native';
 
@@ -31,6 +31,15 @@ export function NoteListScreen() {
   const { tags } = useLinksData();
   const [kind, setKind] = useState<KindFilter>('all');
   const [tagId, setTagId] = useState<string | null>(null);
+  // `/notas?tag=<id>` (ex.: tag escolhida na busca universal) aplica o filtro.
+  // Ajuste durante a renderização (padrão do React para reagir a uma prop nova), sem efeito em cascata.
+  const { tag } = useLocalSearchParams<{ tag?: string }>();
+  const [appliedTag, setAppliedTag] = useState<string | undefined>(undefined);
+  if (typeof tag === 'string' && tag && tag !== appliedTag) {
+    setAppliedTag(tag);
+    setKind('all');
+    setTagId(tag);
+  }
   const [search, setSearch] = useState('');
   const query = KIND_FILTERS.find((f) => f.value === kind)!.query;
   const { items, failed } = useNoteList({ ...query, search: search.trim(), limit: LIST_LIMIT });
@@ -67,7 +76,12 @@ export function NoteListScreen() {
     <Screen
       title="Notas"
       eyebrow={filtered || !items ? ' ' : `${total}${total === LIST_LIMIT ? '+' : ''} ${total === 1 ? 'nota' : 'notas'}`}
-      action={<IconButton icon={Plus} label="Nova nota" onPress={() => void create({})} />}
+      action={
+        <View style={s.actions}>
+          <IconButton icon={Search} label="Buscar em tudo" variant="ghost" onPress={() => router.push('/busca')} />
+          <IconButton icon={Plus} label="Nova nota" onPress={() => void create({})} />
+        </View>
+      }
     >
       <View style={s.controls}>
         <SearchField value={search} onChangeText={setSearch} placeholder="Buscar notas" />
@@ -131,6 +145,7 @@ export function NoteListScreen() {
 
 const useStyles = makeStyles((t) => ({
   controls: { gap: t.space[3] },
+  actions: { flexDirection: 'row', gap: t.space[2] },
   chips: { gap: t.space[1.5] },
   message: { paddingVertical: t.space[4], borderTopWidth: t.hairline, borderTopColor: t.colors.hairline },
   empty: { borderTopWidth: t.hairline, borderTopColor: t.colors.hairline },

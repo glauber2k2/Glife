@@ -1,4 +1,4 @@
-﻿# HANDOFF — plano vivo (Claude ⇄ Codex)
+# HANDOFF — plano vivo (Claude ⇄ Codex)
 
 > Curto e sempre atualizado. Tarefas concluídas de uma funcionalidade terminada vão para `HANDOFF-arquivo.md`.
 > Commits: `claude: <descrição>` ou `codex: <descrição>`.
