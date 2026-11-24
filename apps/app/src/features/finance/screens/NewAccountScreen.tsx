@@ -85,7 +85,7 @@ export function NewAccountScreen() {
         name,
         initialCents: (negative ? -1 : 1) * (initial ?? 0),
       });
-      toast({ message: 'Conta criada' });
+      toast({ message: 'Conta criada', aboveTabBar: true });
       back();
     } catch (e) {
       console.warn('Falha ao criar a conta', e);
@@ -110,7 +110,7 @@ export function NewAccountScreen() {
         },
         today,
       );
-      toast({ message: 'Cartão criado' });
+      toast({ message: 'Cartão criado', aboveTabBar: true });
       if (router.canGoBack()) router.back();
       else router.replace('/financas');
     } catch (e) {

@@ -67,7 +67,7 @@ export function FinanceHomeScreen() {
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
   useEffect(() => () => timers.current.forEach(clearTimeout), []);
   const planned = usePlannedActions(today);
-  const pay = usePayInvoice(today);
+  const pay = usePayInvoice(today, true);
 
   const saldo = useCountUp(overview?.balanceToday ?? 0);
   const esperado = useCountUp(overview?.expected ?? 0);
@@ -451,7 +451,7 @@ export function FinanceHomeScreen() {
         </MonthSlide>
       )}
 
-      <NewEntrySheet visible={entryOpen} onClose={() => setEntryOpen(false)} today={today} />
+      <NewEntrySheet visible={entryOpen} onClose={() => setEntryOpen(false)} today={today} aboveTabBar />
       <ConfirmSheet
         item={fixing}
         accountName={fixing ? accountName(fixing.account_id) : ''}

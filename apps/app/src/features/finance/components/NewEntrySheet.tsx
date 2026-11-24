@@ -45,6 +45,8 @@ type Props = {
   onClose: () => void;
   today: IsoDate;
   preset?: NewEntryPreset;
+  /** o toast sobe acima da barra de abas (lançado do Início) */
+  aboveTabBar?: boolean;
 };
 
 /** Cada abertura começa do zero: o formulário remonta com uma chave nova. */
@@ -62,7 +64,7 @@ export function NewEntrySheet(props: Props) {
   );
 }
 
-function EntryForm({ onClose, today, preset }: Props) {
+function EntryForm({ onClose, today, preset, aboveTabBar }: Props) {
   const s = useStyles();
   const t = useTheme();
   const toast = useToast();
@@ -163,6 +165,7 @@ function EntryForm({ onClose, today, preset }: Props) {
       });
       onClose();
       toast({
+        aboveTabBar,
         message:
           planned || repeat
             ? 'Previsto agendado'
@@ -174,7 +177,7 @@ function EntryForm({ onClose, today, preset }: Props) {
       });
     } catch (e) {
       console.warn('Falha ao salvar o lançamento', e);
-      toast({ message: 'Não foi possível salvar. Confira os campos.' });
+      toast({ message: 'Não foi possível salvar. Confira os campos.', aboveTabBar });
     } finally {
       setSaving(false);
     }

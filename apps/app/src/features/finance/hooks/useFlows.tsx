@@ -39,12 +39,13 @@ export function usePlannedActions(today: IsoDate) {
         toast({
           message: status === 'confirmed' ? `${name} confirmado` : `${name} pulado em ${monthName}`,
           actionLabel: 'Desfazer',
+          aboveTabBar: true,
           onAction: () => void undo().catch((e) => console.warn('Falha ao desfazer', e)),
         });
         return true;
       } catch (e) {
         console.warn('Falha ao atualizar o previsto', e);
-        toast({ message: 'Não foi possível salvar.' });
+        toast({ message: 'Não foi possível salvar.', aboveTabBar: true });
         return false;
       }
     },
@@ -58,7 +59,10 @@ export function usePlannedActions(today: IsoDate) {
 }
 
 /** Folha "Pagar fatura": `open(cardId, mês)` abre; o elemento vai uma vez na tela. */
-export function usePayInvoice(today: IsoDate): {
+export function usePayInvoice(
+  today: IsoDate,
+  aboveTabBar = false,
+): {
   open: (cardId: string, month: Month) => void;
   element: ReactNode;
 } {
@@ -97,10 +101,10 @@ export function usePayInvoice(today: IsoDate): {
             date,
           });
           setVisible(false);
-          toast({ message: `Pagamento de ${money(cents)} registrado` });
+          toast({ message: `Pagamento de ${money(cents)} registrado`, aboveTabBar });
         } catch (e) {
           console.warn('Falha ao pagar a fatura', e);
-          toast({ message: 'Não foi possível registrar o pagamento.' });
+          toast({ message: 'Não foi possível registrar o pagamento.', aboveTabBar });
         }
       }}
     />
