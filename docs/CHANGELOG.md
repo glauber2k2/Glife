@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.5 — 2026-11-24
+
+- Recorrentes: excluir uma ocorrência marca só ela como pulada (não volta como prevista); previstos da fatura e do extrato abrem ao tocar, com Confirmar, Outra pessoa pagou e Excluir.
+- Saldo insuficiente: pagar fatura ou confirmar conta acima do saldo mostra aviso e pede "… mesmo assim".
+- Outra pessoa pagou: fatura ou conta marcada como paga sem sair dinheiro das suas contas (entrada + pagamento; saldo igual).
+
 ## 0.2.4 — 2026-11-24
 
 - Novo lançamento: o valor é digitado no teclado do aparelho (saiu o teclado próprio).
