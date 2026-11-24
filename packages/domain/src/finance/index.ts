@@ -96,6 +96,7 @@ export {
   invoiceSummary,
   isOverdue,
   monthSummary,
+  paidByOther,
   projectBalance,
   suggestInvoiceToPay,
   type Bucket,

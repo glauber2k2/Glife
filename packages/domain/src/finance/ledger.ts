@@ -3,7 +3,7 @@
 // e a conta pagadora só sente o cartão pelo valor restante da fatura, no vencimento.
 import { compareDates, monthOf, type IsoDate, type Month } from './calendar.ts';
 import { invoiceDates, invoiceMonthFor, type CardCycle } from './invoice.ts';
-import type { Account, Budget, Transaction, TxStatus } from './model.ts';
+import type { Account, Budget, Transaction, TransactionDraft, TxStatus } from './model.ts';
 import type { Occurrence } from './recurrence.ts';
 
 const alive = (t: Transaction) => t.deleted_at === null;
@@ -104,6 +104,36 @@ export function suggestInvoiceToPay(card: Account, txs: readonly Transaction[], 
     if (s.status !== 'open' && s.remaining > 0) return month;
   }
   return null;
+}
+
+/**
+ * Pago por outra pessoa (não saiu dinheiro de nenhuma conta sua): uma entrada na conta compensa a saída, e o saldo
+ * não muda. Fatura: entrada + pagamento (transferência para o cartão), e a fatura fica paga. Conta a pagar: só a
+ * entrada; o gasto é confirmado à parte e continua no orçamento.
+ */
+export function paidByOther(p: {
+  accountId: string;
+  cents: number;
+  date: IsoDate;
+  who?: string | null;
+  label?: string;
+  invoice?: { cardId: string; month: Month; description?: string };
+}): TransactionDraft[] {
+  if (!Number.isInteger(p.cents) || p.cents <= 0) throw new RangeError('Valor inválido');
+  const who = p.who?.trim();
+  const description = who ? `Pago por ${who}` : p.label ? `${p.label} · pago por outra pessoa` : 'Pago por outra pessoa';
+  const income: TransactionDraft = { type: 'income', amount_cents: p.cents, date: p.date, account_id: p.accountId, description };
+  if (!p.invoice) return [income];
+  const payment: TransactionDraft = {
+    type: 'transfer',
+    amount_cents: p.cents,
+    date: p.date,
+    account_id: p.accountId,
+    to_account_id: p.invoice.cardId,
+    invoice_month: p.invoice.month,
+    description: p.invoice.description ?? 'Pagamento da fatura',
+  };
+  return [income, payment];
 }
 
 // ---------- Orçamento ----------

@@ -24,6 +24,22 @@ export function useOccurrences(until: IsoDate): Occurrence[] {
   return useMemo(() => (data ? collectOccurrences(data, until) : []), [data, until]);
 }
 
+/**
+ * Saldo de hoje de onde o previsto sai, para avisar de saldo insuficiente. `null` quando não se aplica
+ * (receita, cartão de crédito ou conta desconhecida).
+ */
+export function useAvailableFor(): (item: Pick<PlannedItem, 'type' | 'account_id'>) => number | null {
+  const { data } = useFinance();
+  return useCallback(
+    (item) => {
+      const account = data?.accounts.find((a) => a.id === item.account_id);
+      if (!data || !account || account.kind === 'credit_card' || item.type === 'income') return null;
+      return accountBalance(account, data.transactions);
+    },
+    [data],
+  );
+}
+
 export const invoiceTitle = (month: Month) => `Fatura de ${MONTH_NAMES[Number(month.slice(5, 7)) - 1]}`;
 
 export function usePlannedActions(today: IsoDate) {
@@ -32,12 +48,22 @@ export function usePlannedActions(today: IsoDate) {
   const monthName = MONTH_NAMES[Number(today.slice(5, 7)) - 1];
 
   const run = useCallback(
-    async (item: PlannedItem, status: 'confirmed' | 'skipped', changes?: { amount_cents?: number; date?: IsoDate }) => {
+    async (
+      item: PlannedItem,
+      status: 'confirmed' | 'skipped',
+      changes?: { amount_cents?: number; date?: IsoDate },
+      paidBy?: { who: string | null },
+    ) => {
       try {
-        const undo = await settle(item, status, changes);
+        const undo = await settle(item, status, changes, paidBy);
         const name = item.description || 'Previsto';
         toast({
-          message: status === 'confirmed' ? `${name} confirmado` : `${name} pulado em ${monthName}`,
+          message:
+            status === 'skipped'
+              ? `${name} pulado em ${monthName}`
+              : paidBy
+                ? `${name} marcado como pago por ${paidBy.who?.trim() || 'outra pessoa'}`
+                : `${name} confirmado`,
           actionLabel: 'Desfazer',
           aboveTabBar: true,
           onAction: () => void undo().catch((e) => console.warn('Falha ao desfazer', e)),
@@ -54,6 +80,9 @@ export function usePlannedActions(today: IsoDate) {
 
   return {
     confirm: (item: PlannedItem, changes?: { amount_cents?: number; date?: IsoDate }) => run(item, 'confirmed', changes),
+    /** Outra pessoa pagou: confirma o gasto e grava a entrada que compensa (o saldo não muda). */
+    paidByOther: (item: PlannedItem, who: string | null, changes?: { amount_cents?: number; date?: IsoDate }) =>
+      run(item, 'confirmed', changes, { who }),
     skip: (item: PlannedItem) => run(item, 'skipped'),
   };
 }
@@ -90,7 +119,7 @@ export function usePayInvoice(
       defaultPayerId={card?.payment_account_id ?? null}
       today={today}
       onClose={() => setVisible(false)}
-      onPay={async ({ cents, fromId, date }) => {
+      onPay={async ({ cents, fromId, date, paidBy }) => {
         if (!target) return;
         try {
           await payInvoice({
@@ -99,9 +128,15 @@ export function usePayInvoice(
             cents,
             fromId,
             date,
+            paidBy,
           });
           setVisible(false);
-          toast({ message: `Pagamento de ${money(cents)} registrado`, aboveTabBar });
+          toast({
+            message: paidBy
+              ? `Fatura marcada como paga por ${paidBy.who?.trim() || 'outra pessoa'}`
+              : `Pagamento de ${money(cents)} registrado`,
+            aboveTabBar,
+          });
         } catch (e) {
           console.warn('Falha ao pagar a fatura', e);
           toast({ message: 'Não foi possível registrar o pagamento.', aboveTabBar });

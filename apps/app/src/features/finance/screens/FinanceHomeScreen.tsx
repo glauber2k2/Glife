@@ -19,6 +19,7 @@ import {
   CircleAlert,
   CreditCard,
   Ellipsis,
+  HandCoins,
   PencilLine,
   Plus,
   Repeat,
@@ -39,7 +40,7 @@ import { INVOICE_STATUS } from '../components/status';
 import { ConfirmSheet } from '../components/sheets';
 import { Block, BlockHeader, BudgetBar, Disc, MoneyRow, MonthSlide, MonthStepper, useCountUp } from '../components/ui';
 import { useFinance } from '../hooks/FinanceData';
-import { invoiceTitle, useOccurrences, usePayInvoice, usePlannedActions } from '../hooks/useFlows';
+import { invoiceTitle, useAvailableFor, useOccurrences, usePayInvoice, usePlannedActions } from '../hooks/useFlows';
 
 const MAX_AHEAD = 12;
 const FREQ_LABEL = {
@@ -65,10 +66,12 @@ export function FinanceHomeScreen() {
   const [entryOpen, setEntryOpen] = useState(false);
   const [menuFor, setMenuFor] = useState<string | null>(null);
   const [fixing, setFixing] = useState<PlannedItem | null>(null);
+  const [fixingOther, setFixingOther] = useState(false);
   const [leaving, setLeaving] = useState<Record<string, Leaving>>({});
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
   useEffect(() => () => timers.current.forEach(clearTimeout), []);
   const planned = usePlannedActions(today);
+  const availableFor = useAvailableFor();
   const pay = usePayInvoice(today, true);
   const txSheet = useTransactionSheet({ aboveTabBar: true });
 
@@ -90,7 +93,18 @@ export function FinanceHomeScreen() {
   };
   const doConfirm = async (item: PlannedItem, changes?: { amount_cents: number; date: string }) => {
     setMenuFor(null);
+    // Sem saldo: em vez de confirmar direto, abre a folha com o aviso e "Confirmar mesmo assim".
+    const available = availableFor(item);
+    if (!changes && available !== null && item.amount_cents > available) {
+      setFixingOther(false);
+      setFixing(item);
+      return;
+    }
     if (await planned.confirm(item, changes)) settleLater(changes ? { ...item, amount_cents: changes.amount_cents } : item, 'confirmed');
+  };
+  const doPaidByOther = async (item: PlannedItem, who: string | null, changes: { amount_cents: number; date: string }) => {
+    setMenuFor(null);
+    if (await planned.paidByOther(item, who, changes)) settleLater({ ...item, amount_cents: changes.amount_cents }, 'confirmed');
   };
   const doSkip = async (item: PlannedItem) => {
     setMenuFor(null);
@@ -243,7 +257,14 @@ export function FinanceHomeScreen() {
                       </View>
                       {menuFor === item.key && (
                         <View style={s.menu}>
-                          <MenuItem icon={PencilLine} label="Corrigir valor" onPress={() => (setMenuFor(null), setFixing(item))} />
+                          <MenuItem icon={PencilLine} label="Corrigir valor" onPress={() => (setMenuFor(null), setFixingOther(false), setFixing(item))} />
+                          {item.type === 'expense' && availableFor(item) !== null && (
+                            <MenuItem
+                              icon={HandCoins}
+                              label="Outra pessoa pagou"
+                              onPress={() => (setMenuFor(null), setFixingOther(true), setFixing(item))}
+                            />
+                          )}
                           <MenuItem icon={SkipForward} label="Pular este mês" onPress={() => void doSkip(item)} />
                           {item.recurrenceId && (
                             <MenuItem
@@ -468,6 +489,13 @@ export function FinanceHomeScreen() {
         item={fixing}
         accountName={fixing ? accountName(fixing.account_id) : ''}
         recurringLabel={fixing ? (ruleMeta(fixing) ?? undefined) : undefined}
+        available={fixing ? availableFor(fixing) : null}
+        startPaidByOther={fixingOther}
+        onPaidByOther={(changes, who) => {
+          const item = fixing!;
+          setFixing(null);
+          void doPaidByOther(item, who, changes);
+        }}
         today={today}
         onClose={() => setFixing(null)}
         onConfirm={(changes) => {

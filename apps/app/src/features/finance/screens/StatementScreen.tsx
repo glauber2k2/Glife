@@ -1,6 +1,6 @@
 // Tela 8 do protótipo: Extrato de uma conta. Saldo real e projetado no fim do mês; dias do mais novo ao mais
 // antigo (previstos no topo, Hoje marcado), com o saldo ao fim de cada dia; busca e filtro por categoria.
-import { lastDayOf, monthOf, statement } from '@glife/domain/finance';
+import { lastDayOf, monthOf, plannedItems, statement } from '@glife/domain/finance';
 import { useLocalSearchParams } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { ScrollView, View } from 'react-native';
@@ -10,7 +10,7 @@ import { BackHeader, Button, Chip, Icon, Reveal, Screen, SearchField, Text, make
 import { ACCOUNT_KIND_LABEL, TRANSFER_ICON, categoryIcon } from '../components/categories';
 import { balance, dm, signed, todayIso, weekday } from '../components/format';
 import { Block, MoneyRow } from '../components/ui';
-import { DeleteAccountSheet, useTransactionSheet } from '../components/deleteSheets';
+import { DeleteAccountSheet, usePlannedSheet, useTransactionSheet } from '../components/deleteSheets';
 import { useFinance } from '../hooks/FinanceData';
 import { useOccurrences } from '../hooks/useFlows';
 
@@ -33,6 +33,7 @@ export function StatementScreen() {
   const [filter, setFilter] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
   const txSheet = useTransactionSheet();
+  const plannedSheet = usePlannedSheet(today);
 
   if (!data) return <Screen>{null}</Screen>;
   if (!account || !st) {
@@ -139,7 +140,10 @@ export function StatementScreen() {
                       ? undefined
                       : () => {
                           const row = data.transactions.find((tx) => tx.id === e.key);
-                          if (row) txSheet.open(row);
+                          if (row) return txSheet.open(row);
+                          // Previsto calculado de uma regra (ainda sem linha gravada).
+                          const item = plannedItems([], occurrences).find((p) => p.key === e.key);
+                          if (item) plannedSheet.open(item);
                         }
                   }
                 />
@@ -152,6 +156,7 @@ export function StatementScreen() {
         </View>
       </Reveal>
       {txSheet.element}
+      {plannedSheet.element}
       <DeleteAccountSheet account={account} open={deleting} onClose={() => setDeleting(false)} />
     </Screen>
   );

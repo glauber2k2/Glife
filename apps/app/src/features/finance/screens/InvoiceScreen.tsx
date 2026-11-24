@@ -14,7 +14,7 @@ import { Block, BlockHeader, MoneyRow, MonthSlide, MonthStepper, ProgressTrack }
 import { useFinance } from '../hooks/FinanceData';
 import { invoiceTitle, useOccurrences, usePayInvoice } from '../hooks/useFlows';
 import { INVOICE_STATUS } from '../components/status';
-import { DeleteAccountSheet, useTransactionSheet } from '../components/deleteSheets';
+import { DeleteAccountSheet, usePlannedSheet, useTransactionSheet } from '../components/deleteSheets';
 
 const monthOk = (m: unknown): m is Month => typeof m === 'string' && /^\d{4}-(0[1-9]|1[0-2])$/.test(m);
 const MAX_RANGE = 24;
@@ -35,6 +35,7 @@ export function InvoiceScreen() {
   );
   const pay = usePayInvoice(today);
   const txSheet = useTransactionSheet();
+  const plannedSheet = usePlannedSheet(today);
   const [deleting, setDeleting] = useState(false);
 
   if (!data) return <Screen>{null}</Screen>;
@@ -145,6 +146,7 @@ export function InvoiceScreen() {
                   recurring={!!p.recurrenceId}
                   meta={`${dm(p.date)} · previsto${p.category_id ? ` · ${categories.get(p.category_id)?.name ?? ''}` : ''}`}
                   amount={signed(p.type === 'expense' ? -p.amount_cents : p.amount_cents)}
+                  onPress={() => plannedSheet.open(p)}
                 />
               ))}
             </Block>
@@ -197,6 +199,7 @@ export function InvoiceScreen() {
       </MonthSlide>
       {pay.element}
       {txSheet.element}
+      {plannedSheet.element}
       <DeleteAccountSheet account={card} open={deleting} onClose={() => setDeleting(false)} />
     </Screen>
   );

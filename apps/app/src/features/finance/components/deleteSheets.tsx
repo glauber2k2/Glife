@@ -1,8 +1,8 @@
 // Exclusões de Finanças: detalhe de um lançamento com "Excluir" (uma parcela ou a compra inteira) e a confirmação
 // de excluir uma conta ou um cartão (some junto com os lançamentos e as recorrências dele).
-import type { Account, Transaction } from '@glife/domain/finance';
+import type { Account, IsoDate, PlannedItem, Transaction } from '@glife/domain/finance';
 import { router } from 'expo-router';
-import { Trash2 } from 'lucide-react-native';
+import { HandCoins, Trash2 } from 'lucide-react-native';
 import { useEffect, useState, type ReactNode } from 'react';
 import { View } from 'react-native';
 
@@ -10,7 +10,9 @@ import { Button, Sheet, Text, makeStyles, useTheme, useToast } from '@/shared/ui
 
 import { useFinance } from '../hooks/FinanceData';
 import { useFinanceActions } from '../hooks/useFinanceActions';
+import { useAvailableFor, usePlannedActions } from '../hooks/useFlows';
 import { dmy, money } from './format';
+import { NoFundsNote } from './sheets';
 import { RadioRow } from './ui';
 
 // ---------- Lançamento ----------
@@ -92,12 +94,94 @@ function TransactionDetail({ tx, onDone, aboveTabBar }: { tx: Transaction; onDon
       )}
       {tx.recurrence_id && (
         <Text variant="caption" tone="tertiary">
-          É de uma recorrência: excluído, volta a aparecer como previsto. Para parar de vez, encerre a recorrência.
+          É de uma recorrência: só esta ocorrência sai, a regra continua. Para parar de vez, encerre a recorrência.
         </Text>
       )}
       <View style={{ gap: t.space[1] }}>
         <Button label="Excluir lançamento" icon={Trash2} variant="danger" fullWidth loading={busy} onPress={() => void remove()} />
         <Button label="Cancelar" variant="subtle" fullWidth onPress={onDone} />
+      </View>
+    </>
+  );
+}
+
+// ---------- Previsto ----------
+
+/**
+ * `open(item)` mostra um previsto (linha gravada ou ocorrência calculada de uma regra) com "Confirmar" e "Excluir
+ * este previsto" (pula só esta ocorrência; a regra continua). O elemento vai uma vez na tela.
+ */
+export function usePlannedSheet(today: IsoDate): { open: (item: PlannedItem) => void; element: ReactNode } {
+  const [item, setItem] = useState<PlannedItem | null>(null);
+  const [last, setLast] = useState<PlannedItem | null>(null);
+  if (item && item !== last) setLast(item);
+  const shown = item ?? last;
+  const element = (
+    <Sheet visible={!!item} onClose={() => setItem(null)} title={shown ? shown.description || 'Previsto' : undefined}>
+      {shown && <PlannedDetail key={shown.key} item={shown} today={today} onDone={() => setItem(null)} />}
+    </Sheet>
+  );
+  return { open: setItem, element };
+}
+
+function PlannedDetail({ item, today, onDone }: { item: PlannedItem; today: IsoDate; onDone: () => void }) {
+  const s = useStyles();
+  const t = useTheme();
+  const { data } = useFinance();
+  const planned = usePlannedActions(today);
+  const available = useAvailableFor()(item);
+  const short = available !== null && item.amount_cents > available;
+  const [busy, setBusy] = useState<'confirm' | 'other' | 'skip' | null>(null);
+  const account = data?.accounts.find((a) => a.id === item.account_id)?.name ?? '';
+  const category = data?.categories.find((c) => c.id === item.category_id)?.name;
+  const kind = item.type === 'transfer' ? 'Transferência' : item.type === 'income' ? 'Receita' : 'Gasto';
+  const details = [`${kind} · ${money(item.amount_cents)}`, `${dmy(item.date)} · ${account}`, category ?? null, 'Previsto (ainda não mexe no saldo)'].filter(
+    Boolean,
+  ) as string[];
+  const run = async (what: 'confirm' | 'other' | 'skip') => {
+    setBusy(what);
+    const ok =
+      what === 'confirm' ? await planned.confirm(item) : what === 'other' ? await planned.paidByOther(item, null) : await planned.skip(item);
+    setBusy(null);
+    if (ok) onDone();
+  };
+  return (
+    <>
+      <View style={s.details}>
+        {details.map((d) => (
+          <Text key={d} variant="small" tone="secondary" numeric>
+            {d}
+          </Text>
+        ))}
+      </View>
+      {item.recurrenceId && (
+        <Text variant="caption" tone="tertiary">
+          É de uma recorrência: excluir tira só esta ocorrência, a regra continua. Para parar de vez, encerre a recorrência.
+        </Text>
+      )}
+      {short && <NoFundsNote accountName={account} available={available!} cents={item.amount_cents} />}
+      <View style={{ gap: t.space[1] }}>
+        <Button label={short ? 'Confirmar mesmo assim' : 'Confirmar'} fullWidth haptic disabled={busy !== null} loading={busy === 'confirm'} onPress={() => void run('confirm')} />
+        {item.type === 'expense' && available !== null && (
+          <Button
+            label="Outra pessoa pagou"
+            icon={HandCoins}
+            variant="subtle"
+            fullWidth
+            disabled={busy !== null}
+            loading={busy === 'other'}
+            onPress={() => void run('other')}
+          />
+        )}
+        <Button
+          label="Excluir este previsto"
+          icon={Trash2}
+          variant="ghostDanger"
+          fullWidth
+          disabled={busy !== null}
+          loading={busy === 'skip'}
+          onPress={() => void run('skip')}
+        />
       </View>
     </>
   );

@@ -4,6 +4,7 @@ import {
   currentInvoiceMonth,
   cycleOf,
   materializeOccurrence,
+  paidByOther,
   planInstallmentPurchase,
   planOngoingInstallments,
   planPreviousBalance,
@@ -15,6 +16,8 @@ import {
   type PlannedItem,
   type Recurrence,
   type RecurrenceDraft,
+  type Transaction,
+  type TxStatus,
   type TxType,
 } from '@glife/domain/finance';
 import { useMemo } from 'react';
@@ -72,11 +75,42 @@ export function useFinanceActions() {
       return r;
     };
 
-    /** Confirma ou pula um previsto (linha gravada ou ocorrência calculada). */
+    /**
+     * Confirma ou pula um previsto (linha gravada ou ocorrência calculada). `paidBy` (só ao confirmar um gasto):
+     * outra pessoa pagou; grava junto a entrada que compensa, e o saldo da conta não muda. Tudo ou nada.
+     */
     async function settle(
       item: PlannedItem,
       status: 'confirmed' | 'skipped',
       changes: { amount_cents?: number; date?: IsoDate } = {},
+      paidBy?: { who: string | null },
+    ): Promise<Undo> {
+      const undoSettle = await settleOnly(item, status, changes);
+      if (!paidBy || status !== 'confirmed') return undoSettle;
+      let income: Transaction;
+      try {
+        const [draft] = paidByOther({
+          accountId: item.account_id,
+          cents: changes.amount_cents ?? item.amount_cents,
+          date: changes.date ?? item.date,
+          who: paidBy.who,
+          label: item.description || undefined,
+        });
+        income = await repos.transactions.create(draft!);
+      } catch (e) {
+        await undoSettle().catch(() => undefined);
+        throw e;
+      }
+      return async () => {
+        await repos.transactions.remove(income.id);
+        await undoSettle();
+      };
+    }
+
+    async function settleOnly(
+      item: PlannedItem,
+      status: 'confirmed' | 'skipped',
+      changes: { amount_cents?: number; date?: IsoDate },
     ): Promise<Undo> {
       if (item.transactionId) {
         const id = item.transactionId;
@@ -159,8 +193,21 @@ export function useFinanceActions() {
       });
     }
 
-    async function payInvoice(p: { cardId: string; month: Month; cents: number; fromId: string; date: IsoDate }) {
+    /** Paga a fatura saindo de `fromId`; com `paidBy`, outra pessoa pagou (entrada + pagamento juntos, saldo igual). */
+    async function payInvoice(p: { cardId: string; month: Month; cents: number; fromId: string; date: IsoDate; paidBy?: { who: string | null } }) {
       const card = accountOf(p.cardId);
+      if (p.paidBy) {
+        await repos.transactions.createMany(
+          paidByOther({
+            accountId: p.fromId,
+            cents: p.cents,
+            date: p.date,
+            who: p.paidBy.who,
+            invoice: { cardId: p.cardId, month: p.month, description: `Pagamento da fatura ${card.name}` },
+          }),
+        );
+        return;
+      }
       await repos.transactions.create({
         type: 'transfer',
         amount_cents: p.cents,
@@ -240,10 +287,34 @@ export function useFinanceActions() {
       await refresh();
     }
 
-    /** Exclui lançamentos (uma parcela ou a compra inteira) e devolve como desfazer. */
+    /**
+     * Exclui lançamentos (uma parcela ou a compra inteira) e devolve como desfazer. Ocorrência de recorrência não é
+     * apagada: vira "pulada", senão a regra a recalcularia e ela voltaria como prevista (sem como excluir).
+     */
     async function deleteTransactions(ids: readonly string[]): Promise<Undo> {
-      await repos.transactions.removeMany(ids);
-      return async () => repos.transactions.restoreMany(ids);
+      const byId = new Map((data?.transactions ?? []).map((t) => [t.id, t]));
+      const occurrences = ids.filter((id) => {
+        const t = byId.get(id);
+        return !!t?.recurrence_id && !!t.occurrence_date;
+      });
+      const plain = ids.filter((id) => !occurrences.includes(id));
+      const skipped: { id: string; status: TxStatus }[] = [];
+      try {
+        for (const id of occurrences) {
+          const status = byId.get(id)!.status;
+          await repos.transactions.skip(id);
+          skipped.push({ id, status });
+        }
+        if (plain.length > 0) await repos.transactions.removeMany(plain);
+      } catch (e) {
+        // Tudo ou nada: volta as ocorrências já puladas.
+        for (const { id, status } of skipped) await repos.transactions.update(id, { status }).catch(() => undefined);
+        throw e;
+      }
+      return async () => {
+        if (plain.length > 0) await repos.transactions.restoreMany(plain);
+        for (const { id, status } of skipped) await repos.transactions.update(id, { status });
+      };
     }
 
     const removalImpact = (accountId: string) => repos.accounts.removalImpact(accountId);
