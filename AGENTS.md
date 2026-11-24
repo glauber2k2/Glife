@@ -92,6 +92,8 @@ O Claude é o agente principal; o Codex só assume quando os créditos do Claude
 - **Teclado nunca cobre o campo:** tela com campos usa `Screen` (rola até o campo focado) ou `Sheet`; tela própria usa
   `KeyboardAvoidingView`/`KeyboardAwareScrollView` de `react-native-keyboard-controller`, **nunca** o `KeyboardAvoidingView`
   do React Native (no Android edge-to-edge ele não faz nada).
+- **Sem teclado personalizado:** valores e números usam o teclado do aparelho (`MoneyField`/`Input` com
+  `keyboardType="number-pad"`), mesmo que o protótipo desenhe um teclado próprio.
 - **Campos:** sempre `Input` (texto centrado, rótulo de uma linha). No máximo 2 campos por linha; valor em dinheiro em
   linha própria. Telas estreitas (360 dp) são o caso de teste.
 - **Marcar/selecionar não mexe no layout:** chip, opção ou linha selecionável mantém a mesma largura e altura nos dois

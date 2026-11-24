@@ -1,4 +1,4 @@
-// Tela 2 do protótipo: Novo lançamento (folha). Valor pelo teclado em centavos; tipo em segmentado; categoria,
+// Tela 2 do protótipo: Novo lançamento (folha). Valor no campo de dinheiro com o teclado do aparelho; tipo em segmentado; categoria,
 // conta ou cartão em chips; "Parcelar" só no cartão; "É previsto" e "Repetir".
 import {
   addMonths,
@@ -21,7 +21,7 @@ import { useFinance } from '../hooks/FinanceData';
 import { useFinanceActions } from '../hooks/useFinanceActions';
 import { accountIcon, categoryIcon } from './categories';
 import { MONTH_NAMES, dayLabel, dm, dmy, money, weekday } from './format';
-import { DateRow, Keypad, Stepper, SwitchRow } from './ui';
+import { DateRow, MoneyField, Stepper, SwitchRow } from './ui';
 
 type Freq = 'weekly' | 'monthly' | 'yearly' | 'every';
 const PARCS = [1, 2, 3, 4, 5, 6, 8, 10, 12, 18, 24] as const;
@@ -190,14 +190,14 @@ function EntryForm({ onClose, today, preset, aboveTabBar }: Props) {
         <IconButton icon={X} label="Fechar" variant="ghost" color="textSecondary" onPress={onClose} />
       </View>
       <SegmentedControl label="Tipo de lançamento" options={TYPES} value={type} onChange={changeType} />
-      <View>
-        <Text variant="display" numeric tone={cents ? 'primary' : 'tertiary'} accessibilityLiveRegion="polite">
-          {money(cents)}
-        </Text>
-        <Text variant="small" tone="tertiary" numeric>
-          {amountSub}
-        </Text>
-      </View>
+      <MoneyField
+        large
+        autoFocus
+        label="Valor"
+        cents={cents || null}
+        onChange={(c) => setCents(c ?? 0)}
+        hint={amountSub.trim() || undefined}
+      />
 
       <ScrollView
         style={s.scroll}
@@ -345,7 +345,6 @@ function EntryForm({ onClose, today, preset, aboveTabBar }: Props) {
         )}
       </ScrollView>
 
-      <Keypad cents={cents} onChange={setCents} />
       <Button label={saveLabel} fullWidth haptic disabled={!canSave} loading={saving} onPress={save} />
     </View>
   );

@@ -127,8 +127,6 @@ export const typeScale = {
   reading: { fontSize: 18, lineHeight: 28, font: fonts.serif.regular, letterSpacing: 0 },
   /** valor digitado em destaque (confirmar previsto, pagar fatura) */
   amountField: { fontSize: 32, lineHeight: 38, font: fonts.sans.light, letterSpacing: -1 },
-  /** tecla do teclado numérico */
-  keypad: { fontSize: 24, lineHeight: 28, font: fonts.sans.light, letterSpacing: 0 },
   subtitle: { fontSize: 17, lineHeight: 24, font: fonts.serif.italic, letterSpacing: 0 },
   mono: { fontSize: 13.5, lineHeight: 22, font: fonts.mono.regular, letterSpacing: 0 },
 } as const satisfies Record<string, TypeStyle>;

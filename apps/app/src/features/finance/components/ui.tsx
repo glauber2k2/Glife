@@ -1,6 +1,6 @@
 // Peças visuais das telas de Finanças (protótipo "Glife Finanças"): seletor de mês, disco de ícone, linhas de
-// valor, barra do orçamento, teclado numérico, rádio, campo de dinheiro e campo de data.
-import { ChevronLeft, ChevronRight, Delete, Repeat, type LucideIcon } from 'lucide-react-native';
+// valor, barra do orçamento, rádio, campo de dinheiro e campo de data.
+import { ChevronLeft, ChevronRight, Repeat, type LucideIcon } from 'lucide-react-native';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Platform, Pressable, View } from 'react-native';
 import Animated, { FadeIn, Keyframe, useAnimatedStyle, useSharedValue, withDelay, withSpring } from 'react-native-reanimated';
@@ -289,40 +289,6 @@ export function useCountUp(value: number): number {
 
 // ---------- Teclado e campos ----------
 
-const KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '00', '0', 'del'] as const;
-const MAX_CENTS = 99_999_999_99;
-
-/** Teclado numérico que digita em centavos (2-3-9-9-0-0 → R$ 2.399,00). */
-export function Keypad({ cents, onChange }: { cents: number; onChange: (next: number) => void }) {
-  const s = useStyles();
-  const t = useTheme();
-  const press = (k: (typeof KEYS)[number]) => {
-    const next = k === 'del' ? Math.floor(cents / 10) : k === '00' ? cents * 100 : cents * 10 + Number(k);
-    if (next <= MAX_CENTS) onChange(next);
-  };
-  return (
-    <View style={s.keypad}>
-      {KEYS.map((k) => (
-        <Pressable
-          key={k}
-          accessibilityRole="button"
-          accessibilityLabel={k === 'del' ? 'Apagar' : k}
-          onPress={() => press(k)}
-          style={({ pressed }) => [s.key, pressed && s.keyPressed]}
-        >
-          {k === 'del' ? (
-            <Icon icon={Delete} size={t.icon.size + t.space[0.5]} />
-          ) : (
-            <Text variant="keypad" numeric>
-              {k}
-            </Text>
-          )}
-        </Pressable>
-      ))}
-    </View>
-  );
-}
-
 /** Campo de dinheiro: digita só números, mostra "R$ 1.234,56". */
 export function MoneyField({
   label,
@@ -334,6 +300,7 @@ export function MoneyField({
   negative,
   onNegativeChange,
   placeholder,
+  autoFocus,
 }: {
   label: string;
   cents: number | null;
@@ -344,6 +311,7 @@ export function MoneyField({
   negative?: boolean;
   onNegativeChange?: (negative: boolean) => void;
   placeholder?: string;
+  autoFocus?: boolean;
 }) {
   const s = useStyles();
   const text = cents === null ? '' : `${negative ? '− ' : ''}${money(cents)}`;
@@ -353,6 +321,7 @@ export function MoneyField({
       hint={hint}
       value={text}
       placeholder={placeholder ?? 'R$ 0,00'}
+      autoFocus={autoFocus}
       keyboardType="number-pad"
       inputMode="numeric"
       style={large ? s.largeField : s.numericField}
@@ -631,21 +600,6 @@ const useStyles = makeStyles((t) => ({
     borderRadius: t.hairline,
     backgroundColor: t.colors.text,
   },
-  keypad: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    borderTopWidth: t.hairline,
-    borderTopColor: t.colors.hairline,
-    paddingTop: t.space[1.5],
-  },
-  key: {
-    width: '33.333%',
-    height: t.touch.minTarget,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: t.radius.full,
-  },
-  keyPressed: { backgroundColor: t.colors.soft },
   numericField: { fontVariant: ['tabular-nums'] },
   largeField: {
     fontVariant: ['tabular-nums'],
