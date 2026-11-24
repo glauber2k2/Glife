@@ -3,6 +3,7 @@
 import {
   addDays,
   addMonths,
+  isRecurrenceActive,
   lastDayOf,
   monthOf,
   nextOccurrenceOf,
@@ -48,7 +49,7 @@ export function RecurrencesScreen() {
 
   const accounts = new Map(data.accounts.map((a) => [a.id, a]));
   const categories = new Map(data.categories.map((c) => [c.id, c]));
-  const active = data.rules.filter((r) => r.end_date === null || r.end_date >= today);
+  const active = data.rules.filter((r) => isRecurrenceActive(r, today));
   const groups = [
     { title: 'Entradas', rules: active.filter((r) => r.type === 'income') },
     { title: 'Saídas', rules: active.filter((r) => r.type === 'expense') },

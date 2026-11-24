@@ -127,6 +127,7 @@ export {
   invoiceDues,
   invoiceToShow,
   isInvoiceDue,
+  isRecurrenceActive,
   lastDayOf,
   monthOverview,
   nextOccurrenceOf,

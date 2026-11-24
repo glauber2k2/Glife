@@ -4,6 +4,7 @@ import {
   accountBalance,
   addMonths,
   isInvoiceDue,
+  isRecurrenceActive,
   lastDayOf,
   monthOf,
   monthOverview,
@@ -126,7 +127,7 @@ export function FinanceHomeScreen() {
 
   const budgetsShown = overview.budgets.filter((b) => b.budget !== null).slice(0, 5);
   const budgetCount = overview.budgets.filter((b) => b.budget !== null).length;
-  const activeRules = data.rules.filter((r) => r.end_date === null || r.end_date >= today).length;
+  const activeRules = data.rules.filter((r) => isRecurrenceActive(r, today)).length;
 
   return (
     <Screen

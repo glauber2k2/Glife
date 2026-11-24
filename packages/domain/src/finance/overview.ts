@@ -30,6 +30,14 @@ export function lastDayOf(month: Month): IsoDate {
   return dateInMonth(month, daysInMonth(y, m));
 }
 
+/**
+ * Regra ainda ativa: sem fim, ou com fim depois do mês corrente. Encerrar ("depois deste mês" ou "já neste mês")
+ * põe o fim neste mês, e a regra sai das ativas na hora; a ocorrência que ainda falta no mês segue como prevista.
+ */
+export function isRecurrenceActive(rule: { end_date: IsoDate | null }, today: IsoDate): boolean {
+  return rule.end_date === null || rule.end_date > lastDayOf(monthOf(today));
+}
+
 /** Ocorrências de todas as regras, do início de cada uma até `until`, já casadas com as linhas gravadas. */
 export function collectOccurrences(data: Pick<FinanceData, 'rules' | 'transactions'>, until: IsoDate): Occurrence[] {
   const byRule = new Map<string, Transaction[]>();
