@@ -140,7 +140,7 @@ Ordem obrigatória (cada uma usa a anterior). **Codex: não pegue T15–T19** (C
 
 ### Fase 1 — Bloqueio do app (regras no planejamento, seção "Bloqueio do app"; telas aguardam `docs/prototipos/bloqueio.md`)
 
-**Codex: não pegue T21–T23** (segurança; Claude em andamento, 24/11).
+**Codex: não pegue T21–T25** (segurança; Claude em andamento, 24/11).
 
 - [x] **T21 — Domain `applock` (só Claude)** — `packages/domain/src/applock/` + testes. `appPasswordSchema` (6–128),
   `lockoutFor(falhas)` (5–6 → 30 s; 7–9 → 5 min; ≥ 10 → só com login da conta), `shouldLockOnReturn`, registro
@@ -154,6 +154,17 @@ Ordem obrigatória (cada uma usa a anterior). **Codex: não pegue T15–T19** (C
   geram hashes diferentes, parâmetros vão no registro.
 - [x] **T23 — Lixeira apaga de vez após 30 dias** — `NotesRepository.purgeTrash(deletedBefore)` + `trashCutoff()` no contrato,
   memória e SQLite local; chamado quando o acesso fica `ready`. Aceite: nota excluída há 31 dias some, há 29 fica.
+- [x] **T24 — Portão do bloqueio por AppState (só Claude)** — domain `applock/gate.ts` (`createLockGate`: começa
+  travado; segundo plano → anota a hora; volta → trava se passou do tempo; ignora o segundo plano causado pelo
+  próprio diálogo de biometria) + hook `features/app-lock/hooks/useLockGate.ts` (AppState). **Ainda não ligado no
+  `_layout`**: sem a tela de bloqueio, travaria o app. Aceite: testes do portão com relógio falso.
+- [x] **T25 — Biometria do aparelho (só Claude)** — domain `applock/biometrics.ts` (interface `DeviceBiometrics`
+  e fluxos `enableBiometrics`, `disableBiometrics`, `tryBiometricUnlock`, `unlockWithPasswordAndRearm`) +
+  `features/app-lock/data/deviceBiometrics.ts` (`expo-local-authentication` para disponibilidade; uma sentinela no
+  SecureStore com `requireAuthentication` faz o diálogo e detecta digital nova: chave invalidada lê `null`).
+  Aceite: testes dos fluxos com biometria falsa (digital nova → pede senha uma vez e rearma; cancelar → senha).
+  **Conferir no celular:** se o diálogo do SecureStore aceita o PIN do aparelho (não deveria) e se a chave some
+  mesmo com digital nova.
 
 ## Pendências do usuário
 

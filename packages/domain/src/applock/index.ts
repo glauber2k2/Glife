@@ -19,3 +19,13 @@ export {
   type UnlockResult,
 } from './model.ts';
 export { createAppLock, type AppLock, type AppLockDeps } from './service.ts';
+export { createLockGate, type LockGate } from './gate.ts';
+export {
+  disableBiometrics,
+  enableBiometrics,
+  tryBiometricUnlock,
+  unlockWithPasswordAndRearm,
+  type BiometricAttempt,
+  type BiometricOutcome,
+  type DeviceBiometrics,
+} from './biometrics.ts';
