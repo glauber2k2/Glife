@@ -79,7 +79,10 @@ T11 e T12 foram assumidas pelo Claude a pedido do usuário (23/11). **Codex: nã
   (`/nota/[id]`, salva sozinho, fixar, lixeira, nota vazia é descartada ao sair). **Validado no web com a conta
   real**: nota criada e editada chegou ao Supabase; exclusão lógica também. Android não validado.
   Prototipagem pendente: `docs/prototipos/notas.md` (editor escrever/ler, vínculos `[[`, pastas/tags, lixeira).
-- [ ] **Bloqueada (depende do usuário):** 0.11 APK (Android Studio).
+- [ ] **0.11 APK** — APK 0.1.0 (arm64, release com chave de depuração) gerado em 23/11 a partir de `fc8acc3`
+  e enviado ao usuário; receita do Windows (caminhos longos) na skill `release-android`. **Falta o teste no
+  celular** (abrir, entrar com MFA, criar nota offline, sincronizar, busca) e a `revisao-seguranca` antes de uma
+  release de verdade (esta foi uma build de teste, sem changelog nem chave de release).
 
 ### Fase 1 — Notas (protótipo "Glife Notas" do Claude Design)
 - [x] **T14 — Notas conforme o protótipo (só Claude)** — lista (busca, filtros por tipo e #tag, linha Pastas com
