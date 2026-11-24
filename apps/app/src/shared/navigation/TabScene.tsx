@@ -1,26 +1,46 @@
-import { useIsFocused } from 'expo-router';
+import { useIsFocused, useNavigation, useRoute } from 'expo-router';
 import { useLayoutEffect, type ReactNode } from 'react';
-import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
+import Animated, { useAnimatedStyle, useSharedValue, withSpring, withTiming } from 'react-native-reanimated';
 
-import { makeStyles, useReduceMotion, useTheme } from '@/shared/ui';
+import { makeStyles, resolveSpring, useReduceMotion, useTheme } from '@/shared/ui';
 
-import { tabSceneEnterFrom } from './navigationMotion';
+import { tabSceneEnterFrom, type TabFocusTracker } from './navigationMotion';
 
-/** Mantém a tela montada: a troca de aba esmaece sem apagar seu estado local nem deslocar a tela. */
-export function TabScene({ children }: { children: ReactNode }) {
+/**
+ * Mantém a tela montada (a troca de aba não apaga o estado local). Ao ganhar foco, a tela entra pelo lado
+ * do movimento enquanto esmaece; a primeira só esmaece; com "reduzir movimento" aparece direto.
+ */
+export function TabScene({ children, tracker }: { children: ReactNode; tracker: TabFocusTracker }) {
   const s = useStyles();
   const t = useTheme();
   const focused = useIsFocused();
+  const navigation = useNavigation();
+  const route = useRoute();
   const reduceMotion = useReduceMotion();
-  const from = tabSceneEnterFrom(reduceMotion);
-  const opacity = useSharedValue(from.opacity);
+  const opacity = useSharedValue<number>(t.opacity.hidden);
+  const translateX = useSharedValue<number>(t.space[0]);
 
   useLayoutEffect(() => {
-    if (focused && !reduceMotion) opacity.set(withTiming(1, { duration: t.motion.tap }));
-    else opacity.set(focused ? 1 : from.opacity);
-  }, [focused, reduceMotion, opacity, from.opacity, t.motion.tap]);
+    if (!focused) return;
+    const index = navigation.getState()?.routes.findIndex((r) => r.key === route.key) ?? -1;
+    const direction = tracker.advance(index);
+    const from = tabSceneEnterFrom(reduceMotion, direction, t.space[6]);
+    const spring = resolveSpring('standard', reduceMotion);
+    if (!spring) {
+      opacity.set(t.opacity.full);
+      translateX.set(t.space[0]);
+      return;
+    }
+    opacity.set(from.opacity);
+    translateX.set(from.translateX);
+    opacity.set(withTiming(t.opacity.full, { duration: t.motion.standard }));
+    translateX.set(withSpring(t.space[0], spring));
+  }, [focused, reduceMotion]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const animatedStyle = useAnimatedStyle(() => ({ opacity: opacity.get() }));
+  const animatedStyle = useAnimatedStyle(() => ({
+    opacity: opacity.get(),
+    transform: [{ translateX: translateX.get() }],
+  }));
 
   return (
     <Animated.View testID="tab-scene" style={[s.scene, animatedStyle]}>

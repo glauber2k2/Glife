@@ -158,8 +158,6 @@ export const size = {
   chipSmall: 32,
   linkChip: 26,
   tabBar: 70,
-  tabPillWidth: 56,
-  tabPillHeight: 54,
   toast: 40,
   pill: 32,
   pillSmall: 26,
@@ -202,6 +200,8 @@ export const motion = {
   emphasis: 350,
   gentle: 320,
   stagger: 40,
+  /** a borda de trás da linha da aba ativa parte depois da da frente, e a linha estica */
+  tabLineDelay: 50,
   enterOffset: 12,
   collapseDelay: 650,
   toast: 2200,
