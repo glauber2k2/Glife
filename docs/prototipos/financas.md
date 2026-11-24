@@ -1,4 +1,9 @@
-# Finanças (Fase 2) — aguardando protótipo
+# Finanças (Fase 2) — prototipadas
+
+Protótipo no Claude Design: `Glife Financas.dc.html` (telas em `Financas App.dc.html`), implementado em 24/11/2026
+(`features/finance`, versão 0.2.0). O que ficou de fora está em "Atenção" no STATUS.md.
+
+## Histórico: pedido de prototipagem
 
 O modelo de dados está pronto (spec `docs/superpowers/specs/2026-11-24-financas-modelo-design.md`): contas, cartão
 com fatura (fechamento e vencimento), parcelas, cartão já em uso, recorrências com confirmação, orçamento pelo mês em
