@@ -1,7 +1,7 @@
 # Status: 2026-11-24
-- Tarefa atual: Fase 2 — telas de Finanças implementadas a partir do protótipo "Glife Finanças" (8 telas + folhas); APK 0.2.0
+- Tarefa atual: ajustes de interface e cartão em uso; APK 0.2.2
 - Branch: master
-- Feito: domain `finance/overview.ts` (visão do mês, fatura, extrato, próxima ocorrência) e categorias padrão com id fixo; app: FinanceProvider, Início, Novo lançamento, Confirmar, Pagar fatura, Cartão/fatura, Nova conta/cartão (em uso), Extrato, Recorrentes/regra, Orçamentos; versão 0.2.0 + docs/CHANGELOG.md
-- Falta: **usuário:** republicar `sync-streams.yaml` no PowerSync; conferir as telas no Android e no web (dois temas) com a conta real; validar T19, T20, T26
-- Atenção (riscos/decisões): migração de finanças aplicada no GLIFE em 24/11 (sem dump: Docker desligado; migração só cria tabelas; rls_check vazio); sem republicar o sync-streams, os dados de finanças não descem para outros aparelhos; fora do protótipo nesta versão: animação "cartão que vira tela" (usa a transição de detalhe), "Escolher data" ao aplicar regra, confirmar previsto agendado no cartão; datas digitadas (dd/mm/aaaa) em vez de calendário; menores antigos da revisão de finanças seguem pendentes
-- Último commit: ceca272
+- Feito: teclado sobe telas/folhas/editor (react-native-keyboard-controller); Input sem texto na borda e rótulo de uma linha; Chip md e "Tipo da nota" sem mudar largura ao marcar; cartão em uso tudo ou nada com motivo no aviso
+- Falta: **usuário:** testar o cadastro de cartão com parcelamentos no 0.2.2 e mandar o motivo do aviso se falhar; print do cabeçalho de Notas desalinhado; republicar `sync-streams.yaml`; conferir telas nos dois temas
+- Atenção (riscos/decisões): a falha do cartão com parcelas NÃO foi reproduzida (passa no SQLite dos testes); dev server antigo precisa reiniciar por causa da lib nova; build Android em C:\gl (receita da skill release-android)
+- Último commit: 6b78280
