@@ -1,7 +1,7 @@
 # Status: 2026-11-24
-- Tarefa atual: barra de navegação com alterações não commitadas (outra frente: TabBar, TabScene, navigationMotion, tokens.ts)
+- Tarefa atual: Fase 2 — modelo de dados de finanças concluído (sem telas); próximo: telas de Finanças (perguntar protótipo antes)
 - Branch: master
-- Feito: Fase 0 e Fase 1 até o bloqueio (T21–T26); fluxo "modo reserva"; money.ts; Ajustes no protótipo atualizado (SegmentedControl de tema, BackHeader em shared/ui); acesso e bloqueio conferidos na web contra o protótipo
-- Falta: validar no web com login T19 (busca), T20 (Hoje) e T26 (bloqueio); testar APK 0.11 no celular + revisao-seguranca; pendências dos protótipos (wordmark 44→20, "card que vira tela", navegação superior no web)
-- Atenção (riscos/decisões): usuário deve trocar a senha do `powersync_role` (fraca, foi exposta em conversa); senha do app com módulo nativo exige rebuild do APK; Android não validado; seção "Design system" de demonstração ainda aparece em Ajustes (fora do protótipo)
-- Último commit: 191353d
+- Feito: Fases 0–1 até o bloqueio; Ajustes no protótipo; finanças: money, cartão com fatura, parcelas, cartão já em uso, recorrências (UUID v5), orçamento pelo mês pago, previsão, migração 20261124000001, sync e repositórios (spec e plano em docs/superpowers)
+- Falta: **configurações externas (usuário):** `pnpm sb db push --remote` (migração de finanças no Supabase) e republicar `supabase/powersync/sync-streams.yaml` no painel do PowerSync (Validate → Deploy); validar no web com login T19, T20, T26; APK 0.11 + revisao-seguranca; pendências dos protótipos
+- Atenção (riscos/decisões): sem a migração aplicada, gravações de finanças no app falham no envio ao servidor; menores adiados da revisão: check de parcela no SQL aceita campos nulos (precisa migração nova), `put` do SQLite sem filtro de user_id, consistência ao excluir conta pagadora, `@noble/hashes` fora do deno.json; trocar senha do `powersync_role`; Android não validado
+- Último commit: 088daf4
