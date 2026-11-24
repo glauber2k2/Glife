@@ -18,6 +18,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useEffect, useMemo, type ReactNode } from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
+import { AppLockGate, AppLockProvider, createDeviceAppLock, deviceBiometrics, useAppLock } from '@/features/app-lock';
 import { AuthProvider, createSupabaseAuthService, useAuth } from '@/features/auth';
 import { LinksProvider, linksTables, useLinksSearchSources } from '@/features/links';
 import { NotesProvider, notesSearchIndex, notesTables, useNotesSearchSources } from '@/features/notes';
@@ -34,16 +35,20 @@ installIdGenerator();
 // Raiz de composição: aqui as interfaces recebem as implementações concretas.
 const themePreferenceStore = createThemePreferenceStore(AsyncStorage);
 const authService = createSupabaseAuthService(getSupabase());
+// Bloqueio local: senha do app (scrypt no armazenamento seguro) e biometria forte do aparelho.
+const appLock = createDeviceAppLock();
+const signOut = () => authService.signOut();
 // Banco local com as tabelas das features; sincroniza com o Supabase via PowerSync.
 const localSync = createLocalSync({ ...notesTables, ...linksTables }, [notesSearchIndex]);
 void SplashScreen.preventAutoHideAsync();
 
-/** Busca universal: cada feature entrega as suas fontes; Ctrl+K só com acesso completo. */
+/** Busca universal: cada feature entrega as suas fontes; Ctrl+K só com acesso completo e app desbloqueado. */
 function SearchComposition({ enabled, children }: { enabled: boolean; children: ReactNode }) {
   const notes = useNotesSearchSources();
   const links = useLinksSearchSources();
   const sources = useMemo(() => [...notes, ...links], [notes, links]);
-  useSearchShortcut(enabled);
+  const { locked } = useAppLock();
+  useSearchShortcut(enabled && !locked);
   return (
     <SearchProvider sources={sources} actions={SEARCH_ACTIONS}>
       {children}
@@ -71,6 +76,7 @@ function RootStack() {
   // Dados locais só com sessão aal2; ao sair, os provedores ficam sem repositório.
   const userId = stage === 'ready' ? (state?.userId ?? null) : null;
   return (
+    <AppLockProvider lock={appLock} bio={deviceBiometrics} signedOut={stage === 'signed_out'} signOut={signOut}>
     <SyncStatusProvider subscribe={localSync.onConnectedChange}>
       <NotesProvider db={localSync.db} userId={userId}>
         <LinksProvider db={localSync.db} userId={userId}>
@@ -78,6 +84,8 @@ function RootStack() {
           <ToastProvider>
             <NavigationThemeProvider value={navigationTheme}>
               <StatusBar style={t.scheme === 'dark' ? 'light' : 'dark'} />
+              {/* Com sessão pronta, nada do app aparece sem a senha do app ou a biometria. */}
+              <AppLockGate active={stage === 'ready'}>
               <Stack
                 screenOptions={{
                   headerShown: false,
@@ -100,6 +108,8 @@ function RootStack() {
                   <Stack.Screen name="pastas" options={{ animation: animation.detail }} />
                   <Stack.Screen name="pasta/[id]" options={{ animation: animation.detail }} />
                   <Stack.Screen name="lixeira" options={{ animation: animation.detail }} />
+                  <Stack.Screen name="seguranca" options={{ animation: animation.detail }} />
+                  <Stack.Screen name="trocar-senha" options={{ animation: animation.detail }} />
                 </Stack.Protected>
                 <Stack.Protected guard={stage === 'signed_out'}>
                   <Stack.Screen name="entrar" />
@@ -108,12 +118,14 @@ function RootStack() {
                   <Stack.Screen name="verificacao" />
                 </Stack.Protected>
               </Stack>
+              </AppLockGate>
             </NavigationThemeProvider>
           </ToastProvider>
           </SearchComposition>
         </LinksProvider>
       </NotesProvider>
     </SyncStatusProvider>
+    </AppLockProvider>
   );
 }
 

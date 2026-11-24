@@ -23,6 +23,9 @@ no app** — T11 e T12 são do Codex; T10 e T13 do Claude. Android (0.11) depend
   `search_path = ''`. Migração já commitada **nunca** é editada: crie outra.
 - Dinheiro em centavos (inteiro). Exclusão lógica (`deleted_at`). Texto da Bíblia é somente leitura.
 - Bloqueio: o app **não** se esconde na lista de apps recentes e prints ficam liberados (usuário, 24/11/2026).
+  **Pendência futura** (o usuário pode decidir implementar): esconder o conteúdo nos recentes. O protótipo
+  `Glife Bloqueio` (seção 05) já desenha o cartão: Android 13+ `setRecentsScreenshotEnabled(false)`; antes disso,
+  desenhar a camada de bloqueio ao ir para o segundo plano; prints continuam liberados (sem FLAG_SECURE).
 - Movimento: React Native **Reanimated**, molas amortecidas 200–350 ms, respeitar "reduzir movimento".
 - Testes: vitest em todos os pacotes; banco testado em Postgres real via PGlite (`supabase/tests`).
 - **Telas novas** só depois de perguntar ao usuário se ele quer enviar protótipo (o Claude faz essa pergunta).
@@ -139,12 +142,12 @@ Ordem obrigatória (cada uma usa a anterior). **Codex: não pegue T15–T19** (C
   nota, navegação superior no web, blocos de agenda/refeição/gastos/devocional (chegam com os módulos), itens da caixa
   (sem tabela ainda). **Código commitado (`05c0949`); falta validar no web com login do usuário.**
 
-### Fase 1 — Bloqueio do app (regras no planejamento, seção "Bloqueio do app"; telas aguardam `docs/prototipos/bloqueio.md`)
+### Fase 1 — Bloqueio do app (regras no planejamento, seção "Bloqueio do app"; telas do protótipo Claude Design "Glife Bloqueio")
 
-**Codex: não pegue T21–T25** (segurança; Claude em andamento, 24/11).
+**Codex: não pegue T21–T26** (segurança; Claude, 24/11).
 
 - [x] **T21 — Domain `applock` (só Claude)** — `packages/domain/src/applock/` + testes. `appPasswordSchema` (6–128),
-  `lockoutFor(falhas)` (5–6 → 30 s; 7–9 → 5 min; ≥ 10 → só com login da conta), `shouldLockOnReturn`, registro
+  `lockoutFor(falhas)` (5º erro → 30 s; 7º → 5 min; ≥ 10 → só com login da conta; ajustado ao protótipo na T26), `shouldLockOnReturn`, registro
   `AppLockRecord` (zod), interfaces `AppLockStore`/`PasswordHasher` e serviço `createAppLock` (definir, trocar
   confirmando a atual, desbloquear por senha, redefinir após login da conta, biometria liga/desliga, tempo para
   bloquear, "pedir a senha uma vez" após digital nova). Aceite: testes com loja em memória e hasher falso cobrem
@@ -164,8 +167,20 @@ Ordem obrigatória (cada uma usa a anterior). **Codex: não pegue T15–T19** (C
   `features/app-lock/data/deviceBiometrics.ts` (`expo-local-authentication` para disponibilidade; uma sentinela no
   SecureStore com `requireAuthentication` faz o diálogo e detecta digital nova: chave invalidada lê `null`).
   Aceite: testes dos fluxos com biometria falsa (digital nova → pede senha uma vez e rearma; cancelar → senha).
-  **Conferir no celular:** se o diálogo do SecureStore aceita o PIN do aparelho (não deveria) e se a chave some
-  mesmo com digital nova.
+  Código nativo do expo-secure-store conferido (T26): `BiometricPrompt` com `CryptoObject` (só biometria forte,
+  **sem PIN**), e chave invalidada (`KeyPermanentlyInvalidatedException`) lê `null`. **Conferir no celular** mesmo assim.
+- [x] **T26 — Telas do bloqueio (só Claude)** — protótipo "Glife Bloqueio" (Claude Design). `AppLockProvider` +
+  `AppLockGate` no `_layout` (sessão `ready` → nada aparece sem desbloqueio; 1ª abertura só monta o app depois de
+  liberar; ao voltar, a tela cobre o app e esmaece ao liberar). Telas: bloqueio (biometria automática, senha,
+  erro com tremor e vibração, espera com contagem do prazo, travado, digital nova), criar a senha (+ oferta da
+  biometria no Android), Ajustes › Segurança (`/seguranca`: sempre ligado, biometria, "Bloquear depois de"),
+  trocar a senha (`/trocar-senha`, erro da atual conta no contador). "Esqueci a senha"/"Entrar com a conta" saem
+  da conta (folha de confirmação) e, sem sessão, o registro é apagado (`AppLock.forget`): o próximo login cria
+  outra senha. Biometria vale durante a espera da senha (não com o app travado). `Switch` novo no design system.
+  Aceite: testes de `lockText` e do domain; lint/typecheck verdes. **Pendente:** testar no web com login e no
+  Android (APK); o botão negativo da folha de biometria é o "Cancelar" do sistema (o expo-secure-store não deixa
+  trocar para "Usar senha do app"; cancelar já leva à senha); a contagem usa o relógio do aparelho, não o tempo
+  decorrido.
 
 ## Pendências do usuário
 

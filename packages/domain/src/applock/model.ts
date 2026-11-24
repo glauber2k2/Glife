@@ -21,12 +21,13 @@ export const ACCOUNT_LOCK_FAILURES = 10;
 
 export type Lockout = { kind: 'none' } | { kind: 'wait'; ms: number } | { kind: 'account' };
 
-/** Espera crescente: 5–6 erros → 30 s; 7–9 → 5 min; 10 → só com a conta. */
+/** Esperas fixas: no 5º erro seguido, 30 s; no 7º, 5 min; no 10º, só com a conta (protótipo Glife Bloqueio). */
+export const WAIT_AT_FAILURES: Readonly<Record<number, number>> = { 5: 30 * SEC, 7: 5 * MIN };
+
 export function lockoutFor(failures: number): Lockout {
   if (failures >= ACCOUNT_LOCK_FAILURES) return { kind: 'account' };
-  if (failures >= 7) return { kind: 'wait', ms: 5 * MIN };
-  if (failures >= 5) return { kind: 'wait', ms: 30 * SEC };
-  return { kind: 'none' };
+  const ms = WAIT_AT_FAILURES[failures];
+  return ms ? { kind: 'wait', ms } : { kind: 'none' };
 }
 
 /** Ao voltar do segundo plano: bloqueia se ficou fora pelo menos `timeoutMs` (0 = sempre). */

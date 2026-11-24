@@ -4,6 +4,7 @@ export {
   APP_PASSWORD_MIN,
   DEFAULT_LOCK_TIMEOUT_MS,
   LOCK_TIMEOUT_OPTIONS,
+  WAIT_AT_FAILURES,
   appLockRecordSchema,
   appPasswordSchema,
   lockTimeoutSchema,

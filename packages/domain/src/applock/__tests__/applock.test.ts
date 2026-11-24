@@ -52,12 +52,13 @@ async function failTimes(lock: ReturnType<typeof setup>['lock'], n: number) {
 }
 
 describe('lockoutFor', () => {
-  it('até 4 erros não espera; 5–6 esperam 30 s; 7–9 esperam 5 min; 10 exige a conta', () => {
+  it('espera só no 5º erro (30 s) e no 7º (5 min); 10 exige a conta (protótipo Glife Bloqueio)', () => {
     expect(lockoutFor(4)).toEqual({ kind: 'none' });
     expect(lockoutFor(5)).toEqual({ kind: 'wait', ms: 30 * SEC });
-    expect(lockoutFor(6)).toEqual({ kind: 'wait', ms: 30 * SEC });
+    expect(lockoutFor(6)).toEqual({ kind: 'none' });
     expect(lockoutFor(7)).toEqual({ kind: 'wait', ms: 5 * MIN });
-    expect(lockoutFor(9)).toEqual({ kind: 'wait', ms: 5 * MIN });
+    expect(lockoutFor(8)).toEqual({ kind: 'none' });
+    expect(lockoutFor(9)).toEqual({ kind: 'none' });
     expect(lockoutFor(10)).toEqual({ kind: 'account' });
   });
 });
@@ -130,6 +131,15 @@ describe('createAppLock', () => {
     expect(await lock.unlockWithPassword('nova-senha')).toEqual({ ok: true });
   });
 
+  it('esquecer (ao sair da conta) apaga o registro: o próximo login cria outra senha', async () => {
+    const { lock } = setup();
+    await lock.setPassword('segredo1');
+    await lock.forget();
+    expect((await lock.status()).configured).toBe(false);
+    await lock.setPassword('outra-senha');
+    expect(await lock.unlockWithPassword('outra-senha')).toEqual({ ok: true });
+  });
+
   it('trocar exige a senha atual; errar conta como erro', async () => {
     const { lock } = setup();
     await lock.setPassword('segredo1');
@@ -158,6 +168,22 @@ describe('createAppLock', () => {
     await failTimes(lock, 2);
     expect(await lock.unlockWithBiometrics()).toEqual({ ok: true });
     expect((await lock.status()).failures).toBe(0);
+  });
+
+  it('biometria vale durante a espera da senha (a contagem é da senha), mas não com o app travado', async () => {
+    const { lock, clock } = setup();
+    await lock.setPassword('segredo1');
+    await lock.setBiometrics(true);
+    await failTimes(lock, 5);
+    expect(await lock.canUseBiometrics()).toBe(true);
+    expect(await lock.unlockWithBiometrics()).toEqual({ ok: true });
+    expect((await lock.status()).blockedUntil).toBeNull();
+    for (let i = 0; i < 10; i++) {
+      await lock.unlockWithPassword('errada');
+      clock.advance(5 * MIN);
+    }
+    expect(await lock.canUseBiometrics()).toBe(false);
+    expect(await lock.unlockWithBiometrics()).toEqual({ ok: false, reason: 'account' });
   });
 
   it('tempo para bloquear só aceita as opções previstas', async () => {

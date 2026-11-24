@@ -23,8 +23,8 @@ const THEMES: { value: ThemePreference; label: string }[] = [
   { value: 'dark', label: 'Escuro' },
 ];
 
-/** `account`: seção de conta composta na rota (Ajustes não conhece a feature de autenticação). */
-export function SettingsScreen({ account }: { account?: ReactNode } = {}) {
+/** `account` e `security`: compostas na rota (Ajustes não conhece as features de autenticação e bloqueio). */
+export function SettingsScreen({ account, security }: { account?: ReactNode; security?: ReactNode } = {}) {
   const s = useStyles();
   const t = useTheme();
   const { preference, setPreference } = useThemePreference();
@@ -46,6 +46,8 @@ export function SettingsScreen({ account }: { account?: ReactNode } = {}) {
           ))}
         </View>
       </Section>
+
+      {security && <Section title="Segurança">{security}</Section>}
 
       {account && (
         <Section title="Conta">

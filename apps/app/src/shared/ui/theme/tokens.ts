@@ -145,7 +145,7 @@ export const layout = {
 } as const;
 
 /** Estados sem mudar cor: pressionado (sem movimento) e desabilitado. */
-export const opacity = { hidden: 0, full: 1, pressed: 0.6, disabled: 0.6 } as const;
+export const opacity = { hidden: 0, full: 1, pressed: 0.6, disabled: 0.6, fieldDisabled: 0.55 } as const;
 
 /** Medidas fixas de componentes. */
 export const size = {
@@ -179,6 +179,10 @@ export const size = {
   strike: 1.5,
   track: 3,
   trackThin: 2,
+  /** interruptor 46 × 28, bolinha de 22 a 3 px da borda */
+  switchWidth: 46,
+  switchHeight: 28,
+  switchKnob: 22,
 } as const;
 
 /** Campo com rótulo flutuante (54 px, cantos de 16). */
@@ -206,7 +210,12 @@ export const motion = {
   spin: 800,
   /** a entrada da etapa seguinte começa depois da saída */
   stepDelay: 90,
+  /** senha errada: um tremor só, amortecido */
+  shake: 280,
 } as const;
+
+/** Deslocamentos (px) do tremor do campo de senha errada: 0 → −6 → 5 → −3 → 0. */
+export const shakeSteps = [-6, 5, -3, 0] as const;
 
 /**
  * Quatro molas amortecidas (quase sem ultrapassar o destino):

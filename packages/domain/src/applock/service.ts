@@ -121,17 +121,22 @@ export function createAppLock({ store, hasher, now = Date.now }: AppLockDeps) {
       });
     },
 
+    /** Ao sair da conta: o bloqueio protege uma sessão; o próximo login cria outra senha do app. */
+    async forget(): Promise<void> {
+      await store.clear();
+    },
+
     async canUseBiometrics(): Promise<boolean> {
       const r = await load();
-      return !!r && r.biometrics && !r.mustUsePassword && gate(r) === null;
+      // A espera é da senha: a biometria continua valendo nela. Só o travamento pela conta a barra.
+      return !!r && r.biometrics && !r.mustUsePassword && !r.requireAccount;
     },
 
     /** Chame depois que o diálogo de biometria do sistema confirmou. */
     async unlockWithBiometrics(): Promise<UnlockResult> {
       const r = await load();
       if (!r) return { ok: false, reason: 'no_password' };
-      const blocked = gate(r);
-      if (blocked) return blocked;
+      if (r.requireAccount) return { ok: false, reason: 'account' };
       if (!r.biometrics || r.mustUsePassword) return { ok: false, reason: 'wrong', failures: r.failures };
       await store.save(succeeded(r));
       return { ok: true };
