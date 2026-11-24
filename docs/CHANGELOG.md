@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.2.2 — 2026-11-24
+
+- Teclado: ao tocar num campo, a tela (ou a folha) sobe e rola até ele; o teclado não cobre mais o conteúdo no Android.
+- Campos: o texto não encosta mais na borda de baixo no Android e o rótulo corta com reticências em vez de vazar.
+- Nova conta: os chips de tipo e de conta pagadora não mudam de largura ao marcar (a linha não quebra mais).
+- Nova conta (cartão em uso): "Valor da parcela" em linha própria; se o histórico falhar, o cartão não fica pela metade
+  e o aviso diz o motivo.
+- Notas: no seletor "Tipo da nota", marcar uma opção não muda mais a quebra de linha da descrição.
+
 ## 0.2.1 — 2026-11-24
 
 - Finanças: tocar num lançamento (Início, fatura, extrato) mostra os detalhes e "Excluir lançamento", com "Desfazer";
