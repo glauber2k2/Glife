@@ -1,5 +1,5 @@
 import { useEffect, useState, type ReactNode, type Ref } from 'react';
-import { TextInput, View, type TextInputProps } from 'react-native';
+import { TextInput, View, type TextInputInstance, type TextInputProps } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 
 import { Text } from './Text';
@@ -17,7 +17,7 @@ export interface InputProps extends TextInputProps {
   /** ação à direita, dentro do campo (ex.: mostrar senha) */
   trailing?: ReactNode;
   /** React 19: ref é prop comum e chega ao TextInput (foco, seleção) */
-  ref?: Ref<TextInput>;
+  ref?: Ref<TextInputInstance>;
 }
 
 /** Campo contornado de 54 px, cantos de 16, rótulo que flutua para o topo ao focar ou preencher. */

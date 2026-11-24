@@ -1,7 +1,6 @@
-// Hash lento com sal para a senha do app (scrypt via @noble/hashes, JS puro: roda no Hermes e no web).
-// Os parâmetros vão junto no registro, então subir o custo depois não invalida senhas antigas.
+// Hash lento com sal para a senha do app. O scrypt em si vem de fora (`scryptKdf`): nativo no Android,
+// JS no web. Os parâmetros vão junto no registro, então subir o custo depois não invalida senhas antigas.
 import type { PasswordDigest, PasswordHasher } from '@glife/domain/applock';
-import { scryptAsync } from '@noble/hashes/scrypt.js';
 
 export interface ScryptParams {
   N: number;
@@ -13,6 +12,17 @@ export interface ScryptParams {
 /** 2^15 × 8 ≈ 32 MB de memória: caro para força bruta e ainda aceitável no celular. */
 export const DEFAULT_SCRYPT_PARAMS: ScryptParams = { N: 2 ** 15, r: 8, p: 1, dkLen: 32 };
 const SALT_BYTES = 16;
+
+/** Deriva `dkLen` bytes da senha (já em bytes) e do sal. Implementações devem seguir o RFC 7914. */
+export type ScryptKdf = (password: Uint8Array, salt: Uint8Array, params: ScryptParams) => Promise<Uint8Array>;
+
+/**
+ * Teto de memória para o scrypt nativo (OpenSSL). Ele precisa de um pouco mais que 128 × r × N, e o padrão
+ * de 32 MB recusa N = 2^15; o dobro sobra.
+ */
+export function scryptMaxmem({ N, r }: ScryptParams) {
+  return 2 * 128 * r * N;
+}
 
 const toBase64 = (bytes: Uint8Array) => btoa(String.fromCharCode(...bytes));
 const fromBase64 = (b64: string) => Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
@@ -28,15 +38,15 @@ function equalBytes(a: Uint8Array, b: Uint8Array): boolean {
 
 export function createScryptHasher({
   params = DEFAULT_SCRYPT_PARAMS,
+  kdf,
   randomBytes,
 }: {
   params?: ScryptParams;
+  kdf: ScryptKdf;
   /** gerador criptográfico (expo-crypto no app) */
   randomBytes: (n: number) => Uint8Array;
 }): PasswordHasher {
-  // asyncTick: devolve o controle à interface durante o cálculo.
-  const derive = (password: string, salt: Uint8Array, p: ScryptParams) =>
-    scryptAsync(passwordBytes(password), salt, { N: p.N, r: p.r, p: p.p, dkLen: p.dkLen, asyncTick: 10 });
+  const derive = (password: string, salt: Uint8Array, p: ScryptParams) => kdf(passwordBytes(password), salt, p);
 
   return {
     async hash(password): Promise<PasswordDigest> {

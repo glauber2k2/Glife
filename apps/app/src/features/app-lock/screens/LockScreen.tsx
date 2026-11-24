@@ -4,7 +4,7 @@ import { lockoutFor, tryBiometricUnlock, unlockWithPasswordAndRearm } from '@gli
 import * as Haptics from 'expo-haptics';
 import { Fingerprint, Lock } from 'lucide-react-native';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Platform, TextInput, View } from 'react-native';
+import { Platform, View, type TextInputInstance } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withSequence, withTiming } from 'react-native-reanimated';
 
 import {
@@ -28,7 +28,7 @@ const TICK_MS = 250;
 const isWeb = Platform.OS === 'web';
 
 /** Seleciona o que foi digitado: digitar de novo substitui (Android: setSelection; web: select). */
-function selectAll(input: TextInput | null, length: number) {
+function selectAll(input: TextInputInstance | null, length: number) {
   if (!input) return;
   input.focus();
   const el = input as unknown as { setSelection?: (a: number, b: number) => void; select?: () => void };
@@ -52,7 +52,7 @@ export function LockScreen() {
   const [now, setNow] = useState(Date.now);
   const [forgot, setForgot] = useState(false);
   const [leaving, setLeaving] = useState(false);
-  const inputRef = useRef<TextInput>(null);
+  const inputRef = useRef<TextInputInstance>(null);
   const shakeX = useSharedValue(0);
   const shakeStyle = useAnimatedStyle(() => ({ transform: [{ translateX: shakeX.get() }] }));
 

@@ -1,7 +1,7 @@
 import { APP_PASSWORD_MAX, APP_PASSWORD_MIN } from '@glife/domain/applock';
 import { Circle, CircleAlert, CircleCheck, Eye, EyeOff, Timer, type LucideIcon } from 'lucide-react-native';
 import { useState, type ReactNode, type Ref } from 'react';
-import { TextInput, View } from 'react-native';
+import { View, type TextInputInstance } from 'react-native';
 import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 
 import {
@@ -20,7 +20,7 @@ export function PasswordInput({
   inputRef,
   disabled,
   ...rest
-}: Omit<InputProps, 'secureTextEntry' | 'trailing' | 'ref'> & { inputRef?: Ref<TextInput>; disabled?: boolean }) {
+}: Omit<InputProps, 'secureTextEntry' | 'trailing' | 'ref'> & { inputRef?: Ref<TextInputInstance>; disabled?: boolean }) {
   const s = useStyles();
   const t = useTheme();
   const [show, setShow] = useState(false);

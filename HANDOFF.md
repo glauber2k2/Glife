@@ -191,6 +191,10 @@ Ordem obrigatória (cada uma usa a anterior). **Codex: não pegue T15–T19** (C
 ## Estado atual
 
 - Projeto **Glife** em `Glauber/glife/`: pacotes `@glife/*`, esquema `glife://`, IDs `app.glife.pessoal`.
+- Senha do app (24/11): scrypt N=2^15 em JS levava dezenas de segundos no Hermes. Agora `scryptKdf.native.ts`
+  usa `react-native-quick-crypto` (OpenSSL, fora da thread de JS; `maxmem` = 2 × 128·r·N) e o web segue com
+  `@noble/hashes` (`scryptKdf.ts`); saídas idênticas (teste contra o OpenSSL do Node). **Exige rebuild do dev
+  build/APK** (módulo nativo). Android ainda não conferido.
 - T1–T6 concluídas e arquivadas com hashes: movimento em Button/Chip/Sheet/ListItem, demo em Ajustes,
   preferência dinâmica de movimento reduzido, lint de dados e hello usando o domain real.
 - Lint/typecheck verdes (contagem atualizada na linha da T7). Build web e verificações de
