@@ -340,16 +340,19 @@ export function DayField({
   value,
   onChange,
   max = 31,
+  hint,
 }: {
   label: string;
   value: number | null;
   onChange: (v: number | null) => void;
   max?: number;
+  hint?: string;
 }) {
   const s = useStyles();
   return (
     <Input
       label={label}
+      hint={hint}
       value={value === null ? '' : String(value)}
       keyboardType="number-pad"
       inputMode="numeric"

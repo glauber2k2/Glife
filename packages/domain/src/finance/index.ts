@@ -18,6 +18,7 @@ export {
   localDateOf,
   monthOf,
   monthSchema,
+  nextDayOfMonth,
   type IsoDate,
   type Month,
 } from './calendar.ts';

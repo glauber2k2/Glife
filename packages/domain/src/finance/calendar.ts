@@ -54,6 +54,13 @@ export function dateInMonth(month: Month, day: number): IsoDate {
   return `${month}-${pad(Math.min(day, daysInMonth(y, m)))}`;
 }
 
+/** Primeira data com o dia `day` a partir de `from` (inclusive); dia inexistente vira o último dia do mês. */
+export function nextDayOfMonth(from: IsoDate, day: number): IsoDate {
+  if (!Number.isInteger(day) || day < 1 || day > 31) throw new RangeError('Dia inválido');
+  const here = dateInMonth(monthOf(from), day);
+  return compareDates(here, from) >= 0 ? here : dateInMonth(addMonths(monthOf(from), 1), day);
+}
+
 export function addDays(date: IsoDate, n: number): IsoDate {
   let [y, m, d] = parseDate(date);
   d += n;

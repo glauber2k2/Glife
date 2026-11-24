@@ -1,10 +1,11 @@
-// Tela 2 do protótipo: Novo lançamento (folha). Valor no campo de dinheiro com o teclado do aparelho; tipo em segmentado; categoria,
-// conta ou cartão em chips; "Parcelar" só no cartão; "É previsto" e "Repetir".
+// Tela 2 do protótipo: Novo lançamento (folha). Ordem: tipo, valor (teclado do aparelho), conta ou cartão, parcelas
+// (só no cartão), categoria, descrição, data, "É previsto" e "Repetir" (com dia da cobrança nas repetições por mês).
 import {
   addMonths,
   cycleOf,
   invoiceDates,
   invoiceMonthFor,
+  nextDayOfMonth,
   splitInstallments,
   type Account,
   type Frequency,
@@ -21,7 +22,7 @@ import { useFinance } from '../hooks/FinanceData';
 import { useFinanceActions } from '../hooks/useFinanceActions';
 import { accountIcon, categoryIcon } from './categories';
 import { MONTH_NAMES, dayLabel, dm, dmy, money, weekday } from './format';
-import { DateRow, MoneyField, Stepper, SwitchRow } from './ui';
+import { DateRow, DayField, MoneyField, Stepper, SwitchRow } from './ui';
 
 type Freq = 'weekly' | 'monthly' | 'yearly' | 'every';
 const PARCS = [1, 2, 3, 4, 5, 6, 8, 10, 12, 18, 24] as const;
@@ -88,9 +89,16 @@ function EntryForm({ onClose, today, preset, aboveTabBar }: Props) {
   const [repeat, setRepeat] = useState(!!preset?.repeat);
   const [freq, setFreq] = useState<Freq>('monthly');
   const [every, setEvery] = useState(2);
+  /** dia da cobrança nas repetições por mês; acompanha a data até ser editado; null = campo vazio */
+  const [chargeDay, setChargeDay] = useState<number | null>(() => Number(today.slice(8, 10)));
+  const [chargeEdited, setChargeEdited] = useState(false);
   const [ends, setEnds] = useState<'never' | 'date'>('never');
   const [endDate, setEndDate] = useState<IsoDate>(`${Number(today.slice(0, 4)) + 1}${today.slice(4)}`);
-  const [date, setDate] = useState<IsoDate>(today);
+  const [date, setDateState] = useState<IsoDate>(today);
+  const setDate = (d: IsoDate) => {
+    setDateState(d);
+    if (!chargeEdited) setChargeDay(Number(d.slice(8, 10)));
+  };
   const [saving, setSaving] = useState(false);
 
   const account: Account | undefined = accounts.find((a) => a.id === acctId);
@@ -108,7 +116,11 @@ function EntryForm({ onClose, today, preset, aboveTabBar }: Props) {
     if (next === 'transfer') setToId(accounts.find((a) => a.id !== (acctId ?? banks[0]?.id))?.id ?? null);
   };
 
-  const day = Number(date.slice(8, 10));
+  const monthly = repeat && (freq === 'monthly' || freq === 'every');
+  const day = chargeDay ?? Number(date.slice(8, 10));
+  // Com dia da cobrança, a 1ª ocorrência é o próximo dia escolhido a partir da data; no futuro, fica prevista.
+  const firstDate: IsoDate = monthly ? nextDayOfMonth(date, day) : date;
+  const firstPlanned = planned || firstDate > today;
   const repSub = !repeat
     ? 'Não se repete'
     : {
@@ -121,7 +133,7 @@ function EntryForm({ onClose, today, preset, aboveTabBar }: Props) {
   let invoiceTxt = '';
   if (isCard && account) {
     const cycle = cycleOf(account);
-    const first = invoiceMonthFor(date, cycle);
+    const first = invoiceMonthFor(firstDate, cycle);
     invoiceTxt =
       parc > 1 && !repeat
         ? `1ª parcela na fatura de ${monthYear(first, today)} · última na de ${monthYear(addMonths(first, parc - 1), today)}`
@@ -137,9 +149,9 @@ function EntryForm({ onClose, today, preset, aboveTabBar }: Props) {
 
   const transferNote =
     target?.kind === 'credit_card' ? 'Pagamento de fatura: é transferência, não é gasto.' : 'Transferência não conta no orçamento.';
-  const canSave = cents > 0 && !!acctId && (type !== 'transfer' || !!toId) && !saving;
+  const canSave = cents > 0 && !!acctId && (type !== 'transfer' || !!toId) && (!monthly || chargeDay !== null) && !saving;
   const saveLabel =
-    planned || repeat ? 'Agendar' : type === 'expense' ? 'Salvar gasto' : type === 'income' ? 'Salvar receita' : 'Salvar transferência';
+    firstPlanned || repeat ? 'Agendar' : type === 'expense' ? 'Salvar gasto' : type === 'income' ? 'Salvar receita' : 'Salvar transferência';
 
   const save = async () => {
     if (!canSave || !acctId) return;
@@ -153,8 +165,8 @@ function EntryForm({ onClose, today, preset, aboveTabBar }: Props) {
         accountId: acctId,
         toAccountId: type === 'transfer' ? toId : null,
         installments: isCard ? parc : 1,
-        date,
-        planned,
+        date: firstDate,
+        planned: firstPlanned,
         repeat: repeat
           ? {
               frequency: (freq === 'every' ? 'monthly' : freq) as Frequency,
@@ -167,7 +179,7 @@ function EntryForm({ onClose, today, preset, aboveTabBar }: Props) {
       toast({
         aboveTabBar,
         message:
-          planned || repeat
+          firstPlanned || repeat
             ? 'Previsto agendado'
             : type === 'expense'
               ? 'Gasto salvo'
@@ -205,28 +217,6 @@ function EntryForm({ onClose, today, preset, aboveTabBar }: Props) {
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        <Input label="Descrição" value={desc} onChangeText={setDesc} placeholder="Ex.: Mercado" maxLength={200} />
-
-        {type !== 'transfer' && (
-          <>
-            <Text variant="label" tone="tertiary">
-              Categoria
-            </Text>
-            <View style={s.chips}>
-              {catsForType.map((c) => (
-                <Chip
-                  key={c.id}
-                  size="sm"
-                  label={c.name}
-                  icon={categoryIcon(c.icon)}
-                  selected={catId === c.id}
-                  onPress={() => setCatId(c.id)}
-                />
-              ))}
-            </View>
-          </>
-        )}
-
         <Text variant="label" tone="tertiary">
           {type === 'transfer' ? 'De' : type === 'income' ? 'Conta' : 'Conta ou cartão'}
         </Text>
@@ -294,7 +284,34 @@ function EntryForm({ onClose, today, preset, aboveTabBar }: Props) {
           </View>
         )}
 
-        <DateRow date={date} display={dayLabel(date, today)} onChange={setDate} />
+        {type !== 'transfer' && (
+          <>
+            <Text variant="label" tone="tertiary">
+              Categoria
+            </Text>
+            <View style={s.chips}>
+              {catsForType.map((c) => (
+                <Chip
+                  key={c.id}
+                  size="sm"
+                  label={c.name}
+                  icon={categoryIcon(c.icon)}
+                  selected={catId === c.id}
+                  onPress={() => setCatId(c.id)}
+                />
+              ))}
+            </View>
+          </>
+        )}
+
+        <Input label="Descrição" value={desc} onChangeText={setDesc} placeholder="Ex.: Mercado" maxLength={200} />
+
+        <DateRow
+          label={monthly ? 'A partir de' : 'Data'}
+          date={date}
+          display={dayLabel(date, today)}
+          onChange={setDate}
+        />
         <SwitchRow
           title="É previsto"
           sub="Fica agendado e só muda o saldo quando confirmado."
@@ -315,6 +332,17 @@ function EntryForm({ onClose, today, preset, aboveTabBar }: Props) {
                 <Chip key={v} size="sm" label={l} selected={freq === v} onPress={() => setFreq(v)} />
               ))}
             </View>
+            {monthly && (
+              <DayField
+                label="Dia da cobrança"
+                value={chargeDay}
+                onChange={(v) => {
+                  setChargeEdited(true);
+                  setChargeDay(v);
+                }}
+                hint={`1ª cobrança em ${dmy(firstDate)}${day > 28 ? ' · em mês mais curto, cai no último dia' : ''}`}
+              />
+            )}
             {freq === 'every' && (
               <View style={s.inline}>
                 <Text variant="chip" tone="secondary">
