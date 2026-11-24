@@ -20,6 +20,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { AppLockGate, AppLockProvider, createDeviceAppLock, deviceBiometrics, useAppLock } from '@/features/app-lock';
 import { AuthProvider, createSupabaseAuthService, useAuth } from '@/features/auth';
+import { financeTables } from '@/features/finance';
 import { LinksProvider, linksTables, useLinksSearchSources } from '@/features/links';
 import { NotesProvider, notesSearchIndex, notesTables, useNotesSearchSources } from '@/features/notes';
 import { SearchProvider, useSearchShortcut } from '@/features/search';
@@ -39,7 +40,7 @@ const authService = createSupabaseAuthService(getSupabase());
 const appLock = createDeviceAppLock();
 const signOut = () => authService.signOut();
 // Banco local com as tabelas das features; sincroniza com o Supabase via PowerSync.
-const localSync = createLocalSync({ ...notesTables, ...linksTables }, [notesSearchIndex]);
+const localSync = createLocalSync({ ...notesTables, ...linksTables, ...financeTables }, [notesSearchIndex]);
 void SplashScreen.preventAutoHideAsync();
 
 /** Busca universal: cada feature entrega as suas fontes; Ctrl+K só com acesso completo e app desbloqueado. */

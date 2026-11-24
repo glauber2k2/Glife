@@ -24,3 +24,13 @@ tagsRepositoryContract('SQLite local', async () => {
   const db = await createSqliteLocalDb(linksTables);
   return { tags: createLocalTagsRepository(db, USER), userId: USER };
 });
+
+import { financeRepositoryContract } from '@glife/domain/testing';
+
+import { createLocalFinance } from '../src/features/finance/data/localFinanceStore';
+import { financeTables } from '../src/features/finance/data/schema';
+
+financeRepositoryContract('SQLite local', async () => {
+  const db = await createSqliteLocalDb(financeTables);
+  return { finance: createLocalFinance(db, USER), userId: USER };
+});
