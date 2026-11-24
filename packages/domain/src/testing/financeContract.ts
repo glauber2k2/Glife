@@ -89,6 +89,44 @@ export function financeRepositoryContract(name: string, make: () => Promise<Fina
     });
   });
 
+  describe(`Finanças — exclusão (${name})`, () => {
+    it('excluir conta leva junto lançamentos e recorrências; conta pagadora de cartão é recusada', async () => {
+      const { finance, cc, card, mercado } = await setup(make);
+      const other = await finance.accounts.create({ name: 'Poupança', kind: 'savings' });
+      await finance.transactions.create({ type: 'expense', amount_cents: 1000, date: '2026-11-20', account_id: other.id, category_id: mercado.id });
+      await finance.transactions.create({ type: 'transfer', amount_cents: 500, date: '2026-11-21', account_id: cc.id, to_account_id: other.id });
+      await finance.recurrences.create({ type: 'expense', amount_cents: 300, account_id: other.id, frequency: 'monthly', start_date: '2026-11-01' });
+      const kept = await finance.transactions.create({ type: 'expense', amount_cents: 700, date: '2026-11-22', account_id: cc.id });
+
+      expect(await finance.accounts.removalImpact(other.id)).toEqual({ transactions: 2, recurrences: 1, paysCards: [] });
+      expect((await finance.accounts.removalImpact(cc.id)).paysCards.map((a) => a.id)).toEqual([card.id]);
+      await expectCode(finance.accounts.remove(cc.id), 'conflict');
+
+      await finance.accounts.remove(other.id);
+      expect(await finance.accounts.get(other.id)).toBeNull();
+      const left = await finance.transactions.listRange({ from: '2026-11-01', to: '2026-11-30' });
+      expect(left.map((t) => t.id)).toEqual([kept.id]);
+      expect(await finance.recurrences.listActive('2026-11-01')).toEqual([]);
+
+      await finance.accounts.remove(card.id);
+      await finance.accounts.remove(cc.id);
+      expect(await finance.accounts.list()).toEqual([]);
+    });
+
+    it('excluir e restaurar várias de uma vez (parcelas)', async () => {
+      const { finance, card } = await setup(make);
+      const rows = planInstallmentPurchase({ card, description: 'Sofá', category_id: null, totalCents: 30000, count: 3, date: '2026-11-20' });
+      await finance.transactions.createMany(rows);
+      const ids = rows.map((r) => r.id);
+      await finance.transactions.removeMany(ids);
+      expect(await finance.transactions.listByInvoice(card.id, rows[0]!.invoice_month!)).toEqual([]);
+      await finance.transactions.restoreMany(ids);
+      expect((await finance.transactions.listRange({ from: '2026-11-01', to: '2027-12-31' })).length).toBe(3);
+      await expectCode(finance.transactions.removeMany([ids[0]!, MISSING]), 'not_found');
+      expect((await finance.transactions.listRange({ from: '2026-11-01', to: '2027-12-31' })).length).toBe(3);
+    });
+  });
+
   describe(`Finanças — transações (${name})`, () => {
     it('compra no cartão ganha o mês da fatura na criação', async () => {
       const { finance, card, mercado } = await setup(make);

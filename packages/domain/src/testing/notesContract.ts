@@ -87,6 +87,19 @@ export function notesRepositoryContract(name: string, make: () => Promise<NotesC
       expect(await notes.get(keep.id)).toMatchObject({ id: keep.id });
     });
 
+    it('apaga de vez uma nota da lixeira; ativa ou inexistente é recusada', async () => {
+      const { notes } = await make();
+      const keep = await notes.create({ title: 'fica' });
+      const gone = await notes.create({ title: 'vai' });
+      await expectCode(notes.deleteForever(keep.id), 'conflict');
+      await notes.remove(gone.id);
+      await notes.deleteForever(gone.id);
+      expect(await notes.countTrash()).toBe(0);
+      await expectCode(notes.restore(gone.id), 'not_found');
+      await expectCode(notes.deleteForever(MISSING), 'not_found');
+      expect(await notes.get(keep.id)).toMatchObject({ id: keep.id });
+    });
+
     it('apaga de vez só o que foi para a lixeira antes do corte', async () => {
       const { notes } = await make();
       const keep = await notes.create({ title: 'ativa' });
@@ -209,6 +222,31 @@ export function notesRepositoryContract(name: string, make: () => Promise<NotesC
       await folders.remove(a.id);
       expect(await folders.list()).toEqual([]);
       await expectCode(folders.remove(a.id), 'not_found');
+    });
+
+    it('exclui pasta com conteúdo: subpastas e notas sobem, ou as notas vão para a lixeira', async () => {
+      const { folders, notes } = await make();
+      const top = await folders.create({ name: 'Top' });
+      const a = await folders.create({ name: 'A', parent_id: top.id });
+      const sub = await folders.create({ name: 'Sub', parent_id: a.id });
+      const n1 = await notes.create({ title: 'um', folder_id: a.id });
+      const n2 = await notes.create({ title: 'dois', folder_id: a.id });
+      await notes.remove(n2.id);
+      await folders.removeWithContents(a.id, 'keep');
+      expect((await folders.list()).map((f) => [f.name, f.parent_id])).toEqual([
+        ['Sub', top.id],
+        ['Top', null],
+      ]);
+      expect((await notes.get(n1.id))?.folder_id).toBe(top.id);
+      expect((await notes.restore(n2.id)).folder_id).toBe(top.id);
+
+      const b = await folders.create({ name: 'B' });
+      const n3 = await notes.create({ title: 'três', folder_id: b.id });
+      await folders.removeWithContents(b.id, 'trash');
+      expect(await notes.get(n3.id)).toBeNull();
+      expect((await notes.restore(n3.id)).folder_id).toBeNull();
+      await expectCode(folders.removeWithContents(b.id, 'keep'), 'not_found');
+      void sub;
     });
 
     it('nota não pode apontar para pasta inexistente', async () => {

@@ -155,6 +155,13 @@ export function createInMemoryNotes(userId: string): { notes: NotesRepository; f
     async countTrash() {
       return [...notes.values()].filter((n) => n.deleted_at !== null).length;
     },
+    async deleteForever(id) {
+      const n = notes.get(id);
+      if (!n) throw new RepositoryError('not_found');
+      if (n.deleted_at === null) throw new RepositoryError('conflict');
+      notes.delete(id);
+      subs.notify();
+    },
     async emptyTrash() {
       const trashed = [...notes.values()].filter((n) => n.deleted_at !== null);
       for (const n of trashed) notes.delete(n.id);
@@ -202,6 +209,18 @@ export function createInMemoryNotes(userId: string): { notes: NotesRepository; f
         [...notes.values()].some((n) => n.deleted_at === null && n.folder_id === id) ||
         [...folders.values()].some((c) => c.deleted_at === null && c.parent_id === id);
       if (busy) throw new RepositoryError('conflict');
+      save(folders, id, softDelete(f));
+    },
+    async removeWithContents(id, mode) {
+      const f = aliveFolder(id);
+      for (const c of [...folders.values()]) {
+        if (c.deleted_at === null && c.parent_id === id) save(folders, c.id, { ...c, parent_id: f.parent_id, updated_at: nowIso() });
+      }
+      for (const n of [...notes.values()]) {
+        if (n.folder_id !== id) continue;
+        const moved = { ...n, folder_id: f.parent_id, updated_at: nowIso() };
+        save(notes, n.id, mode === 'trash' && n.deleted_at === null ? softDelete(moved) : moved);
+      }
       save(folders, id, softDelete(f));
     },
   };

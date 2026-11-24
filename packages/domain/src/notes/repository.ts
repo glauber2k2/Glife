@@ -37,6 +37,8 @@ export interface NotesRepository {
   listTrash(page?: PageRequest): Promise<Page<Note>>;
   /** Quantas notas estão na lixeira. */
   countTrash(): Promise<number>;
+  /** Apaga de vez uma nota que já está na lixeira (nota ativa: `conflict`; inexistente: `not_found`). */
+  deleteForever(id: string): Promise<void>;
   /** Apaga de vez as notas da lixeira (ação explícita do usuário). Devolve quantas apagou. */
   emptyTrash(): Promise<number>;
   /** Apaga de vez o que foi para a lixeira antes de `deletedBefore` (ISO; ver `trashCutoff`). Devolve quantas. */
@@ -52,4 +54,9 @@ export interface NoteFoldersRepository {
   move(id: string, parentId: string | null): Promise<NoteFolder>;
   /** Só pasta vazia (sem notas nem subpastas ativas); senão `conflict`. */
   remove(id: string): Promise<void>;
+  /**
+   * Exclui a pasta com o que há dentro, junto: subpastas sobem para a pasta de cima; as notas também sobem
+   * (`keep`) ou vão para a lixeira (`trash`), já apontando para a pasta de cima (restaurar não as perde).
+   */
+  removeWithContents(id: string, notes: 'keep' | 'trash'): Promise<void>;
 }

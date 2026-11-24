@@ -216,6 +216,16 @@ export function createLocalNotesRepository(db: LocalDb, userId: string): NotesRe
       return row?.n ?? 0;
     },
 
+    async deleteForever(id) {
+      // Exclusão definitiva de uma nota da lixeira: o DELETE sobe ao Supabase pela fila do PowerSync.
+      await db.writeTransaction(async (tx) => {
+        const row = await tx.getOptional<{ deleted_at: string | null }>('SELECT deleted_at FROM notes WHERE id = ?', [id]);
+        if (!row) throw new RepositoryError('not_found');
+        if (row.deleted_at === null) throw new RepositoryError('conflict');
+        await tx.execute('DELETE FROM notes WHERE id = ? AND deleted_at IS NOT NULL', [id]);
+      });
+    },
+
     async emptyTrash() {
       // Exclusão definitiva, pedida pelo usuário: o DELETE sobe ao Supabase pela fila do PowerSync.
       return db.writeTransaction(async (tx) => {
@@ -289,6 +299,24 @@ export function createLocalNoteFoldersRepository(db: LocalDb, userId: string): N
           [id, id],
         );
         if ((busy?.n ?? 0) > 0) throw new RepositoryError('conflict');
+        await writeFolder(tx, softDelete(f), false);
+      });
+    },
+
+    async removeWithContents(id, mode) {
+      await db.writeTransaction(async (tx) => {
+        const f = await aliveFolder(tx, id);
+        const now = nowIso();
+        const children = await tx.getAll<NoteFolder>(
+          `SELECT ${FOLDER_COLUMNS} FROM note_folders WHERE deleted_at IS NULL AND parent_id = ?`,
+          [id],
+        );
+        for (const c of children) await writeFolder(tx, { ...c, parent_id: f.parent_id, updated_at: now }, false);
+        const inside = await tx.getAll<NoteRow>(`SELECT ${NOTE_COLUMNS} FROM notes WHERE folder_id = ?`, [id]);
+        for (const row of inside) {
+          const n = { ...toNote(row), folder_id: f.parent_id, updated_at: now };
+          await writeNote(tx, mode === 'trash' && n.deleted_at === null ? softDelete(n) : n, false);
+        }
         await writeFolder(tx, softDelete(f), false);
       });
     },

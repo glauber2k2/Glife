@@ -54,8 +54,13 @@ export interface AccountsRepository {
   create(draft: AccountDraft): Promise<Account>;
   update(id: string, patch: AccountPatch): Promise<Account>;
   archive(id: string): Promise<Account>;
-  /** Exclusão lógica. */
+  /**
+   * Exclusão lógica da conta com os lançamentos (de e para ela) e as recorrências dela, juntos. Conta que paga a
+   * fatura de um cartão ativo é recusada (`conflict`): exclua ou troque antes o cartão.
+   */
   remove(id: string): Promise<void>;
+  /** Quanto some junto ao excluir (para a confirmação). */
+  removalImpact(id: string): Promise<{ transactions: number; recurrences: number; paysCards: Account[] }>;
 }
 
 export interface CategoriesRepository {
@@ -102,7 +107,11 @@ export interface TransactionsRepository {
   /** Grava a ocorrência de uma regra pelo id determinístico; se já existe (mesmo excluída), substitui. */
   upsertOccurrence(input: TransactionDraft & { id: string }): Promise<Transaction>;
   remove(id: string): Promise<void>;
+  /** Exclui várias juntas (ex.: todas as parcelas de uma compra); tudo ou nada. */
+  removeMany(ids: readonly string[]): Promise<void>;
   restore(id: string): Promise<Transaction>;
+  /** Desfaz `removeMany`. */
+  restoreMany(ids: readonly string[]): Promise<void>;
 }
 
 export interface RecurrencesRepository {
@@ -171,6 +180,7 @@ export interface FinanceStore extends FinanceStoreTx {
 // ---------- Implementação comum ----------
 
 const invalid = (cause?: unknown) => new RepositoryError('validation', { cause });
+const ALL_DATES = { from: '0001-01-01', to: '9999-12-31' } as const;
 const notFound = () => new RepositoryError('not_found');
 
 /** Erros de regra do domain (RangeError) viram `validation`; o resto passa como está. */
@@ -272,10 +282,33 @@ export function createFinanceRepositories(store: FinanceStore, userId: string, c
         }),
       ),
     archive: (id) => accounts.update(id, { archived: true }),
+    removalImpact: (id) =>
+      guard(async () => {
+        await alive(store, 'accounts', id);
+        const [txs, rules, all] = await Promise.all([
+          store.transactionsInRange({ ...ALL_DATES, accountId: id }),
+          store.listAlive('recurrences'),
+          store.listAlive('accounts'),
+        ]);
+        return {
+          transactions: txs.length,
+          recurrences: rules.filter((r) => r.account_id === id || r.to_account_id === id).length,
+          paysCards: all.filter((a) => a.kind === 'credit_card' && a.payment_account_id === id),
+        };
+      }),
     remove: (id) =>
       guard(() =>
         store.transaction(async (db) => {
-          await db.put('accounts', softDelete(await alive(db, 'accounts', id), clock));
+          const account = await alive(db, 'accounts', id);
+          const payer = (await db.listAlive('accounts')).some((a) => a.kind === 'credit_card' && a.payment_account_id === id);
+          if (payer) throw new RepositoryError('conflict');
+          for (const t of await db.transactionsInRange({ ...ALL_DATES, accountId: id })) {
+            await db.put('transactions', softDelete(t, clock));
+          }
+          for (const r of await db.listAlive('recurrences')) {
+            if (r.account_id === id || r.to_account_id === id) await db.put('recurrences', softDelete(r, clock));
+          }
+          await db.put('accounts', softDelete(account, clock));
         }),
       ),
   };
@@ -364,6 +397,24 @@ export function createFinanceRepositories(store: FinanceStore, userId: string, c
       guard(() =>
         store.transaction(async (db) => {
           await db.put('transactions', softDelete(await alive(db, 'transactions', id), clock));
+        }),
+      ),
+    removeMany: (ids) =>
+      guard(() =>
+        store.transaction(async (db) => {
+          const rows = [];
+          for (const id of ids) rows.push(await alive(db, 'transactions', id));
+          for (const row of rows) await db.put('transactions', softDelete(row, clock));
+        }),
+      ),
+    restoreMany: (ids) =>
+      guard(() =>
+        store.transaction(async (db) => {
+          for (const id of ids) {
+            const row = await db.get('transactions', id);
+            if (!row) throw notFound();
+            await db.put('transactions', restoreEntity(row, clock));
+          }
         }),
       ),
     restore: (id) =>
