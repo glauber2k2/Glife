@@ -1,7 +1,7 @@
 import type { LocalDb } from '@glife/domain/core';
-import type { NoteFoldersRepository, NotesRepository } from '@glife/domain/notes';
+import { trashCutoff, type NoteFoldersRepository, type NotesRepository } from '@glife/domain/notes';
 import type { SearchSource } from '@glife/domain/search';
-import { createContext, useContext, useMemo, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useMemo, type ReactNode } from 'react';
 
 import { createLocalNoteFoldersRepository, createLocalNotesRepository } from '../data/localNotesRepository';
 import { createFoldersSearchSource, createNotesSearchSource } from '../data/notesSearch';
@@ -24,6 +24,10 @@ export function NotesProvider({ db, userId, children }: { db: LocalDb; userId: s
     const folders = createLocalNoteFoldersRepository(db, userId);
     return { notes, folders, search: [createNotesSearchSource(db, notes), createFoldersSearchSource(folders)] };
   }, [db, userId]);
+  // Ao iniciar a sessão: o que está na lixeira há mais de 30 dias é apagado de vez (o DELETE sincroniza).
+  useEffect(() => {
+    if (value) void value.notes.purgeTrash(trashCutoff()).catch((e) => console.warn('Falha ao limpar a lixeira', e));
+  }, [value]);
   return <NotesDataContext.Provider value={value}>{children}</NotesDataContext.Provider>;
 }
 

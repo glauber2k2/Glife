@@ -87,6 +87,20 @@ export function notesRepositoryContract(name: string, make: () => Promise<NotesC
       expect(await notes.get(keep.id)).toMatchObject({ id: keep.id });
     });
 
+    it('apaga de vez só o que foi para a lixeira antes do corte', async () => {
+      const { notes } = await make();
+      const keep = await notes.create({ title: 'ativa' });
+      const old = await notes.create({ title: 'velha' });
+      await notes.remove(old.id);
+      const [trashed] = (await notes.listTrash()).items;
+      const deletedAt = Date.parse(trashed!.deleted_at!);
+      expect(await notes.purgeTrash(new Date(deletedAt).toISOString())).toBe(0);
+      expect(await notes.countTrash()).toBe(1);
+      expect(await notes.purgeTrash(new Date(deletedAt + 1).toISOString())).toBe(1);
+      expect(await notes.countTrash()).toBe(0);
+      expect(await notes.get(keep.id)).toMatchObject({ id: keep.id });
+    });
+
     it('lista do mais recente para o mais antigo, paginando sem repetir', async () => {
       const { notes } = await make();
       const created: Note[] = [];

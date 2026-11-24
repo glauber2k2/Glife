@@ -224,6 +224,18 @@ export function createLocalNotesRepository(db: LocalDb, userId: string): NotesRe
         return row?.n ?? 0;
       });
     },
+
+    async purgeTrash(deletedBefore) {
+      // Datas ISO em UTC (mesmo formato de nowIso) comparam certo como texto.
+      return db.writeTransaction(async (tx) => {
+        const row = await tx.getOptional<{ n: number }>(
+          'SELECT count(*) AS n FROM notes WHERE deleted_at IS NOT NULL AND deleted_at < ?',
+          [deletedBefore],
+        );
+        await tx.execute('DELETE FROM notes WHERE deleted_at IS NOT NULL AND deleted_at < ?', [deletedBefore]);
+        return row?.n ?? 0;
+      });
+    },
   };
 }
 

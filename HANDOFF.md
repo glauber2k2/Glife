@@ -94,8 +94,7 @@ T11 e T12 foram assumidas pelo Claude a pedido do usuário (23/11). **Codex: nã
   `syncNoteLinks` grava os [[ ]] na tabela links ao salvar. **Validado no web com a conta real.** Android não.
 - [ ] Pendências do protótipo: transição "card que vira tela" (lista → editor) com elemento compartilhado; navegação
   superior no web (≥ 720 px) no lugar da barra de abas; realce dos marcadores markdown no modo Escrever; atalhos de
-  teclado no web (Ctrl+B etc.); "Mover notas para cá" na pasta vazia; chips de vínculo nas linhas da lista;
-  apagar de vez após 30 dias (hoje só "Esvaziar lixeira").
+  teclado no web (Ctrl+B etc.); "Mover notas para cá" na pasta vazia; chips de vínculo nas linhas da lista.
 
 ### Fase 1 — Busca universal (desenho: `docs/superpowers/specs/2026-11-23-busca-universal-design.md`)
 
@@ -153,7 +152,7 @@ Ordem obrigatória (cada uma usa a anterior). **Codex: não pegue T15–T19** (C
   `@noble/hashes`, sal aleatório de 16 bytes, comparação em tempo constante; `createSecureAppLockStore`:
   SecureStore no Android, localStorage no web). Aceite: verifica a senha certa, recusa a errada, sais diferentes
   geram hashes diferentes, parâmetros vão no registro.
-- [ ] **T23 — Lixeira apaga de vez após 30 dias** — `NotesRepository.purgeTrash(olderThanDays)` no contrato,
+- [x] **T23 — Lixeira apaga de vez após 30 dias** — `NotesRepository.purgeTrash(olderThanDays)` no contrato,
   memória e SQLite local; chamado quando o acesso fica `ready`. Aceite: nota excluída há 31 dias some, há 29 fica.
 
 ## Pendências do usuário

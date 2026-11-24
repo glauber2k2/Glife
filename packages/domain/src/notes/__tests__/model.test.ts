@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 
 import { RepositoryError, setIdGenerator } from '../../core/index.ts';
 import {
+  TRASH_RETENTION_DAYS,
+  trashCutoff,
   NOTE_TITLE_MAX,
   applyNotePatch,
   newNote,
@@ -98,5 +100,12 @@ describe('pastas', () => {
     const D = 'f0000000-0000-4000-8000-000000000004';
     const parents = new Map<string, string | null>([[A, B], [B, A]]);
     expect(wouldCreateFolderCycle(D, A, (id) => parents.get(id) ?? null)).toBe(true);
+  });
+});
+
+describe('lixeira', () => {
+  it('guarda 30 dias: o corte é 30 dias antes de agora', () => {
+    expect(TRASH_RETENTION_DAYS).toBe(30);
+    expect(trashCutoff(new Date('2026-12-31T12:00:00.000Z'))).toBe('2026-12-01T12:00:00.000Z');
   });
 });

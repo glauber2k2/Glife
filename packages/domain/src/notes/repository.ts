@@ -39,6 +39,8 @@ export interface NotesRepository {
   countTrash(): Promise<number>;
   /** Apaga de vez as notas da lixeira (ação explícita do usuário). Devolve quantas apagou. */
   emptyTrash(): Promise<number>;
+  /** Apaga de vez o que foi para a lixeira antes de `deletedBefore` (ISO; ver `trashCutoff`). Devolve quantas. */
+  purgeTrash(deletedBefore: string): Promise<number>;
 }
 
 export interface NoteFoldersRepository {

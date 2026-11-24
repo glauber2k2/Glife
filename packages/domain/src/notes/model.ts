@@ -91,3 +91,12 @@ export function wouldCreateFolderCycle(
   return false;
 }
 
+
+/** Notas na lixeira são apagadas de vez depois de 30 dias. */
+export const TRASH_RETENTION_DAYS = 30;
+const DAY_MS = 86_400_000;
+
+/** Data ISO antes da qual o que está na lixeira já pode ser apagado de vez. */
+export function trashCutoff(now: Date = new Date(), days = TRASH_RETENTION_DAYS): string {
+  return new Date(now.getTime() - days * DAY_MS).toISOString();
+}

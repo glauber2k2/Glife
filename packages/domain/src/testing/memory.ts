@@ -161,6 +161,14 @@ export function createInMemoryNotes(userId: string): { notes: NotesRepository; f
       if (trashed.length) subs.notify();
       return trashed.length;
     },
+
+    async purgeTrash(deletedBefore) {
+      const cutoff = Date.parse(deletedBefore);
+      const old = [...notes.values()].filter((n) => n.deleted_at !== null && Date.parse(n.deleted_at) < cutoff);
+      for (const n of old) notes.delete(n.id);
+      if (old.length) subs.notify();
+      return old.length;
+    },
   };
 
   const foldersRepo: NoteFoldersRepository = {
