@@ -17,3 +17,8 @@ streams:
       - SELECT * FROM entity_tags WHERE user_id = auth.user_id() AND auth.parameter('aal') = 'aal2'
       - SELECT * FROM note_folders WHERE user_id = auth.user_id() AND auth.parameter('aal') = 'aal2'
       - SELECT * FROM notes WHERE user_id = auth.user_id() AND auth.parameter('aal') = 'aal2'
+      - SELECT * FROM accounts WHERE user_id = auth.user_id() AND auth.parameter('aal') = 'aal2'
+      - SELECT * FROM categories WHERE user_id = auth.user_id() AND auth.parameter('aal') = 'aal2'
+      - SELECT * FROM recurrences WHERE user_id = auth.user_id() AND auth.parameter('aal') = 'aal2'
+      - SELECT * FROM transactions WHERE user_id = auth.user_id() AND auth.parameter('aal') = 'aal2'
+      - SELECT * FROM budgets WHERE user_id = auth.user_id() AND auth.parameter('aal') = 'aal2'
