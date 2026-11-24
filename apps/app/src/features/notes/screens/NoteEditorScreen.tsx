@@ -651,8 +651,9 @@ const useStyles = makeStyles((t) => {
     bar: { height: t.size.editorBar, flexDirection: 'row', alignItems: 'center', gap: t.space[1] },
     edgeLeft: { marginLeft: -(t.space[2] + t.space[0.5]) },
     edgeRight: { marginRight: -(t.space[2] + t.space[0.5]) },
-    barMiddle: { flex: 1, minWidth: 0, justifyContent: 'center' },
-    barTitle: { paddingLeft: t.space[1] },
+    // alignItems flex-start: a pílula do tipo fica do tamanho do texto (não estica na coluna).
+    barMiddle: { flex: 1, minWidth: 0, justifyContent: 'center', alignItems: 'flex-start' },
+    barTitle: { paddingLeft: t.space[1], alignSelf: 'stretch' },
     barTitleText: { fontFamily: t.type.item.font },
     scroll: { paddingTop: t.space[3] + t.space[0.5], paddingBottom: t.space[12] },
     title: {

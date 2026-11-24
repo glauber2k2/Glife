@@ -51,7 +51,8 @@ export function Pill({ label, onPress, icon, trailingIcon, size = 'md', bare, to
 }
 
 const useStyles = makeStyles((t) => ({
-  base: { flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start', borderRadius: t.radius.full },
+  // Sem alignSelf: quem posiciona é o pai (numa barra com alignItems center, a pílula fica centrada como os botões).
+  base: { flexDirection: 'row', alignItems: 'center', borderRadius: t.radius.full },
   md: { height: t.size.pill, gap: t.space[1.5], paddingHorizontal: t.space[3] },
   sm: { height: t.size.pillSmall, gap: t.space[1], paddingHorizontal: t.space[2] + t.space[0.5] },
   outline: { borderWidth: t.hairline, borderColor: t.colors.hairline },
