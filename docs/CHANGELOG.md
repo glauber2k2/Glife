@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.4 — 2026-11-24
+
+- Novo lançamento: o valor é digitado no teclado do aparelho (saiu o teclado próprio).
+- Novo lançamento: campos em ordem lógica (valor, conta ou cartão, parcelas, categoria, descrição, data, previsto, repetir).
+- Repetição mensal ou a cada N meses: escolha o dia da cobrança; a 1ª cobrança cai no próximo dia escolhido.
+- Recorrentes: ao encerrar, a regra sai na hora da lista e da contagem de ativas.
+
 ## 0.2.3 — 2026-11-24
 
 - Notas: na barra do editor, "Ler/Escrever" fica na mesma linha do seletor de tipo e dos botões (estava mais alto).
