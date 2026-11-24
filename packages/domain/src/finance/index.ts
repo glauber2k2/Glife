@@ -97,3 +97,20 @@ export {
   type InvoiceSummary,
   type MonthSummary,
 } from './ledger.ts';
+export {
+  createFinanceRepositories,
+  type AccountsRepository,
+  type BudgetsRepository,
+  type CategoriesRepository,
+  type FinanceRepositories,
+  type FinanceRows,
+  type FinanceStore,
+  type FinanceStoreReads,
+  type FinanceStoreTx,
+  type FinanceTable,
+  type RecurrencesRepository,
+  type SmallFinanceTable,
+  type TransactionInput,
+  type TransactionRangeQuery,
+  type TransactionsRepository,
+} from './repository.ts';
