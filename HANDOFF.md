@@ -143,13 +143,13 @@ Ordem obrigatória (cada uma usa a anterior). **Codex: não pegue T15–T19** (C
 
 **Codex: não pegue T21–T23** (segurança; Claude em andamento, 24/11).
 
-- [ ] **T21 — Domain `applock` (só Claude)** — `packages/domain/src/applock/` + testes. `appPasswordSchema` (6–128),
+- [x] **T21 — Domain `applock` (só Claude)** — `packages/domain/src/applock/` + testes. `appPasswordSchema` (6–128),
   `lockoutFor(falhas)` (5–6 → 30 s; 7–9 → 5 min; ≥ 10 → só com login da conta), `shouldLockOnReturn`, registro
   `AppLockRecord` (zod), interfaces `AppLockStore`/`PasswordHasher` e serviço `createAppLock` (definir, trocar
   confirmando a atual, desbloquear por senha, redefinir após login da conta, biometria liga/desliga, tempo para
   bloquear, "pedir a senha uma vez" após digital nova). Aceite: testes com loja em memória e hasher falso cobrem
   esperas, trava em 10, sucesso zera erros, troca exige a atual, senha nunca guardada em texto.
-- [ ] **T22 — Hash scrypt e loja segura (só Claude)** — `features/app-lock/data/` (`createScryptHasher` com
+- [x] **T22 — Hash scrypt e loja segura (só Claude)** — `features/app-lock/data/` (`createScryptHasher` com
   `@noble/hashes`, sal aleatório de 16 bytes, comparação em tempo constante; `createSecureAppLockStore`:
   SecureStore no Android, localStorage no web). Aceite: verifica a senha certa, recusa a errada, sais diferentes
   geram hashes diferentes, parâmetros vão no registro.

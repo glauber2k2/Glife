@@ -7,6 +7,7 @@
     "@expo-google-fonts/hanken-grotesk": "^0.4.3",
     "@expo-google-fonts/jetbrains-mono": "^0.4.1",
     "@glife/domain": "workspace:*",
+    "@noble/hashes": "^2.4.0",
     "@op-engineering/op-sqlite": "~18.2.5",
     "@powersync/common": "^2.5.0",
     "@powersync/react-native": "^2.4.1",
