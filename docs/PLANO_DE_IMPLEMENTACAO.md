@@ -117,3 +117,9 @@ Objetivo: o mesmo app abre no Android e no navegador, com login, banco local e s
 - [x] Nome Glife: pasta `glife/`, pacotes `@glife/*`, esquema `glife://` e identificadores `app.glife.pessoal`
 - [x] Retomada preservada: histórico Git verificado, backup dos commits e documentos externos com SHA-256;
   orientação vigente do usuário registrada (telas básicas podem avançar, prototipagem fica pendente)
+- [x] 2.1 `domain/finance`: money, calendário, fatura do cartão, parcelas, cartão já em uso, recorrências (UUID v5),
+  saldo, orçamento pelo mês pago e previsão (design: `docs/superpowers/specs/2026-11-24-financas-modelo-design.md`)
+- [~] 2.2 Banco e sync de finanças: migração `20261124000001` + RLS testadas no PGlite, tabelas locais e repositórios
+  (memória e SQLite pelo mesmo contrato). **Pendente (configuração externa, usuário):** aplicar a migração no Supabase
+  hospedado (`pnpm sb db push --remote`) e republicar o `sync-streams.yaml` no painel do PowerSync (Validate → Deploy)
+- [ ] 2.3 Telas de Finanças (perguntar protótipo antes), gráficos, compras, investimentos, gasto do mês em Hoje
