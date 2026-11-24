@@ -1,4 +1,4 @@
-import { ChevronLeft, Plus } from 'lucide-react-native';
+import { ChevronLeft, Ellipsis, Plus } from 'lucide-react-native';
 import { View } from 'react-native';
 
 import { IconButton, Text, makeStyles } from '@/shared/ui';
@@ -12,12 +12,17 @@ export function SubHeader({
   text,
   plusLabel,
   onPlus,
+  moreLabel,
+  onMore,
 }: {
   eyebrow: string;
   title: string;
   text?: string;
   plusLabel?: string;
   onPlus?: () => void;
+  /** menu "mais ações" (ex.: renomear e excluir a pasta) */
+  moreLabel?: string;
+  onMore?: () => void;
 }) {
   const s = useStyles();
   return (
@@ -26,7 +31,10 @@ export function SubHeader({
         <View style={s.back}>
           <IconButton icon={ChevronLeft} label="Voltar" variant="ghost" onPress={() => goBack()} />
         </View>
-        {onPlus && plusLabel && <IconButton icon={Plus} label={plusLabel} onPress={onPlus} />}
+        <View style={s.actions}>
+          {onMore && moreLabel && <IconButton icon={Ellipsis} label={moreLabel} variant="ghost" onPress={onMore} />}
+          {onPlus && plusLabel && <IconButton icon={Plus} label={plusLabel} onPress={onPlus} />}
+        </View>
       </View>
       <View style={s.titles}>
         <Text variant="eyebrow" tone="tertiary">
@@ -54,5 +62,6 @@ const useStyles = makeStyles((t) => ({
     justifyContent: 'space-between',
   },
   back: { marginLeft: -(t.space[2] + t.space[0.5]) },
+  actions: { flexDirection: 'row', alignItems: 'center', gap: t.space[1] },
   titles: { gap: t.space[1.5] },
 }));

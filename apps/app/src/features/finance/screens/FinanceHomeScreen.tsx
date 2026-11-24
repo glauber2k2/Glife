@@ -33,6 +33,7 @@ import { Button, EmptyState, Icon, IconButton, Reveal, Screen, Text, makeStyles,
 import { ACCOUNT_KIND_LABEL, accountIcon, categoryIcon, TRANSFER_ICON } from '../components/categories';
 import { balance, dm, lateText, longDay, money, monthName, monthShort, signed, todayIso } from '../components/format';
 import { NewEntrySheet } from '../components/NewEntrySheet';
+import { useTransactionSheet } from '../components/deleteSheets';
 import { INVOICE_STATUS } from '../components/status';
 import { ConfirmSheet } from '../components/sheets';
 import { Block, BlockHeader, BudgetBar, Disc, MoneyRow, MonthSlide, MonthStepper, useCountUp } from '../components/ui';
@@ -68,6 +69,7 @@ export function FinanceHomeScreen() {
   useEffect(() => () => timers.current.forEach(clearTimeout), []);
   const planned = usePlannedActions(today);
   const pay = usePayInvoice(today, true);
+  const txSheet = useTransactionSheet({ aboveTabBar: true });
 
   const saldo = useCountUp(overview?.balanceToday ?? 0);
   const esperado = useCountUp(overview?.expected ?? 0);
@@ -302,6 +304,14 @@ export function FinanceHomeScreen() {
                     recurring={!!x.recurrenceId}
                     meta={`${accountName(x.account_id)}${x.recurrenceId ? '' : ' · agendado'}`}
                     amount={signed(x.type === 'income' ? x.amount_cents : -x.amount_cents)}
+                    onPress={
+                      x.transactionId
+                        ? () => {
+                            const row = data.transactions.find((tx) => tx.id === x.transactionId);
+                            if (row) txSheet.open(row);
+                          }
+                        : undefined
+                    }
                   />
                 );
               })}
@@ -421,6 +431,7 @@ export function FinanceHomeScreen() {
                     meta={`${dm(r.date)} · ${cat} · ${where}`}
                     amount={transfer ? money(r.amount_cents) : signed(value)}
                     amountTone={transfer ? 'secondary' : 'primary'}
+                    onPress={() => txSheet.open(r)}
                   />
                 );
               })}
@@ -470,6 +481,7 @@ export function FinanceHomeScreen() {
         }}
       />
       {pay.element}
+      {txSheet.element}
     </Screen>
   );
 }

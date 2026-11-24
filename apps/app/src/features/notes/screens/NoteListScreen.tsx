@@ -8,6 +8,7 @@ import { useLinksData } from '@/features/links';
 import { Chip, EmptyState, IconButton, NavRow, Screen, SearchField, Text, makeStyles } from '@/shared/ui';
 
 import { NoteRows } from '../components/NoteRows';
+import { useNoteQuickActions } from '../components/NoteQuickActions';
 import { useNotesData } from '../hooks/NotesData';
 import { useFocusData } from '../hooks/useFocusData';
 import { useNoteList } from '../hooks/useNoteList';
@@ -27,6 +28,7 @@ const LIST_LIMIT = 200;
 /** Notas do aparelho (funciona sem internet), com acesso a Pastas e à Lixeira. */
 export function NoteListScreen() {
   const s = useStyles();
+  const quick = useNoteQuickActions();
   const { notes, folders } = useNotesData();
   const { tags } = useLinksData();
   const [kind, setKind] = useState<KindFilter>('all');
@@ -127,7 +129,7 @@ export function NoteListScreen() {
             </View>
           )
         ) : (
-          <NoteRows notes={visible} onOpen={(n) => openNote(n.id)} />
+          <NoteRows notes={visible} onOpen={(n) => openNote(n.id)} onLongPress={quick.open} />
         )}
         <View style={s.trash}>
           <NavRow
@@ -139,6 +141,7 @@ export function NoteListScreen() {
           />
         </View>
       </View>
+      {quick.element}
     </Screen>
   );
 }

@@ -14,6 +14,7 @@ import { Block, BlockHeader, MoneyRow, MonthSlide, MonthStepper, ProgressTrack }
 import { useFinance } from '../hooks/FinanceData';
 import { invoiceTitle, useOccurrences, usePayInvoice } from '../hooks/useFlows';
 import { INVOICE_STATUS } from '../components/status';
+import { DeleteAccountSheet, useTransactionSheet } from '../components/deleteSheets';
 
 const monthOk = (m: unknown): m is Month => typeof m === 'string' && /^\d{4}-(0[1-9]|1[0-2])$/.test(m);
 const MAX_RANGE = 24;
@@ -33,6 +34,8 @@ export function InvoiceScreen() {
     [card, data, month, occurrences, today],
   );
   const pay = usePayInvoice(today);
+  const txSheet = useTransactionSheet();
+  const [deleting, setDeleting] = useState(false);
 
   if (!data) return <Screen>{null}</Screen>;
   if (!card || !detail) {
@@ -165,6 +168,7 @@ export function InvoiceScreen() {
                   badge={x.installment_index ? `${x.installment_index}/${x.installment_count}` : undefined}
                   meta={`${dm(x.date)}${cat ? ` · ${cat.name}` : ''}`}
                   amount={signed(x.type === 'expense' ? -x.amount_cents : x.amount_cents)}
+                  onPress={() => txSheet.open(x)}
                 />
               );
             })}
@@ -181,13 +185,19 @@ export function InvoiceScreen() {
                   title="Pagamento da fatura"
                   meta={`${dm(p.date)} · do ${data.accounts.find((a) => a.id === p.account_id)?.name ?? ''} · transferência`}
                   amount={money(p.amount_cents)}
+                  onPress={() => txSheet.open(p)}
                 />
               ))}
             </Block>
           )}
+          <View style={s.danger}>
+            <Button label="Excluir cartão" variant="ghostDanger" onPress={() => setDeleting(true)} />
+          </View>
         </Reveal>
       </MonthSlide>
       {pay.element}
+      {txSheet.element}
+      <DeleteAccountSheet account={card} open={deleting} onClose={() => setDeleting(false)} />
     </Screen>
   );
 }
@@ -223,4 +233,5 @@ const useStyles = makeStyles((t) => ({
   note: { marginTop: t.space[2] + t.space[0.5] },
   payBtn: { marginTop: t.space[3], flexDirection: 'row' },
   empty: { paddingVertical: t.space[1] },
+  danger: { flexDirection: 'row', marginLeft: -(t.space[3] + t.space[0.5]) },
 }));

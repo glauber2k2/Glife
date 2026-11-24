@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.2.1 — 2026-11-24
+
+- Finanças: tocar num lançamento (Início, fatura, extrato) mostra os detalhes e "Excluir lançamento", com "Desfazer";
+  numa compra parcelada, dá para excluir só a parcela ou a compra inteira.
+- Finanças: "Excluir conta" (no extrato) e "Excluir cartão" (na fatura) levam junto os lançamentos e as recorrências;
+  conta que paga a fatura de um cartão pede para excluir o cartão antes.
+- Notas: toque longo numa nota da lista abre "Abrir" e "Mover para a lixeira".
+- Notas: menu ⋯ da pasta com "Renomear pasta" e "Excluir pasta" (manter as notas ou mandá-las para a lixeira).
+- Notas: na Lixeira, apagar uma nota de vez (além de esvaziar tudo).
+
 ## 0.2.0 — 2026-11-24
 
 - Finanças (Fase 2), seguindo o protótipo "Glife Finanças":

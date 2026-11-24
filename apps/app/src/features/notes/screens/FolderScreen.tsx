@@ -1,5 +1,5 @@
 import type { NoteFolder } from '@glife/domain/notes';
-import { useLocalSearchParams } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { Plus } from 'lucide-react-native';
 import { useEffect, useState } from 'react';
 import { ScrollView, View } from 'react-native';
@@ -8,6 +8,7 @@ import { useLinksData } from '@/features/links';
 import { Button, Chip, Screen, Text, makeStyles } from '@/shared/ui';
 
 import { NoteRows } from '../components/NoteRows';
+import { FolderMenu, useNoteQuickActions } from '../components/NoteQuickActions';
 import { SubHeader } from '../components/SubHeader';
 import { useNotesData } from '../hooks/NotesData';
 import { useNoteList } from '../hooks/useNoteList';
@@ -30,6 +31,8 @@ export function FolderScreen() {
   const [tagId, setTagId] = useState<string | null>(null);
   const { items } = useNoteList({ folderId: id, limit: 200 });
   const create = useCreateNote();
+  const quick = useNoteQuickActions();
+  const [menu, setMenu] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -70,7 +73,14 @@ export function FolderScreen() {
 
   return (
     <Screen>
-      <SubHeader eyebrow="Pastas" title={folder?.name ?? ' '} plusLabel="Nova nota nesta pasta" onPlus={newHere} />
+      <SubHeader
+        eyebrow="Pastas"
+        title={folder?.name ?? ' '}
+        plusLabel="Nova nota nesta pasta"
+        onPlus={newHere}
+        moreLabel="Mais ações da pasta"
+        onMore={folder ? () => setMenu(true) : undefined}
+      />
       {tagIndex.length > 0 && (
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.chips}>
           <Chip size="sm" label="Todas" selected={!tagId} onPress={() => setTagId(null)} />
@@ -85,7 +95,18 @@ export function FolderScreen() {
           <Button label="Nova nota aqui" size="sm" icon={Plus} onPress={newHere} />
         </View>
       ) : (
-        <NoteRows notes={visible} onOpen={(n) => openNote(n.id)} />
+        <NoteRows notes={visible} onOpen={(n) => openNote(n.id)} onLongPress={quick.open} />
+      )}
+      {quick.element}
+      {folder && (
+        <FolderMenu
+          folder={folder}
+          open={menu}
+          notesInside={items?.length ?? 0}
+          onClose={() => setMenu(false)}
+          onRenamed={setFolder}
+          onDeleted={() => (router.canGoBack() ? router.back() : router.replace('/pastas'))}
+        />
       )}
     </Screen>
   );

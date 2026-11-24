@@ -9,7 +9,7 @@ import { noteExcerpt } from './excerpt';
 import { KIND_LABEL } from './kinds';
 
 /** Linha da lista: título e data, prévia de 2 linhas e o tipo. Separada por linha fina, nunca uma caixa. */
-export function NoteRow({ note, onPress }: { note: Note; onPress: () => void }) {
+export function NoteRow({ note, onPress, onLongPress }: { note: Note; onPress: () => void; onLongPress?: () => void }) {
   const s = useStyles();
   const t = useTheme();
   const excerpt = noteExcerpt(note.body_md);
@@ -18,6 +18,8 @@ export function NoteRow({ note, onPress }: { note: Note; onPress: () => void }) 
       accessibilityRole="button"
       accessibilityLabel={note.title || 'Sem título'}
       onPress={onPress}
+      onLongPress={onLongPress}
+      accessibilityHint={onLongPress ? 'Toque longo para mais ações' : undefined}
       style={({ pressed }) => [s.row, pressed && s.pressed]}
     >
       <View style={s.head}>

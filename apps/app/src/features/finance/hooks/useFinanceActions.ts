@@ -237,7 +237,24 @@ export function useFinanceActions() {
       await refresh();
     }
 
+    /** Exclui lançamentos (uma parcela ou a compra inteira) e devolve como desfazer. */
+    async function deleteTransactions(ids: readonly string[]): Promise<Undo> {
+      await repos.transactions.removeMany(ids);
+      return async () => repos.transactions.restoreMany(ids);
+    }
+
+    const removalImpact = (accountId: string) => repos.accounts.removalImpact(accountId);
+
+    /** Exclui a conta ou o cartão com os lançamentos e as recorrências dele. */
+    async function deleteAccount(accountId: string) {
+      await repos.accounts.remove(accountId);
+      await refresh();
+    }
+
     return {
+      deleteTransactions,
+      removalImpact,
+      deleteAccount,
       settle,
       createEntry,
       payInvoice,

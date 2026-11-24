@@ -11,7 +11,16 @@ import { NoteRow } from './NoteRow';
  * Linhas da lista com movimento: entram em cascata, a que sai esmaece e as de baixo sobem juntas
  * (mola suave). Com "reduzir movimento", nada anima.
  */
-export function NoteRows({ notes, onOpen }: { notes: Note[]; onOpen: (note: Note) => void }) {
+export function NoteRows({
+  notes,
+  onOpen,
+  onLongPress,
+}: {
+  notes: Note[];
+  onOpen: (note: Note) => void;
+  /** toque longo: ações da nota (ex.: mover para a lixeira) */
+  onLongPress?: (note: Note) => void;
+}) {
   const t = useTheme();
   const reduceMotion = useReduceMotion();
   const layout = useMemo(() => {
@@ -30,7 +39,7 @@ export function NoteRows({ notes, onOpen }: { notes: Note[]; onOpen: (note: Note
           entering={reduceMotion ? undefined : riseIn(t.motion.enterOffset, t.motion.standard, Math.min(i, 8) * t.motion.stagger)}
           exiting={reduceMotion ? undefined : FadeOut.duration(t.motion.tap)}
         >
-          <NoteRow note={n} onPress={() => onOpen(n)} />
+          <NoteRow note={n} onPress={() => onOpen(n)} onLongPress={onLongPress ? () => onLongPress(n) : undefined} />
         </Animated.View>
       ))}
     </View>

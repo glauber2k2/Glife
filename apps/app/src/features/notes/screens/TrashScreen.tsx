@@ -1,10 +1,10 @@
 import type { Note } from '@glife/domain/notes';
-import { RotateCcw } from 'lucide-react-native';
+import { RotateCcw, Trash2 } from 'lucide-react-native';
 import { useCallback, useEffect, useState } from 'react';
 import { Platform, View } from 'react-native';
 import Animated, { Easing, FadeOut, LinearTransition } from 'react-native-reanimated';
 
-import { Button, Screen, Sheet, Text, makeStyles, useReduceMotion, useTheme } from '@/shared/ui';
+import { Button, IconButton, Screen, Sheet, Text, makeStyles, useReduceMotion, useTheme, useToast } from '@/shared/ui';
 
 import { SubHeader } from '../components/SubHeader';
 
@@ -31,6 +31,9 @@ export function TrashScreen() {
   const { restore } = useTrashActions();
   const [items, setItems] = useState<Note[] | null>(null);
   const [confirm, setConfirm] = useState(false);
+  const [forever, setForever] = useState<Note | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const toast = useToast();
   const [emptying, setEmptying] = useState(false);
 
   const [version, setVersion] = useState(0);
@@ -87,6 +90,7 @@ export function TrashScreen() {
                   </Text>
                 </View>
                 <Button label="Restaurar" variant="secondary" size="sm" icon={RotateCcw} onPress={() => void onRestore(n.id)} />
+                <IconButton icon={Trash2} label="Apagar de vez" variant="ghost" color="danger" onPress={() => setForever(n)} />
               </View>
             </Animated.View>
           ))}
@@ -95,6 +99,34 @@ export function TrashScreen() {
           </View>
         </View>
       )}
+
+      <Sheet visible={!!forever} onClose={() => setForever(null)} title="Apagar de vez?">
+        <Text tone="secondary">
+          {`“${forever?.title || 'Sem título'}” será apagada de vez, neste e nos outros aparelhos. Não dá para desfazer.`}
+        </Text>
+        <Button
+          label="Apagar de vez"
+          variant="danger"
+          fullWidth
+          loading={deleting}
+          onPress={async () => {
+            if (!forever) return;
+            setDeleting(true);
+            try {
+              await notes.deleteForever(forever.id);
+              setItems((list) => list?.filter((x) => x.id !== forever.id) ?? null);
+              setForever(null);
+              toast({ message: 'Nota apagada de vez', icon: Trash2 });
+            } catch (e) {
+              console.warn('Falha ao apagar a nota', e);
+              toast({ message: 'Não foi possível apagar a nota.' });
+            } finally {
+              setDeleting(false);
+            }
+          }}
+        />
+        <Button label="Cancelar" variant="secondary" fullWidth onPress={() => setForever(null)} />
+      </Sheet>
 
       <Sheet visible={confirm} onClose={() => setConfirm(false)} title="Esvaziar lixeira?">
         <Text tone="secondary">
