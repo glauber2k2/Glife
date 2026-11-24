@@ -152,7 +152,7 @@ Ordem obrigatória (cada uma usa a anterior). **Codex: não pegue T15–T19** (C
   `@noble/hashes`, sal aleatório de 16 bytes, comparação em tempo constante; `createSecureAppLockStore`:
   SecureStore no Android, localStorage no web). Aceite: verifica a senha certa, recusa a errada, sais diferentes
   geram hashes diferentes, parâmetros vão no registro.
-- [x] **T23 — Lixeira apaga de vez após 30 dias** — `NotesRepository.purgeTrash(olderThanDays)` no contrato,
+- [x] **T23 — Lixeira apaga de vez após 30 dias** — `NotesRepository.purgeTrash(deletedBefore)` + `trashCutoff()` no contrato,
   memória e SQLite local; chamado quando o acesso fica `ready`. Aceite: nota excluída há 31 dias some, há 29 fica.
 
 ## Pendências do usuário
