@@ -75,3 +75,11 @@ export {
   planPreviousBalance,
   type PlannedTransaction,
 } from './installments.ts';
+export {
+  FINANCE_OCCURRENCE_NAMESPACE,
+  expandRecurrence,
+  materializeOccurrence,
+  occurrenceId,
+  splitRecurrence,
+  type Occurrence,
+} from './recurrence.ts';
