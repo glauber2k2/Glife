@@ -9,3 +9,4 @@ export { financeRepositoryContract, type FinanceContractSubject } from './financ
 export { financeReviewContract } from './financeReviewContract.ts';
 export { shoppingRepositoryContract } from './shoppingContract.ts';
 export { investmentsRepositoryContract } from './investmentsContract.ts';
+export { createMemoryRowStore, type MemoryRowStore } from './rowStoreMemory.ts';

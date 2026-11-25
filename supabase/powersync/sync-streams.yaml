@@ -26,3 +26,7 @@ streams:
       - SELECT * FROM shopping_items WHERE user_id = auth.user_id() AND auth.parameter('aal') = 'aal2'
       - SELECT * FROM investment_assets WHERE user_id = auth.user_id() AND auth.parameter('aal') = 'aal2'
       - SELECT * FROM investment_movements WHERE user_id = auth.user_id() AND auth.parameter('aal') = 'aal2'
+      - SELECT * FROM events WHERE user_id = auth.user_id() AND auth.parameter('aal') = 'aal2'
+      - SELECT * FROM reminders WHERE user_id = auth.user_id() AND auth.parameter('aal') = 'aal2'
+      - SELECT * FROM meal_plans WHERE user_id = auth.user_id() AND auth.parameter('aal') = 'aal2'
+      - SELECT * FROM meals WHERE user_id = auth.user_id() AND auth.parameter('aal') = 'aal2'

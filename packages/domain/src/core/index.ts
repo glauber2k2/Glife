@@ -104,3 +104,4 @@ export {
   type Unsubscribe,
 } from './repository.ts';
 export type { LocalDb, LocalQueries, SqlValue } from './localDb.ts';
+export { aliveRow, createEntity, guardRules, repositoryErrorOf, updateEntity, type RowMap, type RowStore, type RowStoreReads, type RowStoreTx } from './rowStore.ts';
