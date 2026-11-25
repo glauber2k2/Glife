@@ -66,6 +66,7 @@ import {
 import { FolderNameSheet } from '../components/FolderNameSheet';
 import { KIND_LABEL, KIND_OPTIONS } from '../components/kinds';
 import { INLINE_MARKS } from '../components/markdown';
+import { LiveMarkdown } from '../components/LiveMarkdownText';
 import { MarkdownView } from '../components/MarkdownView';
 import { NoteLinks } from '../components/NoteLinks';
 import {
@@ -91,6 +92,9 @@ type Mode = 'read' | 'write';
  * Editor da nota (protótipo "Glife Notas"): Ler ⇄ Escrever, pasta e tags, salvamento silencioso,
  * [[vínculos]] com sugestões e, no Android, barra de formatação acima do teclado.
  */
+/** Markdown ao vivo no campo de escrever (o TextInput nativo aceita filhos com estilo; o do web, não). */
+const LIVE = Platform.OS !== 'web';
+
 export function NoteEditorScreen() {
   const s = useStyles();
   const t = useTheme();
@@ -104,7 +108,9 @@ export function NoteEditorScreen() {
   const [note, setNote] = useState<Note | null | undefined>(undefined);
   const [title, setTitle] = useState('');
   const [body, setBody] = useState('');
-  const [mode, setMode] = useState<Mode>(nova ? 'write' : 'read');
+  // No Android e no iOS o campo de escrever já mostra a formatação (markdown ao vivo): não há modo Ler.
+  // No web o campo do navegador não aceita estilos, então lá continua a troca Escrever/Ler.
+  const [mode, setMode] = useState<Mode>(LIVE || nova ? 'write' : 'read');
   const [saving, setSaving] = useState(false);
   const [sheet, setSheet] = useState<SheetKind>(null);
   const [newFolder, setNewFolder] = useState(false);
@@ -317,7 +323,7 @@ export function NoteEditorScreen() {
                 </Animated.View>
               )}
             </View>
-            <Pill label={mode === 'write' ? 'Ler' : 'Escrever'} icon={mode === 'write' ? BookOpen : PencilLine} onPress={toggleMode} />
+            {!LIVE && <Pill label={mode === 'write' ? 'Ler' : 'Escrever'} icon={mode === 'write' ? BookOpen : PencilLine} onPress={toggleMode} />}
             <IconButton
               icon={note.pinned ? Pin : PinOff}
               label={note.pinned ? 'Desafixar' : 'Fixar'}
@@ -380,7 +386,8 @@ export function NoteEditorScreen() {
               <Animated.View key="write" entering={fadeIn}>
                 <TextInput
                   ref={bodyRef}
-                  value={body}
+                  // Ao vivo: o texto vem como filhos estilizados (o mesmo markdown, com as marcações apagadas).
+                  {...(LIVE ? { children: <LiveMarkdown markdown={body} /> } : { value: body })}
                   onChangeText={(v) => {
                     setBody(v);
                     schedule({ body_md: v });
@@ -404,6 +411,7 @@ export function NoteEditorScreen() {
                   textAlignVertical="top"
                   style={[s.body, noFocusRing]}
                 />
+                {LIVE && <NoteLinks noteId={id} version={linkVersion} />}
               </Animated.View>
             ) : (
               <Animated.View key="read" entering={fadeIn}>
