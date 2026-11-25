@@ -52,7 +52,7 @@ Objetivo: o mesmo app abre no Android e no navegador, com login, banco local e s
 - Contas, categorias, transações, orçamentos mensais; saldo por conta.
 - Gráficos SVG (`react-native-gifted-charts`), monocromáticos com destaque no dado relevante.
 - Compras: listas e itens; “comprei” → vira gasto com 1 toque.
-- Investimentos: ativos e movimentos (aporte, resgate, rendimento, cotação manual), evolução do patrimônio.
+- Investimentos: ativos e movimentos (aporte, resgate, rendimento, cotação manual), evolução do patrimônio. ✅ 25/11/2026, com cotação automática de ações, FIIs (brapi) e cripto (CoinGecko) pela Edge Function `quotes` (`docs/prototipos/investimentos.md`).
 - Hoje: gasto do mês vs. orçamento.
 
 ## Fase 3 — Agenda, lembretes e dieta (≈ 3 semanas)
