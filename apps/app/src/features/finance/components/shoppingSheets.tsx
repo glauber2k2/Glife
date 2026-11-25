@@ -95,7 +95,7 @@ function ItemForm({ item, onSave }: { item: ShoppingItem; onSave: (c: ItemChange
 
 // ---------- Ações do item ----------
 
-function ActionRow({
+export function ActionRow({
   icon,
   label,
   aside,

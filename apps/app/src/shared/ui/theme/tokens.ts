@@ -209,6 +209,11 @@ export const size = {
   switchWidth: 46,
   switchHeight: 28,
   switchKnob: 22,
+  /** linha de ativo ou movimento de investimento (nome que quebra em duas linhas) */
+  listRow: 64,
+  /** gráfico de evolução do valor do ativo */
+  chart: 72,
+  chartDot: 3.5,
 } as const;
 
 /** Campo com rótulo flutuante (54 px, cantos de 16). */

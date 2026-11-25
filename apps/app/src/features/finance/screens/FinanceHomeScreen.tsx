@@ -8,6 +8,7 @@ import {
   lastDayOf,
   monthOf,
   monthOverview,
+  portfolio,
   type CardOverview,
   type PlannedItem,
 } from '@glife/domain/finance';
@@ -26,6 +27,7 @@ import {
   SkipForward,
   type LucideIcon,
   ShoppingCart,
+  TrendingUp,
 } from 'lucide-react-native';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Platform, Pressable, View } from 'react-native';
@@ -41,6 +43,7 @@ import { INVOICE_STATUS } from '../components/status';
 import { ConfirmSheet } from '../components/sheets';
 import { Block, BlockHeader, BudgetBar, Disc, MoneyRow, MonthSlide, MonthStepper, useCountUp } from '../components/ui';
 import { useFinance } from '../hooks/FinanceData';
+import { useInvestments, useRefreshQuotes } from '../hooks/useInvestments';
 import { useShopping } from '../hooks/useShopping';
 import { invoiceTitle, useAvailableFor, useOccurrences, usePayInvoice, usePlannedActions } from '../hooks/useFlows';
 
@@ -60,6 +63,9 @@ export function FinanceHomeScreen() {
   const today = todayIso();
   const { data } = useFinance();
   const shopping = useShopping();
+  // A linha de Investimentos mostra o patrimônio: as cotações vencidas são pedidas ao abrir Finanças.
+  const invest = useInvestments();
+  useRefreshQuotes(invest);
   const [offset, setOffset] = useState(0);
   const [dir, setDir] = useState(1);
   const month = addMonths(monthOf(today), offset);
@@ -146,6 +152,8 @@ export function FinanceHomeScreen() {
   const budgetCount = overview.budgets.filter((b) => b.budget !== null).length;
   const activeRules = data.rules.filter((r) => isRecurrenceActive(r, today)).length;
   const pendingItems = shopping ? shopping.items.filter((i) => !i.in_cart).length : 0;
+  const investedTotal = invest && invest.assets.length > 0 ? portfolio(invest.assets, invest.movements, today).total : null;
+  const investMeta = investedTotal === null ? 'Nenhum ativo' : money(investedTotal);
   const shoppingMeta = !shopping || shopping.lists.length === 0 ? 'Listas' : pendingItems === 0 ? 'Nada faltando' : `${pendingItems} ${pendingItems === 1 ? 'item falta' : 'itens faltam'}`;
 
   return (
@@ -480,6 +488,7 @@ export function FinanceHomeScreen() {
                 meta={shoppingMeta}
                 onPress={() => router.push('/financas/compras')}
               />
+              <PlanRow icon={TrendingUp} label="Investimentos" meta={investMeta} onPress={() => router.push('/financas/investimentos')} />
               <PlanRow
                 icon={ChartNoAxesColumn}
                 label="Orçamentos"
