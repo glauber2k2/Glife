@@ -552,7 +552,13 @@ export function NoteEditorScreen() {
               onSubmitEditing={() => void addTag()}
             />
           </View>
-          <Button label="Adicionar" variant="secondary" disabled={!tagDraft.replace(/#/g, '').trim()} onPress={() => void addTag()} />
+          <Button
+            selfAlign="center"
+            label="Adicionar"
+            variant="secondary"
+            disabled={!tagDraft.replace(/#/g, '').trim()}
+            onPress={() => void addTag()}
+          />
         </View>
         <View>
           {noteTags.map((tag) => (
@@ -739,6 +745,7 @@ const useStyles = makeStyles((t) => {
       minHeight: t.size.navRow,
       borderTopWidth: t.hairline,
       borderTopColor: t.colors.hairline,
+      paddingVertical: t.space[2],
     },
   };
 });

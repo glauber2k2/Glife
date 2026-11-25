@@ -89,7 +89,14 @@ export function TrashScreen() {
                     {deletedLabel(n.deleted_at ?? n.updated_at)}
                   </Text>
                 </View>
-                <Button label="Restaurar" variant="secondary" size="sm" icon={RotateCcw} onPress={() => void onRestore(n.id)} />
+                <Button
+                  selfAlign="center"
+                  label="Restaurar"
+                  variant="secondary"
+                  size="sm"
+                  icon={RotateCcw}
+                  onPress={() => void onRestore(n.id)}
+                />
                 <IconButton icon={Trash2} label="Apagar de vez" variant="ghost" color="danger" onPress={() => setForever(n)} />
               </View>
             </Animated.View>

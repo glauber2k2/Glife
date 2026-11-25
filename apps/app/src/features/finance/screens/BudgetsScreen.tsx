@@ -94,6 +94,7 @@ export function BudgetsScreen() {
                       </Text>
                     </View>
                     <Button
+                      selfAlign="center"
                       label="Definir"
                       variant="secondary"
                       size="sm"
@@ -233,5 +234,6 @@ const useStyles = makeStyles((t) => ({
     alignItems: 'center',
     gap: t.space[3],
     minHeight: t.size.field + t.space[0.5],
+    paddingVertical: t.space[2],
   },
 }));

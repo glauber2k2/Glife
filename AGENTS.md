@@ -96,6 +96,10 @@ O Claude é o agente principal; o Codex só assume quando os créditos do Claude
   `keyboardType="number-pad"`), mesmo que o protótipo desenhe um teclado próprio.
 - **Campos:** sempre `Input` (texto centrado, rótulo de uma linha). No máximo 2 campos por linha; valor em dinheiro em
   linha própria. Telas estreitas (360 dp) são o caso de teste.
+- **Respiro e alinhamento:** nada encosta em borda, linha divisória ou outro elemento. Linha de lista com divisória tem
+  `minHeight` **e** `paddingVertical` (≥ `t.space[2]`). Botão numa linha com texto ou ícone usa `selfAlign="center"`
+  (o padrão `start` gruda no topo da linha); o botão não encolhe nem quebra o rótulo (o texto ao lado é que quebra).
+  Antes de entregar, confira a tela em 360 dp com textos longos.
 - **Marcar/selecionar não mexe no layout:** chip, opção ou linha selecionável mantém a mesma largura e altura nos dois
   estados (reserve o espaço do check; esconda com opacidade). Nada de quebra de linha nova ao tocar.
 - **Ação que grava várias coisas é tudo ou nada:** se uma parte falhar, desfaça a anterior (nada pela metade, nada

@@ -390,6 +390,7 @@ const useStyles = makeStyles((t) => ({
     justifyContent: 'space-between',
     alignItems: 'center',
     minHeight: t.touch.minTarget,
+    paddingVertical: t.space[2],
   },
   divider: { borderTopWidth: t.hairline, borderTopColor: t.colors.hairline },
   medium: { fontFamily: t.type.chip.font },

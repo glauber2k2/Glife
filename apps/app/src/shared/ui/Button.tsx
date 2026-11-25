@@ -26,6 +26,11 @@ export interface ButtonProps extends Omit<PressableProps, 'children' | 'style'> 
   /** retorno tátil leve — use em ações importantes (salvar gasto etc.) */
   haptic?: boolean;
   fullWidth?: boolean;
+  /**
+   * Alinhamento no eixo cruzado do pai. Padrão 'start' (em coluna, não estica). Em linha com outros elementos use
+   * 'center', senão o botão gruda no topo da linha.
+   */
+  selfAlign?: 'start' | 'center' | 'end';
 }
 
 /** Botão em pílula (48 / 40 px). Afunda 0,96 no toque com a mola tap. */
@@ -37,6 +42,7 @@ export function Button({
   loading,
   haptic,
   fullWidth,
+  selfAlign = 'start',
   disabled,
   onPress,
   onPressIn,
@@ -82,7 +88,7 @@ export function Button({
         scale.set(spring ? withSpring(restScale, spring) : restScale);
         onPressOut?.(e);
       }}
-      style={[s.wrapper, fullWidth && s.fullWidth]}
+      style={[s.wrapper, selfAlign !== 'start' && s[selfAlign], fullWidth && s.fullWidth]}
       {...rest}
     >
       {({ pressed }) => (
@@ -106,7 +112,8 @@ export function Button({
             <Text
               variant="button"
               tone={textTone}
-              style={[(variant === 'secondary' || variant === 'subtle') && s.mediumWeight, size === 'sm' && s.smallText]}
+              numberOfLines={1}
+              style={[(variant === 'secondary' || variant === 'subtle') && s.mediumWeight, size === 'sm' && s.smallText, s.label]}
             >
               {label}
             </Text>
@@ -118,16 +125,20 @@ export function Button({
 }
 
 const useStyles = makeStyles((t) => ({
-  wrapper: { alignSelf: 'flex-start' },
+  // Em linha, o botão não encolhe (o texto ao lado é que quebra) e o rótulo fica numa linha só.
+  wrapper: { alignSelf: 'flex-start', flexShrink: 0, maxWidth: '100%' },
+  center: { alignSelf: 'center' },
+  end: { alignSelf: 'flex-end' },
   base: {
     borderRadius: t.radius.full,
     alignItems: 'center',
     justifyContent: 'center',
     alignSelf: 'flex-start',
+    maxWidth: '100%',
   },
   md: { minHeight: t.size.button, paddingHorizontal: t.space[6] },
   sm: { minHeight: t.size.buttonSmall, paddingHorizontal: t.space[4] },
-  content: { flexDirection: 'row', alignItems: 'center', gap: t.space[2] },
+  content: { flexDirection: 'row', alignItems: 'center', gap: t.space[2], flexShrink: 1 },
   primary: { backgroundColor: t.colors.accent },
   primaryPressed: { backgroundColor: t.colors.accentPressed },
   secondary: { borderWidth: t.hairline, borderColor: t.colors.hairline, backgroundColor: 'transparent' },
@@ -141,4 +152,5 @@ const useStyles = makeStyles((t) => ({
   disabled: { opacity: t.opacity.disabled },
   mediumWeight: { fontFamily: t.type.chip.font },
   smallText: { fontSize: t.type.chip.fontSize },
+  label: { flexShrink: 1 },
 }));

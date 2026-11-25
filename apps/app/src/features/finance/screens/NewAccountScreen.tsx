@@ -355,6 +355,7 @@ const useStyles = makeStyles((t) => ({
     alignItems: 'center',
     gap: t.space[3],
     minHeight: t.size.field + t.space[0.5],
+    paddingVertical: t.space[2],
   },
   divider: { borderTopWidth: t.hairline, borderTopColor: t.colors.hairline },
   flex: { flex: 1, minWidth: 0 },

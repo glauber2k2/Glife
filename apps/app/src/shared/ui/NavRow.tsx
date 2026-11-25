@@ -55,7 +55,7 @@ export function NavRow({ label, icon, iconColor, meta, onPress, tall, accent, da
 }
 
 const useStyles = makeStyles((t) => ({
-  row: { flexDirection: 'row', alignItems: 'center', gap: t.space[3], minHeight: t.size.navRow },
+  row: { flexDirection: 'row', alignItems: 'center', gap: t.space[3], minHeight: t.size.navRow, paddingVertical: t.space[2] },
   tall: { minHeight: t.size.navRowTall },
   divider: { borderTopWidth: t.hairline, borderTopColor: t.colors.hairline },
   pressed: { backgroundColor: t.colors.soft },

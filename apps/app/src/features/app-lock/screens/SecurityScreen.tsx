@@ -127,6 +127,7 @@ const useStyles = makeStyles((t) => ({
     alignItems: 'center',
     gap: t.space[3],
     minHeight: t.size.navRow,
+    paddingVertical: t.space[2],
   },
   rowGap: { marginTop: t.space[4] },
   always: { flexDirection: 'row', alignItems: 'center', gap: t.space[1.5] },

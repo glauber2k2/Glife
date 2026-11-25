@@ -231,6 +231,7 @@ export function FinanceHomeScreen() {
                         {!kind ? (
                           <View style={s.actions}>
                             <Button
+                              selfAlign="center"
                               label="Confirmar"
                               icon={Check}
                               variant="secondary"
@@ -711,6 +712,7 @@ const useStyles = makeStyles((t) => ({
     minHeight: t.size.navRowTall,
     borderTopWidth: t.hairline,
     borderTopColor: t.colors.hairline,
+    paddingVertical: t.space[2],
   },
   struck: { flexShrink: 1, justifyContent: 'center' },
   strike: {
