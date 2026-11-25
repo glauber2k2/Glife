@@ -29,10 +29,11 @@ export function quantityText(unitsE8: number): string {
 export function parseQuantity(text: string): number | null {
   const t = text.trim().replace(/\s/g, '');
   if (!/^[\d.,]+$/.test(t)) return null;
-  // Vírgula é o decimal; sem vírgula, um único ponto seguido de 1–8 dígitos (e não 3) também é.
+  // Vírgula é o decimal. Sem vírgula, um único ponto também é (teclado do Android só tem "."), exceto no milhar
+  // escrito à brasileira: "1.500" = 1500. "0.123" é sempre decimal (milhar não começa com zero).
   let normalized: string;
   if (t.includes(',')) normalized = t.replace(/\./g, '').replace(',', '.');
-  else if (/^\d+\.\d{1,8}$/.test(t) && !/^\d{1,3}\.\d{3}$/.test(t)) normalized = t;
+  else if (/^\d+\.\d{1,8}$/.test(t) && !/^[1-9]\d{0,2}\.\d{3}$/.test(t)) normalized = t;
   else normalized = t.replace(/\./g, '');
   const m = /^(\d+)(?:\.(\d+))?$/.exec(normalized);
   if (!m) return null;

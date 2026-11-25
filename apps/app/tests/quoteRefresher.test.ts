@@ -15,14 +15,17 @@ const stock = (symbol: string, pricedAgo: number | null): InvestmentAsset => ({
 });
 const snap = (...assets: InvestmentAsset[]): InvestmentsSnapshot => ({ assets, movements: [] });
 
-function setup(fail = false) {
+function setup(fail = false, missing: string[] = []) {
   const asked: QuoteKey[][] = [];
   const applied: Quote[][] = [];
   const client: QuoteClient = {
     async quotes(keys) {
       asked.push([...keys]);
       if (fail) throw new Error('offline');
-      return { quotes: keys.map((k) => ({ ...k, priceE8: 2, name: k.symbol, quotedAt: NOW.toISOString() })), errors: [] };
+      return {
+        quotes: keys.filter((k) => !missing.includes(k.symbol)).map((k) => ({ ...k, priceE8: 2, name: k.symbol, quotedAt: NOW.toISOString() })),
+        errors: keys.filter((k) => missing.includes(k.symbol)).map((k) => ({ ...k, reason: 'not_found' as const })),
+      };
     },
     async lookup() {
       return [];
@@ -78,5 +81,16 @@ describe('atualização automática das cotações', () => {
     const s = snap(stock('ITSA4', null));
     await Promise.all([refresher.refresh(s), refresher.refresh(s)]);
     expect(asked).toHaveLength(1);
+  });
+
+  it('código não encontrado fica marcado e não é pedido de novo até forçar', async () => {
+    const { refresher, asked } = setup(false, ['XXXX9']);
+    await refresher.refresh(snap(stock('XXXX9', null), stock('ITSA4', null)));
+    expect(refresher.notFound().has('brapi:XXXX9')).toBe(true);
+    expect(refresher.notFound().has('brapi:ITSA4')).toBe(false);
+    await refresher.refresh(snap(stock('XXXX9', null)));
+    expect(asked).toHaveLength(1);
+    await refresher.refresh(snap(stock('XXXX9', null)), true);
+    expect(asked).toHaveLength(2);
   });
 });

@@ -81,11 +81,22 @@ export function createInvestmentsRepository({ store, userId, clock, guard }: Inv
     return (await db.listAlive('investment_movements')).filter((m) => m.asset_id === assetId);
   }
 
-  /** Regras do movimento que dependem do ativo, da conta e dos outros movimentos. */
-  async function check(db: FinanceStoreReads, m: InvestmentMovement) {
+  /** Cotas de um ativo automático não podem ficar negativas (sem `without`, com `m` no lugar da versão antiga). */
+  async function checkUnits(db: FinanceStoreReads, asset: InvestmentAsset, m: InvestmentMovement | null, without: string) {
+    if (!isAutoQuoted(asset.kind)) return;
+    const others = (await movementsOf(db, asset.id)).filter((x) => x.id !== without);
+    const units = assetPosition(asset, m ? [...others, m] : others, m?.date ?? today(clock)).units ?? 0;
+    if (units < 0) throw invalid();
+  }
+
+  /**
+   * Regras do movimento que dependem do ativo, da conta e dos outros movimentos. A conta só é conferida quando muda
+   * (`previous`): um movimento ligado a uma conta que depois foi excluída continua editável e restaurável.
+   */
+  async function check(db: FinanceStoreReads, m: InvestmentMovement, previous?: InvestmentMovement) {
     const asset = await db.get('investment_assets', m.asset_id);
     if (!asset || !isAlive(asset)) throw invalid();
-    if (m.account_id !== null) {
+    if (m.account_id !== null && m.account_id !== previous?.account_id) {
       const account = await db.get('accounts', m.account_id);
       if (!account || !isAlive(account) || account.kind === 'credit_card') throw invalid();
     }
@@ -94,11 +105,7 @@ export function createInvestmentsRepository({ store, userId, clock, guard }: Inv
     if (auto && m.kind === 'quote') throw invalid();
     if (auto && flow && m.quantity === null) throw invalid();
     if (!auto && m.quantity !== null) throw invalid();
-    if (auto) {
-      const others = (await movementsOf(db, asset.id)).filter((x) => x.id !== m.id);
-      const units = assetPosition(asset, [...others, m], m.date).units ?? 0;
-      if (units < 0) throw invalid();
-    }
+    await checkUnits(db, asset, m, m.id);
   }
 
   async function snapshot(db: FinanceStoreReads = store): Promise<InvestmentsSnapshot> {
@@ -194,8 +201,9 @@ export function createInvestmentsRepository({ store, userId, clock, guard }: Inv
       guard(() =>
         store.transaction(async (db) => {
           if ('asset_id' in changes) throw invalid();
-          const m = applyInvestmentMovementPatch(await alive(db, 'investment_movements', id), changes, clock);
-          await check(db, m);
+          const current = await alive(db, 'investment_movements', id);
+          const m = applyInvestmentMovementPatch(current, changes, clock);
+          await check(db, m, current);
           await db.put('investment_movements', m);
           return m;
         }),
@@ -203,7 +211,11 @@ export function createInvestmentsRepository({ store, userId, clock, guard }: Inv
     removeMovement: (id) =>
       guard(() =>
         store.transaction(async (db) => {
-          await db.put('investment_movements', softDelete(await alive(db, 'investment_movements', id), clock));
+          const m = await alive(db, 'investment_movements', id);
+          const asset = await db.get('investment_assets', m.asset_id);
+          // Excluir o aporte que sustenta um resgate deixaria as cotas negativas: exclua o resgate antes.
+          if (asset && isAlive(asset)) await checkUnits(db, asset, null, m.id);
+          await db.put('investment_movements', softDelete(m, clock));
         }),
       ),
     restoreMovement: (id) =>
@@ -212,7 +224,7 @@ export function createInvestmentsRepository({ store, userId, clock, guard }: Inv
           const m = await db.get('investment_movements', id);
           if (!m) throw notFound();
           const back = restore(m, clock);
-          await check(db, back);
+          await check(db, back, m);
           await db.put('investment_movements', back);
         }),
       ),

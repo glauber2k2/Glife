@@ -26,6 +26,9 @@ describe('textos de investimento', () => {
     expect(parseQuantity('0,00012345')).toBe(12_345);
     expect(parseQuantity('0.5')).toBe(50_000_000);
     expect(parseQuantity('1.234,5')).toBe(123_450_000_000);
+    expect(parseQuantity('0.123')).toBe(12_300_000);
+    expect(parseQuantity('0.001')).toBe(100_000);
+    expect(parseQuantity('1.500')).toBe(1_500 * 1e8);
     expect(parseQuantity('0,000000001')).toBeNull();
     expect(parseQuantity('')).toBeNull();
     expect(parseQuantity('0')).toBeNull();

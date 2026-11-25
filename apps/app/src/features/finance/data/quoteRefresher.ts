@@ -12,6 +12,8 @@ export interface QuoteClient {
 export interface QuoteRefresher {
   /** Pede as cotações vencidas (ou todas, com `force`). Devolve false se a busca falhou; nunca lança. */
   refresh(snapshot: InvestmentsSnapshot, force?: boolean): Promise<boolean>;
+  /** Códigos que o provedor não encontrou (`keyOf`): a tela avisa e eles só são pedidos de novo ao forçar. */
+  notFound(): ReadonlySet<string>;
 }
 
 export function createQuoteRefresher(deps: {
@@ -21,6 +23,7 @@ export function createQuoteRefresher(deps: {
 }): QuoteRefresher {
   const now = deps.now ?? (() => new Date());
   let inFlight: Promise<boolean> | null = null;
+  const missing = new Set<string>();
 
   function due(snapshot: InvestmentsSnapshot, force: boolean): QuoteKey[] {
     const limit = now().getTime() - QUOTE_TTL_MS;
@@ -30,6 +33,7 @@ export function createQuoteRefresher(deps: {
       if (!source || a.quote_symbol === null) continue;
       if (!force && a.last_price_at !== null && parseTimestamp(a.last_price_at) > limit) continue;
       const key = { source, symbol: a.quote_symbol };
+      if (!force && missing.has(keyOf(key))) continue;
       keys.set(keyOf(key), key);
     }
     return [...keys.values()];
@@ -38,6 +42,8 @@ export function createQuoteRefresher(deps: {
   async function run(keys: QuoteKey[]): Promise<boolean> {
     try {
       const result = await deps.client.quotes(keys);
+      for (const e of result.errors) if (e.reason === 'not_found') missing.add(keyOf(e));
+      for (const q of result.quotes) missing.delete(keyOf(q));
       if (result.quotes.length) await deps.apply(result.quotes);
       return true;
     } catch (e) {
@@ -56,5 +62,6 @@ export function createQuoteRefresher(deps: {
       });
       return inFlight;
     },
+    notFound: () => new Set(missing),
   };
 }

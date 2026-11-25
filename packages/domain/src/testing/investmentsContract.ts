@@ -76,6 +76,27 @@ export function investmentsRepositoryContract(name: string, make: () => Promise<
       await inv.addMovement({ asset_id: a.id, kind: 'withdrawal', amount_cents: 100, quantity: Q(0.004), date: TODAY });
     });
 
+    it('excluir o aporte que sustenta um resgate é recusado (cotas não ficam negativas)', async () => {
+      const { inv } = await setup(make);
+      const a = await inv.createAsset({ name: 'Itaúsa', kind: 'stocks', quote_symbol: 'ITSA4' });
+      const ap = await inv.addMovement({ asset_id: a.id, kind: 'contribution', amount_cents: 1000, quantity: Q(10), date: TODAY });
+      await inv.addMovement({ asset_id: a.id, kind: 'withdrawal', amount_cents: 1000, quantity: Q(10), date: TODAY });
+      await expectCode(inv.removeMovement(ap.id), 'validation');
+      expect((await inv.snapshot()).movements).toHaveLength(2);
+    });
+
+    it('movimento ligado a conta excluída ainda pode ser editado e restaurado', async () => {
+      const { f, inv } = await setup(make);
+      const inter = await f.accounts.create({ name: 'Inter', kind: 'checking' });
+      const a = await inv.createAsset({ name: 'CDB', kind: 'fixed_income' });
+      const m = await inv.addMovement({ asset_id: a.id, kind: 'contribution', amount_cents: 100, date: TODAY, account_id: inter.id });
+      await f.accounts.remove(inter.id);
+      expect((await inv.updateMovement(m.id, { notes: 'Nota nova' })).notes).toBe('Nota nova');
+      await inv.removeMovement(m.id);
+      await inv.restoreMovement(m.id);
+      expect((await inv.snapshot()).movements.map((x) => x.id)).toEqual([m.id]);
+    });
+
     it('editar movimento revalida as regras e excluir/restaurar funciona', async () => {
       const { inv } = await setup(make);
       const a = await inv.createAsset({ name: 'LCI', kind: 'fixed_income' });

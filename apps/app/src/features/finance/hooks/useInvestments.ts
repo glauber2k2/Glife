@@ -30,6 +30,8 @@ export function useRefreshQuotes(snapshot: InvestmentsSnapshot | null) {
   const { quoteRefresher } = useFinance();
   const online = useSyncOnline();
   const [refreshing, setRefreshing] = useState(false);
+  // Códigos que o provedor não encontrou (keyOf): a tela avisa no lugar da data da cotação.
+  const [notFound, setNotFound] = useState<ReadonlySet<string>>(() => quoteRefresher.notFound());
   const latest = useRef(snapshot);
   // Antes do efeito de foco (mesma ordem de declaração): ele lê a versão mais nova.
   useEffect(() => {
@@ -39,7 +41,7 @@ export function useRefreshQuotes(snapshot: InvestmentsSnapshot | null) {
 
   useFocusEffect(
     useCallback(() => {
-      if (ready && online && latest.current) void quoteRefresher.refresh(latest.current);
+      if (ready && online && latest.current) void quoteRefresher.refresh(latest.current).then(() => setNotFound(quoteRefresher.notFound()));
     }, [ready, online, quoteRefresher]),
   );
 
@@ -49,11 +51,12 @@ export function useRefreshQuotes(snapshot: InvestmentsSnapshot | null) {
       setRefreshing(true);
       try {
         await quoteRefresher.refresh(latest.current, force);
+        setNotFound(quoteRefresher.notFound());
       } finally {
         setRefreshing(false);
       }
     },
     [quoteRefresher],
   );
-  return { refreshing, refresh };
+  return { refreshing, refresh, notFound };
 }

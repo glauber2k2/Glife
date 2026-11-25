@@ -1,6 +1,7 @@
 // Investimentos, tela 1: patrimônio (valor atual somado), resultado, distribuição por tipo e os ativos agrupados por
 // tipo; encerrados ficam recolhidos no fim. Ao abrir, pede as cotações vencidas (ações, FIIs e cripto).
-import { ASSET_KIND_LABELS, isAutoQuoted, portfolio, type PositionedAsset } from '@glife/domain/finance';
+import { ASSET_KIND_LABELS, isAutoQuoted, portfolio, quoteSourceOf, type PositionedAsset } from '@glife/domain/finance';
+import { keyOf } from '@glife/domain/quotes';
 import { router } from 'expo-router';
 import { Plus } from 'lucide-react-native';
 import { useMemo, useState } from 'react';
@@ -16,9 +17,11 @@ import { useInvestments, useRefreshQuotes } from '../hooks/useInvestments';
 
 const openAsset = (id: string) => router.push({ pathname: '/financas/investimento/[id]', params: { id } });
 
-function subOf({ asset, position }: PositionedAsset, closed: boolean): string {
+function subOf({ asset, position }: PositionedAsset, closed: boolean, notFound: ReadonlySet<string>): string {
   const parts = [asset.institution];
+  const source = quoteSourceOf(asset.kind);
   if (closed && position.lastDate) parts.push(`encerrado em ${dmy(position.lastDate)}`);
+  else if (source && asset.quote_symbol && notFound.has(keyOf({ source, symbol: asset.quote_symbol }))) parts.push('código não encontrado');
   else if (isAutoQuoted(asset.kind) && !position.hasPrice) parts.push('sem cotação');
   return parts.filter(Boolean).join(' · ');
 }
@@ -27,7 +30,7 @@ export function InvestmentsScreen() {
   const s = useStyles();
   const today = todayIso();
   const snap = useInvestments();
-  useRefreshQuotes(snap);
+  const { notFound } = useRefreshQuotes(snap);
   const [closedOpen, setClosedOpen] = useState(false);
   const p = useMemo(() => (snap ? portfolio(snap.assets, snap.movements, today) : null), [snap, today]);
   const total = useCountUp(p?.total ?? 0);
@@ -83,7 +86,7 @@ export function InvestmentsScreen() {
                     <AssetRow
                       key={x.asset.id}
                       name={x.asset.name}
-                      sub={subOf(x, false)}
+                      sub={subOf(x, false, notFound)}
                       value={money(x.position.current)}
                       pct={pctSigned(x.position.pct)}
                       pctTone={resultTone(x.position.result)}
@@ -103,7 +106,7 @@ export function InvestmentsScreen() {
                         key={x.asset.id}
                         closed
                         name={x.asset.name}
-                        sub={subOf(x, true)}
+                        sub={subOf(x, true, notFound)}
                         value={money(0)}
                         pct={signed(x.position.result)}
                         pctTone={resultTone(x.position.result)}
