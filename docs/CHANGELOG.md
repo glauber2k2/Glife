@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.3.1 — 2026-11-25
+
+- Toast: texto e ação alinhados; a ação ("Desfazer") responde em toda a sua pílula.
+- Notas: barra de formatação com título, subtítulo, negrito, itálico, sublinhado, tachado e marca-texto (rola para o lado em telas estreitas); o modo Ler desenha cada um.
+
 ## 0.3.0 — 2026-11-25
 
 - Compras: listas e itens; "Comprei" vira gasto com um toque (com desfazer).
