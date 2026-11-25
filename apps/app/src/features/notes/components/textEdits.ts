@@ -16,18 +16,52 @@ export function insertAt(text: string, sel: Selection, insert: string): Edit {
   return { text: next, selection: { start: cursor, end: cursor } };
 }
 
-/** **negrito** em volta da seleção; se ela já estiver entre **, tira. */
-export function toggleBold(text: string, sel: Selection): Edit {
+/**
+ * Envolve a seleção com a marcação (`**`, `*`, `++`, `~~`, `==`); se ela já estiver entre a mesma marcação, tira.
+ * Itálico não confunde negrito: o `*` de dentro de `**x**` não conta como itálico.
+ */
+export function toggleWrap(text: string, sel: Selection, mark: string): Edit {
   const { start, end } = sel;
-  if (text.slice(start - 2, start) === '**' && text.slice(end, end + 2) === '**') {
+  const n = mark.length;
+  const wrapped = text.slice(start - n, start) === mark && text.slice(end, end + n) === mark;
+  const insideBold = mark === '*' && text[start - 2] === '*' && text[end + 1] === '*' && text[start - 3] !== '*';
+  if (wrapped && !insideBold) {
     return {
-      text: text.slice(0, start - 2) + text.slice(start, end) + text.slice(end + 2),
-      selection: { start: start - 2, end: end - 2 },
+      text: text.slice(0, start - n) + text.slice(start, end) + text.slice(end + n),
+      selection: { start: start - n, end: end - n },
     };
   }
   return {
-    text: `${text.slice(0, start)}**${text.slice(start, end)}**${text.slice(end)}`,
-    selection: { start: start + 2, end: end + 2 },
+    text: `${text.slice(0, start)}${mark}${text.slice(start, end)}${mark}${text.slice(end)}`,
+    selection: { start: start + n, end: end + n },
+  };
+}
+
+/** **negrito** em volta da seleção; se ela já estiver entre **, tira. */
+export const toggleBold = (text: string, sel: Selection): Edit => toggleWrap(text, sel, '**');
+
+/**
+ * Título (`# `) ou subtítulo (`## `) nas linhas tocadas pela seleção. Linha já nesse nível volta a ser texto
+ * comum; em outro nível (ou sem nível), passa para este.
+ */
+export function toggleHeading(text: string, sel: Selection, level: 1 | 2): Edit {
+  const prefix = `${'#'.repeat(level)} `;
+  const lineStart = text.lastIndexOf('\n', sel.start - 1) + 1;
+  const nextBreak = text.indexOf('\n', sel.end);
+  const lineEnd = nextBreak === -1 ? text.length : nextBreak;
+  const lines = text.slice(lineStart, lineEnd).split('\n');
+  const levelOf = (l: string) => l.match(/^(#{1,6})\s+/)?.[1]?.length ?? 0;
+  const strip = (l: string) => l.replace(/^#{1,6}\s+/, '');
+  const remove = lines.every((l) => levelOf(l) === level);
+  const changed = lines.map((l) => (remove ? strip(l) : prefix + strip(l)));
+  const firstDelta = changed[0]!.length - lines[0]!.length;
+  const totalDelta = changed.join('\n').length - lines.join('\n').length;
+  return {
+    text: text.slice(0, lineStart) + changed.join('\n') + text.slice(lineEnd),
+    selection: {
+      start: Math.max(lineStart, sel.start + firstDelta),
+      end: Math.max(lineStart, sel.end + totalDelta),
+    },
   };
 }
 

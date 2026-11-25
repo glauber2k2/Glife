@@ -15,9 +15,9 @@ export function MarkdownView({ markdown, onWikilink }: { markdown: string; onWik
 
   const inline = (parts: Inline[]) =>
     parts.map((p, i) => {
-      if (p.type === 'bold') {
+      if (p.type === 'bold' || p.type === 'italic' || p.type === 'underline' || p.type === 'strike' || p.type === 'highlight') {
         return (
-          <Text key={i} style={s.bold}>
+          <Text key={i} style={s[p.type]}>
             {p.text}
           </Text>
         );
@@ -45,7 +45,14 @@ export function MarkdownView({ markdown, onWikilink }: { markdown: string; onWik
         switch (b.type) {
           case 'heading':
             return (
-              <Text key={i} variant="heading" accessibilityRole="header" style={i > 0 && s.headingGap}>
+              // # título (20/500) · ## subtítulo e abaixo (17/500, um tom mais baixo).
+              <Text
+                key={i}
+                variant={b.level === 1 ? 'heading' : 'item'}
+                tone={b.level === 1 ? 'primary' : 'secondary'}
+                accessibilityRole="header"
+                style={i > 0 && s.headingGap}
+              >
                 {inline(b.inline)}
               </Text>
             );
@@ -94,6 +101,11 @@ const useStyles = makeStyles((t) => {
     root: { gap: t.space[3] },
     body: { lineHeight: bodyLine },
     bold: { fontFamily: t.type.button.font },
+    italic: { fontStyle: 'italic' },
+    underline: { textDecorationLine: 'underline' },
+    strike: { textDecorationLine: 'line-through', color: t.colors.textSecondary },
+    /** marca-texto só na leitura: o mel da paleta de marcação */
+    highlight: { backgroundColor: t.colors.highlight.honey },
     link: { textDecorationLine: 'underline', textDecorationColor: t.colors.hairline },
     headingGap: { marginTop: t.space[1.5] },
     list: { gap: t.space[1] },

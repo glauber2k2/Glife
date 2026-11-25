@@ -14,14 +14,20 @@ import {
   FolderInput,
   FolderPlus,
   FolderX,
+  Heading1,
+  Heading2,
+  Highlighter,
+  Italic,
   KeyboardOff,
   List,
   PencilLine,
   Pin,
   PinOff,
   Plus,
+  Strikethrough,
   TextQuote,
   Trash2,
+  Underline,
   X,
   type LucideIcon,
 } from 'lucide-react-native';
@@ -59,13 +65,15 @@ import {
 
 import { FolderNameSheet } from '../components/FolderNameSheet';
 import { KIND_LABEL, KIND_OPTIONS } from '../components/kinds';
+import { INLINE_MARKS } from '../components/markdown';
 import { MarkdownView } from '../components/MarkdownView';
 import { NoteLinks } from '../components/NoteLinks';
 import {
   applyWikilink,
   insertAt,
   prefixLines,
-  toggleBold,
+  toggleHeading,
+  toggleWrap,
   wikilinkQuery,
   type Edit,
   type Selection,
@@ -455,26 +463,22 @@ export function NoteEditorScreen() {
 
         {showFormatBar && (
           <View style={s.formatBar}>
-            <IconButton icon={Bold} label="Negrito" variant="ghost" size={t.touch.minTarget} onPress={() => applyEdit(toggleBold(body, selection))} />
-            <IconButton icon={List} label="Lista" variant="ghost" size={t.touch.minTarget} onPress={() => applyEdit(prefixLines(body, selection, '- '))} />
-            <IconButton
-              icon={TextQuote}
-              label="Citação"
-              variant="ghost"
-              size={t.touch.minTarget}
-              onPress={() => applyEdit(prefixLines(body, selection, '> '))}
-            />
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Ligar a outra nota"
-              onPress={() => applyEdit(insertAt(body, selection, '[['))}
-              style={({ pressed }) => [s.linkButton, query && s.linkButtonActive, pressed && s.soft]}
-            >
-              <Text variant="chip" tone={query ? 'accent' : 'primary'}>
-                {'[[ ]]'}
-              </Text>
-            </Pressable>
-            <View style={s.flex} />
+            {/* Rola na horizontal: em 360 dp os botões não cabem todos; "fechar teclado" fica sempre à vista. */}
+            <ScrollView horizontal style={s.flex} showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="always" contentContainerStyle={s.formatScroll}>
+              {formatActions(body, selection).map((a) => (
+                <IconButton key={a.label} icon={a.icon} label={a.label} variant="ghost" size={t.touch.minTarget} onPress={() => applyEdit(a.edit())} />
+              ))}
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Ligar a outra nota"
+                onPress={() => applyEdit(insertAt(body, selection, '[['))}
+                style={({ pressed }) => [s.linkButton, query && s.linkButtonActive, pressed && s.soft]}
+              >
+                <Text variant="chip" tone={query ? 'accent' : 'primary'}>
+                  {'[[ ]]'}
+                </Text>
+              </Pressable>
+            </ScrollView>
             <IconButton icon={KeyboardOff} label="Fechar teclado" variant="ghost" size={t.touch.minTarget} onPress={() => Keyboard.dismiss()} />
           </View>
         )}
@@ -599,6 +603,22 @@ function SaveStatus({ saving, online }: { saving: boolean; online: boolean }) {
   );
 }
 
+/** Botões da barra de formatação, na ordem: título, subtítulo, estilos de trecho, lista e citação. */
+function formatActions(body: string, selection: Selection): { label: string; icon: LucideIcon; edit: () => Edit }[] {
+  const wrap = (mark: string) => () => toggleWrap(body, selection, mark);
+  return [
+    { label: 'Título', icon: Heading1, edit: () => toggleHeading(body, selection, 1) },
+    { label: 'Subtítulo', icon: Heading2, edit: () => toggleHeading(body, selection, 2) },
+    { label: 'Negrito', icon: Bold, edit: wrap(INLINE_MARKS.bold) },
+    { label: 'Itálico', icon: Italic, edit: wrap(INLINE_MARKS.italic) },
+    { label: 'Sublinhado', icon: Underline, edit: wrap(INLINE_MARKS.underline) },
+    { label: 'Tachado', icon: Strikethrough, edit: wrap(INLINE_MARKS.strike) },
+    { label: 'Marca-texto', icon: Highlighter, edit: wrap(INLINE_MARKS.highlight) },
+    { label: 'Lista', icon: List, edit: () => prefixLines(body, selection, '- ') },
+    { label: 'Citação', icon: TextQuote, edit: () => prefixLines(body, selection, '> ') },
+  ];
+}
+
 function OptionRow({
   label,
   description,
@@ -710,11 +730,12 @@ const useStyles = makeStyles((t) => {
       flexDirection: 'row',
       alignItems: 'center',
       gap: t.space[0.5],
-      paddingHorizontal: t.space[3],
+      paddingRight: t.space[3],
       borderTopWidth: t.hairline,
       borderTopColor: t.colors.hairline,
       backgroundColor: t.colors.bg,
     },
+    formatScroll: { flexDirection: 'row', alignItems: 'center', gap: t.space[0.5], paddingLeft: t.space[3], paddingRight: t.space[2] },
     linkButton: {
       height: t.size.pill + t.space[1],
       justifyContent: 'center',
