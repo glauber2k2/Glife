@@ -19,6 +19,8 @@ const emptyTables = (): Tables => ({
   transactions: new Map(),
   recurrences: new Map(),
   budgets: new Map(),
+  shopping_lists: new Map(),
+  shopping_items: new Map(),
 });
 
 const copy = (t: Tables): Tables =>
@@ -87,6 +89,11 @@ export function createInMemoryFinanceStore(userId: string): FinanceStore {
       watchers.add(emit);
       emit();
       return () => watchers.delete(emit);
+    },
+    watchShopping(onChange): Unsubscribe {
+      watchers.add(onChange);
+      queueMicrotask(() => watchers.has(onChange) && onChange());
+      return () => watchers.delete(onChange);
     },
   };
 }

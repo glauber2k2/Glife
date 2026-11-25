@@ -15,7 +15,7 @@ import {
 import { financeTables } from './schema';
 
 const TABLES = Object.keys(financeTables) as FinanceTable[];
-const BOOLEAN_COLUMNS = new Set(['archived']);
+const BOOLEAN_COLUMNS = new Set(['archived', 'in_cart', 'always']);
 const columnsOf = (table: FinanceTable) => ['id', ...financeTables[table].columns.map((c) => c.name)];
 
 /** Nome de tabela só da lista fixa (nunca vem de fora, mas garante que não há SQL montado com texto livre). */
@@ -130,6 +130,15 @@ export function createLocalFinanceStore(db: LocalDb, userId: string): FinanceSto
         RANGE_SQL(!!query.accountId),
         rangeParams(userId, query),
         (rows) => onRows(rows.map((r) => fromRow<'transactions'>(r) as Transaction)),
+        onError,
+      ),
+    // Sinal de mudança: o repositório relê listas e itens a cada emissão.
+    watchShopping: (onChange, onError) =>
+      db.watch<{ n: number }>(
+        `SELECT (SELECT count(*) || max(updated_at) FROM shopping_lists WHERE user_id = ?) AS l,
+                (SELECT count(*) || max(updated_at) FROM shopping_items WHERE user_id = ?) AS i`,
+        [userId, userId],
+        () => onChange(),
         onError,
       ),
   };

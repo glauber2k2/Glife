@@ -72,4 +72,22 @@ export const financeTables = {
     starts_month: column.text,
     amount_cents: column.integer,
   }),
+  shopping_lists: new Table({
+    ...base,
+    name: column.text,
+    category_id: column.text,
+    last_purchase_date: column.text,
+  }),
+  shopping_items: new Table(
+    {
+      ...base,
+      list_id: column.text,
+      name: column.text,
+      quantity: column.integer,
+      unit_price_cents: column.integer,
+      in_cart: column.integer,
+      always: column.integer,
+    },
+    { indexes: { by_list: ['list_id'] } },
+  ),
 };

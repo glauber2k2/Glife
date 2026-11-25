@@ -26,20 +26,20 @@ export const CATEGORY_NAME_MAX = 60;
 export const TX_DESCRIPTION_MAX = 200;
 export const INTERVAL_MAX = 99;
 
-const singleLine = (max: number) =>
+export const singleLine = (max: number) =>
   z.string().trim().max(max).refine((s) => !/[\r\n]/.test(s), 'Uma linha só.');
-const positiveCents = centsSchema.refine((v) => v > 0, 'Valor deve ser maior que zero');
+export const positiveCents = centsSchema.refine((v) => v > 0, 'Valor deve ser maior que zero');
 const day = z.number().int().min(1).max(31);
-const issue = (ctx: z.RefinementCtx, message: string) => ctx.addIssue({ code: 'custom', message });
+export const issue = (ctx: z.RefinementCtx, message: string) => ctx.addIssue({ code: 'custom', message });
 
 /** Aplica padrões, valida e carimba id, dono e datas. */
-function build<T extends object>(schema: z.ZodType<T>, defaults: Partial<T>, draft: object, userId: string, clock?: () => Date) {
+export function build<T extends object>(schema: z.ZodType<T>, defaults: Partial<T>, draft: object, userId: string, clock?: () => Date) {
   const clean = Object.fromEntries(Object.entries(draft).filter(([, v]) => v !== undefined));
   return stampNew(parseOrThrow(schema, { ...defaults, ...clean }), userId, clock);
 }
 
 /** Junta o patch (só campos definidos) e revalida a entidade inteira. */
-function patch<E extends BaseEntity, T extends object>(schema: z.ZodType<T>, entity: E, changes: object, clock?: () => Date): E {
+export function patch<E extends BaseEntity, T extends object>(schema: z.ZodType<T>, entity: E, changes: object, clock?: () => Date): E {
   const clean = Object.fromEntries(Object.entries(changes).filter(([, v]) => v !== undefined));
   const { id: _i, user_id: _u, created_at: _c, updated_at: _up, deleted_at: _d, ...current } = entity;
   const merged = parseOrThrow(schema, { ...current, ...clean });

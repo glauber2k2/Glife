@@ -43,6 +43,8 @@ import {
   type TransactionPatch,
 } from './model.ts';
 import { budgetId, defaultCategoryId, occurrenceId, splitRecurrence } from './recurrence.ts';
+import type { ShoppingItem, ShoppingList } from './shopping.ts';
+import { createShoppingRepository, type ShoppingRepository } from './shoppingRepository.ts';
 
 // ---------- Interfaces usadas pelas telas ----------
 
@@ -139,6 +141,7 @@ export interface FinanceRepositories {
   transactions: TransactionsRepository;
   recurrences: RecurrencesRepository;
   budgets: BudgetsRepository;
+  shopping: ShoppingRepository;
 }
 
 // ---------- Armazenamento (o que cada plataforma implementa) ----------
@@ -149,6 +152,8 @@ export interface FinanceRows {
   transactions: Transaction;
   recurrences: Recurrence;
   budgets: Budget;
+  shopping_lists: ShoppingList;
+  shopping_items: ShoppingItem;
 }
 export type FinanceTable = keyof FinanceRows;
 export type SmallFinanceTable = Exclude<FinanceTable, 'transactions'>;
@@ -175,6 +180,8 @@ export interface FinanceStore extends FinanceStoreTx {
   /** Tudo dentro de `fn` grava junto ou nada grava. */
   transaction<R>(fn: (tx: FinanceStoreTx) => Promise<R>): Promise<R>;
   watchTransactions(query: TransactionRangeQuery, onRows: (rows: Transaction[]) => void, onError?: (e: unknown) => void): Unsubscribe;
+  /** Avisa agora e a cada mudança nas listas ou itens de compras. */
+  watchShopping(onChange: () => void, onError?: (e: unknown) => void): Unsubscribe;
 }
 
 // ---------- Implementação comum ----------
@@ -507,5 +514,7 @@ export function createFinanceRepositories(store: FinanceStore, userId: string, c
       ),
   };
 
-  return { accounts, categories, transactions, recurrences, budgets };
+  const shopping = createShoppingRepository({ store, userId, clock, buildTransaction: (db, input) => buildTransaction(db, input), guard });
+
+  return { accounts, categories, transactions, recurrences, budgets, shopping };
 }

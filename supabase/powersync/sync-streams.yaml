@@ -22,3 +22,5 @@ streams:
       - SELECT * FROM recurrences WHERE user_id = auth.user_id() AND auth.parameter('aal') = 'aal2'
       - SELECT * FROM transactions WHERE user_id = auth.user_id() AND auth.parameter('aal') = 'aal2'
       - SELECT * FROM budgets WHERE user_id = auth.user_id() AND auth.parameter('aal') = 'aal2'
+      - SELECT * FROM shopping_lists WHERE user_id = auth.user_id() AND auth.parameter('aal') = 'aal2'
+      - SELECT * FROM shopping_items WHERE user_id = auth.user_id() AND auth.parameter('aal') = 'aal2'

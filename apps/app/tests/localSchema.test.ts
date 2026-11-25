@@ -56,6 +56,8 @@ describe('schema local (PowerSync) espelha as migrações', () => {
       'note_folders',
       'notes',
       'recurrences',
+      'shopping_items',
+      'shopping_lists',
       'tags',
       'transactions',
     ]);

@@ -109,4 +109,37 @@ describe('finanças: isolamento e regras do banco', () => {
     });
     expect(n).toBe(2);
   });
+
+  it('compras: lista de A não usa categoria de B; item não vai para lista de B', async () => {
+    await expect(
+      asUser(db, USER_A, (tx) => tx.query(`insert into public.shopping_lists (name, category_id) values ('Mercado', $1)`, [CAT_B])),
+    ).rejects.toThrow();
+    const listB = await asUser(db, USER_B, async (tx) => {
+      const r = await tx.query<{ id: string }>(`insert into public.shopping_lists (name) values ('Feira') returning id`);
+      return r.rows[0]!.id;
+    });
+    await expect(
+      asUser(db, USER_A, (tx) => tx.query(`insert into public.shopping_items (list_id, name) values ($1, 'Arroz')`, [listB])),
+    ).rejects.toThrow();
+  });
+
+  it('compras: recusa quantidade zero e preço zero; A lê só as próprias listas', async () => {
+    const newList = async (tx: { query: PGlite['query'] }) =>
+      (await tx.query<{ id: string }>(`insert into public.shopping_lists (name, category_id) values ('Mercado', $1) returning id`, [CAT_A]))
+        .rows[0]!.id;
+    const n = await asUser(db, USER_A, async (tx) => {
+      const list = await newList(tx);
+      await tx.query(`insert into public.shopping_items (list_id, name, quantity, unit_price_cents) values ($1, 'Arroz', 2, 2790)`, [list]);
+      return count(tx, 'select count(*)::int as n from public.shopping_lists');
+    });
+    expect(n).toBeGreaterThanOrEqual(1);
+    await expect(
+      asUser(db, USER_A, async (tx) => tx.query(`insert into public.shopping_items (list_id, name, quantity) values ($1, 'X', 0)`, [await newList(tx)])),
+    ).rejects.toThrow();
+    await expect(
+      asUser(db, USER_A, async (tx) =>
+        tx.query(`insert into public.shopping_items (list_id, name, unit_price_cents) values ($1, 'X', 0)`, [await newList(tx)]),
+      ),
+    ).rejects.toThrow();
+  });
 });
