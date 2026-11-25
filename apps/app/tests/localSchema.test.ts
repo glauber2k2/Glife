@@ -2,6 +2,8 @@ import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
+import { agendaTables } from '../src/features/agenda/data/schema';
+import { dietTables } from '../src/features/diet/data/schema';
 import { financeTables } from '../src/features/finance/data/schema';
 import { linksTables } from '../src/features/links/data/schema';
 import { notesTables } from '../src/features/notes/data/schema';
@@ -42,7 +44,7 @@ function migrationColumns(): Map<string, string[]> {
   return tables;
 }
 
-const local = { ...notesTables, ...linksTables, ...financeTables };
+const local = { ...notesTables, ...linksTables, ...financeTables, ...agendaTables, ...dietTables };
 const remote = migrationColumns();
 
 describe('schema local (PowerSync) espelha as migrações', () => {
@@ -52,12 +54,16 @@ describe('schema local (PowerSync) espelha as migrações', () => {
       'budgets',
       'categories',
       'entity_tags',
+      'events',
       'investment_assets',
       'investment_movements',
       'links',
+      'meal_plans',
+      'meals',
       'note_folders',
       'notes',
       'recurrences',
+      'reminders',
       'shopping_items',
       'shopping_lists',
       'tags',

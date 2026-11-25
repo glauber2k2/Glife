@@ -2,6 +2,15 @@
 
 O que só o dono do projeto pode fazer (contas, chaves, testes no aparelho, decisões). Ao concluir um item, apague-o.
 
+## Agenda e dieta (26/11/2026)
+
+- [ ] Publicar a migração `20261126000001_agenda_dieta` no Supabase (projeto GLIFE), na raiz `glife/`:
+      `pnpm sb db push --remote` (faça antes um backup).
+- [ ] Republicar o `supabase/powersync/sync-streams.yaml` no painel do PowerSync (Validate → Deploy; cole o arquivo):
+      entraram `events`, `reminders`, `meal_plans` e `meals`. Sem isso, agenda e dieta ficam só no aparelho.
+- [ ] Instalar o APK novo (tem biblioteca nativa nova, a de notificações) e permitir as notificações quando o app pedir.
+- [ ] Testar: evento com aviso 15 min antes, lembrete avulso, refeição do plano com aviso, tudo com o celular offline.
+
 ## Investimentos (25/11/2026)
 
 - [ ] Criar conta grátis na brapi (https://brapi.dev) e gerar o token.
@@ -19,4 +28,4 @@ O que só o dono do projeto pode fazer (contas, chaves, testes no aparelho, deci
 
 ## Já publicado (não precisa fazer)
 
-Migrações até `20261125000002`, sync-streams v6 no PowerSync e a Edge Function `quotes`.
+Migrações até `20261125000002` (a `20261126000001` ainda não), sync-streams v6 no PowerSync e a Edge Function `quotes`.

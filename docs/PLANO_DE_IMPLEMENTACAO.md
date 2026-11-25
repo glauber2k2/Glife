@@ -57,9 +57,11 @@ Objetivo: o mesmo app abre no Android e no navegador, com login, banco local e s
 
 ## Fase 3 — Agenda, lembretes e dieta (≈ 3 semanas)
 
-- Eventos com RRULE, lembretes (`expo-notifications`, funcionando offline).
-- Plano alimentar, horários, registro de refeições.
-- Hoje: próximo compromisso e próxima refeição.
+- Eventos com repetição simples (diária, semanal com dias, mensal, anual; pular uma data), lembretes avulsos e avisos
+  (`expo-notifications`, offline). ✅ 26/11/2026 em versão básica (sem design; redesenho depois). Repetição em campos,
+  não RRULE (decisão do usuário: "Simples").
+- Plano alimentar (refeições com horário e dias da semana), registro de refeições. ✅ 26/11/2026, versão básica.
+- Hoje: próximo compromisso e próxima refeição. ✅ 26/11/2026, versão básica.
 
 ## Fase 4 — Bíblia e devocionais (≈ 3 semanas)
 

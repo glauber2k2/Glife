@@ -1,9 +1,7 @@
 // Armazenamento genérico de linhas de uma feature (o que cada plataforma implementa: SQLite no app, memória nos
 // testes). Só guarda e lê linhas do dono da sessão; as regras ficam no repositório da feature, no domain.
-import type { z } from 'zod';
-
-import { stampNew, stampUpdate, type BaseEntity } from './index.ts';
-import { RepositoryError, isRepositoryError, parseOrThrow, type Unsubscribe } from './repository.ts';
+import type { BaseEntity } from './index.ts'; // só tipo: sem ciclo em tempo de execução
+import { RepositoryError, isRepositoryError, type Unsubscribe } from './repository.ts';
 
 /** Mapa nome da tabela → tipo da linha. */
 export type RowMap = Record<string, BaseEntity>;
@@ -47,18 +45,4 @@ export async function aliveRow<R extends RowMap, K extends keyof R & string>(db:
   const row = await db.get(table, id);
   if (!row || row.deleted_at !== null) throw new RepositoryError('not_found');
   return row;
-}
-
-/** Aplica padrões, valida (Zod) e carimba id, dono e datas. Campos `undefined` do rascunho são ignorados. */
-export function createEntity<T extends object>(schema: z.ZodType<T>, defaults: Partial<T>, draft: object, userId: string, clock?: () => Date): T & BaseEntity {
-  const clean = Object.fromEntries(Object.entries(draft).filter(([, v]) => v !== undefined));
-  return stampNew(parseOrThrow(schema, { ...defaults, ...clean }), userId, clock);
-}
-
-/** Junta as mudanças (só campos definidos) e revalida a entidade inteira. */
-export function updateEntity<E extends BaseEntity, T extends object>(schema: z.ZodType<T>, entity: E, changes: object, clock?: () => Date): E {
-  const clean = Object.fromEntries(Object.entries(changes).filter(([, v]) => v !== undefined));
-  const { id: _i, user_id: _u, created_at: _c, updated_at: _up, deleted_at: _d, ...current } = entity;
-  const merged = parseOrThrow(schema, { ...current, ...clean });
-  return stampUpdate(entity, merged as unknown as Partial<E>, clock);
 }

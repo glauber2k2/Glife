@@ -21,12 +21,16 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { AppLockGate, AppLockProvider, createDeviceAppLock, deviceBiometrics, useAppLock } from '@/features/app-lock';
 import { AuthProvider, createSupabaseAuthService, useAuth } from '@/features/auth';
+import { AgendaProvider, agendaTables } from '@/features/agenda';
+import { DietProvider, dietTables } from '@/features/diet';
 import { FinanceProvider, createEdgeQuoteClient, financeTables } from '@/features/finance';
 import { LinksProvider, linksTables, useLinksSearchSources } from '@/features/links';
 import { NotesProvider, notesSearchIndex, notesTables, useNotesSearchSources } from '@/features/notes';
 import { SearchProvider, useSearchShortcut } from '@/features/search';
+import { NoticesSync } from '@/features/today';
 import { installIdGenerator } from '@/shared/lib/ids';
 import { SyncStatusProvider, createLocalSync } from '@/shared/lib/powersync';
+import { createNoticeScheduler } from '@/shared/lib/notices';
 import { getSupabase } from '@/shared/lib/supabase';
 import { toNavigationTheme } from '@/shared/navigation/navigationTheme';
 import { resolveNavigationMotion } from '@/shared/navigation/navigationMotion';
@@ -43,7 +47,9 @@ const quoteClient = createEdgeQuoteClient(getSupabase());
 const appLock = createDeviceAppLock();
 const signOut = () => authService.signOut();
 // Banco local com as tabelas das features; sincroniza com o Supabase via PowerSync.
-const localSync = createLocalSync({ ...notesTables, ...linksTables, ...financeTables }, [notesSearchIndex]);
+const localSync = createLocalSync({ ...notesTables, ...linksTables, ...financeTables, ...agendaTables, ...dietTables }, [notesSearchIndex]);
+/** Avisos locais do aparelho (agenda e dieta); no web não faz nada. */
+const noticeScheduler = createNoticeScheduler();
 void SplashScreen.preventAutoHideAsync();
 
 /** Busca universal: cada feature entrega as suas fontes; Ctrl+K só com acesso completo e app desbloqueado. */
@@ -85,6 +91,9 @@ function RootStack() {
       <NotesProvider db={localSync.db} userId={userId}>
         <LinksProvider db={localSync.db} userId={userId}>
           <FinanceProvider db={localSync.db} userId={userId} quotes={quoteClient}>
+          <AgendaProvider db={localSync.db} userId={userId}>
+          <DietProvider db={localSync.db} userId={userId}>
+          <NoticesSync scheduler={noticeScheduler} />
           <SearchComposition enabled={stage === 'ready'}>
           <ToastProvider>
             <NavigationThemeProvider value={navigationTheme}>
@@ -128,6 +137,16 @@ function RootStack() {
                   <Stack.Screen name="financas/orcamentos" options={{ animation: animation.detail }} />
                   <Stack.Screen name="financas/graficos" options={{ animation: animation.detail }} />
                   <Stack.Screen name="financas/grafico/[categoria]" options={{ animation: animation.detail }} />
+                  <Stack.Screen name="agenda" options={{ animation: animation.detail }} />
+                  <Stack.Screen name="agenda/evento/novo" options={{ animation: animation.detail }} />
+                  <Stack.Screen name="agenda/evento/[id]" options={{ animation: animation.detail }} />
+                  <Stack.Screen name="agenda/lembrete/novo" options={{ animation: animation.detail }} />
+                  <Stack.Screen name="agenda/lembrete/[id]" options={{ animation: animation.detail }} />
+                  <Stack.Screen name="dieta" options={{ animation: animation.detail }} />
+                  <Stack.Screen name="dieta/refeicao/novo" options={{ animation: animation.detail }} />
+                  <Stack.Screen name="dieta/refeicao/[id]" options={{ animation: animation.detail }} />
+                  <Stack.Screen name="dieta/registro/novo" options={{ animation: animation.detail }} />
+                  <Stack.Screen name="dieta/registro/[id]" options={{ animation: animation.detail }} />
                   <Stack.Screen name="seguranca" options={{ animation: animation.detail }} />
                   <Stack.Screen name="trocar-senha" options={{ animation: animation.detail }} />
                 </Stack.Protected>
@@ -143,6 +162,8 @@ function RootStack() {
             </NavigationThemeProvider>
           </ToastProvider>
           </SearchComposition>
+          </DietProvider>
+          </AgendaProvider>
           </FinanceProvider>
         </LinksProvider>
       </NotesProvider>
