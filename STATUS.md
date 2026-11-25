@@ -4,4 +4,4 @@
 - Feito: ativos e movimentos, "Já tenho", encerrar, desfazer; aportes/resgates no saldo e extrato; Edge Function `quotes` (brapi p/ ações e FIIs, CoinGecko p/ cripto, cache 30 min, só aal2); telas lista/detalhe/folha/cadastro; revisão final com 4 correções; lint, tipos, testes e build web verdes
 - Falta: **usuário:** ver `PENDENCIAS.md` (chaves brapi/CoinGecko, testar Compras e Investimentos, confirmar "pago por outra pessoa"). **Próximo:** gráficos de Finanças e tela Hoje (Fase 2)
 - Atenção (riscos/decisões): telas de Compras e Investimentos não vistas rodando (MFA; navegador do app não abre o banco local); brapi grátis atrasa ~30 min; 5 pontos pequenos adiados em docs/prototipos/investimentos.md
-- Último commit: 0cb7cea
+- Último commit: 2735771
