@@ -47,11 +47,12 @@ export function useRefreshQuotes(snapshot: InvestmentsSnapshot | null) {
 
   const refresh = useCallback(
     async (force = true) => {
-      if (!latest.current) return;
+      if (!latest.current) return true;
       setRefreshing(true);
       try {
-        await quoteRefresher.refresh(latest.current, force);
+        const ok = await quoteRefresher.refresh(latest.current, force);
         setNotFound(quoteRefresher.notFound());
+        return ok;
       } finally {
         setRefreshing(false);
       }

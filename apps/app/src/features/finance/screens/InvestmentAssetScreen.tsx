@@ -336,7 +336,16 @@ export function InvestmentAssetScreen() {
               <Pressable
                 accessibilityRole="button"
                 disabled={refreshing}
-                onPress={() => void refresh(true)}
+                onPress={() =>
+                  void refresh(true).then(
+                    (ok) =>
+                      !ok &&
+                      toast({
+                        message:
+                          "Não foi possível atualizar a cotação agora. Confira a conexão.",
+                      }),
+                  )
+                }
                 hitSlop={t.touch.hitSlop}
               >
                 <Text variant="caption" tone="accent" style={s.semibold}>

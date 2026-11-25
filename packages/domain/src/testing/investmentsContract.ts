@@ -97,6 +97,13 @@ export function investmentsRepositoryContract(name: string, make: () => Promise<
       expect((await inv.snapshot()).movements.map((x) => x.id)).toEqual([m.id]);
     });
 
+    it('resgate com data anterior ao aporte é recusado', async () => {
+      const { inv } = await setup(make);
+      const a = await inv.createAsset({ name: 'Itaúsa', kind: 'stocks', quote_symbol: 'ITSA4' });
+      await inv.addMovement({ asset_id: a.id, kind: 'contribution', amount_cents: 1000, quantity: Q(10), date: '2026-11-20' });
+      await expectCode(inv.addMovement({ asset_id: a.id, kind: 'withdrawal', amount_cents: 500, quantity: Q(5), date: '2026-11-10' }), 'validation');
+    });
+
     it('editar movimento revalida as regras e excluir/restaurar funciona', async () => {
       const { inv } = await setup(make);
       const a = await inv.createAsset({ name: 'LCI', kind: 'fixed_income' });

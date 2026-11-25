@@ -26,6 +26,8 @@ export function createHandler(deps: { verify: VerifyJwt; service: QuotesService 
     const auth = await requireAal2(req, deps.verify);
     if ('status' in auth) return json({ error: auth.error }, auth.status);
 
+    const declared = Number(req.headers.get('Content-Length') ?? '0');
+    if (declared > MAX_BODY) return json({ error: 'Pedido grande demais.' }, 413);
     const text = await req.text();
     if (text.length > MAX_BODY) return json({ error: 'Pedido grande demais.' }, 413);
     let raw: unknown;

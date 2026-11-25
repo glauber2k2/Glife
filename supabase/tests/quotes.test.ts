@@ -100,6 +100,17 @@ describe('quotes: pedidos', () => {
     expect(res.status).toBe(413);
   });
 
+  it('Content-Length acima do limite é recusado antes de ler o corpo', async () => {
+    const { handler, asked } = setup();
+    const req = new Request('https://example.test/functions/v1/quotes', {
+      method: 'POST',
+      headers: { Authorization: 'Bearer token-aal2', 'Content-Type': 'application/json', 'Content-Length': '999999' },
+      body: JSON.stringify(quotesBody),
+    });
+    expect((await handler(req)).status).toBe(413);
+    expect(asked).toEqual([]);
+  });
+
   it('OPTIONS responde ao preflight do navegador; GET não é aceito', async () => {
     const { handler } = setup();
     const pre = await handler(new Request('https://example.test/functions/v1/quotes', { method: 'OPTIONS' }));

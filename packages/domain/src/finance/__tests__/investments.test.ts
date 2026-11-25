@@ -6,9 +6,11 @@ import {
   applyInvestmentAssetPatch,
   assetPosition,
   canChangeKind,
+  chronological,
   isAutoQuoted,
   newInvestmentAsset,
   newInvestmentMovement,
+  parseTimestamp,
   portfolio,
   quoteSourceOf,
   unitsValue,
@@ -195,5 +197,24 @@ describe('investimentos: carteira e contas', () => {
       { key: ap.id, account_id: ACC, amount_cents: -R(500), date: '2026-11-10', description: 'Aporte · HGLG11' },
       { key: rs.id, account_id: ACC, amount_cents: R(200), date: '2026-11-20', description: 'Resgate · HGLG11' },
     ]);
+  });
+});
+
+describe('investimentos: datas e casos de borda', () => {
+  it('lê horário do Postgres com microssegundos', () => {
+    expect(parseTimestamp('2026-11-25 13:07:00.123456+00')).toBe(Date.UTC(2026, 10, 25, 13, 7, 0, 123));
+    expect(parseTimestamp('2026-11-25T13:07:00.5Z')).toBe(Date.UTC(2026, 10, 25, 13, 7, 0, 500));
+  });
+
+  it('ordena pelo instante mesmo misturando o formato local (ISO) e o do Postgres', () => {
+    const a = asset('X', 'other');
+    const m1 = { ...mov(a, 'contribution', 100, TODAY), created_at: '2026-11-25 13:07:00+00' };
+    const m2 = { ...mov(a, 'quote', 500, TODAY), created_at: '2026-11-25T13:06:00.000Z' };
+    expect([m1, m2].sort(chronological).map((m) => m.kind)).toEqual(['quote', 'contribution']);
+  });
+
+  it('automático só com rendimentos não aparece como encerrado', () => {
+    const a = asset('ITSA4', 'stocks', { quote_symbol: 'ITSA4' });
+    expect(assetPosition(a, [mov(a, 'income', R(30), TODAY)], TODAY).closed).toBe(false);
   });
 });
