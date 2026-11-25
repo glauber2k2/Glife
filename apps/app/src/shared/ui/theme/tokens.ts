@@ -83,7 +83,7 @@ export const space = { 0: 0, 0.5: 2, 1: 4, 1.5: 6, 2: 8, 3: 12, 4: 16, 5: 20, 6:
 export type SpaceKey = keyof typeof space;
 
 /** Controles são pílulas; campos 16, cards em repouso 20, topo da folha 30. */
-export const radius = { field: 16, card: 20, sheet: 30, full: 999 } as const;
+export const radius = { checkbox: 7, field: 16, card: 20, sheet: 30, full: 999 } as const;
 
 export const fonts = {
   sans: {
@@ -203,6 +203,8 @@ export const size = {
   radio: 20,
   radioDot: 10,
   radioBorder: 1.5,
+  /** caixa de marcar 22 com cantos de 7 (itens de compras) */
+  checkbox: 22,
   /** interruptor 46 × 28, bolinha de 22 a 3 px da borda */
   switchWidth: 46,
   switchHeight: 28,

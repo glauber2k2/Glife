@@ -4,6 +4,8 @@ export { NewAccountScreen } from './screens/NewAccountScreen';
 export { StatementScreen } from './screens/StatementScreen';
 export { RecurrenceScreen, RecurrencesScreen } from './screens/RecurrencesScreen';
 export { BudgetsScreen } from './screens/BudgetsScreen';
+export { ShoppingListScreen } from './screens/ShoppingListScreen';
+export { ShoppingListsScreen } from './screens/ShoppingListsScreen';
 export { FinanceProvider } from './hooks/FinanceData';
 export { financeTables } from './data/schema';
 export { createLocalFinance } from './data/localFinanceStore';

@@ -25,6 +25,7 @@ import {
   Repeat,
   SkipForward,
   type LucideIcon,
+  ShoppingCart,
 } from 'lucide-react-native';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Platform, Pressable, View } from 'react-native';
@@ -40,6 +41,7 @@ import { INVOICE_STATUS } from '../components/status';
 import { ConfirmSheet } from '../components/sheets';
 import { Block, BlockHeader, BudgetBar, Disc, MoneyRow, MonthSlide, MonthStepper, useCountUp } from '../components/ui';
 import { useFinance } from '../hooks/FinanceData';
+import { useShopping } from '../hooks/useShopping';
 import { invoiceTitle, useAvailableFor, useOccurrences, usePayInvoice, usePlannedActions } from '../hooks/useFlows';
 
 const MAX_AHEAD = 12;
@@ -57,6 +59,7 @@ export function FinanceHomeScreen() {
   const reduceMotion = useReduceMotion();
   const today = todayIso();
   const { data } = useFinance();
+  const shopping = useShopping();
   const [offset, setOffset] = useState(0);
   const [dir, setDir] = useState(1);
   const month = addMonths(monthOf(today), offset);
@@ -142,6 +145,8 @@ export function FinanceHomeScreen() {
   const budgetsShown = overview.budgets.filter((b) => b.budget !== null).slice(0, 5);
   const budgetCount = overview.budgets.filter((b) => b.budget !== null).length;
   const activeRules = data.rules.filter((r) => isRecurrenceActive(r, today)).length;
+  const pendingItems = shopping ? shopping.items.filter((i) => !i.in_cart).length : 0;
+  const shoppingMeta = !shopping || shopping.lists.length === 0 ? 'Listas' : pendingItems === 0 ? 'Nada faltando' : `${pendingItems} ${pendingItems === 1 ? 'item falta' : 'itens faltam'}`;
 
   return (
     <Screen
@@ -468,6 +473,12 @@ export function FinanceHomeScreen() {
                 label="Recorrentes"
                 meta={`${activeRules} ${activeRules === 1 ? 'regra' : 'regras'}`}
                 onPress={() => router.push('/financas/recorrentes')}
+              />
+              <PlanRow
+                icon={ShoppingCart}
+                label="Compras"
+                meta={shoppingMeta}
+                onPress={() => router.push('/financas/compras')}
               />
               <PlanRow
                 icon={ChartNoAxesColumn}
