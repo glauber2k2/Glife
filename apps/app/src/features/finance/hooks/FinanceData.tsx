@@ -110,3 +110,8 @@ export function useFinance(): FinanceState {
   if (!ctx) throw new Error('useFinance precisa de <FinanceProvider> com sessão ativa');
   return ctx;
 }
+
+/** Como `useFinance`, mas null sem sessão (para blocos que outras telas compõem, como Hoje). */
+export function useFinanceMaybe(): FinanceState | null {
+  return useContext(FinanceContext);
+}

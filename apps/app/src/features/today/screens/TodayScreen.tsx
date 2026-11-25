@@ -3,6 +3,7 @@ import { ChevronRight, Search, Settings2 } from 'lucide-react-native';
 import { useCallback, useRef, useState } from 'react';
 import { Platform, Pressable, View } from 'react-native';
 
+import { TodayFinanceBlock } from '@/features/finance';
 import { TodayInboxBlock } from '@/features/inbox';
 import { TodayNotesBlock, useTodayNotes } from '@/features/notes';
 import { openSearch } from '@/features/search';
@@ -32,6 +33,7 @@ export function TodayScreen() {
       {notes && (
         <View key={entrance} style={s.blocks}>
           <Reveal>
+            <TodayFinanceBlock key="finance" />
             <TodayInboxBlock key="inbox" firstUse={firstUse} />
             <TodayNotesBlock key="notes" notes={notes} />
             <ModulesRow key="modules" />
@@ -85,7 +87,7 @@ function ModulesRow() {
       style={({ pressed }) => [s.modules, pressed && s.pressed]}
     >
       <Text variant="small" tone="tertiary" style={s.modulesText}>
-        Agenda, refeições, gastos e devocional aparecem aqui quando forem configurados.
+        Agenda, refeições e devocional aparecem aqui quando forem configurados.
       </Text>
       <Icon icon={ChevronRight} size={t.icon.small} color="textTertiary" />
     </Pressable>

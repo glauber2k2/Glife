@@ -14,6 +14,7 @@ import {
 } from '@glife/domain/finance';
 import { router } from 'expo-router';
 import {
+  ChartColumn,
   ChartNoAxesColumn,
   Check,
   ChevronRight,
@@ -41,6 +42,7 @@ import { NewEntrySheet } from '../components/NewEntrySheet';
 import { useTransactionSheet } from '../components/deleteSheets';
 import { INVOICE_STATUS } from '../components/status';
 import { ConfirmSheet } from '../components/sheets';
+import { ChartsSummaryBlock } from '../components/charts/SummaryBlocks';
 import { Block, BlockHeader, BudgetBar, Disc, MoneyRow, MonthSlide, MonthStepper, useCountUp } from '../components/ui';
 import { useFinance } from '../hooks/FinanceData';
 import { useInvestments, useRefreshQuotes } from '../hooks/useInvestments';
@@ -411,6 +413,9 @@ export function FinanceHomeScreen() {
               )}
             </Block>
 
+            {/* Resumo dos gráficos (só no mês atual: são os últimos 6 meses até hoje) */}
+            {overview.isCurrentMonth && <ChartsSummaryBlock />}
+
             {/* Contas */}
             <Block>
               <BlockHeader title="Contas" />
@@ -499,6 +504,12 @@ export function FinanceHomeScreen() {
                     params: { mes: month },
                   })
                 }
+              />
+              <PlanRow
+                icon={ChartColumn}
+                label="Gráficos"
+                meta="Entradas, gastos e saldo"
+                onPress={() => router.push({ pathname: '/financas/graficos', params: { modo: '6m', de: 'Finanças' } })}
               />
             </Block>
           </Reveal>

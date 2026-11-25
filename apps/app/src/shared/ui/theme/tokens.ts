@@ -151,7 +151,7 @@ export const layout = {
 } as const;
 
 /** Estados sem mudar cor: pressionado (sem movimento) e desabilitado. */
-export const opacity = { hidden: 0, full: 1, pressed: 0.6, disabled: 0.6, fieldDisabled: 0.55, faint: 0.35 } as const;
+export const opacity = { hidden: 0, full: 1, pressed: 0.6, disabled: 0.6, fieldDisabled: 0.55, faint: 0.35, muted: 0.45 } as const;
 
 /** Medidas fixas de componentes. */
 export const size = {
@@ -214,6 +214,36 @@ export const size = {
   /** gráfico de evolução do valor do ativo */
   chart: 72,
   chartDot: 3.5,
+  /** Gráficos de Finanças: faixa acima do gráfico (linha de referência ou etiqueta do toque) */
+  chartTop: 36,
+  /** altura das barras de Entradas e saídas, das barras da categoria e da miniatura */
+  chartBars: 120,
+  chartBarsCategory: 100,
+  chartBarsMini: 56,
+  /** área da linha (saldo, patrimônio) */
+  chartLine: 80,
+  chartLinePad: 8,
+  /** largura das barras: Mês, 6 meses, 12 meses; da categoria (6 e 12 meses) */
+  barWide: 16,
+  bar: 12,
+  barThin: 8,
+  barCategory: 22,
+  barCategoryThin: 14,
+  barRadius: 2,
+  barOutline: 1.5,
+  /** mês sem dados: traço na base */
+  barEmpty: 3,
+  /** barra horizontal de "Para onde foi" */
+  categoryBar: 6,
+  /** marcador do ponto tocado na linha */
+  scrubDot: 7,
+  /** quadradinho da legenda (entradas, saídas, previsto) */
+  legendSwatch: 10,
+  /** coluna do percentual em "Para onde foi" */
+  pctColumn: 38,
+  /** traço e intervalo do trecho esperado da linha */
+  dashOn: 2,
+  dashOff: 4,
 } as const;
 
 /** Campo com rótulo flutuante (54 px, cantos de 16). */
@@ -245,6 +275,8 @@ export const motion = {
   stepDelay: 90,
   /** senha errada: um tremor só, amortecido */
   shake: 280,
+  /** etiqueta do toque nos gráficos some depois de soltar */
+  scrubHide: 2500,
 } as const;
 
 /** Deslocamentos (px) do tremor do campo de senha errada: 0 → −6 → 5 → −3 → 0. */

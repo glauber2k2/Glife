@@ -14,3 +14,6 @@ export type { QuoteClient } from './data/quoteRefresher';
 export { InvestmentsScreen } from './screens/InvestmentsScreen';
 export { InvestmentAssetScreen } from './screens/InvestmentAssetScreen';
 export { AssetFormScreen } from './screens/AssetFormScreen';
+export { ChartsScreen } from './screens/ChartsScreen';
+export { ChartCategoryScreen } from './screens/ChartCategoryScreen';
+export { TodayFinanceBlock } from './components/charts/SummaryBlocks';
