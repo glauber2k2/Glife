@@ -31,7 +31,7 @@ import { getSupabase } from '@/shared/lib/supabase';
 import { toNavigationTheme } from '@/shared/navigation/navigationTheme';
 import { resolveNavigationMotion } from '@/shared/navigation/navigationMotion';
 import { SEARCH_ACTIONS } from '@/shared/navigation/searchActions';
-import { ThemeProvider, ToastProvider, createThemePreferenceStore, useReduceMotion, useTheme } from '@/shared/ui';
+import { ExpandProvider, ThemeProvider, ToastProvider, createThemePreferenceStore, useReduceMotion, useTheme } from '@/shared/ui';
 
 installIdGenerator();
 // Raiz de composição: aqui as interfaces recebem as implementações concretas.
@@ -91,6 +91,7 @@ function RootStack() {
               <StatusBar style={t.scheme === 'dark' ? 'light' : 'dark'} />
               {/* Com sessão pronta, nada do app aparece sem a senha do app ou a biometria. */}
               <AppLockGate active={stage === 'ready'}>
+              <ExpandProvider>
               <Stack
                 screenOptions={{
                   headerShown: false,
@@ -109,7 +110,13 @@ function RootStack() {
                   <Stack.Screen name="ajustes" options={{ animation: animation.detail }} />
                   <Stack.Screen name="busca" options={{ presentation: 'modal', animation: animation.modal }} />
                   <Stack.Screen name="nota/nova" options={{ animation: 'none' }} />
-                  <Stack.Screen name="nota/[id]" options={{ animation: animation.detail }} />
+                  {/* Aberta pela linha que se expande (Hoje): sem animação própria, o contêiner faz a transição. */}
+                  <Stack.Screen
+                    name="nota/[id]"
+                    options={({ route }) => ({
+                      animation: (route.params as { entrada?: string } | undefined)?.entrada === 'expandir' ? 'none' : animation.detail,
+                    })}
+                  />
                   <Stack.Screen name="pastas" options={{ animation: animation.detail }} />
                   <Stack.Screen name="pasta/[id]" options={{ animation: animation.detail }} />
                   <Stack.Screen name="lixeira" options={{ animation: animation.detail }} />
@@ -119,6 +126,8 @@ function RootStack() {
                   <Stack.Screen name="financas/recorrentes" options={{ animation: animation.detail }} />
                   <Stack.Screen name="financas/recorrente/[id]" options={{ animation: animation.detail }} />
                   <Stack.Screen name="financas/orcamentos" options={{ animation: animation.detail }} />
+                  <Stack.Screen name="financas/graficos" options={{ animation: animation.detail }} />
+                  <Stack.Screen name="financas/grafico/[categoria]" options={{ animation: animation.detail }} />
                   <Stack.Screen name="seguranca" options={{ animation: animation.detail }} />
                   <Stack.Screen name="trocar-senha" options={{ animation: animation.detail }} />
                 </Stack.Protected>
@@ -129,6 +138,7 @@ function RootStack() {
                   <Stack.Screen name="verificacao" />
                 </Stack.Protected>
               </Stack>
+              </ExpandProvider>
               </AppLockGate>
             </NavigationThemeProvider>
           </ToastProvider>

@@ -164,6 +164,8 @@ export const size = {
   chipSmall: 32,
   linkChip: 26,
   tabBar: 70,
+  /** navegação no topo (web largo): marca, abas e o + da caixa de entrada */
+  topNav: 64,
   toast: 40,
   pill: 32,
   pillSmall: 26,

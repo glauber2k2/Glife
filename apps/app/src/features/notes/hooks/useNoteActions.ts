@@ -13,8 +13,12 @@ export function goBack() {
   else router.replace('/notas');
 }
 
-export function openNote(id: string, opts: { fresh?: boolean } = {}) {
-  router.push({ pathname: '/nota/[id]', params: opts.fresh ? { id, nova: '1' } : { id } });
+/** `expanded`: a linha tocada já se expandiu até a tela (Hoje), então a nota abre sem animação própria. */
+export function openNote(id: string, opts: { fresh?: boolean; expanded?: boolean } = {}) {
+  router.push({
+    pathname: '/nota/[id]',
+    params: { id, ...(opts.fresh ? { nova: '1' } : {}), ...(opts.expanded ? { entrada: 'expandir' } : {}) },
+  });
 }
 
 /** Cria a nota e abre o editor; toques repetidos não criam duplicatas. */

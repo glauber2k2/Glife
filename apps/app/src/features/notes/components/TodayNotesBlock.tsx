@@ -4,7 +4,7 @@ import { Pin, Plus } from 'lucide-react-native';
 import { Pressable, View } from 'react-native';
 
 import { relativeDay } from '@/shared/lib/dates';
-import { Button, Icon, Section, Text, makeStyles, useTheme } from '@/shared/ui';
+import { Button, Icon, Section, Text, makeStyles, useExpandRows, useTheme } from '@/shared/ui';
 
 import { openNote, useCreateNote } from '../hooks/useNoteActions';
 import { noteExcerpt } from './excerpt';
@@ -14,6 +14,8 @@ export function TodayNotesBlock({ notes }: { notes: Note[] }) {
   const s = useStyles();
   const t = useTheme();
   const create = useCreateNote();
+  // Tocar numa nota: a linha vira um contêiner que se expande até a tela da nota (e volta até ela).
+  const expand = useExpandRows();
   const empty = notes.length === 0;
   return (
     <Section
@@ -34,9 +36,10 @@ export function TodayNotesBlock({ notes }: { notes: Note[] }) {
           return (
             <Pressable
               key={n.id}
+              ref={expand.rowRef(n.id)}
               accessibilityRole="button"
               accessibilityLabel={n.title || 'Sem título'}
-              onPress={() => openNote(n.id)}
+              onPress={() => expand.open(n.id, () => openNote(n.id, { expanded: expand.enabled }))}
               style={({ pressed }) => [s.row, pressed && s.pressed]}
             >
               <View style={s.head}>
