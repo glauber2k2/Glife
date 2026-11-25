@@ -50,10 +50,10 @@ Objetivo: o mesmo app abre no Android e no navegador, com login, banco local e s
 
 - `domain/finance/money.ts`: centavos, parcelas, formatação BRL (com testes).
 - Contas, categorias, transações, orçamentos mensais; saldo por conta.
-- Gráficos SVG (`react-native-gifted-charts`), monocromáticos com destaque no dado relevante.
+- Gráficos SVG, monocromáticos com destaque no dado relevante. ✅ 25/11/2026, desenhados com `react-native-svg` e Views, sem `react-native-gifted-charts` (`docs/prototipos/graficos.md`).
 - Compras: listas e itens; “comprei” → vira gasto com 1 toque.
 - Investimentos: ativos e movimentos (aporte, resgate, rendimento, cotação manual), evolução do patrimônio. ✅ 25/11/2026, com cotação automática de ações, FIIs (brapi) e cripto (CoinGecko) pela Edge Function `quotes` (`docs/prototipos/investimentos.md`).
-- Hoje: gasto do mês vs. orçamento.
+- Hoje: gasto do mês vs. orçamento. ✅ 25/11/2026, bloco "Mês até agora" (`docs/prototipos/graficos.md`).
 
 ## Fase 3 — Agenda, lembretes e dieta (≈ 3 semanas)
 
@@ -122,4 +122,4 @@ Objetivo: o mesmo app abre no Android e no navegador, com login, banco local e s
 - [~] 2.2 Banco e sync de finanças: migração `20261124000001` + RLS testadas no PGlite, tabelas locais e repositórios
   (memória e SQLite pelo mesmo contrato). **Pendente (configuração externa, usuário):** aplicar a migração no Supabase
   hospedado (`pnpm sb db push --remote`) e republicar o `sync-streams.yaml` no painel do PowerSync (Validate → Deploy)
-- [ ] 2.3 Telas de Finanças (perguntar protótipo antes), gráficos, compras, investimentos, gasto do mês em Hoje
+- [~] 2.3 Telas de Finanças, gráficos, compras, investimentos e gasto do mês em Hoje feitos; falta o usuário testar no Chrome/Android (`PENDENCIAS.md`)
