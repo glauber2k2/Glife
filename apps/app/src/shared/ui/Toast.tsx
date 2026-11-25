@@ -88,19 +88,29 @@ function ToastView({ toast, onAction }: { toast: (ToastOptions & { key: number }
   return (
     // Toques controlados por uma View comum: no web, pointerEvents no Animated.View não é confiável.
     <View pointerEvents={toast ? 'box-none' : 'none'} style={[s.host, { bottom }]}>
-      <Animated.View accessibilityRole="alert" accessibilityLiveRegion="polite" style={[s.pill, style]}>
-        {current.icon && <current.icon size={t.icon.small} strokeWidth={t.icon.strokeWidth} color={t.colors.bg} />}
+      <Animated.View
+        accessibilityRole="alert"
+        accessibilityLiveRegion="polite"
+        style={[s.pill, current.actionLabel ? s.pillWithAction : s.pillPlain, style]}
+      >
+        {current.icon && (
+          <View style={s.icon}>
+            <current.icon size={t.icon.small} strokeWidth={t.icon.strokeWidth} color={t.colors.bg} />
+          </View>
+        )}
         <Text variant="small" style={s.message} numberOfLines={1}>
           {current.message}
         </Text>
         {current.actionLabel && (
-          // Text com onPress: clique direto no web e toque nativo no Android.
+          // Text com onPress: clique direto no web e toque nativo no Android. A altura do texto é a da área de toque
+          // (entrelinha = altura), então o rótulo fica centrado e a pílula inteira da ação responde.
           <Text
             variant="small"
             accessibilityRole="button"
             onPress={onAction}
             suppressHighlighting
-            style={[s.action, s.actionText]}
+            numberOfLines={1}
+            style={s.action}
           >
             {current.actionLabel}
           </Text>
@@ -115,20 +125,36 @@ const useStyles = makeStyles((t) => ({
   pill: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: t.space[2] + t.space[0.5],
+    gap: t.space[2],
     minHeight: t.size.toast,
+    paddingVertical: t.space[1],
     paddingLeft: t.space[4],
-    paddingRight: t.space[1.5],
     borderRadius: t.radius.full,
     backgroundColor: t.colors.text,
     maxWidth: t.layout.sheetMaxWidth,
+    marginHorizontal: t.layout.gutter,
   },
-  message: { color: t.colors.bg, fontFamily: t.type.chip.font, flexShrink: 1 },
+  /** sem ação, a folga da direita é igual à da esquerda; com ação, a pílula da ação fica a 4 px da borda */
+  pillPlain: { paddingRight: t.space[4] },
+  pillWithAction: { paddingRight: t.space[1] },
+  icon: { height: t.type.small.lineHeight, justifyContent: 'center' },
+  message: {
+    color: t.colors.bg,
+    fontFamily: t.type.chip.font,
+    flexShrink: 1,
+    includeFontPadding: false,
+    textAlignVertical: 'center',
+  },
   action: {
-    minHeight: t.size.toast - t.space[2] - t.space[0.5],
+    height: t.size.toast - 2 * t.space[1],
+    lineHeight: t.size.toast - 2 * t.space[1],
     paddingHorizontal: t.space[3],
-    justifyContent: 'center',
     borderRadius: t.radius.full,
+    overflow: 'hidden',
+    color: t.colors.bg,
+    fontFamily: t.type.button.font,
+    textDecorationLine: 'underline',
+    includeFontPadding: false,
+    textAlignVertical: 'center',
   },
-  actionText: { color: t.colors.bg, fontFamily: t.type.button.font, textDecorationLine: 'underline' },
 }));
