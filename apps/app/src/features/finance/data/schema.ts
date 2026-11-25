@@ -90,4 +90,27 @@ export const financeTables = {
     },
     { indexes: { by_list: ['list_id'] } },
   ),
+  investment_assets: new Table({
+    ...base,
+    name: column.text,
+    kind: column.text,
+    institution: column.text,
+    notes: column.text,
+    quote_symbol: column.text,
+    last_price_e8: column.integer,
+    last_price_at: column.text,
+  }),
+  investment_movements: new Table(
+    {
+      ...base,
+      asset_id: column.text,
+      kind: column.text,
+      amount_cents: column.integer,
+      quantity: column.integer,
+      date: column.text,
+      account_id: column.text,
+      notes: column.text,
+    },
+    { indexes: { by_asset: ['asset_id'] } },
+  ),
 };

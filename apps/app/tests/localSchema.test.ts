@@ -32,7 +32,7 @@ function migrationColumns(): Map<string, string[]> {
     const sql = readFileSync(join(migrationsDir, file), 'utf8');
     for (const m of sql.matchAll(/create table public\.(\w+) \(([\s\S]*?)\n\);/g)) {
       const columns = topLevelItems(m[2]!)
-        .filter((item) => /^[a-z_]+ [a-z]/.test(item) && !/^(foreign|primary|unique|check|constraint) /.test(item))
+        .filter((item) => /^[a-z_][a-z0-9_]* [a-z]/.test(item) && !/^(foreign|primary|unique|check|constraint) /.test(item))
         .map((item) => item.split(/\s/)[0]!)
         .filter((name) => name !== 'id');
       tables.set(m[1]!, columns);
@@ -52,6 +52,8 @@ describe('schema local (PowerSync) espelha as migrações', () => {
       'budgets',
       'categories',
       'entity_tags',
+      'investment_assets',
+      'investment_movements',
       'links',
       'note_folders',
       'notes',
