@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.2 — 2026-11-25
+
+- Notas (Android): a formatação aparece enquanto se escreve (títulos, negrito, itálico, sublinhado, tachado, marca-texto, citação e vínculos), com as marcações em cinza claro; saiu a troca Escrever/Ler. Ligações e "Mencionada em" ficam no fim da nota.
+
 ## 0.3.1 — 2026-11-25
 
 - Toast: texto e ação alinhados; a ação ("Desfazer") responde em toda a sua pílula.
