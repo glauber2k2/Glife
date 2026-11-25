@@ -158,8 +158,15 @@ export interface AssetPosition {
   series: { date: IsoDate; value: number }[];
 }
 
-const chronological = (a: InvestmentMovement, b: InvestmentMovement) =>
-  a.date !== b.date ? (a.date < b.date ? -1 : 1) : a.created_at !== b.created_at ? (a.created_at < b.created_at ? -1 : 1) : a.id < b.id ? -1 : 1;
+const KIND_RANK: Record<MovementKind, number> = { contribution: 0, income: 1, quote: 2, withdrawal: 3 };
+
+/** Ordem dos movimentos: data, instante de criação e, no mesmo instante, aporte → rendimento → cotação → resgate. */
+export const chronological = (a: InvestmentMovement, b: InvestmentMovement) =>
+  a.date !== b.date
+    ? a.date < b.date ? -1 : 1
+    : a.created_at !== b.created_at
+      ? a.created_at < b.created_at ? -1 : 1
+      : KIND_RANK[a.kind] - KIND_RANK[b.kind] || (a.id < b.id ? -1 : 1);
 
 export function assetPosition(asset: InvestmentAsset, movements: readonly InvestmentMovement[], today: IsoDate, excludeId?: string): AssetPosition {
   const ms = movements.filter((m) => m.asset_id === asset.id && isAlive(m) && m.id !== excludeId).sort(chronological);

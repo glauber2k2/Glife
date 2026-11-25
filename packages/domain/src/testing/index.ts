@@ -8,3 +8,4 @@ export { createInMemoryFinance, createInMemoryFinanceStore } from './financeMemo
 export { financeRepositoryContract, type FinanceContractSubject } from './financeContract.ts';
 export { financeReviewContract } from './financeReviewContract.ts';
 export { shoppingRepositoryContract } from './shoppingContract.ts';
+export { investmentsRepositoryContract } from './investmentsContract.ts';

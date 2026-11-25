@@ -192,6 +192,7 @@ export {
   applyInvestmentMovementPatch,
   assetPosition,
   canChangeKind,
+  chronological,
   investmentAssetSchema,
   investmentMovementSchema,
   isAutoQuoted,
@@ -215,3 +216,8 @@ export {
   type PortfolioGroup,
   type PositionedAsset,
 } from './investments.ts';
+export {
+  type AssetOpening,
+  type InvestmentsRepository,
+  type InvestmentsSnapshot,
+} from './investmentsRepository.ts';

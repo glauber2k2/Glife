@@ -45,6 +45,8 @@ import {
 import { budgetId, defaultCategoryId, occurrenceId, splitRecurrence } from './recurrence.ts';
 import type { ShoppingItem, ShoppingList } from './shopping.ts';
 import { createShoppingRepository, type ShoppingRepository } from './shoppingRepository.ts';
+import type { InvestmentAsset, InvestmentMovement } from './investments.ts';
+import { createInvestmentsRepository, type InvestmentsRepository } from './investmentsRepository.ts';
 
 // ---------- Interfaces usadas pelas telas ----------
 
@@ -142,6 +144,7 @@ export interface FinanceRepositories {
   recurrences: RecurrencesRepository;
   budgets: BudgetsRepository;
   shopping: ShoppingRepository;
+  investments: InvestmentsRepository;
 }
 
 // ---------- Armazenamento (o que cada plataforma implementa) ----------
@@ -154,6 +157,8 @@ export interface FinanceRows {
   budgets: Budget;
   shopping_lists: ShoppingList;
   shopping_items: ShoppingItem;
+  investment_assets: InvestmentAsset;
+  investment_movements: InvestmentMovement;
 }
 export type FinanceTable = keyof FinanceRows;
 export type SmallFinanceTable = Exclude<FinanceTable, 'transactions'>;
@@ -182,6 +187,8 @@ export interface FinanceStore extends FinanceStoreTx {
   watchTransactions(query: TransactionRangeQuery, onRows: (rows: Transaction[]) => void, onError?: (e: unknown) => void): Unsubscribe;
   /** Avisa agora e a cada mudança nas listas ou itens de compras. */
   watchShopping(onChange: () => void, onError?: (e: unknown) => void): Unsubscribe;
+  /** Avisa agora e a cada mudança nos ativos ou movimentos de investimento. */
+  watchInvestments(onChange: () => void, onError?: (e: unknown) => void): Unsubscribe;
 }
 
 // ---------- Implementação comum ----------
@@ -516,5 +523,7 @@ export function createFinanceRepositories(store: FinanceStore, userId: string, c
 
   const shopping = createShoppingRepository({ store, userId, clock, buildTransaction: (db, input) => buildTransaction(db, input), guard });
 
-  return { accounts, categories, transactions, recurrences, budgets, shopping };
+  const investments = createInvestmentsRepository({ store, userId, clock, guard });
+
+  return { accounts, categories, transactions, recurrences, budgets, shopping, investments };
 }

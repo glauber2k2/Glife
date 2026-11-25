@@ -18,3 +18,7 @@ financeReviewContract('memória', async () => ({ finance: createInMemoryFinance(
 import { shoppingRepositoryContract } from '../index.ts';
 
 shoppingRepositoryContract('memória', async () => ({ finance: createInMemoryFinance(USER), userId: USER }));
+
+import { investmentsRepositoryContract } from '../index.ts';
+
+investmentsRepositoryContract('memória', async () => ({ finance: createInMemoryFinance(USER), userId: USER }));
