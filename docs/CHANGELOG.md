@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.3.0 — 2026-11-25
+
+- Compras: listas e itens; "Comprei" vira gasto com um toque (com desfazer).
+- Investimentos: ativos, aportes, resgates, rendimentos e cotação; ações e FIIs (brapi) e cripto (CoinGecko) com cotação automática; aportes e resgates mexem no saldo da conta.
+- Gráficos (Finanças → Planejamento → Gráficos, ou o bloco "Últimos 6 meses"): entradas e saídas, para onde foi o dinheiro, saldo das contas e patrimônio, por mês, 6 ou 12 meses; tocar ou arrastar mostra o valor; cada categoria abre o detalhe com orçamento e lançamentos.
+- Hoje: bloco "Mês até agora" (gasto contra o orçamento, como o mês fecha com os previstos e a maior categoria).
+- Hoje: tocar numa nota expande a linha até a tela da nota; voltar encolhe até a linha.
+- Web largo: abas no topo.
+
 ## 0.2.5 — 2026-11-24
 
 - Recorrentes: excluir uma ocorrência marca só ela como pulada (não volta como prevista); previstos da fatura e do extrato abrem ao tocar, com Confirmar, Outra pessoa pagou e Excluir.
