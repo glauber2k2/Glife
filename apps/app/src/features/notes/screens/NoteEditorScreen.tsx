@@ -108,9 +108,8 @@ export function NoteEditorScreen() {
   const [note, setNote] = useState<Note | null | undefined>(undefined);
   const [title, setTitle] = useState('');
   const [body, setBody] = useState('');
-  // No Android e no iOS o campo de escrever já mostra a formatação (markdown ao vivo): não há modo Ler.
-  // No web o campo do navegador não aceita estilos, então lá continua a troca Escrever/Ler.
-  const [mode, setMode] = useState<Mode>(LIVE || nova ? 'write' : 'read');
+  // Escrever mostra a formatação ao vivo (Android/iOS) com as marcações apagadas; Ler mostra a nota limpa, sem elas.
+  const [mode, setMode] = useState<Mode>(nova ? 'write' : 'read');
   const [saving, setSaving] = useState(false);
   const [sheet, setSheet] = useState<SheetKind>(null);
   const [newFolder, setNewFolder] = useState(false);
@@ -323,7 +322,7 @@ export function NoteEditorScreen() {
                 </Animated.View>
               )}
             </View>
-            {!LIVE && <Pill label={mode === 'write' ? 'Ler' : 'Escrever'} icon={mode === 'write' ? BookOpen : PencilLine} onPress={toggleMode} />}
+            <Pill label={mode === 'write' ? 'Ler' : 'Escrever'} icon={mode === 'write' ? BookOpen : PencilLine} onPress={toggleMode} />
             <IconButton
               icon={note.pinned ? Pin : PinOff}
               label={note.pinned ? 'Desafixar' : 'Fixar'}
