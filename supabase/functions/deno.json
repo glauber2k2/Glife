@@ -1,5 +1,8 @@
 {
   "imports": {
-    "@glife/domain/bible": "../../packages/domain/src/bible/index.ts"
+    "@glife/domain/bible": "../../packages/domain/src/bible/index.ts",
+    "@glife/domain/quotes": "../../packages/domain/src/quotes/index.ts",
+    "@supabase/supabase-js": "npm:@supabase/supabase-js@^2.119.2",
+    "zod": "npm:zod@^4.6.7"
   }
 }
