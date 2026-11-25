@@ -21,7 +21,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { AppLockGate, AppLockProvider, createDeviceAppLock, deviceBiometrics, useAppLock } from '@/features/app-lock';
 import { AuthProvider, createSupabaseAuthService, useAuth } from '@/features/auth';
-import { FinanceProvider, financeTables } from '@/features/finance';
+import { FinanceProvider, createEdgeQuoteClient, financeTables } from '@/features/finance';
 import { LinksProvider, linksTables, useLinksSearchSources } from '@/features/links';
 import { NotesProvider, notesSearchIndex, notesTables, useNotesSearchSources } from '@/features/notes';
 import { SearchProvider, useSearchShortcut } from '@/features/search';
@@ -37,6 +37,8 @@ installIdGenerator();
 // Raiz de composição: aqui as interfaces recebem as implementações concretas.
 const themePreferenceStore = createThemePreferenceStore(AsyncStorage);
 const authService = createSupabaseAuthService(getSupabase());
+// Cotações de ações, FIIs e cripto pela Edge Function `quotes` (chaves das APIs só no servidor).
+const quoteClient = createEdgeQuoteClient(getSupabase());
 // Bloqueio local: senha do app (scrypt no armazenamento seguro) e biometria forte do aparelho.
 const appLock = createDeviceAppLock();
 const signOut = () => authService.signOut();
@@ -82,7 +84,7 @@ function RootStack() {
     <SyncStatusProvider subscribe={localSync.onConnectedChange}>
       <NotesProvider db={localSync.db} userId={userId}>
         <LinksProvider db={localSync.db} userId={userId}>
-          <FinanceProvider db={localSync.db} userId={userId}>
+          <FinanceProvider db={localSync.db} userId={userId} quotes={quoteClient}>
           <SearchComposition enabled={stage === 'ready'}>
           <ToastProvider>
             <NavigationThemeProvider value={navigationTheme}>

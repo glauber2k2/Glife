@@ -9,3 +9,5 @@ export { ShoppingListsScreen } from './screens/ShoppingListsScreen';
 export { FinanceProvider } from './hooks/FinanceData';
 export { financeTables } from './data/schema';
 export { createLocalFinance } from './data/localFinanceStore';
+export { createEdgeQuoteClient } from './data/edgeQuoteClient';
+export type { QuoteClient } from './data/quoteRefresher';

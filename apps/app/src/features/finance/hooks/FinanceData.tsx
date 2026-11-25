@@ -4,6 +4,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 
 import { DEFAULT_CATEGORIES } from '../components/categories';
 import { createLocalFinance } from '../data/localFinanceStore';
+import { createQuoteRefresher, type QuoteClient, type QuoteRefresher } from '../data/quoteRefresher';
 
 /** Todas as transações: o saldo real soma desde o início. */
 const ALL_TIME = { from: '0001-01-01', to: '9999-12-31' } as const;
@@ -14,13 +15,20 @@ interface FinanceState {
   data: FinanceData | null;
   /** Relê contas, categorias, regras e orçamentos (as transações já chegam pelo watch). */
   refresh: () => Promise<void>;
+  /** Cotações automáticas (ações, FIIs e cripto). */
+  quotes: QuoteClient;
+  quoteRefresher: QuoteRefresher;
 }
 
 const FinanceContext = createContext<FinanceState | null>(null);
 
-/** Composto na raiz: o banco local e o dono da sessão. Sem sessão, não há repositório. */
-export function FinanceProvider({ db, userId, children }: { db: LocalDb; userId: string | null; children: ReactNode }) {
+/** Composto na raiz: o banco local, o dono da sessão e a fonte de cotações. Sem sessão, não há repositório. */
+export function FinanceProvider({ db, userId, quotes, children }: { db: LocalDb; userId: string | null; quotes: QuoteClient; children: ReactNode }) {
   const repos = useMemo(() => (userId ? createLocalFinance(db, userId) : null), [db, userId]);
+  const quoteRefresher = useMemo(
+    () => (repos ? createQuoteRefresher({ client: quotes, apply: (q) => repos.investments.applyQuotes(q) }) : null),
+    [repos, quotes],
+  );
   // Os dados ficam presos ao repositório que os leu: trocou a sessão, somem até a nova leitura.
   const [loaded, setLoaded] = useState<{
     repos: FinanceRepositories;
@@ -90,7 +98,10 @@ export function FinanceProvider({ db, userId, children }: { db: LocalDb; userId:
     };
   }, [repos, refresh, readSmall]);
 
-  const value = useMemo(() => (repos ? { repos, data, refresh } : null), [repos, data, refresh]);
+  const value = useMemo(
+    () => (repos && quoteRefresher ? { repos, data, refresh, quotes, quoteRefresher } : null),
+    [repos, data, refresh, quotes, quoteRefresher],
+  );
   return <FinanceContext.Provider value={value}>{children}</FinanceContext.Provider>;
 }
 
