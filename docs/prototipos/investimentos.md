@@ -26,3 +26,16 @@ Protótipo no Claude Design: `Glife Investimentos.dc.html` (telas em `Investimen
 - Sem "puxar para atualizar": o `Screen` não tem esse gesto; o "Atualizar" do detalhe força a cotação.
 - Encerrar ativo automático resgata todas as cotas pelo preço atual; sem a primeira cotação, não encerra.
 - Pendente: conferir as telas rodando (claro/escuro, 360 dp, Android e web) — não foram vistas com dados reais.
+
+## Pendências pequenas (revisão final de 25/11/2026, adiadas)
+
+- Resgate datado antes do aporte é aceito (a checagem de cotas olha só o total, não a ordem das datas).
+- Data de hoje do repositório em UTC (só afeta a série no "Encerrar").
+- `parseTimestamp` não corta microssegundos como `localDateOf`; `chronological` compara `created_at` como texto
+  (ISO local × formato do Postgres enquanto há upload pendente).
+- "Atualizar" no detalhe não avisa quando a busca falha.
+- Preço unitário abaixo de R$ 0,01 aparece como "< R$ 0,01" (detalhe) ou R$ 0,00 (cadastro).
+- Posição minúscula (< R$ 0,005) não encerra; ativo automático só com rendimentos aparece como encerrado.
+- Cada gravação de cotação relê todos os dados de Finanças; a conferência de ticker não usa o cache do servidor.
+- Edge Function lê o corpo antes de conferir o tamanho (usar `Content-Length`).
+- Gravar o preço muda `updated_at` (última gravação vence entre aparelhos) — rever na rotina de alerta de preço.
