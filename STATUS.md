@@ -1,7 +1,7 @@
-# Status: 2026-11-25
-- Tarefa atual: pendências da Fase 1 em Hoje (protótipo "Glife Hoje") — implementadas
+# Status: 2026-11-26
+- Tarefa atual: Fase 3 (agenda, lembretes, dieta) em versão básica, sem design (redesenho geral virá depois)
 - Branch: master
-- Feito: gráficos de Finanças e "Mês até agora" (docs/prototipos/graficos.md); linha da nota em Hoje que se expande até a tela da nota e volta (`ExpandProvider`/`useExpandRows` em shared/ui); abas no topo (64 px) no web com janela ≥ 764 px; rotas de gráficos com slide; lint, tipos, testes e build web verdes
-- Falta: **usuário:** `PENDENCIAS.md` + conferir no Chrome/Android: Gráficos, a expansão da nota e o menu do topo. **Próximo:** Fase 3 (agenda, lembretes, dieta) — pedir protótipos antes
-- Atenção (riscos/decisões): nada visto rodando com sessão (MFA; navegador do app não abre o banco local); a volta da nota pode piscar um quadro antes do contêiner encolher
-- Último commit: 5ba1d22
+- Feito: domínio `time` (repetição, avisos), `agenda` e `diet` com testes; RowStore genérico (domain + SQLite) reutilizável; migração 20261126000001 com RLS, FK composta e sync; telas Agenda/Evento/Lembrete/Dieta/Refeição/Registro; blocos em Hoje; avisos locais (expo-notifications, 7 dias, até 60); notas com markdown ao vivo e volta do Ler; lint, tipos, testes e build web verdes
+- Falta: **usuário:** `PENDENCIAS.md` (db push da migração nova, republicar sync-streams, APK novo). **Próximo:** APK 0.4.0 com `prebuild --clean` (lib nativa nova) e teste dos avisos offline; depois Fase 4
+- Atenção (riscos/decisões): repetição em campos (não RRULE); editar uma ocorrência muda a série; avisos nunca sincronizam (cada aparelho agenda); nada visto rodando com login
+- Último commit: faa56a8
