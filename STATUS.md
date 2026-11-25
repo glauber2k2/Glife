@@ -1,7 +1,7 @@
 # Status: 2026-11-25
-- Tarefa atual: Gráficos de Finanças (Fase 2) — implementado do protótipo "Glife Gráficos" (docs/prototipos/graficos.md)
+- Tarefa atual: pendências da Fase 1 em Hoje (protótipo "Glife Hoje") — implementadas
 - Branch: master
-- Feito: domínio `finance/charts.ts` (lançamentos na regra do orçamento, barras por mês/semana, categorias 6 + Outras, saldo e patrimônio no tempo, mês até agora) com testes; telas Gráficos e Categoria com toque; bloco "Últimos 6 meses" e linha Gráficos em Finanças; "Mês até agora" em Hoje; lint, tipos, testes e build web verdes
-- Falta: **usuário:** ver `PENDENCIAS.md` + conferir Gráficos no Chrome/Android (claro e escuro, 360 dp). **Próximo:** restante da tela Hoje (Fase 2)
-- Atenção (riscos/decisões): telas não vistas rodando (MFA; navegador do app não abre o banco local); diferenças do protótipo listadas em docs/prototipos/graficos.md
-- Último commit: 36d62e5
+- Feito: gráficos de Finanças e "Mês até agora" (docs/prototipos/graficos.md); linha da nota em Hoje que se expande até a tela da nota e volta (`ExpandProvider`/`useExpandRows` em shared/ui); abas no topo (64 px) no web com janela ≥ 764 px; rotas de gráficos com slide; lint, tipos, testes e build web verdes
+- Falta: **usuário:** `PENDENCIAS.md` + conferir no Chrome/Android: Gráficos, a expansão da nota e o menu do topo. **Próximo:** Fase 3 (agenda, lembretes, dieta) — pedir protótipos antes
+- Atenção (riscos/decisões): nada visto rodando com sessão (MFA; navegador do app não abre o banco local); a volta da nota pode piscar um quadro antes do contêiner encolher
+- Último commit: 5ba1d22
