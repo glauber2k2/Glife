@@ -413,7 +413,7 @@ export function FinanceHomeScreen() {
                   leading={<Icon icon={accountIcon(a.kind)} size={t.icon.size - t.space[0.5]} color="textSecondary" />}
                   title={a.name}
                   meta={ACCOUNT_KIND_LABEL[a.kind]}
-                  amount={balance(accountBalance(a, data.transactions))}
+                  amount={balance(accountBalance(a, data.transactions, data.flows))}
                   trailing={<Icon icon={ChevronRight} size={t.icon.small} color="textTertiary" />}
                   onPress={() =>
                     router.push({

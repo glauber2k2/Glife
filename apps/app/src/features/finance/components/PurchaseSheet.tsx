@@ -91,7 +91,7 @@ function PurchaseForm({ list, items, today, onDone }: Props & { list: ShoppingLi
   const value = cents ?? 0;
   const onCard = source === 'card';
   const account = accounts.find((a) => a.id === (onCard ? cardId : bankId)) ?? null;
-  const available = !onCard && account && data ? accountBalance(account, data.transactions) : null;
+  const available = !onCard && account && data ? accountBalance(account, data.transactions, data.flows) : null;
   const short = available !== null && value > available;
 
   // Linhas do gasto: uma na conta; no cartão, uma por parcela (cada uma na sua fatura).
@@ -190,7 +190,7 @@ function PurchaseForm({ list, items, today, onDone }: Props & { list: ShoppingLi
                   sub={
                     a.kind === 'credit_card'
                       ? `Fecha dia ${a.closing_day}, vence dia ${a.due_day}`
-                      : `Saldo ${data ? balance(accountBalance(a, data.transactions)) : ''}`
+                      : `Saldo ${data ? balance(accountBalance(a, data.transactions, data.flows)) : ''}`
                   }
                   selected={a.id === (onCard ? cardId : bankId)}
                   onPress={() => {

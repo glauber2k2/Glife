@@ -4,6 +4,7 @@
 import { compareDates, monthOf, type IsoDate, type Month } from './calendar.ts';
 import { invoiceDates, invoiceMonthFor, type CardCycle } from './invoice.ts';
 import type { Account, Budget, Transaction, TransactionDraft, TxStatus } from './model.ts';
+import type { AccountFlow } from './investments.ts';
 import type { Occurrence } from './recurrence.ts';
 
 const alive = (t: Transaction) => t.deleted_at === null;
@@ -31,12 +32,19 @@ function effectOn(accountId: string, m: Pick<Transaction, 'type' | 'account_id' 
   return m.type === 'income' ? m.amount_cents : -m.amount_cents;
 }
 
-/** Saldo real (só confirmados). Cartão devolve a dívida: compras − estornos − pagamentos. */
-export function accountBalance(account: Account, txs: readonly Transaction[]): number {
+/**
+ * Saldo real (só confirmados). Cartão devolve a dívida: compras − estornos − pagamentos.
+ * `flows`: aportes e resgates de investimento ligados à conta (não são transações nem entram no orçamento).
+ */
+export function accountBalance(account: Account, txs: readonly Transaction[], flows: readonly AccountFlow[] = []): number {
   const net = txs
     .filter((t) => alive(t) && t.status === 'confirmed')
-    .reduce((sum, t) => sum + effectOn(account.id, t), account.initial_balance_cents);
+    .reduce((sum, t) => sum + effectOn(account.id, t), account.initial_balance_cents + flowsOn(account.id, flows));
   return isCard(account) ? 0 - net : net; // 0 - net evita -0
+}
+
+function flowsOn(accountId: string, flows: readonly AccountFlow[]): number {
+  return flows.reduce((sum, f) => sum + (f.account_id === accountId ? f.amount_cents : 0), 0);
 }
 
 export function isOverdue(item: { status: TxStatus; date: IsoDate }, today: IsoDate): boolean {
@@ -198,12 +206,12 @@ export function budgetFor(categoryId: string, month: Month, budgets: readonly Bu
 export function projectBalance(
   account: Account,
   until: IsoDate,
-  data: { transactions: readonly Transaction[]; occurrences: readonly Occurrence[]; cards: readonly Account[] },
+  data: { transactions: readonly Transaction[]; occurrences: readonly Occurrence[]; cards: readonly Account[]; flows?: readonly AccountFlow[] },
 ): number {
   if (isCard(account)) throw new RangeError('Previsão é da conta que paga, não do cartão');
   const cardIds = new Set(data.cards.map((c) => c.id));
   const due = (date: IsoDate) => compareDates(date, until) <= 0;
-  let balance = accountBalance(account, data.transactions);
+  let balance = accountBalance(account, data.transactions, data.flows);
   for (const t of data.transactions) {
     if (alive(t) && t.status === 'planned' && due(t.date) && !cardIds.has(t.account_id)) balance += effectOn(account.id, t);
   }

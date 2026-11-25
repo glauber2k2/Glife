@@ -1,5 +1,5 @@
 import type { LocalDb } from '@glife/domain/core';
-import type { FinanceData, FinanceRepositories } from '@glife/domain/finance';
+import { accountFlows, type FinanceData, type FinanceRepositories } from '@glife/domain/finance';
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 
 import { DEFAULT_CATEGORIES } from '../components/categories';
@@ -30,13 +30,15 @@ export function FinanceProvider({ db, userId, children }: { db: LocalDb; userId:
   const txs = useRef<FinanceData['transactions'] | null>(null);
 
   const readSmall = useCallback(async (r: FinanceRepositories) => {
-    const [accounts, categories, rules, budgets] = await Promise.all([
+    const [accounts, categories, rules, budgets, invest] = await Promise.all([
       r.accounts.list({ includeArchived: true }),
       r.categories.list({ includeArchived: true }),
       r.recurrences.listActive(ALL_TIME.from),
       r.budgets.list(),
+      r.investments.snapshot(),
     ]);
-    return { accounts, categories, rules, budgets };
+    // Aportes e resgates ligados a contas mexem no saldo (não no orçamento).
+    return { accounts, categories, rules, budgets, flows: accountFlows(invest.assets, invest.movements) };
   }, []);
 
   const refresh = useCallback(async () => {
@@ -69,9 +71,22 @@ export function FinanceProvider({ db, userId, children }: { db: LocalDb; userId:
       },
       (e) => console.warn('Falha ao ler as transações', e),
     );
+    // Movimento de investimento com conta muda o saldo: relê o que é pequeno (inclui os fluxos).
+    let first = true;
+    const stopInvest = repos.investments.watch(
+      () => {
+        if (first) {
+          first = false;
+          return;
+        }
+        if (active) void refresh();
+      },
+      (e) => console.warn('Falha ao ler os investimentos', e),
+    );
     return () => {
       active = false;
       stop();
+      stopInvest();
     };
   }, [repos, refresh, readSmall]);
 

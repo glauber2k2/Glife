@@ -47,6 +47,7 @@ export function StatementScreen() {
 
   const categories = new Map(data.categories.map((c) => [c.id, c]));
   const cards = new Map(data.accounts.map((a) => [a.id, a]));
+  const invested = new Set((data.flows ?? []).map((f) => f.key));
   const used = [...new Set(st.days.flatMap((d) => d.entries.map((e) => e.category_id)).filter((c): c is string => !!c))];
   const hasTransfers = st.days.some((d) => d.entries.some((e) => e.type === 'transfer'));
   const query = q.trim().toLowerCase();
@@ -131,7 +132,7 @@ export function StatementScreen() {
                       <Text variant="caption" tone={e.late ? 'danger' : 'secondary'} style={s.semibold}>
                         {tag}
                       </Text>
-                      {e.type === 'transfer' ? 'Transferência' : (cat?.name ?? 'Sem categoria')}
+                      {invested.has(e.key) ? 'Investimento' : e.type === 'transfer' ? 'Transferência' : (cat?.name ?? 'Sem categoria')}
                     </Text>
                   }
                   amount={signed(e.amount)}

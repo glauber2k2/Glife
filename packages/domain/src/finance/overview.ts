@@ -5,6 +5,7 @@ import { addDays, addMonths, compareDates, dateInMonth, daysInMonth, monthOf, ty
 import { currentInvoiceMonth } from './installments.ts';
 import { invoiceDates, invoiceMonthFor, type CardCycle } from './invoice.ts';
 import { accountBalance, budgetFor, invoiceSummary, monthSummary, projectBalance, type InvoiceSummary } from './ledger.ts';
+import type { AccountFlow } from './investments.ts';
 import type { Account, Budget, Category, Recurrence, Transaction, TxType } from './model.ts';
 import { expandRecurrence, type Occurrence } from './recurrence.ts';
 
@@ -15,6 +16,8 @@ export interface FinanceData {
   transactions: readonly Transaction[];
   rules: readonly Recurrence[];
   budgets: readonly Budget[];
+  /** Aportes e resgates de investimento ligados a contas (mexem no saldo, não no orçamento). */
+  flows?: readonly AccountFlow[];
 }
 
 const isCard = (a: Pick<Account, 'kind'>) => a.kind === 'credit_card';
@@ -197,9 +200,9 @@ export function monthOverview(data: FinanceData, occurrences: readonly Occurrenc
   const cardIds = new Set(data.accounts.filter(isCard).map((a) => a.id));
   const isCurrentMonth = month === monthOf(today);
   const endDate = lastDayOf(month);
-  const projection = { transactions: data.transactions, occurrences, cards: data.accounts.filter((a) => alive(a) && isCard(a)) };
+  const projection = { transactions: data.transactions, occurrences, cards: data.accounts.filter((a) => alive(a) && isCard(a)), flows: data.flows };
 
-  const balanceToday = banks.reduce((s, a) => s + accountBalance(a, data.transactions), 0);
+  const balanceToday = banks.reduce((s, a) => s + accountBalance(a, data.transactions, data.flows), 0);
   const expected =
     month < monthOf(today) ? balanceToday : banks.reduce((s, a) => s + projectBalance(a, endDate, projection), 0);
 
@@ -324,6 +327,22 @@ export function statement(account: Account, data: FinanceData, occurrences: read
       recurring: t.recurrence_id !== null,
       invoiceCardId: null,
     }));
+  const invested: StatementEntry[] = (data.flows ?? [])
+    .filter((f) => f.account_id === account.id)
+    .map((f) => ({
+      key: f.key,
+      date: f.date,
+      description: f.description,
+      category_id: null,
+      type: 'transfer' as const,
+      amount: f.amount_cents,
+      planned: false,
+      late: false,
+      today: false,
+      recurring: false,
+      invoiceCardId: null,
+    }));
+  confirmed.push(...invested);
   const planned: StatementEntry[] = plannedItems(data.transactions, occurrences)
     .filter((p) => involves(p) && compareDates(p.date, until) <= 0)
     .map((p) => ({
@@ -354,7 +373,7 @@ export function statement(account: Account, data: FinanceData, occurrences: read
       recurring: false,
       invoiceCardId: d.cardId,
     }));
-  const balance = accountBalance(account, data.transactions);
+  const balance = accountBalance(account, data.transactions, data.flows);
   const all = [...confirmed, ...planned, ...dues];
   const dates = [...new Set(all.map((e) => e.date))].sort().reverse();
   const days = dates.map((date) => {
