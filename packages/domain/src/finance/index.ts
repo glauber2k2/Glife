@@ -2,11 +2,13 @@ export {
   INSTALLMENTS_MAX,
   centsSchema,
   formatBRL,
+  installmentAmount,
   parseBRL,
   splitInstallments,
   sumCents,
   type Cents,
   type FormatBRLOptions,
+  type InstallmentAmountMode,
 } from './money.ts';
 export {
   addDays,

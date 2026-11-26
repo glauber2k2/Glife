@@ -6,11 +6,12 @@ import {
   invoiceDates,
   invoiceMonthFor,
   nextDayOfMonth,
-  splitInstallments,
+  installmentAmount,
   type Account,
   type Frequency,
   type IsoDate,
   type TxType,
+  type InstallmentAmountMode,
 } from '@glife/domain/finance';
 import { router } from 'expo-router';
 import { ArrowLeftRight, CreditCard, X } from 'lucide-react-native';
@@ -21,6 +22,7 @@ import { Button, Chip, Icon, IconButton, Input, SegmentedControl, Sheet, Switch,
 
 import { useFinance } from '../hooks/FinanceData';
 import { useFinanceActions } from '../hooks/useFinanceActions';
+import { InstallmentAmountChoice } from './InstallmentAmountChoice';
 import { accountIcon, categoryIcon } from './categories';
 import { MONTH_NAMES, dayLabel, dm, dmy, weekday } from './format';
 import { useMoneyFormat } from '../hooks/useMoneyFormat';
@@ -88,6 +90,7 @@ function EntryForm({ onClose, today, preset, aboveTabBar }: Props) {
   const [acctId, setAcctId] = useState<string | null>(() => banks[0]?.id ?? null);
   const [toId, setToId] = useState<string | null>(null);
   const [parc, setParc] = useState(1);
+  const [amountMode, setAmountMode] = useState<InstallmentAmountMode>('total');
   const [planned, setPlanned] = useState(!!preset?.planned);
   const [repeat, setRepeat] = useState(!!preset?.repeat);
   const [freq, setFreq] = useState<Freq>('monthly');
@@ -143,26 +146,31 @@ function EntryForm({ onClose, today, preset, aboveTabBar }: Props) {
         : `Cai na fatura de ${monthYear(first, today)} · vence ${dm(invoiceDates(first, cycle).dueDate)}`;
   }
 
+  const hasInstallments = isCard && parc > 1 && !repeat;
+  let amount: ReturnType<typeof installmentAmount> | null = null;
+  try {
+    amount = installmentAmount(cents, hasInstallments ? parc : 1, hasInstallments ? amountMode : 'total');
+  } catch { /* O formulário mantém o valor e impede salvar fora do limite. */ }
   const amountSub =
-    isCard && parc > 1 && cents > 0 && !repeat
-      ? `${parc} × ${money(splitInstallments(cents, parc)[0]!)}`
+    !amount ? 'O valor total excede o limite permitido.' : hasInstallments && cents > 0
+      ? `${parc} parcelas · total ${money(amount.totalCents)}`
       : planned
         ? 'Previsto · confirma no dia'
         : ' ';
 
   const transferNote =
     target?.kind === 'credit_card' ? 'Pagamento de fatura: é transferência, não é gasto.' : 'Transferência não conta no orçamento.';
-  const canSave = cents > 0 && !!acctId && (type !== 'transfer' || !!toId) && (!monthly || chargeDay !== null) && !saving;
+  const canSave = cents > 0 && !!amount && !!acctId && (type !== 'transfer' || !!toId) && (!monthly || chargeDay !== null) && !saving;
   const saveLabel =
     firstPlanned || repeat ? 'Agendar' : type === 'expense' ? 'Salvar gasto' : type === 'income' ? 'Salvar receita' : 'Salvar transferência';
 
   const save = async () => {
-    if (!canSave || !acctId) return;
+    if (!canSave || !acctId || !amount) return;
     setSaving(true);
     try {
       await createEntry({
         type,
-        cents,
+        cents: amount.totalCents,
         description: desc,
         categoryId: type === 'transfer' ? null : catId,
         accountId: acctId,
@@ -205,10 +213,11 @@ function EntryForm({ onClose, today, preset, aboveTabBar }: Props) {
         <IconButton icon={X} label="Fechar" variant="soft" onPress={onClose} />
       </View>
       <SegmentedControl label="Tipo de lançamento" shape="block" options={TYPES} value={type} onChange={changeType} />
+      {hasInstallments && <InstallmentAmountChoice value={amountMode} onChange={setAmountMode} />}
       <MoneyField
         large
         autoFocus
-        label="Valor"
+        label={hasInstallments ? amountMode === 'installment' ? 'Valor da parcela' : 'Valor total' : 'Valor'}
         cents={cents || null}
         onChange={(c) => setCents(c ?? 0)}
         hint={amountSub.trim() || undefined}

@@ -9,6 +9,7 @@ import { Card, Icon, ProgressBar, SectionHeader, Tag, Text, makeStyles, useTheme
 
 
 import { useMoneyFormat } from '../../hooks/useMoneyFormat';
+import { MoneyEyeButton } from '../MoneyEyeButton';
 import { Block } from '../ui';
 import { useFinanceMaybe } from '../../hooks/FinanceData';
 import { useChartsSource } from '../../hooks/useCharts';
@@ -95,6 +96,7 @@ export function MonthSoFarBlock() {
     <View style={s.section}>
       <SectionHeader
         title="Mês até agora"
+        accessory={<MoneyEyeButton />}
         actionLabel="Gráficos"
         onAction={() => router.push({ pathname: '/financas/graficos', params: { modo: 'mes', mes: src.thisMonth, de: 'Início' } })}
       />

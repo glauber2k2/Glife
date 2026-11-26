@@ -12,13 +12,14 @@ import {
   monthOverview,
   planInstallmentPurchase,
   purchaseDescription,
-  splitInstallments,
+  installmentAmount,
   type AfterPurchase,
   type IsoDate,
   type PurchaseReceipt,
   type ShoppingItem,
   type ShoppingList,
   type TransactionInput,
+  type InstallmentAmountMode,
 } from '@glife/domain/finance';
 import { router } from 'expo-router';
 import { CreditCard, Landmark, ReceiptText } from 'lucide-react-native';
@@ -32,6 +33,7 @@ import { useOccurrences } from '../hooks/useFlows';
 import { categoryIcon } from './categories';
 import { MONTH_NAMES, dayLabel, dm } from './format';
 import { useMoneyFormat } from '../hooks/useMoneyFormat';
+import { InstallmentAmountChoice } from './InstallmentAmountChoice';
 import { NoFundsNote } from './sheets';
 import { DateRow, MoneyField, NoCategoriesNote, RadioRow } from './ui';
 
@@ -85,14 +87,20 @@ function PurchaseForm({ list, items, today, onDone, onClose }: Props & { list: S
   const [bankId, setBankId] = useState(banks[0]?.id ?? null);
   const [cardId, setCardId] = useState(cards[0]?.id ?? null);
   const [parc, setParc] = useState(1);
+  const [amountMode, setAmountMode] = useState<InstallmentAmountMode>('total');
   const [catId, setCatId] = useState<string | null>(list.category_id);
   const [date, setDate] = useState<IsoDate>(today);
   const [after, setAfter] = useState<AfterPurchase>('remove');
   const [forced, setForced] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  const value = cents ?? 0;
   const onCard = source === 'card';
+  const hasInstallments = onCard && parc > 1;
+  let amount: ReturnType<typeof installmentAmount> | null = null;
+  try {
+    amount = installmentAmount(cents ?? 0, hasInstallments ? parc : 1, hasInstallments ? amountMode : 'total');
+  } catch { /* Sem valor resolvido, nenhuma linha é criada e Salvar fica desabilitado. */ }
+  const value = amount?.totalCents ?? 0;
   const account = accounts.find((a) => a.id === (onCard ? cardId : bankId)) ?? null;
   const available = !onCard && account && data ? accountBalance(account, data.transactions, data.flows) : null;
   const short = available !== null && value > available;
@@ -156,15 +164,16 @@ function PurchaseForm({ list, items, today, onDone, onClose }: Props & { list: S
         </Text>
       </View>
       <ScrollView style={s.scroll} contentContainerStyle={s.scrollContent} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+        {hasInstallments && <InstallmentAmountChoice value={amountMode} onChange={setAmountMode} />}
         <MoneyField
           large
-          label="Valor pago"
+          label={hasInstallments ? amountMode === 'installment' ? 'Valor da parcela' : 'Valor total' : 'Valor pago'}
           cents={cents}
           onChange={(c) => {
             setCents(c);
             setForced(false);
           }}
-          hint={`${est.approx ? 'Estimado ≈ ' : 'Estimado '}${money(est.totalCents)}${est.approx ? ' · há item sem preço' : ''}`}
+          hint={!amount ? 'O valor total excede o limite permitido.' : hasInstallments ? `${parc} parcelas · total ${money(value)}` : `${est.approx ? 'Estimado ≈ ' : 'Estimado '}${money(est.totalCents)}${est.approx ? ' · há item sem preço' : ''}`}
         />
 
         {noSource ? (
@@ -215,7 +224,7 @@ function PurchaseForm({ list, items, today, onDone, onClose }: Props & { list: S
                 Parcelas
               </Text>
               <Text variant="small" numeric style={s.medium}>
-                {parc === 1 ? `À vista · ${money(value)}` : `${parc}× de ${money(splitInstallments(Math.max(value, parc), parc)[0]!)}`}
+                {parc === 1 ? `À vista · ${money(value)}` : `${parc} parcelas · ${money(value)} no total`}
               </Text>
             </View>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.parcs} style={s.parcScroll}>

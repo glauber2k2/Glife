@@ -42,6 +42,8 @@ export function Section({ title, action, kind = 'label', children }: SectionProp
 
 export interface SectionHeaderProps {
   title: string;
+  /** ação complementar, independente do link (ex.: ocultar valores) */
+  accessory?: ReactNode;
   /** link à direita ("Ver tudo") */
   actionLabel?: string;
   onAction?: () => void;
@@ -50,14 +52,16 @@ export interface SectionHeaderProps {
 }
 
 /** Título 20 de seção com uma ação em link cobalto (ou um texto discreto à direita). */
-export function SectionHeader({ title, actionLabel, onAction, meta }: SectionHeaderProps) {
+export function SectionHeader({ title, actionLabel, onAction, meta, accessory }: SectionHeaderProps) {
   const s = useStyles();
   const t = useTheme();
   return (
-    <View style={[s.header, s.headerHeading]}>
+    <View style={[s.header, s.headerHeading, !!accessory && s.headerAccessory]}>
       <Text variant="heading" accessibilityRole="header" style={s.title}>
         {title}
       </Text>
+      <View style={s.headerActions}>
+      {accessory}
       {actionLabel && onAction && (
         <Pressable accessibilityRole="button" onPress={onAction} hitSlop={t.touch.hitSlop + t.space[1]}>
           <Text variant="small" tone="accent" style={s.link}>
@@ -70,6 +74,7 @@ export function SectionHeader({ title, actionLabel, onAction, meta }: SectionHea
           {meta}
         </Text>
       ) : null}
+      </View>
     </View>
   );
 }
@@ -123,6 +128,8 @@ const useStyles = makeStyles((t) => ({
   sectionHeading: { gap: t.space[3] },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: t.space[3] },
   headerHeading: { alignItems: 'baseline' },
+  headerAccessory: { alignItems: 'center' },
+  headerActions: { flexDirection: 'row', alignItems: 'center', gap: t.space[2], flexShrink: 0 },
   title: { flexShrink: 1 },
   body: { gap: t.space[3] },
   link: { fontFamily: t.type.chip.font },
