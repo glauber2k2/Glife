@@ -17,19 +17,19 @@ import { useResolveTarget, useTargetSources } from '../hooks/Targets';
 const COPY: Record<NotFoundView, { title: (noun: string) => string; message: string }> = {
   lixeira: {
     title: (noun) => `${noun} está na lixeira`,
-    message: 'Foi excluído há pouco. Se restaurar, volta para o lugar dele com os vínculos.',
+    message: 'Está na lixeira deste aparelho. Se restaurar, volta para o lugar de antes, com os vínculos.',
   },
   naosync: {
     title: () => 'Ainda não chegou neste aparelho',
-    message: 'Foi criado em outro aparelho há pouco e chega na próxima sincronização.',
+    message: 'Ainda não está neste aparelho. Se existir na nuvem, chega na próxima sincronização.',
   },
   apagado: {
     title: () => 'Não encontrei este item',
-    message: 'Ele foi excluído para sempre. O vínculo continua nas notas, marcado como quebrado.',
+    message: 'Este item não existe mais, nem aqui nem na nuvem. O vínculo continua nas notas, marcado como quebrado.',
   },
   semtela: {
-    title: () => 'Este item está salvo',
-    message: 'Ele existe neste aparelho, mas ainda não tem uma tela disponível para abrir por aqui.',
+    title: () => 'Não consigo abrir este item aqui',
+    message: 'Este item está salvo neste aparelho, mas ainda não há uma tela para abri-lo por aqui.',
   },
 };
 
