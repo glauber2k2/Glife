@@ -15,9 +15,9 @@ function cycleOf(card: Account): CardCycle {
   return { closing_day: card.closing_day, due_day: card.due_day };
 }
 
-/** Mês do orçamento: o da fatura (cartão) ou o da data. Transferência e pulado não contam. */
-export function budgetMonth(tx: Pick<Transaction, 'type' | 'status' | 'invoice_month' | 'date'>): Month | null {
-  if (tx.type === 'transfer' || tx.status === 'skipped') return null;
+/** Mês do orçamento: o da fatura (cartão) ou o da data. Transferência, pulado e ajuste de saldo não contam. */
+export function budgetMonth(tx: Pick<Transaction, 'type' | 'status' | 'invoice_month' | 'date'> & Partial<Pick<Transaction, 'is_adjustment'>>): Month | null {
+  if (tx.type === 'transfer' || tx.status === 'skipped' || tx.is_adjustment) return null;
   return tx.invoice_month ?? monthOf(tx.date);
 }
 

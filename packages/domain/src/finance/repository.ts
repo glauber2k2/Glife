@@ -15,6 +15,8 @@ import {
   type Unsubscribe,
 } from '../core/index.ts';
 import type { IsoDate, Month } from './calendar.ts';
+import { ADJUSTMENT_DESCRIPTION, balanceAdjustment } from './adjustment.ts';
+import { accountBalance } from './ledger.ts';
 import { invoiceMonthFor } from './invoice.ts';
 import {
   applyAccountPatch,
@@ -45,7 +47,7 @@ import {
 import { budgetId, defaultCategoryId, occurrenceId, splitRecurrence } from './recurrence.ts';
 import type { ShoppingItem, ShoppingList } from './shopping.ts';
 import { createShoppingRepository, type ShoppingRepository } from './shoppingRepository.ts';
-import type { InvestmentAsset, InvestmentMovement } from './investments.ts';
+import { accountFlows, type InvestmentAsset, type InvestmentMovement } from './investments.ts';
 import { createInvestmentsRepository, type InvestmentsRepository } from './investmentsRepository.ts';
 
 // ---------- Interfaces usadas pelas telas ----------
@@ -58,6 +60,9 @@ export interface AccountsRepository {
   create(draft: AccountDraft): Promise<Account>;
   update(id: string, patch: AccountPatch): Promise<Account>;
   archive(id: string): Promise<Account>;
+  unarchive(id: string): Promise<Account>;
+  /** Define `sort_order` = posição em `ids`, tudo ou nada. Id inexistente = `not_found`; repetido = `validation`. */
+  reorder(ids: readonly string[]): Promise<void>;
   /**
    * Exclusão lógica da conta com os lançamentos (de e para ela) e as recorrências dela, juntos. Conta que paga a
    * fatura de um cartão ativo é recusada (`conflict`): exclua ou troque antes o cartão.
@@ -73,6 +78,9 @@ export interface CategoriesRepository {
   create(draft: CategoryDraft): Promise<Category>;
   update(id: string, patch: CategoryPatch): Promise<Category>;
   archive(id: string): Promise<Category>;
+  unarchive(id: string): Promise<Category>;
+  /** Define `sort_order` = posição em `ids`, tudo ou nada. Id inexistente = `not_found`; repetido = `validation`. */
+  reorder(ids: readonly string[]): Promise<void>;
   /**
    * Garante as categorias padrão, cada uma com id fixo por dono e `key`. Nunca recria uma que já existiu (mesmo
    * excluída ou editada): a pessoa manda nas próprias categorias. Devolve as que foram criadas agora.
@@ -106,6 +114,11 @@ export interface TransactionsRepository {
   /** Tudo ou nada. */
   createMany(inputs: readonly TransactionInput[]): Promise<Transaction[]>;
   update(id: string, patch: TransactionPatch): Promise<Transaction>;
+  /**
+   * Ajuste de saldo: leva o saldo da conta ao `bankCents` com um lançamento confirmado `is_adjustment` (receita ou
+   * despesa, sem categoria). `null` se a diferença é zero. Cartão é recusado (`validation`).
+   */
+  adjustBalance(accountId: string, bankCents: number, date: IsoDate): Promise<Transaction | null>;
   confirm(id: string, changes?: { amount_cents?: number; date?: IsoDate }): Promise<Transaction>;
   skip(id: string): Promise<Transaction>;
   /** Grava a ocorrência de uma regra pelo id determinístico; se já existe (mesmo excluída), substitui. */
@@ -208,7 +221,8 @@ async function guard<T>(fn: () => Promise<T>): Promise<T> {
   }
 }
 
-const byName = <T extends { name: string; id: string }>(a: T, b: T) =>
+const byName = <T extends { name: string; id: string; sort_order: number }>(a: T, b: T) =>
+  a.sort_order - b.sort_order ||
   a.name.localeCompare(b.name, 'pt-BR', { sensitivity: 'base' }) || (a.id < b.id ? -1 : 1);
 
 export function createFinanceRepositories(store: FinanceStore, userId: string, clock?: () => Date): FinanceRepositories {
@@ -271,6 +285,21 @@ export function createFinanceRepositories(store: FinanceStore, userId: string, c
     );
   }
 
+  /** Grava `sort_order` = índice em `ids` numa só transação (tudo ou nada). */
+  function reorder(table: 'accounts' | 'categories', ids: readonly string[]): Promise<void> {
+    return guard(() =>
+      store.transaction(async (db) => {
+        if (new Set(ids).size !== ids.length) throw invalid();
+        const rows = [];
+        for (const id of ids) rows.push(await alive(db, table, id));
+        for (const [index, row] of rows.entries()) {
+          if (row.sort_order === index) continue;
+          await db.put(table, { ...row, sort_order: index, updated_at: nowIso(clock) } as never);
+        }
+      }),
+    );
+  }
+
   const accounts: AccountsRepository = {
     list: (query = {}) =>
       guard(async () =>
@@ -296,6 +325,8 @@ export function createFinanceRepositories(store: FinanceStore, userId: string, c
         }),
       ),
     archive: (id) => accounts.update(id, { archived: true }),
+    unarchive: (id) => accounts.update(id, { archived: false }),
+    reorder: (ids) => reorder('accounts', ids),
     removalImpact: (id) =>
       guard(async () => {
         await alive(store, 'accounts', id);
@@ -350,6 +381,8 @@ export function createFinanceRepositories(store: FinanceStore, userId: string, c
         }),
       ),
     archive: (id) => categories.update(id, { archived: true }),
+    unarchive: (id) => categories.update(id, { archived: false }),
+    reorder: (ids) => reorder('categories', ids),
     ensureDefaults: (defaults) =>
       guard(() =>
         store.transaction(async (db) => {
@@ -392,6 +425,21 @@ export function createFinanceRepositories(store: FinanceStore, userId: string, c
         }),
       ),
     update: changeTransaction,
+    adjustBalance: (accountId, bankCents, date) =>
+      guard(() =>
+        store.transaction(async (db) => {
+          const account = await alive(db, 'accounts', accountId);
+          if (account.kind === 'credit_card') throw invalid();
+          // O saldo mostrado inclui aportes e resgates de investimento ligados à conta.
+          const flows = accountFlows(await db.listAlive('investment_assets'), await db.listAlive('investment_movements'));
+          const current = accountBalance(account, await db.transactionsInRange({ ...ALL_DATES, accountId }), flows);
+          const adjustment = balanceAdjustment(current, bankCents);
+          if (!adjustment) return null;
+          const t = await buildTransaction(db, { ...adjustment, date, account_id: accountId, is_adjustment: true, description: ADJUSTMENT_DESCRIPTION });
+          await db.put('transactions', t);
+          return t;
+        }),
+      ),
     confirm: (id, changes = {}) => changeTransaction(id, { ...changes, status: 'confirmed' }),
     skip: (id) => changeTransaction(id, { status: 'skipped' }),
     upsertOccurrence: (input) =>

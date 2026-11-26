@@ -163,6 +163,7 @@ const transactionData = transactionFields.superRefine((t, ctx) => {
     if (!ok) issue(ctx, 'Número de parcela inválido');
   }
   if ((t.recurrence_id === null) !== (t.occurrence_date === null)) issue(ctx, 'Ocorrência precisa de regra e data');
+  if (t.is_adjustment && (t.type === 'transfer' || t.category_id !== null)) issue(ctx, 'Ajuste de saldo é receita ou despesa, sem categoria');
 });
 
 export const transactionSchema = baseEntitySchema.extend(transactionFields.shape);

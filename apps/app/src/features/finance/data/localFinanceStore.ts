@@ -16,6 +16,8 @@ import { financeTables } from './schema';
 
 const TABLES = Object.keys(financeTables) as FinanceTable[];
 const BOOLEAN_COLUMNS = new Set(['archived', 'in_cart', 'always', 'is_adjustment']);
+/** Colunas inteiras com padrão 0: linhas que vieram antes da migração chegam NULL até a sincronização. */
+const ZERO_DEFAULT_COLUMNS = new Set(['sort_order']);
 const columnsOf = (table: FinanceTable) => ['id', ...financeTables[table].columns.map((c) => c.name)];
 
 /** Nome de tabela só da lista fixa (nunca vem de fora, mas garante que não há SQL montado com texto livre). */
@@ -26,7 +28,7 @@ function tableName(table: FinanceTable): string {
 
 function fromRow<K extends FinanceTable>(row: Record<string, unknown>): FinanceRows[K] {
   const out: Record<string, unknown> = {};
-  for (const [k, v] of Object.entries(row)) out[k] = BOOLEAN_COLUMNS.has(k) ? v === 1 : (v ?? null);
+  for (const [k, v] of Object.entries(row)) out[k] = BOOLEAN_COLUMNS.has(k) ? v === 1 : (v ?? (ZERO_DEFAULT_COLUMNS.has(k) ? 0 : null));
   return out as FinanceRows[K];
 }
 

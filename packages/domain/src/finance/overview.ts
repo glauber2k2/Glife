@@ -233,7 +233,7 @@ export function monthOverview(data: FinanceData, occurrences: readonly Occurrenc
     });
 
   const recent = data.transactions
-    .filter((t) => alive(t) && t.status === 'confirmed' && monthOf(t.date) === month)
+    .filter((t) => alive(t) && t.status === 'confirmed' && !t.is_adjustment && monthOf(t.date) === month)
     .sort((a, b) => compareDates(b.date, a.date) || (a.created_at < b.created_at ? 1 : -1))
     .slice(0, 6);
 

@@ -58,7 +58,7 @@ export function chartEntries(data: Pick<FinanceData, 'accounts' | 'transactions'
   };
   const out: ChartEntry[] = [];
   for (const t of data.transactions) {
-    if (!alive(t) || t.type === 'transfer' || t.status === 'skipped') continue;
+    if (!alive(t) || t.type === 'transfer' || t.status === 'skipped' || t.is_adjustment) continue;
     out.push(make(t, t.id, t.id, t.invoice_month ?? monthOf(t.date), t.status === 'planned'));
   }
   for (const o of occurrences) {

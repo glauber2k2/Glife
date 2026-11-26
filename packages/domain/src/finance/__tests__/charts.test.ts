@@ -228,3 +228,10 @@ describe('gráficos: mês até agora e escala', () => {
     expect(niceCeiling(1234567)).toBe(1500000);
   });
 });
+
+describe('gráficos: ajuste de saldo', () => {
+  it('não vira lançamento de gráfico', () => {
+    const adj = tx({ type: 'expense', amount_cents: 237, account_id: ITAU.id, date: '2026-11-10', is_adjustment: true });
+    expect(chartEntries(dataWith([adj, gasto('2026-11-11', 100)]), []).map((e) => e.amount)).toEqual([100]);
+  });
+});

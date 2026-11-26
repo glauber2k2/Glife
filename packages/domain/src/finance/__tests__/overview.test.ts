@@ -124,6 +124,13 @@ describe('monthOverview', () => {
   it('últimos: confirmados do mês, mais novos primeiro', () => {
     expect(o.recent.map((t) => t.id)).toEqual([mercadoConta.id, compraDez.id]);
   });
+
+  it('ajuste de saldo não aparece nos últimos nem no orçamento', () => {
+    const adj = tx({ type: 'expense', amount_cents: 999, date: '2026-12-09', account_id: ITAU.id, is_adjustment: true });
+    const withAdj = monthOverview({ ...d, transactions: [...d.transactions, adj] }, occ, TODAY, '2026-12');
+    expect(withAdj.recent.map((t) => t.id)).toEqual([mercadoConta.id, compraDez.id]);
+    expect(withAdj.balanceToday).toBe(o.balanceToday - 999);
+  });
 });
 
 describe('invoiceDetail', () => {

@@ -165,3 +165,20 @@ describe('projectBalance', () => {
     expect(projectBalance(CC, '2026-12-09', { transactions: [purchase], occurrences, cards: [NU] })).toBe(210000);
   });
 });
+
+describe('ajuste de saldo no ledger', () => {
+  const adj = tx({ type: 'expense', amount_cents: 237, date: '2026-12-02', account_id: CC.id, is_adjustment: true, description: 'Ajuste de saldo' });
+  const adjIn = tx({ type: 'income', amount_cents: 200, date: '2026-12-02', account_id: CC.id, is_adjustment: true, description: 'Ajuste de saldo' });
+  const data = { transactions: [adj, adjIn], occurrences: [], accounts };
+
+  it('entra no saldo da conta', () => {
+    expect(accountBalance(CC, [adj, adjIn])).toBe(210000 - 237 + 200);
+  });
+  it('fica fora do mês do orçamento e dos totais', () => {
+    expect(budgetMonth(adj)).toBeNull();
+    const s = monthSummary('2026-12', data);
+    expect(s.expense).toEqual({ confirmed: 0, planned: 0 });
+    expect(s.income).toEqual({ confirmed: 0, planned: 0 });
+    expect(s.byCategory.size).toBe(0);
+  });
+});

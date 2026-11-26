@@ -22,6 +22,7 @@ export {
   type IsoDate,
   type Month,
 } from './calendar.ts';
+export { ADJUSTMENT_DESCRIPTION, balanceAdjustment, type BalanceAdjustment } from './adjustment.ts';
 export { invoiceDates, invoiceMonthFor, type CardCycle } from './invoice.ts';
 export {
   ACCOUNT_KINDS,
