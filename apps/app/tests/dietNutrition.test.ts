@@ -1,9 +1,15 @@
 import { describe, expect, it } from 'vitest';
 
 import { emptyLogForm, fillFromPlan, readLogForm, readPlanForm, emptyPlanForm } from '../src/features/diet/components/forms';
-import { gramsText, kcalText, maskGrams, maskKcal, readNutrition } from '../src/features/diet/components/nutrition';
+import { gramsText, kcalGoal, kcalText, maskGrams, maskKcal, readNutrition } from '../src/features/diet/components/nutrition';
 
 describe('dieta: kcal e macros nos campos', () => {
+  it('meta calórica zero equivale a sem meta no cartão e no histórico', () => {
+    expect(kcalGoal(0)).toBeNull();
+    expect(kcalGoal(null)).toBeNull();
+    expect(kcalGoal(undefined)).toBeNull();
+    expect(kcalGoal(2000)).toBe(2000);
+  });
   it('máscaras e exibição', () => {
     expect(maskKcal('1.420 kcal')).toBe('1420');
     expect(maskGrams('92.55')).toBe('92,5');

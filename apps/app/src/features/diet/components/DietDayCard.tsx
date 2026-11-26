@@ -5,15 +5,15 @@ import { View } from 'react-native';
 
 import { Button, Card, ProgressBar, ProgressRing, Text, makeStyles, useTheme } from '@/shared/ui';
 
-import { gramsText, kcalText } from './nutrition';
+import { gramsText, kcalGoal, kcalText } from './nutrition';
 
 export function DietDayCard({ totals, goals, onEditGoals }: { totals: NutritionTotals; goals: DietGoals | null; onEditGoals: () => void }) {
   const s = useStyles();
   const t = useTheme();
-  const target = goals?.kcal_target ?? null;
+  const target = kcalGoal(goals?.kcal_target);
   const left = target !== null ? target - totals.kcal : null;
   const over = left !== null && left < 0;
-  const hasGoals = !!goals && [goals.kcal_target, goals.protein_g_target, goals.carbs_g_target, goals.fat_g_target].some((v) => v !== null);
+  const hasGoals = !!goals && [target, goals.protein_g_target, goals.carbs_g_target, goals.fat_g_target].some((v) => v !== null);
   const macros: [string, number, number | null][] = [
     ['Proteína', totals.protein_g, goals?.protein_g_target ?? null],
     ['Carboidratos', totals.carbs_g, goals?.carbs_g_target ?? null],

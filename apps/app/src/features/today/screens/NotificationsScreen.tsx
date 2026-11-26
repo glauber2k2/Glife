@@ -29,6 +29,8 @@ import {
 } from '@/shared/ui';
 
 import { useNotifications } from '../notifications/NotificationsData';
+import { noticeForSnooze } from '../notifications/snooze';
+import { SnoozeSheet } from '../components/SnoozeSheet';
 
 const MODULE_KEY: Record<AppNotification['module'], ModuleKey> = { finance: 'finance', agenda: 'reminders', diet: 'diet' };
 
@@ -44,7 +46,8 @@ const resolvedText = (n: AppNotification) => (n.module === 'agenda' ? 'Lembrete 
 export function NotificationsScreen() {
   const s = useStyles();
   const toast = useToast();
-  const { feed, ready, now, markAllRead, resolve } = useNotifications();
+  const { feed, ready, now, markAllRead, resolve, snooze } = useNotifications();
+  const [snoozing, setSnoozing] = useState<AppNotification | null>(null);
   const openRoute = useOpenRoute();
   // Resolvidos na linha somem na hora (os dados chegam logo depois pelo watch).
   const [gone, setGone] = useState<ReadonlySet<string>>(new Set());
@@ -111,18 +114,19 @@ export function NotificationsScreen() {
               </Text>
               <ListGroup>
                 {g.items.map((n) => (
-                  <NotificationRow key={n.id} n={n} now={now} dotIndex={n.unread ? dotIndex++ : 0} onAction={() => void act(n)} />
+                  <NotificationRow key={n.id} n={n} now={now} dotIndex={n.unread ? dotIndex++ : 0} onAction={() => void act(n)} onSnooze={() => setSnoozing(n)} />
                 ))}
               </ListGroup>
             </View>
           ))}
         </Reveal>
       )}
+      <SnoozeSheet notification={snoozing} onClose={() => setSnoozing(null)} onSnooze={snooze} />
     </Screen>
   );
 }
 
-function NotificationRow({ n, now, dotIndex, onAction }: { n: FeedItem; now: Date; dotIndex: number; onAction: () => void }) {
+function NotificationRow({ n, now, dotIndex, onAction, onSnooze }: { n: FeedItem; now: Date; dotIndex: number; onAction: () => void; onSnooze: () => void }) {
   const openRoute = useOpenRoute();
   const s = useStyles();
   const t = useTheme();
@@ -168,6 +172,7 @@ function NotificationRow({ n, now, dotIndex, onAction }: { n: FeedItem; now: Dat
             <Text variant="caption" tone="tertiary" numeric style={s.when}>
               {relativeTime(n.at, now)}
             </Text>
+            {noticeForSnooze(n) && <Button label="Adiar" variant="ghost" size="sm" icon={AlarmClock} onPress={onSnooze} />}
           </View>
           {n.action && <Button label={n.action.label} variant="secondary" size="sm" selfAlign="center" haptic onPress={onAction} />}
         </Animated.View>

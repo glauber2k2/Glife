@@ -32,22 +32,22 @@ describe('estado da tela de sincronização', () => {
 
 describe('abertura e primeira sincronização', () => {
   it('não aparece quando já sincronizou, quando ainda não se sabe, sem sync configurado ou depois de dispensar', () => {
-    expect(firstSyncState(snap({ hasSynced: true }), false)).toBe('none');
-    expect(firstSyncState(snap({ hasSynced: undefined }), false)).toBe('none');
-    expect(firstSyncState(snap({ enabled: false, hasSynced: false }), false)).toBe('none');
-    expect(firstSyncState(snap({ hasSynced: false, connected: true }), true)).toBe('none');
+    expect(firstSyncState(snap({ hasSynced: true }), false, false)).toBe('none');
+    expect(firstSyncState(snap({ hasSynced: undefined }), false, false)).toBe('none');
+    expect(firstSyncState(snap({ enabled: false, hasSynced: false }), false, false)).toBe('none');
+    expect(firstSyncState(snap({ hasSynced: false, connected: true }), true, false)).toBe('none');
   });
 
   it('trazendo os dados enquanto conecta ou baixa', () => {
-    expect(firstSyncState(snap({ hasSynced: false, connected: true, downloading: true }), false)).toBe('sincronizando');
-    expect(firstSyncState(snap({ hasSynced: false, connecting: true }), false)).toBe('sincronizando');
+    expect(firstSyncState(snap({ hasSynced: false, connected: true, downloading: true }), false, false)).toBe('sincronizando');
+    expect(firstSyncState(snap({ hasSynced: false, connecting: true }), false, false)).toBe('sincronizando');
     // Logo ao abrir, antes da primeira tentativa: ainda não é "sem internet".
-    expect(firstSyncState(snap({ hasSynced: false }), false)).toBe('sincronizando');
+    expect(firstSyncState(snap({ hasSynced: false }), false, false)).toBe('sincronizando');
   });
 
-  it('precisa de internet quando a tentativa falhou e não está conectando', () => {
-    expect(firstSyncState(snap({ hasSynced: false, failed: true }), false)).toBe('offline');
-    expect(firstSyncState(snap({ hasSynced: false, failed: true, connecting: true }), false)).toBe('sincronizando');
+  it('precisa de internet enquanto a falha estiver travada', () => {
+    expect(firstSyncState(snap({ hasSynced: false, failed: true }), false, true)).toBe('offline');
+    expect(firstSyncState(snap({ hasSynced: false, failed: true, connecting: true }), false, true)).toBe('offline');
   });
 
   it('"Começar a usar" liberado quando as notas chegaram ou a sincronização terminou', () => {

@@ -3,12 +3,13 @@ import type { LocalDb } from '@glife/domain/core';
 import { Schema, type PowerSyncBackendConnector, type Table } from '@powersync/common';
 
 import { getSupabase } from '../supabase';
-import { createSupabaseConnector, type UploadClient } from './connector';
+import { createSupabaseConnector, type CredentialsOutcome, type UploadClient } from './connector';
 import { createPowerSyncDatabase } from './database';
 import { createSyncController, type SyncStage } from './lifecycle';
 import { toLocalDb, type PowerSyncLike } from './localDb';
 import { dropSearchIndexes, ensureSearchIndexes, type FtsIndexSpec } from './searchIndex';
-import { INITIAL_SYNC, type CrudOpName, type SyncSnapshot } from './syncState';
+import { runSyncAttempt } from './syncAttempt';
+import { INITIAL_SYNC, type CrudOpName, type SyncResult, type SyncSnapshot } from './syncState';
 
 // Acesso estático: o Expo só embute variáveis escritas literalmente.
 const endpoint = process.env.EXPO_PUBLIC_POWERSYNC_URL;
@@ -23,7 +24,7 @@ export interface LocalSync {
   /** estado da sincronização agora e a cada mudança */
   onStatusChange: (listener: (snapshot: SyncSnapshot) => void) => () => void;
   /** "Sincronizar agora": reconecta e resolve quando a troca termina (ou falha, ou demora demais) */
-  syncNow: () => Promise<void>;
+  syncNow: () => Promise<SyncResult>;
   /** fila de envio agrupada por tabela e tipo de alteração (só metadados, nunca o conteúdo) */
   watchPending: (listener: (changes: PendingChange[]) => void) => () => void;
   /** linhas vivas por grupo de tabelas (contagens "Neste aparelho") */
@@ -42,6 +43,8 @@ const OPS = new Set<string>(['PUT', 'PATCH', 'DELETE']);
 const PENDING_SQL = `SELECT json_extract(data, '$.op') AS op, json_extract(data, '$.type') AS tbl, count(*) AS n, max(id) AS last
   FROM ps_crud GROUP BY op, tbl ORDER BY last DESC`;
 const SYNC_NOW_TIMEOUT_MS = 15000;
+/** releituras da fila juntas num intervalo curto (gravações em sequência, envio em lotes) */
+const PENDING_DEBOUNCE_MS = 250;
 
 /**
  * Cria o banco local com as tabelas das features (composição na raiz do app).
@@ -53,7 +56,9 @@ export function createLocalSync(tables: Record<string, Table>, searchIndexes: Ft
   if (!online) console.warn('Sincronização desligada: configure EXPO_PUBLIC_POWERSYNC_URL em apps/app/.env.local.');
 
   const supabase = getSupabase();
-  let credentialsRefused = false;
+  // Resultado da última entrega de credenciais e quantas já houve (para "Sincronizar agora" saber que tentou).
+  let credentials: CredentialsOutcome = 'ok';
+  let credentialsRound = 0;
   const credentialListeners = new Set<() => void>();
   const connector = createSupabaseConnector({
     supabase,
@@ -61,9 +66,9 @@ export function createLocalSync(tables: Record<string, Table>, searchIndexes: Ft
     client: supabase as unknown as UploadClient,
     // Só metadados no log: nunca o conteúdo da linha.
     onDiscard: (info) => console.warn('Alteração recusada pelo servidor e descartada', info),
-    onCredentials: (ok) => {
-      if (credentialsRefused === !ok) return;
-      credentialsRefused = !ok;
+    onCredentials: (outcome) => {
+      credentials = outcome;
+      credentialsRound += 1;
       credentialListeners.forEach((l) => l());
     },
   });
@@ -91,9 +96,10 @@ export function createLocalSync(tables: Record<string, Table>, searchIndexes: Ft
       lastSyncedAt: st.lastSyncedAt ?? null,
       uploading: st.dataFlowStatus.uploading ?? false,
       downloading: st.dataFlowStatus.downloading ?? false,
-      failed: !!st.dataFlowStatus.downloadError,
+      failed: !!(st.dataFlowStatus.downloadError || st.dataFlowStatus.uploadError),
       progress: st.downloadProgress?.downloadedFraction ?? null,
-      sessionExpired: credentialsRefused,
+      sessionExpired: credentials === 'refused',
+      networkError: credentials === 'offline',
     };
   };
   const onStatusChange = (listener: (s: SyncSnapshot) => void) => {
@@ -106,6 +112,7 @@ export function createLocalSync(tables: Record<string, Table>, searchIndexes: Ft
       off();
     };
   };
+  let manualSync: Promise<SyncResult> | null = null;
 
   return {
     db,
@@ -120,28 +127,16 @@ export function createLocalSync(tables: Record<string, Table>, searchIndexes: Ft
       return ps.registerListener({ statusChanged: (status) => listener(status.connected) });
     },
     onStatusChange,
-    syncNow: () =>
-      new Promise<void>((resolve) => {
-        const before = ps.currentStatus.lastSyncedAt?.getTime() ?? 0;
-        let started = false;
-        let off = () => {};
-        const timer = setTimeout(() => finish(), SYNC_NOW_TIMEOUT_MS);
-        function finish() {
-          clearTimeout(timer);
-          off();
-          resolve();
-        }
-        off = onStatusChange((s) => {
-          if (!started) return;
-          const fresh = (s.lastSyncedAt?.getTime() ?? 0) > before;
-          if (s.sessionExpired || (s.failed && !s.connecting) || (fresh && !s.uploading && !s.downloading)) finish();
-        });
-        started = true;
-        if (!online) return finish();
-        void controller.reconnect();
-      }),
+    // Telas diferentes compartilham a mesma tentativa, sem reconexões concorrentes.
+    syncNow: () => (manualSync ??= runSyncAttempt({
+      snapshot,
+      credentialsRound: () => credentialsRound,
+      subscribe: onStatusChange,
+      reconnect: () => controller.reconnect(),
+    }, SYNC_NOW_TIMEOUT_MS).finally(() => { manualSync = null; })),
     watchPending: (listener) => {
       let active = true;
+      let timer: ReturnType<typeof setTimeout> | null = null;
       const read = () =>
         db
           .getAll<{ op: string; tbl: string; n: number }>(PENDING_SQL)
@@ -150,12 +145,24 @@ export function createLocalSync(tables: Record<string, Table>, searchIndexes: Ft
             listener(rows.filter((r) => OPS.has(r.op) && typeof r.tbl === 'string').map((r) => ({ table: r.tbl, op: r.op as CrudOpName, count: Number(r.n) })));
           })
           .catch((e) => console.warn('Falha ao ler a fila de envio', e));
+      const schedule = () => {
+        if (timer) clearTimeout(timer);
+        timer = setTimeout(() => void read(), PENDING_DEBOUNCE_MS);
+      };
       void read();
-      // A fila muda ao gravar (watch) e ao enviar (estado de upload).
-      const offWatch = db.watch(PENDING_SQL, [], () => void read(), () => {});
-      const offStatus = ps.registerListener({ statusChanged: () => void read() });
+      // A fila muda ao gravar (watch) e ao terminar um envio (upload liga → desliga).
+      const offWatch = db.watch(PENDING_SQL, [], schedule, () => {});
+      let uploading = ps.currentStatus.dataFlowStatus.uploading ?? false;
+      const offStatus = ps.registerListener({
+        statusChanged: (st) => {
+          const now = st.dataFlowStatus.uploading ?? false;
+          if (now !== uploading) schedule();
+          uploading = now;
+        },
+      });
       return () => {
         active = false;
+        if (timer) clearTimeout(timer);
         offWatch();
         offStatus();
       };

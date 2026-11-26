@@ -1,7 +1,7 @@
 // Abertura e primeira sincronização (protótipo "abertura"): só no primeiro acesso de um aparelho o app baixa os dados
 // uma vez e já deixa usar o que chegou ("Começar a usar" assim que as notas chegam). Sem internet nesse primeiro acesso,
 // explica que precisa de conexão uma única vez. Nas aberturas seguintes nada disso aparece (local-first, instantâneo).
-import { Apple, Calendar, Check, StickyNote, Wallet, WifiOff, type LucideIcon } from 'lucide-react-native';
+import { Apple, Calendar, Check, KeyRound, StickyNote, Wallet, WifiOff, type LucideIcon } from 'lucide-react-native';
 import { useState, type ReactNode } from 'react';
 import { View } from 'react-native';
 import Animated, { FadeIn, ZoomIn } from 'react-native-reanimated';
@@ -9,8 +9,9 @@ import Animated, { FadeIn, ZoomIn } from 'react-native-reanimated';
 import {
   canStartUsing,
   firstSyncState,
+  syncResultText,
+  useFirstSyncLatch,
   useLocalCounts,
-  useSyncNow,
   useSyncState,
   type CountGroup,
 } from '@/shared/lib/powersync';
@@ -29,6 +30,7 @@ import {
   statusHue,
   useReduceMotion,
   useTheme,
+  useToast,
   type ModuleKey,
 } from '@/shared/ui';
 
@@ -46,26 +48,30 @@ const count = (n: number) => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
 export function FirstSyncGate({ active, children }: { active: boolean; children: ReactNode }) {
   const sync = useSyncState();
   const [dismissed, setDismissed] = useState(false);
-  const state = active ? firstSyncState(sync, dismissed) : 'none';
+  if (!active && dismissed) setDismissed(false);
+  const { offline } = useFirstSyncLatch();
+  const state = active ? firstSyncState(sync, dismissed, offline) : 'none';
   if (state === 'none') return children;
-  return <FirstSyncScreen offline={state === 'offline'} onStart={() => setDismissed(true)} />;
+  return <FirstSyncScreen state={state} onStart={() => setDismissed(true)} />;
 }
 
-function FirstSyncScreen({ offline, onStart }: { offline: boolean; onStart: () => void }) {
+function FirstSyncScreen({ state, onStart }: { state: 'sincronizando' | 'offline' | 'sessao'; onStart: () => void }) {
   const s = useStyles();
   const t = useTheme();
   const reduceMotion = useReduceMotion();
   const sync = useSyncState();
-  const syncNow = useSyncNow();
+  const { retry: syncNow } = useFirstSyncLatch();
+  const toast = useToast();
   const counts = useLocalCounts();
   const [retrying, setRetrying] = useState(false);
   const fade = FadeIn.duration(reduceMotion ? t.motion.tap : t.motion.standard);
 
-  if (offline) {
+  if (state !== 'sincronizando') {
     const retry = async () => {
       setRetrying(true);
       try {
-        await syncNow();
+        const result = await syncNow();
+        if (result !== 'ok') toast({ message: syncResultText(result) });
       } finally {
         setRetrying(false);
       }
@@ -73,14 +79,19 @@ function FirstSyncScreen({ offline, onStart }: { offline: boolean; onStart: () =
     return (
       <Screen>
         <Animated.View entering={fade} style={s.offline}>
-          <ModuleIcon icon={WifiOff} size="lg" tone="tonal" />
+          <ModuleIcon icon={state === 'sessao' ? KeyRound : WifiOff} size="lg" tone="tonal" />
           <Text variant="title" align="center" accessibilityRole="header">
-            Precisa de internet uma vez
+            {state === 'sessao' ? 'Entre de novo para sincronizar' : 'Precisa de internet uma vez'}
           </Text>
           <Text tone="tertiary" align="center" style={s.message}>
-            No primeiro acesso deste aparelho eu baixo seus dados. Depois disso, o Glife funciona sem conexão.
+            {state === 'sessao'
+              ? 'A sessão não foi aceita pela nuvem. Se continuar assim, saia e entre de novo em Ajustes › Conta.'
+              : 'No primeiro acesso deste aparelho eu baixo seus dados. Depois disso, o Glife funciona sem conexão.'}
           </Text>
           <Button label="Tentar de novo" selfAlign="center" loading={retrying} onPress={retry} />
+          {(state === 'sessao' || canStartUsing(sync, counts?.notes ?? 0)) && (
+            <Button label="Continuar sem sincronizar" variant="secondary" selfAlign="center" onPress={onStart} />
+          )}
         </Animated.View>
       </Screen>
     );

@@ -72,7 +72,7 @@ describe('resolveTarget', () => {
 
 describe('tela de item não encontrado', () => {
   it('lixeira, ainda não chegou (antes da primeira sincronização ou baixando) e excluído para sempre', () => {
-    expect(notFoundView('alive', { hasSynced: true, downloading: false })).toBeNull();
+    expect(notFoundView('alive', { hasSynced: true, downloading: false })).toBe('semtela');
     expect(notFoundView('trash', { hasSynced: false, downloading: false })).toBe('lixeira');
     expect(notFoundView('missing', { hasSynced: false, downloading: false })).toBe('naosync');
     expect(notFoundView('missing', { hasSynced: undefined, downloading: false })).toBe('naosync');

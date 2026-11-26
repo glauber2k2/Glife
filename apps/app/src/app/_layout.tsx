@@ -133,7 +133,7 @@ function RootStack() {
           <FinanceProvider db={localSync.db} userId={userId} quotes={quoteClient}>
           <AgendaProvider db={localSync.db} userId={userId}>
           <DietProvider db={localSync.db} userId={userId}>
-          <NotificationsProvider store={seenStore}>
+          <NotificationsProvider store={seenStore} scheduler={noticeScheduler}>
           <DayMarksComposition>
           <SearchComposition enabled={stage === 'ready'}>
           <TaggedComposition>

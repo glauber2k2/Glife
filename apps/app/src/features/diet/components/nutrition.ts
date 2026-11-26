@@ -18,6 +18,9 @@ export interface NutritionValues {
 
 export const emptyNutrition = (): NutritionForm => ({ kcal: '', protein: '', carbs: '', fat: '' });
 
+/** Meta calórica zero equivale a não acompanhar; evita um anel sem denominador. */
+export const kcalGoal = (value: number | null | undefined): number | null => value != null && value > 0 ? value : null;
+
 /** Milhar com ponto: 1420 → "1.420". */
 export const kcalText = (n: number) => String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
 /** Uma casa com vírgula, sem ",0": 92.5 → "92,5"; 92 → "92". */

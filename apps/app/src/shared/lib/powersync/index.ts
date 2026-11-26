@@ -12,6 +12,7 @@ export { toLocalDb } from './localDb';
 export { ftsTableName, type FtsIndexSpec } from './searchIndex';
 export {
   SyncStatusProvider,
+  useFirstSyncLatch,
   useLocalCounts,
   usePendingChanges,
   useSyncLabels,
@@ -25,7 +26,9 @@ export {
   firstSyncState,
   lastSyncText,
   syncScreenState,
+  syncResultText,
   type CountGroup,
+  type SyncResult,
   type SyncScreenState,
   type SyncSnapshot,
   type SyncTableLabel,

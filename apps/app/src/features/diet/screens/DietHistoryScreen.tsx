@@ -11,7 +11,7 @@ import { longDay } from '@/shared/lib/calendarInput';
 import { BackHeader, Card, Icon, ListGroup, ListItem, Reveal, Screen, SegmentedControl, Text, makeStyles, useTheme } from '@/shared/ui';
 
 import { DietBarChart } from '../components/DietBarChart';
-import { kcalText } from '../components/nutrition';
+import { kcalGoal, kcalText } from '../components/nutrition';
 import { useDiet } from '../hooks/DietData';
 
 const MONTHS = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
@@ -38,7 +38,7 @@ export function DietHistoryScreen() {
   const today = localNow().date;
   const [range, setRange] = useState<HistoryRange>('week');
   const h = useMemo(() => history(data?.logs ?? [], data?.plan ?? [], range, today), [data, range, today]);
-  const goal = data?.goals?.kcal_target ?? null;
+  const goal = kcalGoal(data?.goals?.kcal_target);
   const elapsed = h.days.filter((d) => !d.future);
   const list = [...elapsed].reverse();
   const last = h.days.length - 1;

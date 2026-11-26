@@ -1,7 +1,16 @@
-import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 
 import type { LocalSync, PendingChange } from './localSync';
-import { INITIAL_SYNC, countGroupsOf, type CountGroup, type SyncSnapshot, type SyncTableLabel } from './syncState';
+import {
+  INITIAL_LATCH,
+  INITIAL_SYNC,
+  countGroupsOf,
+  stepFirstSyncLatch,
+  type CountGroup,
+  type SyncResult,
+  type SyncSnapshot,
+  type SyncTableLabel,
+} from './syncState';
 
 type SyncSource = Pick<LocalSync, 'onStatusChange' | 'syncNow' | 'watchPending' | 'watchCounts'>;
 
@@ -9,9 +18,18 @@ interface SyncContextValue {
   snapshot: SyncSnapshot;
   source: SyncSource | null;
   labels: Record<string, SyncTableLabel>;
+  /** primeira sincronização travada em "sem internet" até tentar de novo ou chegar progresso */
+  firstSyncOffline: boolean;
+  retryFirstSync: () => Promise<SyncResult>;
 }
 
-const SyncContext = createContext<SyncContextValue>({ snapshot: INITIAL_SYNC, source: null, labels: {} });
+const SyncContext = createContext<SyncContextValue>({
+  snapshot: INITIAL_SYNC,
+  source: null,
+  labels: {},
+  firstSyncOffline: false,
+  retryFirstSync: async () => 'disabled',
+});
 
 /**
  * Estado da sincronização para as telas ("Salvo" × "Salvo no aparelho", Sincronização, Abertura).
@@ -19,8 +37,39 @@ const SyncContext = createContext<SyncContextValue>({ snapshot: INITIAL_SYNC, so
  */
 export function SyncStatusProvider({ sync, labels, children }: { sync: SyncSource; labels: Record<string, SyncTableLabel>; children: ReactNode }) {
   const [snapshot, setSnapshot] = useState<SyncSnapshot>(INITIAL_SYNC);
-  useEffect(() => sync.onStatusChange(setSnapshot), [sync]);
-  const value = useMemo(() => ({ snapshot, source: sync, labels }), [snapshot, sync, labels]);
+  const [latch, setLatch] = useState(INITIAL_LATCH);
+  // Durante "Tentar de novo" a falha antiga do SDK não trava de novo; quem decide é o resultado da tentativa.
+  const retrying = useRef(false);
+  const latest = useRef(INITIAL_SYNC);
+  useEffect(
+    () =>
+      sync.onStatusChange((s) => {
+        latest.current = s;
+        setSnapshot(s);
+        if (!retrying.current) setLatch((l) => stepFirstSyncLatch(l, s));
+      }),
+    [sync],
+  );
+  const retryFirstSync = useCallback(async () => {
+    retrying.current = true;
+    setLatch((l) => ({ ...l, offline: false }));
+    try {
+      const result = await sync.syncNow();
+      setLatch((l) => result === 'failed' || result === 'timeout'
+        ? { ...l, offline: true }
+        : result === 'expired' ? { ...l, offline: false } : stepFirstSyncLatch({ ...l, offline: false }, latest.current));
+      return result;
+    } catch {
+      setLatch((l) => ({ ...l, offline: true }));
+      return 'failed' as const;
+    } finally {
+      retrying.current = false;
+    }
+  }, [sync]);
+  const value = useMemo(
+    () => ({ snapshot, source: sync, labels, firstSyncOffline: latch.offline, retryFirstSync }),
+    [snapshot, sync, labels, latch.offline, retryFirstSync],
+  );
   return <SyncContext.Provider value={value}>{children}</SyncContext.Provider>;
 }
 
@@ -32,9 +81,15 @@ export function useSyncState(): SyncSnapshot {
   return useContext(SyncContext).snapshot;
 }
 
-export function useSyncNow(): () => Promise<void> {
+export function useSyncNow(): () => Promise<SyncResult> {
   const { source } = useContext(SyncContext);
-  return useMemo(() => () => source?.syncNow() ?? Promise.resolve(), [source]);
+  return useMemo(() => () => source?.syncNow() ?? Promise.resolve('disabled' as const), [source]);
+}
+
+/** Trava de "sem internet" da primeira sincronização e o "Tentar de novo" dela. */
+export function useFirstSyncLatch(): { offline: boolean; retry: () => Promise<SyncResult> } {
+  const { firstSyncOffline, retryFirstSync } = useContext(SyncContext);
+  return useMemo(() => ({ offline: firstSyncOffline, retry: retryFirstSync }), [firstSyncOffline, retryFirstSync]);
 }
 
 export function useSyncLabels(): Record<string, SyncTableLabel> {

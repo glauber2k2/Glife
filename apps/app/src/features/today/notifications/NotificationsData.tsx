@@ -8,6 +8,9 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState, t
 import { AppState } from 'react-native';
 
 import type { SeenStore } from '@/shared/lib/seenStore';
+import type { NoticeScheduler } from '@/shared/lib/notices';
+
+import { noticeForSnooze } from './snooze';
 
 const MINUTE_MS = 60_000;
 
@@ -21,6 +24,7 @@ interface NotificationsValue {
   markAllRead: () => void;
   /** Resolve na hora (Confirmar, Feito) pela feature dona. */
   resolve: (n: AppNotification) => Promise<void>;
+  snooze: (n: AppNotification, at: Date) => Promise<boolean>;
 }
 
 const EMPTY: Feed = { groups: [], unread: 0 };
@@ -40,7 +44,7 @@ function useMinuteClock(): Date {
   return now;
 }
 
-export function NotificationsProvider({ store, children }: { store: SeenStore; children: ReactNode }) {
+export function NotificationsProvider({ store, scheduler, children }: { store: SeenStore; scheduler: Pick<NoticeScheduler, 'snooze'>; children: ReactNode }) {
   const now = useMinuteClock();
   const finance = useFinanceNotifications(now);
   const agenda = useAgendaNotifications(now);
@@ -80,9 +84,15 @@ export function NotificationsProvider({ store, children }: { store: SeenStore; c
   );
 
   const ready = Object.values(sources).some((s) => s !== null);
+  const snooze = useCallback(async (n: AppNotification, at: Date) => {
+    const current = sources[n.module]?.items.find((item) => item.id === n.id);
+    const notice = current && noticeForSnooze(current);
+    if (!notice) throw new Error('Este aviso não está mais pendente.');
+    return scheduler.snooze(notice, at);
+  }, [sources, scheduler]);
   const value = useMemo(
-    () => ({ feed, ready, hasUnread: seen.loaded && feed.unread > 0, now, markAllRead, resolve }),
-    [feed, ready, seen.loaded, now, markAllRead, resolve],
+    () => ({ feed, ready, hasUnread: seen.loaded && feed.unread > 0, now, markAllRead, resolve, snooze }),
+    [feed, ready, seen.loaded, now, markAllRead, resolve, snooze],
   );
   return <NotificationsContext.Provider value={value}>{children}</NotificationsContext.Provider>;
 }
@@ -97,6 +107,7 @@ export function useNotifications(): NotificationsValue {
       now: new Date(),
       markAllRead: () => {},
       resolve: async () => {},
+      snooze: async () => false,
     }
   );
 }

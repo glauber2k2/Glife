@@ -48,11 +48,12 @@ export function createTargetResolver(rowStatus: RowStatus, sources: readonly Tar
   };
 }
 
-export type NotFoundView = 'lixeira' | 'naosync' | 'apagado';
+/** semtela: existe, mas não há tela para abrir esse tipo por aqui. */
+export type NotFoundView = 'lixeira' | 'naosync' | 'apagado' | 'semtela';
 
 /** Ausente antes da primeira sincronização (ou enquanto baixa) ainda pode chegar; depois, foi excluído de vez. */
-export function notFoundView(status: TargetStatus, sync: { hasSynced: boolean | undefined; downloading: boolean }): NotFoundView | null {
-  if (status === 'alive') return null;
+export function notFoundView(status: TargetStatus, sync: { hasSynced: boolean | undefined; downloading: boolean }): NotFoundView {
+  if (status === 'alive') return 'semtela';
   if (status === 'trash') return 'lixeira';
   return sync.hasSynced !== true || sync.downloading ? 'naosync' : 'apagado';
 }

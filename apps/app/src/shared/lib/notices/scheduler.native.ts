@@ -133,6 +133,32 @@ export function createNoticeScheduler(): NoticeScheduler {
   }
 
   return {
+    snooze: (notice, at) => {
+      const task = running.then(async () => {
+        if (!Number.isFinite(at.getTime()) || at.getTime() <= Date.now()) throw new Error('Escolha um horário futuro.');
+        if (!notice.ref || !parseNoticeRef(notice.ref) || !SAFE_NOTICE_ROUTES.test(notice.url)) throw new Error('Aviso indisponível.');
+        if (!(await ready())) return false;
+        const content = contentOf(notice);
+        // O identificador é o mesmo do adiamento pelo Android; repetir substitui em vez de duplicar.
+        await Notifications.scheduleNotificationAsync({
+          identifier: notice.key + SNOOZED,
+          content: { ...content, data: { ...content.data, snoozed: true } },
+          trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: at, channelId: CHANNEL },
+        });
+        try {
+          await Notifications.cancelScheduledNotificationAsync(notice.key);
+        } catch (e) {
+          await Notifications.cancelScheduledNotificationAsync(notice.key + SNOOZED);
+          throw e;
+        }
+        // O agendamento já deu certo; falhar ao tirar da gaveta não desfaz o aviso.
+        await Notifications.dismissNotificationAsync(notice.key).catch(() => undefined);
+        return true;
+      });
+      // A fila continua utilizável após falha; a tela recebe o erro original.
+      running = task.then(() => {}, () => {});
+      return task;
+    },
     // Em fila: duas trocas seguidas não se atropelam.
     replaceAll: (notices, keepSnoozed) => {
       running = running
@@ -140,8 +166,12 @@ export function createNoticeScheduler(): NoticeScheduler {
           // Adiado fica só enquanto o lembrete/refeição dele ainda está pendente (concluído em qualquer lugar, some).
           await cancel(keepSnoozed);
           if (notices.length === 0 || !(await ready())) return;
+          const snoozed = new Set((await Notifications.getAllScheduledNotificationsAsync())
+            .filter((n) => n.content.data?.glife === true && n.content.data.snoozed === true && n.identifier.endsWith(SNOOZED))
+            .map((n) => n.identifier.slice(0, -SNOOZED.length)));
           const now = localNow();
           for (const n of notices) {
+            if (snoozed.has(n.key)) continue;
             if (`${n.date}T${n.time}` <= `${now.date}T${now.time}`) continue;
             await Notifications.scheduleNotificationAsync({
               identifier: n.key,

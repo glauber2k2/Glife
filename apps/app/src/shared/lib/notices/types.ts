@@ -17,6 +17,8 @@ export interface NoticeScheduler {
   replaceAll(notices: readonly ScheduledNotice[], keepSnoozed: (ref: NoticeRef) => boolean): Promise<void>;
   /** Sem sessão: cancela todos os avisos do Glife (adiados inclusive) e tira os que estão na gaveta. */
   clearAll(): Promise<void>;
+  /** Adia um aviso dentro do app. false = o aparelho/navegador não permite agendá-lo. */
+  snooze(notice: ScheduledNotice, at: Date): Promise<boolean>;
   /** Avisa quando a pessoa toca num aviso; devolve a rota segura a abrir. */
   onOpen(listener: (url: string) => void): () => void;
   /** Avisa quando a pessoa usa um botão do aviso (o "Adiar" já foi reagendado pelo próprio agendador). */

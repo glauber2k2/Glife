@@ -1,5 +1,5 @@
 // Sincronização e offline (protótipo "sincronizacao"): o estado em linguagem simples — Em dia (hora da última troca e
-// "Sincronizar agora"), Sem internet (a fila do que espera para subir) e Sessão expirada (Entrar) — e o que existe neste
+// "Sincronizar agora"), Sem internet (a fila do que espera para subir) e Sessão expirada — e o que existe neste
 // aparelho por módulo. A fila mostra só o tipo de cada alteração, nunca o conteúdo.
 import { Apple, Calendar, CloudCheck, CloudOff, FileText, KeyRound, RefreshCw, StickyNote, Wallet, type LucideIcon } from 'lucide-react-native';
 import { useEffect, useState } from 'react';
@@ -10,6 +10,7 @@ import {
   changeLabel,
   lastSyncText,
   syncScreenState,
+  syncResultText,
   useLocalCounts,
   usePendingChanges,
   useSyncLabels,
@@ -57,7 +58,7 @@ const HERO: Record<SyncScreenState, { icon: LucideIcon; hue?: number; title: str
     icon: KeyRound,
     hue: statusHue.attention,
     title: 'Entre de novo para sincronizar',
-    message: 'Sua sessão expirou. Os dados continuam aqui; para enviar e receber, entre com e-mail, senha e código.',
+    message: 'A sessão não foi aceita pela nuvem. Os dados continuam neste aparelho.',
   },
 };
 
@@ -92,15 +93,11 @@ export function SyncScreen() {
   const runSync = async () => {
     setBusy(true);
     try {
-      await syncNow();
+      const result = await syncNow();
+      toast({ message: syncResultText(result), ...(result === 'ok' ? { icon: CloudCheck } : {}) });
     } finally {
       setBusy(false);
     }
-  };
-
-  const syncAndTell = async () => {
-    await runSync();
-    toast({ message: 'Sincronizado agora', icon: CloudCheck });
   };
 
   return (
@@ -125,10 +122,21 @@ export function SyncScreen() {
               </Text>
             )}
             {state === 'emdia' && (
-              <Button label="Sincronizar agora" variant="secondary" icon={RefreshCw} loading={busy} selfAlign="center" onPress={syncAndTell} />
+              <Button label="Sincronizar agora" variant="secondary" icon={RefreshCw} loading={busy} selfAlign="center" onPress={runSync} />
             )}
-            {/* Reconectar renova a sessão; se ela não vale mais, o app volta sozinho para a tela de entrar. */}
-            {state === 'sessao' && <Button label="Entrar" loading={busy} selfAlign="center" onPress={runSync} />}
+            {state !== 'emdia' && <Button label="Tentar de novo" loading={busy} selfAlign="center" onPress={runSync} />}
+            {state === 'sessao' && (
+              <>
+                <Text variant="small" tone="tertiary" align="center" style={s.message}>
+                  Se continuar assim, saia e entre de novo em Ajustes › Conta.
+                </Text>
+                {waiting > 0 && (
+                  <Text variant="small" tone="danger" align="center" style={s.message}>
+                    {waiting === 1 ? '1 alteração ainda não enviada será perdida ao sair.' : `${count(waiting)} alterações ainda não enviadas serão perdidas ao sair.`}
+                  </Text>
+                )}
+              </>
+            )}
           </Animated.View>
         </Card>
 

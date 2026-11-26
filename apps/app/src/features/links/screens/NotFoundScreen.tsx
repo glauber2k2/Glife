@@ -8,7 +8,7 @@ import { View } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
 
 import { errorText } from '@/shared/lib/errorText';
-import { useSyncNow, useSyncState } from '@/shared/lib/powersync';
+import { syncResultText, useSyncNow, useSyncState } from '@/shared/lib/powersync';
 import { BackHeader, Button, Mascot, Screen, Text, makeStyles, useReduceMotion, useTheme, useToast } from '@/shared/ui';
 
 import { notFoundView, parseNotFoundParams, type NotFoundView, type TargetStatus } from '../data/targets';
@@ -26,6 +26,10 @@ const COPY: Record<NotFoundView, { title: (noun: string) => string; message: str
   apagado: {
     title: () => 'Não encontrei este item',
     message: 'Ele foi excluído para sempre. O vínculo continua nas notas, marcado como quebrado.',
+  },
+  semtela: {
+    title: () => 'Este item está salvo',
+    message: 'Ele existe neste aparelho, mas ainda não tem uma tela disponível para abrir por aqui.',
   },
 };
 
@@ -69,7 +73,7 @@ export function NotFoundScreen() {
     };
   }, [type, id, source, resolve, sync.lastSyncedAt, round]);
 
-  const view: NotFoundView = status ? (notFoundView(status, sync) ?? 'apagado') : 'apagado';
+  const view: NotFoundView = status ? notFoundView(status, sync) : 'apagado';
   const copy = COPY[view];
 
   const restore = async () => {
@@ -89,7 +93,8 @@ export function NotFoundScreen() {
   const syncAgain = async () => {
     setBusy(true);
     try {
-      await syncNow();
+      const result = await syncNow();
+      if (result !== 'ok') toast({ message: syncResultText(result) });
       setRound((n) => n + 1);
     } finally {
       setBusy(false);
