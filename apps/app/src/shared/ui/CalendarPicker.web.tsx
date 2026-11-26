@@ -4,7 +4,7 @@ import { pickerWebResult, pickerWebValue } from '../lib/calendarPicker';
 import { CalendarPickerField, type CalendarPickerProps } from './CalendarPickerField';
 import { useTheme } from './theme';
 
-/** A real browser input opens the browser/OS picker without bundling a native module. */
+/** Um input real do navegador abre o seletor do navegador/sistema sem empacotar módulo nativo. */
 export function CalendarPicker(props: CalendarPickerProps) {
   const t = useTheme();
   const [focused, setFocused] = useState(false);
@@ -18,7 +18,7 @@ export function CalendarPicker(props: CalendarPickerProps) {
         onFocus={() => setFocused(true)}
         onBlur={() => setFocused(false)}
         onClick={(event) => {
-          try { event.currentTarget.showPicker?.(); } catch { /* Browsers without permission retain their native input behavior. */ }
+          try { event.currentTarget.showPicker?.(); } catch { /* Navegador sem permissão mantém o comportamento nativo do input. */ }
         }}
         onChange={(event) => {
           const result = pickerWebResult(props.mode, event.currentTarget.value);

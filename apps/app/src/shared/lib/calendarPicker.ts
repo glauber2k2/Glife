@@ -2,13 +2,13 @@ import { formatDateInput, parseDateInput, parseTimeInput } from './calendarInput
 
 export type CalendarMode = 'date' | 'time';
 
-/** Native pickers consume local Date components, never a UTC date string. */
+/** Os seletores nativos usam os componentes locais do Date, nunca uma data UTC em texto. */
 export function pickerDate(mode: CalendarMode, value: string, fallback = new Date()): Date {
   const result = new Date(fallback.getTime());
   if (mode === 'date') {
     const iso = parseDateInput(value);
     if (iso) {
-      // setFullYear also preserves years below 100 (the Date constructor does not).
+      // setFullYear preserva também anos abaixo de 100 (o construtor do Date não).
       result.setFullYear(Number(iso.slice(0, 4)), Number(iso.slice(5, 7)) - 1, Number(iso.slice(8, 10)));
     }
   } else {

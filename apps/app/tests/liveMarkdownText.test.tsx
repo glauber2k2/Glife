@@ -2,7 +2,7 @@ import { createElement, isValidElement, type ReactNode, type ReactElement } from
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it, vi } from 'vitest';
 
-// Exercise the actual component's text boundary without loading the Android runtime.
+// Exercita a fronteira de texto do componente real sem carregar o runtime do Android.
 vi.mock('react-native', () => ({ Text: ({ children, style }: { children?: ReactNode; style?: unknown }) => {
   const list = Array.isArray(children) ? children : [children];
   for (const child of list) {
@@ -18,9 +18,9 @@ vi.mock('@/shared/ui', () => ({ makeStyles: (fn: (theme: unknown) => unknown) =>
 
 import { LiveMarkdown } from '../src/features/notes/components/LiveMarkdownText';
 
-describe('native live Markdown text tree', () => {
-  it('keeps one text root when switching between styled, plain and empty content', () => {
-    // Call through a wrapper to preserve hooks while inspecting the component result.
+describe('árvore de texto nativa do Markdown ao vivo', () => {
+  it('mantém uma só raiz de texto ao alternar entre conteúdo formatado, simples e vazio', () => {
+    // Chama por um invólucro para preservar os hooks ao inspecionar o resultado do componente.
     function Inspect({ text }: { text: string }) {
       const result = LiveMarkdown({ markdown: text });
       expect(isValidElement(result)).toBe(true);

@@ -13,10 +13,10 @@ vi.mock('../src/shared/ui/theme', () => ({ useTheme: () => ({ scheme: 'light' })
 
 import { CalendarPicker } from '../src/shared/ui/CalendarPicker';
 
-describe('Android picker lifecycle', () => {
+describe('ciclo de vida do seletor no Android', () => {
   beforeEach(() => vi.clearAllMocks());
 
-  it('prevents duplicate dialogs, preserves cancel and allows another selection', () => {
+  it('não abre diálogo duplicado, respeita o cancelar e permite escolher de novo', () => {
     const onChange = vi.fn();
     renderToStaticMarkup(createElement(CalendarPicker, { mode: 'date', label: 'Data', value: '31/12/2026', onChange }));
     native.press!();
@@ -31,7 +31,7 @@ describe('Android picker lifecycle', () => {
     expect(native.open).toHaveBeenCalledTimes(3);
   });
 
-  it('reports a native error and permits retry instead of permanently locking the field', () => {
+  it('avisa erro nativo e deixa tentar de novo, sem travar o campo', () => {
     renderToStaticMarkup(createElement(CalendarPicker, { mode: 'time', label: 'Hora', value: '09:05', onChange: vi.fn() }));
     native.press!();
     const options = native.open.mock.calls[0]![0];
