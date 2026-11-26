@@ -10,6 +10,7 @@ import {
   monthName,
   parseDmy,
   relativeDay,
+  tinyInstallmentsHint,
   signed,
 } from '../src/features/finance/components/format';
 
@@ -53,5 +54,17 @@ describe('dica do campo de data', () => {
     expect(relativeDay('2026-12-09', '2026-12-10')).toBe('Ontem');
     expect(relativeDay('2026-12-11', '2026-12-10')).toBe('Amanhã');
     expect(relativeDay('2026-12-01', '2026-12-10')).toBeUndefined();
+  });
+});
+
+describe('total menor que o número de parcelas', () => {
+  it('explica que cada parcela precisa de pelo menos 1 centavo', () => {
+    expect(tinyInstallmentsHint([1, 1, 0, 0], 4)).toBe('Com 4 parcelas, o total precisa ser de pelo menos R$ 0,04.');
+  });
+
+  it('não reclama de parcelas válidas nem do campo ainda vazio', () => {
+    expect(tinyInstallmentsHint([1, 1, 1], 3)).toBeNull();
+    expect(tinyInstallmentsHint([0, 0, 0], 3)).toBeNull();
+    expect(tinyInstallmentsHint(undefined, 3)).toBeNull();
   });
 });

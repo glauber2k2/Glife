@@ -24,7 +24,7 @@ import { useFinance } from '../hooks/FinanceData';
 import { useFinanceActions } from '../hooks/useFinanceActions';
 import { InstallmentAmountChoice } from './InstallmentAmountChoice';
 import { accountIcon, categoryIcon } from './categories';
-import { MONTH_NAMES, dm, dmy, relativeDay, weekday } from './format';
+import { MONTH_NAMES, dm, dmy, relativeDay, tinyInstallmentsHint, weekday } from './format';
 import { useMoneyFormat } from '../hooks/useMoneyFormat';
 import { DateRow, DayField, MoneyField, NoCategoriesNote, Stepper, SwitchRow } from './ui';
 
@@ -151,8 +151,10 @@ function EntryForm({ onClose, today, preset, aboveTabBar }: Props) {
   try {
     amount = installmentAmount(cents, hasInstallments ? parc : 1, hasInstallments ? amountMode : 'total');
   } catch { /* O formulário mantém o valor e impede salvar fora do limite. */ }
+  // Cada parcela precisa de pelo menos 1 centavo: total menor que o número de parcelas não salva.
+  const tiny = hasInstallments ? tinyInstallmentsHint(amount?.amounts, parc) : null;
   const amountSub =
-    !amount ? 'O valor total excede o limite permitido.' : hasInstallments && cents > 0
+    !amount ? 'O valor total excede o limite permitido.' : tiny ? tiny : hasInstallments && cents > 0
       ? `${parc} parcelas · total ${money(amount.totalCents)}`
       : planned
         ? 'Previsto · confirma no dia'
@@ -160,7 +162,7 @@ function EntryForm({ onClose, today, preset, aboveTabBar }: Props) {
 
   const transferNote =
     target?.kind === 'credit_card' ? 'Pagamento de fatura: é transferência, não é gasto.' : 'Transferência não conta no orçamento.';
-  const canSave = cents > 0 && !!amount && !!acctId && (type !== 'transfer' || !!toId) && (!monthly || chargeDay !== null) && !saving;
+  const canSave = cents > 0 && !!amount && !tiny && !!acctId && (type !== 'transfer' || !!toId) && (!monthly || chargeDay !== null) && !saving;
   const saveLabel =
     firstPlanned || repeat ? 'Agendar' : type === 'expense' ? 'Salvar gasto' : type === 'income' ? 'Salvar receita' : 'Salvar transferência';
 

@@ -31,7 +31,7 @@ import { Button, Chip, Icon, SegmentedControl, Sheet, Text, makeStyles, useTheme
 import { useFinance } from '../hooks/FinanceData';
 import { useOccurrences } from '../hooks/useFlows';
 import { categoryIcon } from './categories';
-import { MONTH_NAMES, dm, relativeDay } from './format';
+import { MONTH_NAMES, dm, relativeDay, tinyInstallmentsHint } from './format';
 import { useMoneyFormat } from '../hooks/useMoneyFormat';
 import { InstallmentAmountChoice } from './InstallmentAmountChoice';
 import { NoFundsNote } from './sheets';
@@ -101,7 +101,9 @@ function PurchaseForm({ list, items, today, onDone, onClose }: Props & { list: S
     amount = installmentAmount(cents ?? 0, hasInstallments ? parc : 1, hasInstallments ? amountMode : 'total');
   } catch { /* Sem valor resolvido, nenhuma linha é criada e Salvar fica desabilitado. */ }
   const value = amount?.totalCents ?? 0;
-  const account = accounts.find((a) => a.id === (onCard ? cardId : bankId)) ?? null;
+  // Cada parcela precisa de pelo menos 1 centavo: total menor que o número de parcelas não registra.
+  const tiny = hasInstallments ? tinyInstallmentsHint(amount?.amounts, parc) : null;
+  const account =accounts.find((a) => a.id === (onCard ? cardId : bankId)) ?? null;
   const available = !onCard && account && data ? accountBalance(account, data.transactions, data.flows) : null;
   const short = available !== null && value > available;
 
@@ -133,7 +135,7 @@ function PurchaseForm({ list, items, today, onDone, onClose }: Props & { list: S
         : `Fatura de ${monthLabel(inv)} · vence ${dm(invoiceDates(inv, cycle).dueDate)}`;
   }
 
-  const ready = rows.length > 0 && cart.length > 0 && !saving;
+  const ready = rows.length > 0 && cart.length > 0 && !tiny && !saving;
   const label = short && !forced ? 'Registrar mesmo assim' : `Registrar ${money(value)}`;
 
   const save = async () => {
@@ -173,7 +175,7 @@ function PurchaseForm({ list, items, today, onDone, onClose }: Props & { list: S
             setCents(c);
             setForced(false);
           }}
-          hint={!amount ? 'O valor total excede o limite permitido.' : hasInstallments ? `${parc} parcelas · total ${money(value)}` : `${est.approx ? 'Estimado ≈ ' : 'Estimado '}${money(est.totalCents)}${est.approx ? ' · há item sem preço' : ''}`}
+          hint={!amount ? 'O valor total excede o limite permitido.' : tiny ? tiny : hasInstallments ? `${parc} parcelas · total ${money(value)}` : `${est.approx ? 'Estimado ≈ ' : 'Estimado '}${money(est.totalCents)}${est.approx ? ' · há item sem preço' : ''}`}
         />
 
         {noSource ? (
