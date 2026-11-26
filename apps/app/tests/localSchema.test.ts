@@ -53,6 +53,7 @@ describe('schema local (PowerSync) espelha as migrações', () => {
       'accounts',
       'budgets',
       'categories',
+      'diet_goals',
       'entity_tags',
       'events',
       'investment_assets',

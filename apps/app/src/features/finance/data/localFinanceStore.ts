@@ -15,7 +15,7 @@ import {
 import { financeTables } from './schema';
 
 const TABLES = Object.keys(financeTables) as FinanceTable[];
-const BOOLEAN_COLUMNS = new Set(['archived', 'in_cart', 'always']);
+const BOOLEAN_COLUMNS = new Set(['archived', 'in_cart', 'always', 'is_adjustment']);
 const columnsOf = (table: FinanceTable) => ['id', ...financeTables[table].columns.map((c) => c.name)];
 
 /** Nome de tabela só da lista fixa (nunca vem de fora, mas garante que não há SQL montado com texto livre). */

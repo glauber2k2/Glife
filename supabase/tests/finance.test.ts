@@ -142,4 +142,12 @@ describe('finanças: isolamento e regras do banco', () => {
       ),
     ).rejects.toThrow();
   });
+  it('ajuste de saldo: só receita/despesa sem categoria', async () => {
+    const ok = `user_id, type, amount_cents, date, account_id, is_adjustment`;
+    await asUser(db, USER_A, insertTx(ok, `'${USER_A}', 'income', 500, '2026-11-27', '${CC_A}', true`));
+    await expect(asUser(db, USER_A, insertTx(ok, `'${USER_A}', 'expense', 500, '2026-11-27', '${CC_A}', true`))).resolves.toBeDefined();
+    await expect(
+      asUser(db, USER_A, insertTx(`${ok}, category_id`, `'${USER_A}', 'expense', 500, '2026-11-27', '${CC_A}', true, '${CAT_A}'`)),
+    ).rejects.toThrow();
+  });
 });

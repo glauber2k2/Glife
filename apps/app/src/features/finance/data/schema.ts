@@ -28,6 +28,7 @@ export const financeTables = {
     due_day: column.integer,
     credit_limit_cents: column.integer,
     payment_account_id: column.text,
+    sort_order: column.integer,
   }),
   categories: new Table({
     ...base,
@@ -36,6 +37,7 @@ export const financeTables = {
     color: column.text,
     icon: column.text,
     archived: column.integer,
+    sort_order: column.integer,
   }),
   recurrences: new Table({
     ...base,
@@ -57,6 +59,7 @@ export const financeTables = {
       installment_count: column.integer,
       recurrence_id: column.text,
       occurrence_date: column.text,
+      is_adjustment: column.integer,
     },
     {
       indexes: {

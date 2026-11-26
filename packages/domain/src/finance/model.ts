@@ -53,6 +53,7 @@ const accountFields = z.object({
   kind: z.enum(ACCOUNT_KINDS),
   initial_balance_cents: centsSchema,
   archived: z.boolean(),
+  sort_order: z.number().int(),
   closing_day: day.nullable(),
   due_day: day.nullable(),
   credit_limit_cents: centsSchema.refine((v) => v >= 0).nullable(),
@@ -77,6 +78,7 @@ export type AccountPatch = Partial<z.input<typeof accountFields>>;
 const ACCOUNT_DEFAULTS = {
   initial_balance_cents: 0,
   archived: false,
+  sort_order: 0,
   closing_day: null,
   due_day: null,
   credit_limit_cents: null,
@@ -98,15 +100,16 @@ const categoryFields = z.object({
   color: z.enum(CATEGORY_COLORS),
   icon: z.string().regex(/^[a-z0-9]+(-[a-z0-9]+)*$/, 'Ícone inválido').max(60),
   archived: z.boolean(),
+  sort_order: z.number().int(),
 });
 
 export const categorySchema = baseEntitySchema.extend(categoryFields.shape);
 export type Category = z.infer<typeof categorySchema>;
-export type CategoryDraft = Omit<z.input<typeof categoryFields>, 'archived'> & { archived?: boolean };
+export type CategoryDraft = Omit<z.input<typeof categoryFields>, 'archived' | 'sort_order'> & { archived?: boolean; sort_order?: number };
 export type CategoryPatch = Partial<z.input<typeof categoryFields>>;
 
 export function newCategory(draft: CategoryDraft, userId: string, clock?: () => Date): Category {
-  return build(categoryFields, { archived: false }, draft, userId, clock);
+  return build(categoryFields, { archived: false, sort_order: 0 }, draft, userId, clock);
 }
 export function applyCategoryPatch(category: Category, changes: CategoryPatch, clock?: () => Date): Category {
   return patch(categoryFields, category, changes, clock);
@@ -147,6 +150,7 @@ const transactionFields = z.object({
   installment_count: z.number().int().nullable(),
   recurrence_id: z.uuid().nullable(),
   occurrence_date: isoDateSchema.nullable(),
+  is_adjustment: z.boolean(),
 });
 
 const transactionData = transactionFields.superRefine((t, ctx) => {
@@ -178,6 +182,7 @@ const TRANSACTION_DEFAULTS = {
   installment_count: null,
   recurrence_id: null,
   occurrence_date: null,
+  is_adjustment: false,
 };
 
 export function newTransaction(draft: TransactionDraft, userId: string, clock?: () => Date): Transaction {

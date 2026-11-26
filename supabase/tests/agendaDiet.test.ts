@@ -49,4 +49,17 @@ describe('agenda e dieta: isolamento e regras do banco', () => {
   it('plano precisa de ao menos um dia', async () => {
     await expect(fails(`insert into public.meal_plans (name, time, weekdays) values ('X', '10:00', 0)`)).rejects.toThrow();
   });
+  it('metas da dieta: B não enxerga as de A, uma linha viva por usuário e valores limitados', async () => {
+    await db.query(`insert into public.diet_goals (user_id, kcal_target) values ($1, 2000)`, [USER_B]);
+    const n = await asUser(db, USER_A, (tx) => tx.query<{ n: number }>('select count(*)::int as n from public.diet_goals'));
+    expect(Number(n.rows[0]!.n)).toBe(0);
+    await expect(
+      asUser(db, USER_A, async (tx) => {
+        await tx.query(`insert into public.diet_goals (kcal_target) values (2200)`);
+        await tx.query(`insert into public.diet_goals (kcal_target) values (1800)`);
+      }),
+    ).rejects.toThrow();
+    await expect(fails(`insert into public.diet_goals (kcal_target) values (30000)`)).rejects.toThrow();
+    await expect(fails(`insert into public.meals (date, time, kcal) values ('2026-11-25', '12:40', -1)`)).rejects.toThrow();
+  });
 });
