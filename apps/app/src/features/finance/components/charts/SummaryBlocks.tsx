@@ -2,17 +2,16 @@
 // "Mês até agora" em Hoje (gasto × orçamento, como o mês fecha com os previstos e a maior categoria).
 import { daysInMonth, monthBuckets, monthSoFar, chartPeriod, type IsoDate } from '@glife/domain/finance';
 import { router } from 'expo-router';
-import { ChevronRight } from 'lucide-react-native';
+import { ChevronRight, TriangleAlert } from 'lucide-react-native';
 import { Pressable, View } from 'react-native';
 
-import { Icon, Text, makeStyles, useTheme } from '@/shared/ui';
+import { Card, Icon, ProgressBar, SectionHeader, Tag, Text, makeStyles, useTheme } from '@/shared/ui';
 
 import { money, signed } from '../format';
 import { Block } from '../ui';
 import { useFinanceMaybe } from '../../hooks/FinanceData';
 import { useChartsSource } from '../../hooks/useCharts';
 import { BarChart } from './BarChart';
-import { BigAmount, SpendTrack } from './ChartBlocks';
 import { monthLower, sharePct } from './chartFormat';
 import { flowAria, flowSlots, sliceName } from './slots';
 
@@ -71,9 +70,10 @@ const daysLeft = (today: IsoDate) => {
   return daysInMonth(y, m) - d;
 };
 
-/** Hoje: "Mês até agora". Sem contas ainda, não aparece; tocar abre Gráficos no modo Mês. */
+/** Início: "Mês até agora". Sem contas ainda, não aparece; tocar abre Finanças, o link abre Gráficos do mês. */
 export function MonthSoFarBlock() {
   const s = useStyles();
+  const t = useTheme();
   const src = useChartsSource();
   if (!src || src.data.accounts.length === 0) return null;
   const m = monthSoFar(src.entries, src.data.categories, src.data.budgets, src.today);
@@ -85,66 +85,49 @@ export function MonthSoFarBlock() {
   const closesOver = budget !== null && m.spent + m.planned > budget;
   const aria =
     budget === null
-      ? `Mês até agora: ${money(m.spent)} gastos.${top ? ` Maior categoria: ${top}.` : ''} Abrir gráficos do mês.`
-      : `Mês até agora: ${money(m.spent)} de ${money(budget)} de orçamento. ${over ? `${money(m.spent - budget)} acima.` : `Restam ${money(budget - m.spent)}.`}${top ? ` Maior categoria: ${top}.` : ''} Abrir gráficos do mês.`;
+      ? `Mês até agora: ${money(m.spent)} gastos.${top ? ` Maior categoria: ${top}.` : ''} Abrir Finanças.`
+      : `Mês até agora: ${money(m.spent)} de ${money(budget)} de orçamento. ${over ? `${money(m.spent - budget)} acima.` : `Restam ${money(budget - m.spent)}.`}${top ? ` Maior categoria: ${top}.` : ''} Abrir Finanças.`;
   return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityLabel={aria}
-      onPress={() => router.push({ pathname: '/financas/graficos', params: { modo: 'mes', mes: src.thisMonth, de: 'Hoje' } })}
-      style={({ pressed }) => [s.block, pressed && s.pressed]}
-    >
-      <Header title="Mês até agora" />
-      <BigAmount value={m.spent} after={budget !== null ? `de ${money(budget)}` : undefined} />
-      {budget !== null && (
-        <>
-          <SpendTrack spent={m.spent} planned={m.planned} budget={budget} />
-          <View style={s.line}>
-            <Text variant="small" tone="secondary" numeric>
-              {over ? '' : 'Restam '}
-              <Text variant="small" tone={over ? 'danger' : 'primary'} numeric style={s.medium}>
-                {money(over ? m.spent - budget : budget - m.spent)}
-              </Text>
-              {over ? ' acima do orçamento' : ''}
-            </Text>
-            <Text variant="small" tone="tertiary">
-              {left === 1 ? '1 dia restante' : `${left} dias restantes`}
-            </Text>
-          </View>
-          {m.planned > 0 && (
-            <Text variant="small" tone="tertiary" numeric>
-              {over ? 'Com os previstos, ' : closesOver ? 'Com os previstos, fecha ' : 'Com os previstos, sobram '}
-              <Text variant="small" tone={closesOver ? 'danger' : 'primary'} numeric style={s.medium}>
-                {over
-                  ? `mais ${money(m.planned)}`
-                  : closesOver
-                    ? `${money(m.spent + m.planned - budget)} acima`
-                    : money(budget - m.spent - m.planned)}
-              </Text>
-            </Text>
-          )}
-        </>
-      )}
-      {budget === null && m.planned > 0 && (
-        <Text variant="small" tone="tertiary" numeric>{`Mais ${money(m.planned)} previsto até o fim do mês`}</Text>
-      )}
-      {m.top && top && (
-        <View style={[s.line, s.topRow]}>
+    <View style={s.section}>
+      <SectionHeader
+        title="Mês até agora"
+        actionLabel="Gráficos"
+        onAction={() => router.push({ pathname: '/financas/graficos', params: { modo: 'mes', mes: src.thisMonth, de: 'Início' } })}
+      />
+      <Card onPress={() => router.navigate('/financas')} accessibilityLabel={aria} gap={t.space[3.5]}>
+        <View style={s.line}>
           <View style={s.grow}>
-            <Text variant="caption" tone="tertiary">
-              Maior categoria
+            <Text variant="small" tone="tertiary">{`Gasto em ${monthLower(src.thisMonth)}`}</Text>
+            <Text variant="big" numeric style={s.amount}>
+              {money(m.spent)}
             </Text>
-            <Text style={s.medium}>{top}</Text>
           </View>
           <View style={s.right}>
-            <Text variant="caption" tone="tertiary" numeric>{`${sharePct(m.spent > 0 ? m.top.total / m.spent : 0)} do mês`}</Text>
-            <Text numeric style={s.medium}>
-              {money(m.top.total)}
+            {budget !== null && (
+              <Text variant="small" tone="tertiary" numeric align="right">{`de ${money(budget)}`}</Text>
+            )}
+            <Text variant="small" tone="secondary" align="right" style={s.medium}>
+              {left === 0 ? 'último dia' : left === 1 ? 'falta 1 dia' : `faltam ${left} dias`}
             </Text>
           </View>
         </View>
-      )}
-    </Pressable>
+        {budget !== null && (
+          <ProgressBar
+            value={budget > 0 ? m.spent / budget : 1}
+            planned={budget > 0 ? m.planned / budget : 0}
+            tone={over ? 'danger' : 'neutral'}
+            thickness="thick"
+            label={`${sharePct(budget > 0 ? m.spent / budget : 1)} do orçamento usado`}
+          />
+        )}
+        <View style={s.tags}>
+          {over && budget !== null && <Tag tone="danger" icon={TriangleAlert} label={`Passou ${money(m.spent - budget)}`} />}
+          {!over && closesOver && budget !== null && <Tag tone="warning" label={`Com os previstos, fecha ${money(m.spent + m.planned - budget)} acima`} />}
+          {m.planned > 0 && <Tag label={`${money(m.planned)} previstos`} />}
+          {m.top && top && <Tag tone="outline" label={`Maior: ${top} · ${sharePct(m.spent > 0 ? m.top.total / m.spent : 0)}`} />}
+        </View>
+      </Card>
+    </View>
   );
 }
 
@@ -167,6 +150,9 @@ const useStyles = makeStyles((t) => ({
   mini: { marginTop: t.space[1] },
   line: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'baseline', columnGap: t.space[3], rowGap: t.space[1] },
   topRow: { alignItems: 'flex-end', marginTop: t.space[1] },
+  section: { gap: t.space[3] },
+  amount: { fontSize: t.type.title.fontSize + t.space[0.5], lineHeight: t.type.title.lineHeight + t.space[0.5] },
+  tags: { flexDirection: 'row', flexWrap: 'wrap', gap: t.space[2] },
 }));
 
 /** Bloco de Hoje: só existe com sessão (o provedor de Finanças tem repositório). */

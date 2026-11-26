@@ -123,7 +123,8 @@ export function ExpandProvider({ children }: { children: ReactNode }) {
     height: h.get(),
     opacity: opacity.get(),
     borderRadius: edge.get() * t.radius.card,
-    borderColor: interpolateColor(edge.get(), [0, 1], [t.colors.bg, t.colors.hairline]),
+    // cartão branco que vira a tela (fundo do app) ao crescer
+    backgroundColor: interpolateColor(edge.get(), [0, 1], [t.colors.bg, t.colors.card]),
   }));
 
   return (
@@ -187,9 +188,7 @@ const useStyles = makeStyles((t) => ({
   root: { flex: 1 },
   box: {
     position: 'absolute',
-    backgroundColor: t.colors.bg,
-    borderWidth: t.hairline,
-    borderColor: t.colors.hairline,
+    backgroundColor: t.colors.card,
     overflow: 'hidden',
   },
 }));

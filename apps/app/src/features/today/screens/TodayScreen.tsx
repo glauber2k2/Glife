@@ -1,23 +1,36 @@
 import { router, useFocusEffect } from 'expo-router';
-import { ChevronRight, Search, Settings2 } from 'lucide-react-native';
+import { CalendarCheck, Plus, Salad, Search, Settings, ShoppingBasket, StickyNote, TrendingUp, Wallet } from 'lucide-react-native';
 import { useCallback, useRef, useState } from 'react';
-import { Platform, Pressable, View } from 'react-native';
+import { Pressable, View } from 'react-native';
+import Animated from 'react-native-reanimated';
 
 import { TodayAgendaBlock } from '@/features/agenda';
 import { TodayDietBlock } from '@/features/diet';
 import { TodayFinanceBlock } from '@/features/finance';
-import { TodayInboxBlock } from '@/features/inbox';
 import { TodayNotesBlock, useTodayNotes } from '@/features/notes';
 import { openSearch } from '@/features/search';
 import { longDate } from '@/shared/lib/dates';
-import { Icon, IconButton, Reveal, Screen, Text, makeStyles, useTheme } from '@/shared/ui';
+import {
+  Icon,
+  IconButton,
+  Mascot,
+  ModuleTile,
+  ModuleTiles,
+  Reveal,
+  Screen,
+  SectionHeader,
+  Text,
+  makeStyles,
+  usePress,
+  useTheme,
+} from '@/shared/ui';
 
 import { shouldReplayEntrance } from '../entrance';
+import { greeting } from './greeting';
 
 /**
- * Tela Hoje (protótipo "Glife Hoje", variante 2a): a única que compõe várias features — cada bloco vem da
- * feature dona. Na Fase 1 só Caixa de entrada e Notas existem; os módulos ainda não configurados recolhem
- * numa linha no fim, que leva a Ajustes.
+ * Início (protótipo do redesign Cobalto): um resumo calmo do dia. A única tela que compõe várias features — cada
+ * bloco vem da feature dona. Blocos de módulos que ainda não existem (Bíblia, Galeria, IA) ficam de fora.
  */
 export function TodayScreen() {
   const s = useStyles();
@@ -26,21 +39,21 @@ export function TodayScreen() {
   const entrance = useEntranceReplay();
 
   return (
-    <Screen eyebrow={longDate()} title="Hoje" action={<HeaderActions />}>
-      {firstUse && (
-        <Text tone="secondary" style={s.intro}>
-          O resumo do dia se monta aqui conforme o app é usado.
-        </Text>
-      )}
+    <Screen
+      eyebrow={longDate()}
+      title={firstUse ? 'Boas-vindas' : greeting(new Date().getHours())}
+      action={<HeaderActions />}
+      tabBar
+    >
       {notes && (
         <View key={entrance} style={s.blocks}>
           <Reveal>
+            <AskBar key="ask" />
             <TodayAgendaBlock key="agenda" />
-            <TodayDietBlock key="diet" />
             <TodayFinanceBlock key="finance" />
-            <TodayInboxBlock key="inbox" firstUse={firstUse} />
+            <TodayDietBlock key="diet" />
             <TodayNotesBlock key="notes" notes={notes} />
-            <ModulesRow key="modules" />
+            <Spaces key="spaces" />
           </Reveal>
         </View>
       )}
@@ -48,53 +61,57 @@ export function TodayScreen() {
   );
 }
 
-/** Lupa e ajustes; no web a lupa vira a pílula "Buscar  Ctrl K". */
 function HeaderActions() {
   const s = useStyles();
-  const t = useTheme();
   return (
     <View style={s.actions}>
-      {Platform.OS === 'web' ? (
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Buscar (Ctrl K)"
-          onPress={openSearch}
-          style={({ pressed }) => [s.searchPill, pressed && s.pressed]}
-        >
-          <Icon icon={Search} size={t.icon.small} color="textSecondary" />
-          <Text variant="small" tone="secondary">
-            Buscar
-          </Text>
-          <View style={s.kbd}>
-            <Text variant="caption" tone="tertiary" style={s.kbdText}>
-              Ctrl K
-            </Text>
-          </View>
-        </Pressable>
-      ) : (
-        <IconButton icon={Search} label="Buscar" variant="ghost" onPress={openSearch} />
-      )}
-      <IconButton icon={Settings2} label="Ajustes" variant="ghost" onPress={() => router.push('/ajustes')} />
+      <IconButton icon={Search} label="Buscar" onPress={openSearch} />
+      <IconButton icon={Settings} label="Ajustes" onPress={() => router.push('/ajustes')} />
     </View>
   );
 }
 
-/** Módulos ainda não configurados: uma linha só, no fim. */
-function ModulesRow() {
+/** "Pergunte, anote ou lembre…": abre a captura (a conversa com a IA chega na Fase 6). */
+function AskBar() {
   const s = useStyles();
   const t = useTheme();
+  const press = usePress();
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel="Configurar módulos"
-      onPress={() => router.push('/ajustes')}
-      style={({ pressed }) => [s.modules, pressed && s.pressed]}
+      accessibilityLabel="Anotar ou lembrar"
+      onPress={() => router.push('/caixa-de-entrada')}
+      onPressIn={press.onPressIn}
+      onPressOut={press.onPressOut}
     >
-      <Text variant="small" tone="tertiary" style={s.modulesText}>
-        O devocional aparece aqui quando for configurado.
-      </Text>
-      <Icon icon={ChevronRight} size={t.icon.small} color="textTertiary" />
+      <Animated.View style={[s.ask, press.style]}>
+        <Mascot size={t.size.tabIndicatorHeight - t.space[0.5]} />
+        <Text tone="tertiary" style={s.askText} numberOfLines={1}>
+          Anote ou lembre…
+        </Text>
+        <View style={s.mic}>
+          <Icon icon={Plus} />
+        </View>
+      </Animated.View>
     </Pressable>
+  );
+}
+
+/** Atalhos dos módulos que já existem. */
+function Spaces() {
+  const s = useStyles();
+  return (
+    <View style={s.section}>
+      <SectionHeader title="Seus espaços" />
+      <ModuleTiles>
+        <ModuleTile label="Notas" icon={StickyNote} module="notes" onPress={() => router.navigate('/notas')} />
+        <ModuleTile label="Agenda" icon={CalendarCheck} module="agenda" onPress={() => router.navigate('/agenda')} />
+        <ModuleTile label="Finanças" icon={Wallet} module="finance" onPress={() => router.navigate('/financas')} />
+        <ModuleTile label="Investir" icon={TrendingUp} module="investments" onPress={() => router.push('/financas/investimentos')} />
+        <ModuleTile label="Dieta" icon={Salad} module="diet" onPress={() => router.push('/dieta')} />
+        <ModuleTile label="Compras" icon={ShoppingBasket} module="shopping" onPress={() => router.push('/financas/compras')} />
+      </ModuleTiles>
+    </View>
   );
 }
 
@@ -114,37 +131,26 @@ function useEntranceReplay(): number {
 }
 
 const useStyles = makeStyles((t) => ({
-  intro: { marginTop: -t.space[3] },
   blocks: { gap: t.layout.blockGap },
-  actions: { flexDirection: 'row', alignItems: 'center', gap: t.space[0.5], marginRight: -t.space[2] },
-  searchPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: t.space[2],
-    height: t.size.chipSmall,
-    paddingLeft: t.space[3],
-    paddingRight: t.space[1.5],
-    marginRight: t.space[1.5],
-    borderRadius: t.radius.full,
-    borderWidth: t.hairline,
-    borderColor: t.colors.hairline,
-  },
-  kbd: {
-    height: t.size.pillSmall - t.space[1],
-    paddingHorizontal: t.space[2],
-    borderRadius: t.radius.full,
-    backgroundColor: t.colors.soft,
-    justifyContent: 'center',
-  },
-  kbdText: { fontFamily: t.type.label.font },
-  pressed: { backgroundColor: t.colors.soft },
-  modules: {
+  section: { gap: t.space[3] },
+  actions: { flexDirection: 'row', alignItems: 'center', gap: t.space[2] },
+  ask: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: t.space[3],
-    paddingVertical: t.space[3] + t.space[0.5],
-    borderTopWidth: t.hairline,
-    borderTopColor: t.colors.hairline,
+    height: t.size.navRow,
+    paddingLeft: t.space[3.5],
+    paddingRight: t.space[2],
+    borderRadius: t.radius.full,
+    backgroundColor: t.colors.card,
   },
-  modulesText: { flex: 1 },
+  askText: { flex: 1, fontSize: t.type.item.fontSize },
+  mic: {
+    width: t.size.iconButton - t.space[0.5],
+    height: t.size.iconButton - t.space[0.5],
+    borderRadius: t.radius.full,
+    backgroundColor: t.colors.bg,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
 }));
