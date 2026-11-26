@@ -422,18 +422,72 @@ export function createInMemoryTags(userId: string): TagsRepository {
         [...links.values()].filter((l) => l.deleted_at === null && l.tag_id === intoId).map((l) => `${l.entity_type}:${l.entity_id}`),
       );
       const now = nowIso();
+      const movedLinkIds: string[] = [];
+      const removedLinkIds: string[] = [];
       for (const l of [...links.values()]) {
         if (l.deleted_at !== null || l.tag_id !== fromId) continue;
         const key = `${l.entity_type}:${l.entity_id}`;
-        if (has.has(key)) links.set(l.id, softDelete(l));
-        else {
+        if (has.has(key)) {
+          links.set(l.id, softDelete(l));
+          removedLinkIds.push(l.id);
+        } else {
           links.set(l.id, { ...l, tag_id: intoId, updated_at: now });
+          movedLinkIds.push(l.id);
           has.add(key);
         }
       }
       tags.set(fromId, softDelete(from));
       subs.notify();
-      return { ...into };
+      return { into: { ...into }, from: { ...from }, movedLinkIds, removedLinkIds };
+    },
+    async unmerge(receipt) {
+      const from = tags.get(receipt.from.id);
+      if (!from) throw new RepositoryError('not_found');
+      if (aliveTags().some((t) => t.id !== from.id && tagKey(t.name) === tagKey(from.name))) throw new RepositoryError('conflict');
+      const now = nowIso();
+      tags.set(from.id, { ...restoreEntity(from), updated_at: now });
+      for (const id of receipt.movedLinkIds) {
+        const l = links.get(id);
+        if (l && l.deleted_at === null && l.tag_id === receipt.into.id) links.set(id, { ...l, tag_id: from.id, updated_at: now });
+      }
+      for (const id of receipt.removedLinkIds) {
+        const l = links.get(id);
+        if (l && l.deleted_at !== null) links.set(id, restoreEntity(l));
+      }
+      subs.notify();
+    },
+    async create(name) {
+      const clean = normalizeTagName(name);
+      const found = aliveTags().find((t) => tagKey(t.name) === tagKey(clean));
+      if (found) return { tag: { ...found }, created: false };
+      const tag = newTag(clean, userId);
+      tags.set(tag.id, tag);
+      subs.notify();
+      return { tag: { ...tag }, created: true };
+    },
+    async replaceMany(entries) {
+      const list = entries.map((x) => ({ entity: parseOrThrow(taggedEntitySchema, x.entity), tagIds: new Set(x.tagIds) }));
+      const alive = new Set(aliveTags().map((t) => t.id));
+      for (const { entity, tagIds } of list) {
+        const current = linksOf(entity);
+        for (const l of current) if (!tagIds.has(l.tag_id)) links.set(l.id, softDelete(l));
+        for (const tagId of tagIds) {
+          if (!alive.has(tagId) || current.some((l) => l.tag_id === tagId)) continue;
+          const now = nowIso();
+          const row: EntityTag = {
+            id: newId(),
+            user_id: userId,
+            tag_id: tagId,
+            entity_type: entity.type,
+            entity_id: entity.id,
+            created_at: now,
+            updated_at: now,
+            deleted_at: null,
+          };
+          links.set(row.id, row);
+        }
+      }
+      subs.notify();
     },
     async delete(tagId) {
       const tag = aliveTag(tagId);

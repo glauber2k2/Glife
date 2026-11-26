@@ -132,9 +132,19 @@ export function createLocalTagsRepository(db: LocalDb, userId: string): TagsRepo
     async merge(fromId, intoId) {
       if (fromId === intoId) throw new RepositoryError('validation');
       return db.writeTransaction(async (tx) => {
-        await aliveTag(tx, fromId);
+        const from = await aliveTag(tx, fromId);
         const into = await aliveTag(tx, intoId);
         const now = nowIso();
+        // Guarda o que muda (recibo para o "Desfazer") antes de gravar.
+        const fromLinks = await tx.getAll<{ id: string; dup: number }>(
+          `SELECT et.id, EXISTS (
+             SELECT 1 FROM entity_tags o WHERE o.deleted_at IS NULL AND o.tag_id = ?
+               AND o.entity_type = et.entity_type AND o.entity_id = et.entity_id) AS dup
+           FROM entity_tags et WHERE et.deleted_at IS NULL AND et.tag_id = ?`,
+          [intoId, fromId],
+        );
+        const removedLinkIds = fromLinks.filter((l) => Number(l.dup) === 1).map((l) => l.id);
+        const movedLinkIds = fromLinks.filter((l) => Number(l.dup) !== 1).map((l) => l.id);
         // Quem já tem as duas: o vínculo da origem só é apagado (sem duplicar).
         await tx.execute(
           `UPDATE entity_tags SET deleted_at = ?, updated_at = ?
@@ -149,7 +159,53 @@ export function createLocalTagsRepository(db: LocalDb, userId: string): TagsRepo
           fromId,
         ]);
         await tx.execute('UPDATE tags SET deleted_at = ?, updated_at = ? WHERE id = ?', [now, now, fromId]);
-        return into;
+        return { into, from, movedLinkIds, removedLinkIds };
+      });
+    },
+
+    async unmerge(receipt) {
+      await db.writeTransaction(async (tx) => {
+        const from = await tx.getOptional<Tag>(`SELECT ${TAG_COLUMNS} FROM tags WHERE id = ?`, [receipt.from.id]);
+        if (!from) throw new RepositoryError('not_found');
+        const alive = await aliveTags(tx);
+        if (alive.some((t) => t.id !== from.id && tagKey(t.name) === tagKey(from.name))) throw new RepositoryError('conflict');
+        const now = nowIso();
+        await tx.execute('UPDATE tags SET deleted_at = NULL, updated_at = ? WHERE id = ?', [now, from.id]);
+        for (const id of receipt.movedLinkIds) {
+          await tx.execute('UPDATE entity_tags SET tag_id = ?, updated_at = ? WHERE id = ? AND deleted_at IS NULL AND tag_id = ?', [
+            from.id,
+            now,
+            id,
+            receipt.into.id,
+          ]);
+        }
+        for (const id of receipt.removedLinkIds) {
+          await tx.execute('UPDATE entity_tags SET deleted_at = NULL, updated_at = ? WHERE id = ? AND deleted_at IS NOT NULL', [now, id]);
+        }
+      });
+    },
+
+    async create(name) {
+      const clean = normalizeTagName(name);
+      return db.writeTransaction(async (tx) => {
+        const before = (await aliveTags(tx)).length;
+        const tag = await tagByName(tx, userId, clean);
+        return { tag, created: (await aliveTags(tx)).length > before };
+      });
+    },
+
+    async replaceMany(entries) {
+      const list = entries.map((x) => ({ entity: parseOrThrow(taggedEntitySchema, x.entity), tagIds: new Set(x.tagIds) }));
+      await db.writeTransaction(async (tx) => {
+        const alive = new Set((await aliveTags(tx)).map((t) => t.id));
+        for (const { entity, tagIds } of list) {
+          const current = await tx.getAll<{ tag_id: string }>(
+            'SELECT tag_id FROM entity_tags WHERE deleted_at IS NULL AND entity_type = ? AND entity_id = ?',
+            [entity.type, entity.id],
+          );
+          for (const c of current) if (!tagIds.has(c.tag_id)) await unlink(tx, c.tag_id, entity);
+          for (const tagId of tagIds) if (alive.has(tagId)) await link(tx, userId, tagId, entity);
+        }
       });
     },
 

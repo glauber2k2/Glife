@@ -108,8 +108,11 @@ export function tagsRepositoryContract(name: string, make: () => Promise<TagsCon
       await tags.add(NOTE_B, 'feira');
       await tags.add(TX_A, 'feira');
       const into = await tags.add(NOTE_A, 'mercado'); // NOTE_A já tem as duas
-      const merged = await tags.merge(from.id, into.id);
-      expect(merged.id).toBe(into.id);
+      const receipt = await tags.merge(from.id, into.id);
+      expect(receipt.into.id).toBe(into.id);
+      expect(receipt.from.id).toBe(from.id);
+      expect(receipt.movedLinkIds).toHaveLength(2);
+      expect(receipt.removedLinkIds).toHaveLength(1);
       expect(names(await tags.list())).toEqual(['mercado']);
       expect(names(await tags.forEntity(NOTE_A))).toEqual(['mercado']);
       expect((await tags.entitiesWithTag(into.id, 'note')).sort()).toEqual([NOTE_A.id, NOTE_B.id].sort());
@@ -118,6 +121,54 @@ export function tagsRepositoryContract(name: string, make: () => Promise<TagsCon
       // A tag de origem não volta: aplicar o mesmo nome cria outra.
       const again = await tags.add(NOTE_A, 'feira');
       expect(again.id).not.toBe(from.id);
+    });
+
+    it('desfaz a junção: a origem volta com os mesmos itens e a escolhida fica como era', async () => {
+      const { tags } = await make();
+      const from = await tags.add(NOTE_A, 'feira');
+      await tags.add(NOTE_B, 'feira');
+      const into = await tags.add(NOTE_A, 'mercado');
+      await tags.add(TX_A, 'mercado');
+      const receipt = await tags.merge(from.id, into.id);
+      await tags.unmerge(receipt);
+      expect(names(await tags.list())).toEqual(['feira', 'mercado']);
+      expect((await tags.entitiesWithTag(from.id, 'note')).sort()).toEqual([NOTE_A.id, NOTE_B.id].sort());
+      expect(await tags.entitiesWithTag(into.id, 'note')).toEqual([NOTE_A.id]);
+      expect(await tags.entitiesWithTag(into.id, 'tx')).toEqual([TX_A.id]);
+      expect((await tags.listWithCounts()).map((r) => r.counts)).toEqual([{ note: 2 }, { note: 1, tx: 1 }]);
+    });
+
+    it('desfazer a junção recusa se o nome da origem já foi usado por outra tag', async () => {
+      const { tags } = await make();
+      const from = await tags.add(NOTE_A, 'feira');
+      const into = await tags.add(NOTE_B, 'mercado');
+      const receipt = await tags.merge(from.id, into.id);
+      await tags.add(TX_A, 'Feira');
+      await expectCode(tags.unmerge(receipt), 'conflict');
+      expect(await tags.entitiesWithTag(into.id, 'note')).toContain(NOTE_A.id);
+    });
+
+    it('cria tag solta pelo nome, reaproveitando a existente', async () => {
+      const { tags } = await make();
+      const a = await tags.create(' #Viagem ');
+      expect(a).toMatchObject({ created: true, tag: { name: 'Viagem' } });
+      const b = await tags.create('viagem');
+      expect(b).toEqual({ created: false, tag: expect.objectContaining({ id: a.tag.id }) });
+      expect((await tags.listWithCounts()).map((r) => [r.tag.name, r.counts])).toEqual([['Viagem', {}]]);
+      await expectCode(tags.create(' # '), 'validation');
+    });
+
+    it('volta cada entidade ao retrato de tags anterior, em lote', async () => {
+      const { tags } = await make();
+      const casa = await tags.add(NOTE_A, 'casa');
+      const before = [
+        { entity: NOTE_A, tagIds: (await tags.forEntity(NOTE_A)).map((t) => t.id) },
+        { entity: NOTE_B, tagIds: (await tags.forEntity(NOTE_B)).map((t) => t.id) },
+      ];
+      await tags.applyMany([NOTE_A, NOTE_B], { add: ['novo'], remove: [casa.id] });
+      await tags.replaceMany(before);
+      expect(names(await tags.forEntity(NOTE_A))).toEqual(['casa']);
+      expect(await tags.forEntity(NOTE_B)).toEqual([]);
     });
 
     it('juntar com ela mesma ou com tag inexistente é recusado e não mexe em nada', async () => {

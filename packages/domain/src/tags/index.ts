@@ -68,11 +68,35 @@ export interface TagsRepository {
    * Junta `fromId` em `intoId`: os itens passam para a escolhida (sem duplicar quem já tinha as duas) e a de
    * origem é excluída. Tudo numa transação. Juntar com ela mesma → `validation`; inexistente → `not_found`.
    */
-  merge(fromId: string, intoId: string): Promise<Tag>;
+  merge(fromId: string, intoId: string): Promise<MergeReceipt>;
+  /**
+   * Desfaz um `merge` numa transação: a tag de origem volta, os vínculos movidos voltam para ela e os que foram
+   * apagados por duplicar voltam. Se outra tag viva já usa o nome da origem → `conflict` (nada muda).
+   */
+  unmerge(receipt: MergeReceipt): Promise<void>;
+  /** Cria a tag pelo nome sem aplicar a nada; se já existe (sem diferenciar maiúsculas), devolve a existente. */
+  create(name: string): Promise<{ tag: Tag; created: boolean }>;
   /** Exclui a tag e os vínculos (exclusão lógica); os itens ficam, só perdem a tag. */
   delete(tagId: string): Promise<void>;
   /** Em lote e tudo ou nada: aplica as tags `add` (por nome) e tira as `remove` (por id) de todas as entidades. */
   applyMany(entities: readonly TaggedEntity[], change: { add: readonly string[]; remove: readonly string[] }): Promise<void>;
+  /**
+   * Em lote e tudo ou nada: deixa cada entidade com exatamente estas tags (o "Desfazer" do `applyMany`, a partir do
+   * retrato tirado antes). Tags que não existem mais são ignoradas.
+   */
+  replaceMany(entries: readonly { entity: TaggedEntity; tagIds: readonly string[] }[]): Promise<void>;
+}
+
+/** O que um `merge` mudou, para poder desfazer. */
+export interface MergeReceipt {
+  /** a tag que ficou */
+  into: Tag;
+  /** a tag que foi absorvida (como era antes) */
+  from: Tag;
+  /** vínculos que trocaram de tag (origem → escolhida) */
+  movedLinkIds: string[];
+  /** vínculos da origem apagados porque a entidade já tinha a escolhida */
+  removedLinkIds: string[];
 }
 
 export interface TagWithCounts {
@@ -98,6 +122,8 @@ export interface TaggedItemSource {
   /** rótulo do grupo e do filtro (ex.: "Notas", "Gastos") */
   label: string;
   resolve(ids: readonly string[]): Promise<TaggedItem[]>;
+  /** Só os ids que ainda existem vivos (fora da lixeira) — para as contagens baterem com a tela da tag. */
+  alive(ids: readonly string[]): Promise<string[]>;
 }
 
 /** Texto curto "5 notas · 6 gastos" a partir das contagens; `units` dá singular/plural por tipo. */
