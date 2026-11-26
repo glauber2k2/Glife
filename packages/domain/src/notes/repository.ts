@@ -51,9 +51,17 @@ export interface NotesRepository {
   purgeTrash(deletedBefore: string): Promise<number>;
 }
 
+export interface NoteFolderSummary {
+  folder: NoteFolder;
+  /** Notas vivas diretamente nesta pasta, sem limite de paginação. */
+  notes: number;
+  children: number;
+}
+
 export interface NoteFoldersRepository {
   /** Pastas ativas, por nome (sem diferenciar maiúsculas). */
   list(): Promise<NoteFolder[]>;
+  listSummaries(): Promise<NoteFolderSummary[]>;
   create(draft: NoteFolderDraft): Promise<NoteFolder>;
   rename(id: string, name: string): Promise<NoteFolder>;
   /** Recusa ciclo (`validation`) e destino inexistente (`not_found`). */

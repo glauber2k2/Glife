@@ -1,4 +1,4 @@
-import { NOTE_TITLE_MAX, type Note, type NoteFolder, type NoteKind, type NotePatch } from '@glife/domain/notes';
+import { NOTE_TITLE_MAX, folderPath, type Note, type NoteFolder, type NoteKind, type NotePatch } from '@glife/domain/notes';
 import type { Tag as TagModel } from '@glife/domain/tags';
 import { useLocalSearchParams } from 'expo-router';
 import {
@@ -11,7 +11,6 @@ import {
   Folder,
   FolderInput,
   FolderPlus,
-  FolderX,
   Heading1,
   Heading2,
   Highlighter,
@@ -64,6 +63,7 @@ import {
 } from '@/shared/ui';
 
 import { FolderNameSheet } from '../components/FolderNameSheet';
+import { FolderPicker } from '../components/FolderPicker';
 import { KIND_LABEL, KIND_OPTIONS } from '../components/kinds';
 import { INLINE_MARKS } from '../components/markdown';
 import { LiveMarkdown } from '../components/LiveMarkdownText';
@@ -291,7 +291,7 @@ export function NoteEditorScreen() {
     );
   }
 
-  const folderName = folderList.find((f) => f.id === note.folder_id)?.name ?? 'Sem pasta';
+  const folderName = note.folder_id ? folderPath(folderList, note.folder_id) || 'Sem pasta' : 'Sem pasta';
   const showFormatBar = Platform.OS === 'android' && keyboard && bodyFocused && mode === 'write';
   const fadeIn = reduceMotion ? undefined : FadeIn.duration(t.motion.standard);
   const fadeOut = reduceMotion ? undefined : FadeOut.duration(t.motion.tap);
@@ -524,29 +524,10 @@ export function NoteEditorScreen() {
       </Sheet>
 
       <Sheet visible={sheet === 'pasta'} onClose={() => setSheet(null)} title="Mover para pasta">
-        <ListGroup>
-          <OptionRow
-            icon={FolderX}
-            label="Sem pasta"
-            selected={!note.folder_id}
-            onPress={() => {
-              setSheet(null);
-              void saveNow({ folder_id: null });
-            }}
-          />
-          {folderList.map((f) => (
-            <OptionRow
-              key={f.id}
-              icon={Folder}
-              label={f.name}
-              selected={note.folder_id === f.id}
-              onPress={() => {
-                setSheet(null);
-                void saveNow({ folder_id: f.id });
-              }}
-            />
-          ))}
-          <NavRow
+        <FolderPicker folders={folderList} selectedId={note.folder_id} onPick={(f) => {
+          setSheet(null);
+          void saveNow({ folder_id: f?.id ?? null });
+        }} footer={<NavRow
             accent
             icon={FolderPlus}
             label="Nova pasta"
@@ -554,8 +535,7 @@ export function NoteEditorScreen() {
               setSheet(null);
               setNewFolder(true);
             }}
-          />
-        </ListGroup>
+          />} />
       </Sheet>
 
       <Sheet visible={sheet === 'tags'} onClose={() => setSheet(null)} title="Tags">

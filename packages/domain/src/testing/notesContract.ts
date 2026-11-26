@@ -243,6 +243,22 @@ export function notesRepositoryContract(name: string, make: () => Promise<NotesC
   });
 
   describe(`NoteFoldersRepository (${name})`, () => {
+    it('resume todas as notas e subpastas vivas sem o limite de uma página', async () => {
+      const { folders, notes } = await make();
+      const parent = await folders.create({ name: 'Pai' });
+      const child = await folders.create({ name: 'Filha', parent_id: parent.id });
+      const removedChild = await folders.create({ name: 'Excluída', parent_id: parent.id });
+      await folders.remove(removedChild.id);
+      for (let i = 0; i < 201; i++) await notes.create({ title: `Nota ${i}`, folder_id: parent.id });
+      const removedNote = await notes.create({ title: 'Lixeira', folder_id: parent.id });
+      await notes.remove(removedNote.id);
+      await notes.create({ title: 'Na filha', folder_id: child.id });
+      const summaries = await folders.listSummaries();
+      expect(summaries.find((s) => s.folder.id === parent.id)).toMatchObject({ notes: 201, children: 1 });
+      expect(summaries.find((s) => s.folder.id === child.id)).toMatchObject({ notes: 1, children: 0 });
+      expect(summaries.some((s) => s.folder.id === removedChild.id)).toBe(false);
+    });
+
     it('cria, renomeia e lista em ordem alfabética', async () => {
       const { folders } = await make();
       const b = await folders.create({ name: 'Trabalho' });

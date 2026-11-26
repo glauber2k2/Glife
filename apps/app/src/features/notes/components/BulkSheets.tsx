@@ -1,14 +1,15 @@
 // Folhas da seleção múltipla: mover para pasta (protótipo `moverPasta`) e tags (protótipo `tags`), em lote.
 import { TAG_NAME_MAX, normalizeTagName, tagKey, type Tag } from '@glife/domain/tags';
 import type { Note, NoteFolder } from '@glife/domain/notes';
-import { Folder, FolderOpen, Hash } from 'lucide-react-native';
+import { Hash } from 'lucide-react-native';
 import { useEffect, useRef, useState } from 'react';
 import { View } from 'react-native';
 
 import { useLinksData } from '@/features/links';
-import { Button, Chip, Input, ListGroup, NavRow, Sheet, Text, makeStyles } from '@/shared/ui';
+import { Button, Chip, Input, Sheet, Text, makeStyles } from '@/shared/ui';
 
 import { commonTagState, nextTagState, tagChange, type TagState } from '../hooks/selection';
+import { FolderPicker } from './FolderPicker';
 
 export function MoveNotesSheet({
   visible,
@@ -23,12 +24,7 @@ export function MoveNotesSheet({
 }) {
   return (
     <Sheet visible={visible} onClose={onClose} title="Mover para pasta">
-      <ListGroup>
-        {folders.map((f) => (
-          <NavRow key={f.id} icon={Folder} module="notes" label={f.name} onPress={() => onPick(f)} />
-        ))}
-        <NavRow icon={FolderOpen} label="Sem pasta" meta="Tira as notas das pastas" onPress={() => onPick(null)} />
-      </ListGroup>
+      <FolderPicker folders={folders} onPick={onPick} />
     </Sheet>
   );
 }

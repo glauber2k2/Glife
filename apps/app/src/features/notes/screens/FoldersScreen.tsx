@@ -1,3 +1,4 @@
+import { folderChildren } from '@glife/domain/notes';
 import { router } from 'expo-router';
 import { Folder, FolderPlus } from 'lucide-react-native';
 import { useState } from 'react';
@@ -9,16 +10,15 @@ import { SubHeader } from '../components/SubHeader';
 import { useNotesData } from '../hooks/NotesData';
 import { useFocusData } from '../hooks/useFocusData';
 
-/** Um nível de pastas, com a contagem de notas de cada uma. */
+/** Raiz da árvore; as contagens são agregadas no banco, sem carregar as notas. */
 export function FoldersScreen() {
-  const { folders, notes } = useNotesData();
+  const { folders } = useNotesData();
   const [creating, setCreating] = useState(false);
   const { data, reload } = useFocusData(
     async () => {
-      const [all, page] = await Promise.all([folders.list(), notes.list({}, { limit: 200 })]);
-      const count = new Map<string, number>();
-      for (const n of page.items) if (n.folder_id) count.set(n.folder_id, (count.get(n.folder_id) ?? 0) + 1);
-      return all.map((f) => ({ ...f, count: count.get(f.id) ?? 0 }));
+      const summaries = await folders.listSummaries();
+      const roots = new Set(folderChildren(summaries.map((s) => s.folder), null).map((f) => f.id));
+      return summaries.filter((s) => roots.has(s.folder.id));
     },
   );
 
@@ -36,14 +36,14 @@ export function FoldersScreen() {
       ) : (
         <Reveal>
           <ListGroup>
-            {data.map((f) => (
+            {data.map(({ folder: f, notes: count, children }) => (
               <NavRow
                 key={f.id}
                 icon={Folder}
                 iconSize="md"
                 module="notes"
                 label={f.name}
-                meta={f.count === 1 ? '1 nota' : `${f.count} notas`}
+                meta={`${count === 1 ? '1 nota' : `${count} notas`}${children ? ` · ${children} ${children === 1 ? 'subpasta' : 'subpastas'}` : ''}`}
                 onPress={() => goFolder(f.id)}
               />
             ))}

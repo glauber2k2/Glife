@@ -59,11 +59,11 @@
 
 **Interfaces:** `folderPath(folders: readonly NoteFolder[], id: string): string`, `folderChildren(folders: readonly NoteFolder[], parentId: string | null): NoteFolder[]`, `folderDestinations(folders: readonly NoteFolder[], movingId?: string): { folder: NoteFolder; path: string }[]`; produzir `NoteFolderSummary = { folder: NoteFolder; notes: number; children: number }` e `NoteFoldersRepository.listSummaries(): Promise<NoteFolderSummary[]>`. `FolderNameSheet` aceita `parentId?: string | null`. `FolderPicker` recebe pastas, seleção opcional, movingId opcional e onPick(folder|null), sem acessar banco.
 
-- [ ] Testar árvore Raiz/A/B; filhos diretos e caminhos distintos; destinos excluem a própria pasta e descendentes; órfãos/ciclos terminam e continuam acessíveis; contratos listSummaries ignoram notas/pastas excluídas e contam além da primeira página de 200.
-- [ ] Rodar testes de folders e contrato; esperado RED por interfaces novas ausentes.
-- [ ] Implementar helpers iterativos com conjunto de visitados; agregação SQL e equivalente em memória; usar o contrato nas duas implementações.
-- [ ] Expor raiz, subpastas, caminho, Nova subpasta e Mover pasta nas telas existentes. Atualizar escolher pasta em nota individual e em lote. Exclusão mantém a promoção existente e retorna ao pai. Recarregar dados ao criar/mover/renomear e ao focar a pasta.
-- [ ] Rodar testes alvo, lint, typecheck e suíte. Commit `feat(notas): navegar criar e mover subpastas`.
+- [x] Testar árvore Raiz/A/B; filhos diretos e caminhos distintos; destinos excluem a própria pasta e descendentes; órfãos/ciclos terminam e continuam acessíveis; contratos listSummaries ignoram notas/pastas excluídas e contam além da primeira página de 200.
+- [x] Rodar testes de folders e contrato; esperado RED por interfaces novas ausentes.
+- [x] Implementar helpers iterativos com conjunto de visitados; agregação SQL e equivalente em memória; usar o contrato nas duas implementações.
+- [x] Expor raiz, subpastas, caminho, Nova subpasta e Mover pasta nas telas existentes. Atualizar escolher pasta em nota individual e em lote. Exclusão mantém a promoção existente e retorna ao pai. Recarregar dados ao criar/mover/renomear e ao focar a pasta.
+- [x] Rodar testes alvo, lint, typecheck e suíte. Commit `feat(notas): navegar criar e mover subpastas`.
 
 ### Task 3: Campos compartilhados — seletores nativos de data e hora
 

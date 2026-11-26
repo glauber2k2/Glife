@@ -207,6 +207,13 @@ export function createInMemoryNotes(userId: string): { notes: NotesRepository; f
   };
 
   const foldersRepo: NoteFoldersRepository = {
+    async listSummaries() {
+      const noteCounts = new Map<string, number>();
+      const childCounts = new Map<string, number>();
+      for (const n of notes.values()) if (n.deleted_at === null && n.folder_id) noteCounts.set(n.folder_id, (noteCounts.get(n.folder_id) ?? 0) + 1);
+      for (const f of folders.values()) if (f.deleted_at === null && f.parent_id) childCounts.set(f.parent_id, (childCounts.get(f.parent_id) ?? 0) + 1);
+      return (await foldersRepo.list()).map((folder) => ({ folder, notes: noteCounts.get(folder.id) ?? 0, children: childCounts.get(folder.id) ?? 0 }));
+    },
     async list() {
       return [...folders.values()]
         .filter((f) => f.deleted_at === null)

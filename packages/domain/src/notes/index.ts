@@ -22,4 +22,5 @@ export {
   type NoteKind,
   type NotePatch,
 } from './model.ts';
-export type { NoteFoldersRepository, NoteListQuery, NotesRepository } from './repository.ts';
+export type { NoteFolderSummary, NoteFoldersRepository, NoteListQuery, NotesRepository } from './repository.ts';
+export { folderBreadcrumbs, folderChildren, folderDestinations, folderPath } from './folders.ts';

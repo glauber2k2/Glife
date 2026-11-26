@@ -2,7 +2,7 @@
 // (renomear, excluir — com escolha do que fazer com as notas de dentro).
 import { isRepositoryError } from '@glife/domain/core';
 import { FOLDER_NAME_MAX, type Note, type NoteFolder } from '@glife/domain/notes';
-import { FolderOpen, Pencil, Trash2 } from 'lucide-react-native';
+import { FolderInput, FolderOpen, Pencil, Trash2 } from 'lucide-react-native';
 import { useEffect, useState, type ReactNode } from 'react';
 import { Pressable, View } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
@@ -11,6 +11,8 @@ import { Button, Input, ListGroup, NavRow, Sheet, Text, makeStyles, resolveSprin
 
 import { useNotesData } from '../hooks/NotesData';
 import { openNote, useTrashActions } from '../hooks/useNoteActions';
+import { FolderPicker } from './FolderPicker';
+import { errorText } from '@/shared/lib/errorText';
 
 /** `open(note)` mostra as ações da nota; o elemento vai uma vez na tela. */
 export function useNoteQuickActions(onChanged?: () => void): { open: (note: Note) => void; element: ReactNode } {
@@ -47,7 +49,7 @@ export function useNoteQuickActions(onChanged?: () => void): { open: (note: Note
   return { open: setNote, element };
 }
 
-type Step = 'menu' | 'rename' | 'delete' | null;
+type Step = 'menu' | 'rename' | 'delete' | 'move' | null;
 
 /** Menu de uma pasta: renomear e excluir. `notesInside` decide se a exclusão pergunta o que fazer com as notas. */
 export function FolderMenu({
@@ -57,6 +59,8 @@ export function FolderMenu({
   onClose,
   onRenamed,
   onDeleted,
+  allFolders,
+  onMoved,
 }: {
   folder: NoteFolder;
   open: boolean;
@@ -64,6 +68,8 @@ export function FolderMenu({
   onClose: () => void;
   onRenamed: (folder: NoteFolder) => void;
   onDeleted: () => void;
+  allFolders: readonly NoteFolder[];
+  onMoved: (folder: NoteFolder) => void;
 }) {
   const s = useStyles();
   const toast = useToast();
@@ -120,15 +126,31 @@ export function FolderMenu({
     }
   };
 
-  const title = step === 'rename' ? 'Renomear pasta' : step === 'delete' ? `Excluir “${folder.name}”?` : folder.name;
+  const move = async (parent: NoteFolder | null) => {
+    if (busy) return;
+    setBusy(true);
+    try {
+      const moved = await folders.move(folder.id, parent?.id ?? null);
+      close();
+      onMoved(moved);
+      toast({ message: 'Pasta movida', icon: FolderInput });
+    } catch (e) {
+      toast({ message: `Não foi possível mover: ${errorText(e)}` });
+    } finally {
+      setBusy(false);
+    }
+  };
+  const title = step === 'rename' ? 'Renomear pasta' : step === 'move' ? 'Mover pasta' : step === 'delete' ? `Excluir “${folder.name}”?` : folder.name;
   return (
     <Sheet visible={open} onClose={close} title={title}>
       {step === 'menu' && (
         <ListGroup>
           <NavRow icon={Pencil} label="Renomear pasta" onPress={() => setStep('rename')} />
+          <NavRow icon={FolderInput} label="Mover pasta" onPress={() => setStep('move')} />
           <NavRow danger icon={Trash2} label="Excluir pasta" onPress={() => setStep('delete')} />
         </ListGroup>
       )}
+      {step === 'move' && <FolderPicker folders={allFolders} movingId={folder.id} selectedId={folder.parent_id} rootLabel="Raiz" disabled={busy} onPick={(parent) => void move(parent)} />}
       {step === 'rename' && (
         <>
           <Input
