@@ -52,6 +52,16 @@ describe('tentativa manual de sincronização', () => {
     await expect(result).resolves.toBe('expired');
   });
 
+  it('o erro antigo do SDK pode persistir ao conectar sem encerrar a tentativa nova', async () => {
+    const s = source({ failed: true });
+    const result = runSyncAttempt(s.port, 15000);
+    s.emit({ connecting: true });
+    s.emit({ connecting: false, connected: true, downloading: true });
+    expect(s.listeners.size).toBe(1);
+    s.emit({ failed: false, hasSynced: true, downloading: false, lastSyncedAt: new Date(2000) });
+    await expect(result).resolves.toBe('ok');
+  });
+
   it('não confirma sucesso se a troca nova tem erro de envio', async () => {
     vi.useFakeTimers();
     const s = source();

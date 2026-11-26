@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.5.0 — 2026-11-26
+
+- Finanças: gerenciar e ordenar categorias, contas e cartões, arquivar e ajustar saldo sem afetar o orçamento; olhinho com preferência salva para ocultar valores.
+- Notas: gerenciar tags, juntar sem duplicar vínculos e selecionar várias notas para mover, aplicar tags, fixar, exportar ou excluir, com desfazer.
+- Agenda: calendário mensal com indicadores de eventos, lembretes e refeições.
+- Dieta: calorias, macros, metas diárias e histórico por semana ou mês; meta calórica zero equivale a não acompanhar.
+- Sistema: central de notificações e ações nos avisos; folha Adiar com 10 minutos, 1 hora, amanhã às 9h ou horário escolhido.
+- Sincronização: fila de alterações e contagens locais, primeira sincronização sem piscar offline e mensagens distintas para falha, sessão recusada e tempo esgotado; sucesso só após uma troca concluída.
+- Vínculos: restaurar item na lixeira, tentar sincronizar item ausente e informar quando um item existe sem tela disponível.
+- Marca: ícone Cobalto no Android e no navegador e nova imagem de abertura.
+
 ## 0.4.0 — 2026-11-26
 
 - Redesign Cobalto em todo o app: fonte Outfit, fundo cinza com cartões brancos, cobalto só nas ações, cor própria em cada módulo e mascote nos estados vazios; tema escuro refeito.

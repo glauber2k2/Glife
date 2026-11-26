@@ -2,6 +2,12 @@
 
 O que só o dono do projeto pode fazer (contas, chaves, testes no aparelho, decisões). Ao concluir um item, apague-o.
 
+## Fechamento da Fase R2 (26/11/2026)
+
+- [ ] Republicar `supabase/powersync/sync-streams.yaml` no PowerSync: Glife → Production → Sync Streams → colar o arquivo → Validate → Deploy. Inclui a tabela `diet_goals`; as duas migrações R2 já foram aplicadas no Supabase.
+- [ ] Instalar o APK 0.5.0 e conferir no Android e no Chrome: dois temas, largura de 360 dp e textos longos.
+- [ ] Testar uma alteração offline entre Android e web, a preferência do olhinho após reabrir e os botões Feito, Registrar e Adiar (incluindo concluir um item adiado).
+
 ## Agenda e dieta (26/11/2026)
 
 - [ ] Instalar o APK novo (tem biblioteca nativa nova, a de notificações) e permitir as notificações quando o app pedir.
@@ -24,4 +30,4 @@ O que só o dono do projeto pode fazer (contas, chaves, testes no aparelho, deci
 
 ## Já publicado (não precisa fazer)
 
-Migrações até `20261126000001` (agenda e dieta, publicada em 25/11/2026 sem backup: o Docker não subiu), sync-streams v7 no PowerSync e a Edge Function `quotes`.
+Migrações até `20261127000002` (R2 publicada em 26/11/2026 após backup em `../backups/glife-r2-20261126/`); verificação de RLS hospedado sem problemas. A Edge Function `quotes` e os Sync Streams v7 já estavam publicados; a versão atual do arquivo de Sync Streams ainda precisa ser republicada.

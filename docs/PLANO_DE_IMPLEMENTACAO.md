@@ -87,16 +87,17 @@ com "reduzir movimento" respeitado e `pnpm lint && pnpm typecheck && pnpm test` 
 | R.7 | Compras e investimentos | Listas, Lista + Comprei, Investimentos, Ativo + movimento, Novo ativo | ✅ sem conferência visual com login |
 | R.8 | Agenda e dieta | Agenda (linha do tempo), Evento, Lembrete, Dieta, Refeição do plano, Registrar refeição | ✅ sem conferência visual com login |
 | R.9 | Ajustes | Aparência, notificações, dados, conta, sair deste aparelho | ✅ notificações e exportar ficam para R2/Fase 7 |
-| R.10 | Fechamento: revisão geral das transições (empurrar, aba, folha, cartão que vira tela), remoção dos tokens e fontes do Glaciar, APK novo | Todas acima | 🟡 tokens e fontes do Glaciar removidos; falta revisão no aparelho (dois temas, 360 dp) e APK novo |
+| R.10 | Fechamento: revisão geral das transições (empurrar, aba, folha, cartão que vira tela), remoção dos tokens e fontes do Glaciar, APK novo | Todas acima | 🟡 tokens e fontes do Glaciar removidos; APK 0.5.0 gerado; falta revisão no aparelho (dois temas, 360 dp) |
 
 Regras da fase: blocos e atalhos de módulos que ainda não existem (Bíblia, Galeria, IA) ficam recolhidos como no
 estado "Poucos módulos" do Início, sem levar a telas vazias. O que o protótipo mostra de funcionalidade nova fica
 para a Fase R2.
 
-## Fase R2 — Complementos do protótipo nos módulos existentes (≈ 2 semanas)
+## Fase R2 — Complementos do protótipo nos módulos existentes — código concluído em 26/11/2026
 
-Funções novas que o protótipo trouxe para módulos que já existem. Algumas mexem no banco (migração nova, com RLS e
-sync, pela skill `migracao-supabase`).
+Funções novas do protótipo implementadas nos módulos existentes. Migrações `20261127000001` e `20261127000002` aplicadas no Supabase após backup; RLS hospedado conferido sem problemas. Lint, TypeScript e 1.119 testes aprovados.
+
+**Fechamento:** falta republicar `supabase/powersync/sync-streams.yaml` no painel do PowerSync e conferir as telas no Chrome/Android (dois temas, 360 dp), conforme `PENDENCIAS.md`. A folha Adiar oferece 10 minutos, 1 hora, amanhã às 9h e horário escolhido; preferências de notificações por módulo ficam para evolução posterior.
 
 - Notas: tela de Tags e tag aberta (renomear, juntar, excluir); seleção múltipla (mover, tags, fixar, exportar,
   lixeira).
@@ -193,5 +194,5 @@ Telas do protótipo: Exportar tudo (Ajustes), Nota trancada (abrir, aberta, tran
 - [x] 3 Agenda, lembretes e dieta em versão básica (26/11/2026)
 - [x] Design system Cobalto documentado (`docs/design-system-cobalto/`) e protótipo de todas as telas
   (`docs/prototipos/redesign-cobalto/`, 63 telas e 38 folhas) — 26/11/2026
-- [ ] Fase R — redesign do que já existe (próxima)
-- [ ] Fase R2 — complementos do protótipo nos módulos existentes
+- [~] Fase R — redesign implementado; falta conferência no aparelho
+- [~] Fase R2 — implementação e migrações concluídas; falta publicar Sync Streams e conferir no aparelho

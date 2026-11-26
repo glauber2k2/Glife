@@ -18,7 +18,8 @@ export function runSyncAttempt(source: SyncAttemptSource, timeoutMs: number): Pr
 
   return new Promise((resolve) => {
     let settled = false;
-    let tried = false;
+    // O SDK mantém erros até uma troca bem-sucedida. Conectar de novo não os torna novos.
+    let failureCleared = !initial.failed;
     let unsubscribe = () => {};
     const timer = setTimeout(() => finish('timeout'), timeoutMs);
     function finish(result: SyncResult) {
@@ -30,12 +31,12 @@ export function runSyncAttempt(source: SyncAttemptSource, timeoutMs: number): Pr
     }
     const check = (s: SyncSnapshot) => {
       if (settled) return;
-      if (s.connecting) tried = true;
+      if (!s.failed) failureCleared = true;
       if (source.credentialsRound() > round) {
         if (s.networkError) return finish('failed');
         if (s.sessionExpired) return finish('expired');
       }
-      if (tried && s.failed && !s.connecting) return finish('failed');
+      if (failureCleared && s.failed && !s.connecting) return finish('failed');
       if (s.connected && s.hasSynced && !s.failed && !s.uploading && !s.downloading && (s.lastSyncedAt?.getTime() ?? 0) > before) finish('ok');
     };
     unsubscribe = source.subscribe(check);
