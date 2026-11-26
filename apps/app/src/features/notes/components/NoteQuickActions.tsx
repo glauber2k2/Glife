@@ -128,6 +128,11 @@ export function FolderMenu({
 
   const move = async (parent: NoteFolder | null) => {
     if (busy) return;
+    // Escolheu a mãe atual: nada muda, não grava.
+    if ((parent?.id ?? null) === folder.parent_id) {
+      close();
+      return;
+    }
     setBusy(true);
     try {
       const moved = await folders.move(folder.id, parent?.id ?? null);
