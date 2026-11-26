@@ -77,9 +77,9 @@ export function ChartsScreen() {
 
   return (
     <Screen>
-      <BackHeader title="Gráficos" backLabel={params.de === 'Hoje' ? 'Hoje' : 'Finanças'} fallback="/financas" />
+      <BackHeader title="Gráficos" backLabel={params.de === 'Início' || params.de === 'Hoje' ? 'Início' : 'Finanças'} fallback="/financas" />
       <View style={s.controls}>
-        <SegmentedControl label="Período" options={MODE_OPTIONS} value={mode} onChange={setMode} />
+        <SegmentedControl label="Período" shape="block" options={MODE_OPTIONS} value={mode} onChange={setMode} />
         <View style={s.periodRow}>
           {mode === 'month' ? (
             <MonthStepper

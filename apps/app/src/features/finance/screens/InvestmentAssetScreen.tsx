@@ -21,6 +21,7 @@ import {
   Button,
   EmptyState,
   IconButton,
+  ListGroup,
   Reveal,
   Screen,
   Sheet,
@@ -119,9 +120,10 @@ export function InvestmentAssetScreen() {
   if (!snap) return <Screen>{null}</Screen>;
   if (!asset || !pos) {
     return (
-      <Screen>
-        <BackHeader title="Investimento" fallback="/financas/investimentos" />
+      <Screen header={<BackHeader title="Investimento" fallback="/financas/investimentos" />}>
         <EmptyState
+          title="Ativo não encontrado"
+          mood="pensando"
           message="Este ativo não existe mais."
           actionLabel="Ver investimentos"
           onAction={() => router.replace("/financas/investimentos")}
@@ -291,34 +293,22 @@ export function InvestmentAssetScreen() {
 
   return (
     <Screen>
-      <View>
-        <BackHeader
-          title={asset.name}
-          backLabel="Investimentos"
-          fallback="/financas/investimentos"
-        />
-        <View style={s.menuAction}>
-          <IconButton
-            icon={Ellipsis}
-            label="Mais opções"
-            variant="ghost"
-            onPress={() => setMenu(true)}
-          />
-        </View>
-      </View>
-      <Text variant="label" tone="tertiary">
-        {eyebrow}
-      </Text>
+      <BackHeader
+        title={asset.name}
+        subtitle={eyebrow}
+        backLabel="Investimentos"
+        fallback="/financas/investimentos"
+        right={<IconButton icon={Ellipsis} label="Mais opções" onPress={() => setMenu(true)} />}
+      />
 
       <Reveal>
         <View style={s.hero}>
-          <Text variant="caption" tone="tertiary">
+          <Text variant="small" tone="tertiary">
             Valor atual
           </Text>
           <Text
-            variant="display"
+            variant="big"
             numeric
-            style={s.heroValue}
             accessibilityLabel={`Valor atual ${money(pos.current)}`}
           >
             {balance(current)}
@@ -401,16 +391,14 @@ export function InvestmentAssetScreen() {
           ))}
         </View>
 
-        <Text variant="label" tone="tertiary" style={s.historyTitle}>
+        <Text variant="heading" style={s.historyTitle}>
           Histórico
         </Text>
         {months.length === 0 ? (
-          <Text tone="tertiary" style={s.emptyHistory}>
-            Nenhum movimento ainda. Comece por um aporte.
-          </Text>
+          <EmptyState compact message="Nenhum movimento ainda. Comece por um aporte." />
         ) : (
           months.map((g) => (
-            <View key={g.key}>
+            <View key={g.key} style={s.month}>
               <Text
                 variant="small"
                 tone="secondary"
@@ -418,7 +406,7 @@ export function InvestmentAssetScreen() {
               >
                 {g.label}
               </Text>
-              <Reveal>
+              <ListGroup>
                 {g.items.map((m) => {
                   const negative =
                     m.kind === "withdrawal" ||
@@ -449,11 +437,10 @@ export function InvestmentAssetScreen() {
                     />
                   );
                 })}
-              </Reveal>
+              </ListGroup>
             </View>
           ))
         )}
-        <View style={s.rule} />
       </Reveal>
 
       <MovementSheet
@@ -538,11 +525,9 @@ function Stat({
 }
 
 const useStyles = makeStyles((t) => ({
-  menuAction: { position: "absolute", right: -t.space[2], bottom: t.space[0] },
   semibold: { fontFamily: t.type.button.font },
   shrink: { flexShrink: 1 },
-  hero: { gap: t.space[2], paddingTop: t.space[6] },
-  heroValue: { lineHeight: t.type.display.fontSize + t.space[1] },
+  hero: { gap: t.space[1.5] },
   quoteLine: {
     flexDirection: "row",
     alignItems: "center",
@@ -550,10 +535,9 @@ const useStyles = makeStyles((t) => ({
     flexWrap: "wrap",
   },
   block: {
-    marginTop: t.layout.blockGap,
-    paddingTop: t.layout.blockGap,
-    borderTopWidth: t.hairline,
-    borderTopColor: t.colors.hairline,
+    backgroundColor: t.colors.card,
+    borderRadius: t.radius.card,
+    padding: t.space[4.5],
   },
   grid: { flexDirection: "row", flexWrap: "wrap", rowGap: t.space[4] },
   stat: { width: "50%", paddingRight: t.space[3], gap: t.space[1] },
@@ -561,18 +545,10 @@ const useStyles = makeStyles((t) => ({
   actions: {
     flexDirection: "row",
     flexWrap: "wrap",
-    marginHorizontal: -t.space[1],
+    padding: t.space[3],
   },
   action: { width: "50%", padding: t.space[1] },
-  historyTitle: {
-    paddingTop: t.space[6] + t.space[1.5],
-    paddingBottom: t.space[1.5],
-  },
-  monthLabel: { paddingTop: t.layout.blockGap, paddingBottom: t.space[2] },
-  emptyHistory: {
-    paddingVertical: t.space[4],
-    borderTopWidth: t.hairline,
-    borderTopColor: t.colors.hairline,
-  },
-  rule: { borderTopWidth: t.hairline, borderTopColor: t.colors.hairline },
+  historyTitle: { marginBottom: -t.space[3] },
+  month: { gap: t.space[2] },
+  monthLabel: {},
 }));

@@ -17,16 +17,13 @@ import { flowAria, flowSlots } from './slots';
 // ---------- Peças ----------
 
 /** "R$ 1.450,00" grande, contando até o novo valor; `size` escolhe a escala (28 nos blocos, 40/44 no topo). */
-export function BigAmount({ value, size = 'title2', after }: { value: number; size?: 'title2' | 'display'; after?: string }) {
+export function BigAmount({ value, size = 'title2', after }: { value: number; size?: 'title2' | 'display' | 'big'; after?: string }) {
   const s = useStyles();
   const shown = useCountUp(value);
   return (
     <View style={s.amount}>
-      <Text variant={size === 'display' ? 'heading' : 'item'} tone="secondary" style={s.light}>
-        {value < 0 ? '− R$' : 'R$'}
-      </Text>
       <Text variant={size} numeric>
-        {formatBRL(Math.abs(shown), { symbol: false })}
+        {`${value < 0 ? '− ' : ''}R$ ${formatBRL(Math.abs(shown), { symbol: false })}`}
       </Text>
       {after ? (
         <Text variant="small" tone="tertiary">
@@ -199,7 +196,7 @@ const useStyles = makeStyles((t) => ({
   swatchOutline: { borderWidth: t.size.barOutline, borderColor: t.colors.textTertiary },
   swatchFill: { backgroundColor: t.colors.textSecondary },
   swatchPlanned: { backgroundColor: t.colors.planned },
-  track: { height: t.size.track, borderRadius: t.radius.full, backgroundColor: t.colors.soft, flexDirection: 'row', overflow: 'hidden' },
+  track: { height: t.size.track, borderRadius: t.radius.full, backgroundColor: t.colors.track, flexDirection: 'row', overflow: 'hidden' },
   trackSpent: { backgroundColor: t.colors.textSecondary },
   trackPlanned: { backgroundColor: t.colors.planned },
   empty: { paddingTop: t.space[3] },

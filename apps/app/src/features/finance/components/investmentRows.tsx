@@ -7,7 +7,7 @@ import { Pressable, View } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 import Svg, { Circle, Path } from 'react-native-svg';
 
-import { Icon, Text, makeStyles, resolveSpring, useReduceMotion, useTheme, type TextTone } from '@/shared/ui';
+import { Icon, ModuleIcon, Text, makeStyles, resolveSpring, useInListGroup, useReduceMotion, useTheme, type TextTone } from '@/shared/ui';
 
 import { shareText } from './investmentFormat';
 
@@ -40,8 +40,15 @@ export function AssetRow(p: {
   onPress: () => void;
 }) {
   const s = useStyles();
+  const inGroup = useInListGroup();
   return (
-    <Pressable accessibilityRole="button" accessibilityLabel={`${p.name}, ${p.value}, ${p.pct}`} onPress={p.onPress} style={({ pressed }) => [s.row, pressed && s.pressed]}>
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={`${p.name}, ${p.value}, ${p.pct}`}
+      onPress={p.onPress}
+      style={({ pressed }) => [s.row, !inGroup && s.rowDivider, pressed && s.pressed]}
+    >
+      <ModuleIcon icon={TrendingUp} module="investments" tone={p.closed ? 'neutral' : 'module'} />
       <View style={s.grow}>
         <Text variant="item" tone={p.closed ? 'secondary' : 'primary'}>
           {p.name}
@@ -53,7 +60,7 @@ export function AssetRow(p: {
         ) : null}
       </View>
       <View style={s.right}>
-        <Text tone={p.closed ? 'tertiary' : 'primary'} numeric style={s.medium}>
+        <Text variant="amount" tone={p.closed ? 'tertiary' : 'primary'} numeric>
           {p.value}
         </Text>
         <Text variant="caption" tone={p.pctTone} numeric>
@@ -69,10 +76,10 @@ export function GroupHeader({ label, right }: { label: string; right: string }) 
   const s = useStyles();
   return (
     <View style={s.groupHeader}>
-      <Text variant="label" tone="tertiary" accessibilityRole="header">
+      <Text variant="heading" accessibilityRole="header">
         {label}
       </Text>
-      <Text variant="label" tone="tertiary" numeric>
+      <Text variant="small" tone="tertiary" numeric>
         {right}
       </Text>
     </View>
@@ -84,9 +91,7 @@ export function DistributionBar({ groups }: { groups: readonly Pick<PortfolioGro
   const s = useStyles();
   return (
     <View style={s.distribution}>
-      <Text variant="label" tone="tertiary">
-        Distribuição
-      </Text>
+      <Text variant="emphasis">Distribuição</Text>
       <View style={s.bar}>
         {groups.map((g, i) => (
           <View key={g.kind} style={[s.segment, i === 0 ? s.segmentTop : s.segmentRest, { flexGrow: Math.max(g.total, 1) }]} />
@@ -138,21 +143,24 @@ export function ClosedToggle({ count, open, onPress }: { count: number; open: bo
 
 export function MovementRow(p: { icon: LucideIcon; label: string; sub: string; amount: string; muted?: boolean; onPress: () => void }) {
   const s = useStyles();
-  const t = useTheme();
+  const inGroup = useInListGroup();
   return (
-    <Pressable accessibilityRole="button" accessibilityLabel={`${p.label}, ${p.amount}`} onPress={p.onPress} style={({ pressed }) => [s.row, pressed && s.pressed]}>
-      <View style={s.disc}>
-        <Icon icon={p.icon} size={t.icon.small} color="textSecondary" />
-      </View>
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={`${p.label}, ${p.amount}`}
+      onPress={p.onPress}
+      style={({ pressed }) => [s.row, !inGroup && s.rowDivider, pressed && s.pressed]}
+    >
+      <ModuleIcon icon={p.icon} module="investments" tone={p.muted ? 'neutral' : 'module'} />
       <View style={s.grow}>
-        <Text style={s.medium}>{p.label}</Text>
+        <Text variant="item">{p.label}</Text>
         {p.sub ? (
           <Text variant="caption" tone="tertiary" numeric>
             {p.sub}
           </Text>
         ) : null}
       </View>
-      <Text tone={p.muted ? 'secondary' : 'primary'} numeric style={s.medium}>
+      <Text variant="amount" tone={p.muted ? 'secondary' : 'primary'} numeric>
         {p.amount}
       </Text>
     </Pressable>
@@ -206,30 +214,29 @@ const useStyles = makeStyles((t) => ({
   grow: { flex: 1, minWidth: 0, gap: t.space[1] },
   medium: { fontFamily: t.type.chip.font },
   semibold: { fontFamily: t.type.button.font },
-  pressed: { backgroundColor: t.colors.soft },
+  pressed: { opacity: t.opacity.pressed },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: t.space[3] + t.space[0.5],
+    gap: t.space[3],
     minHeight: t.size.listRow,
-    paddingVertical: t.space[3] + t.space[0.5],
-    borderTopWidth: t.hairline,
-    borderTopColor: t.colors.hairline,
+    paddingVertical: t.space[3],
   },
+  rowDivider: { borderTopWidth: t.hairline, borderTopColor: t.colors.hairline },
   right: { flexShrink: 0, alignItems: 'flex-end', gap: t.space[1] },
   groupHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'baseline',
     gap: t.space[3],
-    paddingTop: t.space[6] + t.space[1.5],
-    paddingBottom: t.space[2] + t.space[0.5],
+    paddingTop: t.space[2],
+    paddingBottom: t.space[1],
   },
   distribution: { gap: t.space[3] },
-  bar: { flexDirection: 'row', gap: t.space[0.5], height: t.space[1.5] },
+  bar: { flexDirection: 'row', gap: t.space[1], height: t.size.trackThick + t.space[0.5] },
   segment: { flexBasis: 0, minWidth: t.space[1], borderRadius: t.radius.full },
   segmentTop: { backgroundColor: t.colors.accent },
-  segmentRest: { backgroundColor: t.colors.textTertiary, opacity: t.opacity.faint },
+  segmentRest: { backgroundColor: t.colors.border },
   legend: { flexDirection: 'row', flexWrap: 'wrap', columnGap: t.space[4], rowGap: t.space[1.5] },
   closedRow: {
     flexDirection: 'row',
@@ -237,18 +244,9 @@ const useStyles = makeStyles((t) => ({
     gap: t.space[2] + t.space[0.5],
     minHeight: t.size.listRow,
     paddingVertical: t.space[2],
-    marginTop: t.space[6] + t.space[1.5],
-    borderTopWidth: t.hairline,
-    borderTopColor: t.colors.hairline,
-  },
-  disc: {
-    width: t.size.disc,
-    height: t.size.disc,
-    borderRadius: t.radius.full,
-    borderWidth: t.hairline,
-    borderColor: t.colors.hairline,
-    alignItems: 'center',
-    justifyContent: 'center',
+    paddingHorizontal: t.space[4],
+    borderRadius: t.radius.card,
+    backgroundColor: t.colors.card,
   },
   chart: { gap: t.space[2] },
   chartAxis: { flexDirection: 'row', justifyContent: 'space-between' },

@@ -7,7 +7,7 @@ import { Plus } from 'lucide-react-native';
 import { useMemo, useState } from 'react';
 import { View } from 'react-native';
 
-import { BackHeader, EmptyState, IconButton, Reveal, Screen, Text, makeStyles } from '@/shared/ui';
+import { BackHeader, Card, EmptyState, IconButton, ListGroup, Reveal, Screen, Text, makeStyles } from '@/shared/ui';
 
 import { balance, dm, dmy, money, signed, todayIso } from '../components/format';
 import { pctSigned, shareText } from '../components/investmentFormat';
@@ -38,22 +38,22 @@ export function InvestmentsScreen() {
 
   return (
     <Screen>
-      <View>
-        <BackHeader title="Investimentos" fallback="/financas" />
-        <View style={s.addAction}>
-          <IconButton icon={Plus} label="Novo ativo" variant="outline" onPress={newAsset} />
-        </View>
-      </View>
+      <BackHeader title="Investimentos" fallback="/financas" right={<IconButton icon={Plus} label="Novo ativo" onPress={newAsset} />} />
 
       {p && snap && snap.assets.length === 0 ? (
-        <EmptyState message="Nenhum investimento cadastrado. Cadastre um ativo e lance aportes e resgates." actionLabel="Novo ativo" onAction={newAsset} />
+        <EmptyState
+          title="Nenhum investimento ainda"
+          message="Cadastre um ativo e lance aportes e resgates. Ações, FIIs e cripto atualizam sozinhos."
+          actionLabel="Novo ativo"
+          onAction={newAsset}
+        />
       ) : p ? (
         <Reveal>
           <View style={s.hero}>
-            <Text variant="caption" tone="tertiary">
+            <Text variant="small" tone="tertiary">
               Patrimônio investido
             </Text>
-            <Text variant="display" numeric style={s.heroValue} accessibilityLabel={`Patrimônio investido ${money(p.total)}`}>
+            <Text variant="big" numeric accessibilityLabel={`Patrimônio investido ${money(p.total)}`}>
               {balance(total)}
             </Text>
             <View style={s.resultLine}>
@@ -72,16 +72,16 @@ export function InvestmentsScreen() {
           </View>
 
           {p.groups.length > 0 && (
-            <View style={s.block}>
+            <Card>
               <DistributionBar groups={p.groups} />
-            </View>
+            </Card>
           )}
 
-          <View>
+          <View style={s.groups}>
             {p.groups.map((g) => (
-              <View key={g.kind}>
+              <View key={g.kind} style={s.group}>
                 <GroupHeader label={ASSET_KIND_LABELS[g.kind]} right={shareText(g.share)} />
-                <Reveal>
+                <ListGroup>
                   {g.assets.map((x) => (
                     <AssetRow
                       key={x.asset.id}
@@ -93,14 +93,14 @@ export function InvestmentsScreen() {
                       onPress={() => openAsset(x.asset.id)}
                     />
                   ))}
-                </Reveal>
+                </ListGroup>
               </View>
             ))}
             {p.closed.length > 0 && (
               <>
                 <ClosedToggle count={p.closed.length} open={closedOpen} onPress={() => setClosedOpen((o) => !o)} />
                 {closedOpen && (
-                  <Reveal>
+                  <ListGroup>
                     {p.closed.map((x) => (
                       <AssetRow
                         key={x.asset.id}
@@ -113,11 +113,10 @@ export function InvestmentsScreen() {
                         onPress={() => openAsset(x.asset.id)}
                       />
                     ))}
-                  </Reveal>
+                  </ListGroup>
                 )}
               </>
             )}
-            <View style={s.rule} />
           </View>
         </Reveal>
       ) : null}
@@ -126,11 +125,10 @@ export function InvestmentsScreen() {
 }
 
 const useStyles = makeStyles((t) => ({
-  addAction: { position: 'absolute', right: t.space[0], bottom: t.space[0] },
   medium: { fontFamily: t.type.chip.font },
-  hero: { gap: t.space[2], paddingTop: t.space[2] },
-  heroValue: { lineHeight: t.type.display.fontSize + t.space[1] },
+  hero: { gap: t.space[1.5] },
+  groups: { gap: t.layout.blockGap },
+  group: { gap: t.space[3] },
   resultLine: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'baseline', columnGap: t.space[2] + t.space[0.5], rowGap: t.space[1] },
-  block: { marginTop: t.layout.blockGap, paddingTop: t.layout.blockGap, borderTopWidth: t.hairline, borderTopColor: t.colors.hairline },
-  rule: { borderTopWidth: t.hairline, borderTopColor: t.colors.hairline },
+
 }));

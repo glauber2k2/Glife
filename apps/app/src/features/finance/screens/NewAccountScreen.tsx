@@ -7,7 +7,7 @@ import { Plus, X } from 'lucide-react-native';
 import { useState } from 'react';
 import { Pressable, View } from 'react-native';
 
-import { Button, Chip, Icon, IconButton, Input, Reveal, Screen, Text, makeStyles, useTheme, useToast } from '@/shared/ui';
+import { BackHeader, Button, Chip, Icon, IconButton, Input, Reveal, Screen, Text, makeStyles, useTheme, useToast } from '@/shared/ui';
 
 import { money, dm, MONTH_NAMES, todayIso } from '../components/format';
 import { Block, BlockHeader, DayField, MoneyField, RadioRow } from '../components/ui';
@@ -150,9 +150,7 @@ export function NewAccountScreen() {
   return (
     <Screen>
       <View>
-        <View style={s.bar}>
-          <IconButton icon={X} label="Voltar" variant="ghost" size={t.touch.minTarget} onPress={back} />
-        </View>
+        <BackHeader left={<IconButton icon={X} label="Voltar" onPress={back} />} />
         <Text variant="title" accessibilityRole="header" style={s.title}>
           {title}
         </Text>
@@ -368,10 +366,10 @@ const useStyles = makeStyles((t) => ({
     flexDirection: 'row',
     alignItems: 'center',
     gap: t.space[3],
-    minHeight: t.size.button,
+    minHeight: t.size.navRow,
     borderTopWidth: t.hairline,
     borderTopColor: t.colors.hairline,
   },
-  pressed: { backgroundColor: t.colors.soft },
+  pressed: { opacity: t.opacity.pressed },
   summary: { paddingTop: t.space[2] },
 }));

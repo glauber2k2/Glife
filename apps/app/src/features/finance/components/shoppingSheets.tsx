@@ -291,7 +291,7 @@ const useStyles = makeStyles((t) => ({
   form: { gap: t.space[3] + t.space[0.5] },
   flex: { flex: 1, minWidth: 0 },
   medium: { fontFamily: t.type.chip.font },
-  pressed: { backgroundColor: t.colors.soft },
+  pressed: { opacity: t.opacity.pressed },
   action: {
     flexDirection: 'row',
     alignItems: 'center',

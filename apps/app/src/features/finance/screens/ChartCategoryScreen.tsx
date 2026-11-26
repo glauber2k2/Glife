@@ -60,11 +60,8 @@ export function ChartCategoryScreen() {
 
   return (
     <Screen>
-      <BackHeader title={name} backLabel="Gráficos" fallback="/financas" />
+      <BackHeader title={name} subtitle={`Categoria · ${MODE_SHORT[mode]}`} backLabel="Gráficos" fallback="/financas" />
       <View style={s.head}>
-        <Text variant="label" tone="tertiary">
-          {`Categoria · ${MODE_SHORT[mode]}`}
-        </Text>
         {outras && ids.length > 0 && (
           <Text variant="small" tone="tertiary">
             {categoryNames(ids, categories).join(', ')}
@@ -75,7 +72,7 @@ export function ChartCategoryScreen() {
         <Text variant="caption" tone="tertiary">
           {`Gasto em ${period.mode === 'month' ? monthLower(period.anchor) : periodText.charAt(0).toLowerCase() + periodText.slice(1)}`}
         </Text>
-        <BigAmount value={detail.total} size="display" />
+        <BigAmount value={detail.total} size="big" />
         <Text variant="small" tone="secondary" numeric>
           {cmp}
         </Text>

@@ -199,9 +199,9 @@ function EntryForm({ onClose, today, preset, aboveTabBar }: Props) {
     <View style={[s.root, { height: height - t.space[12] - t.space[8] }]}>
       <View style={s.header}>
         <Text variant="heading">Novo lançamento</Text>
-        <IconButton icon={X} label="Fechar" variant="ghost" color="textSecondary" onPress={onClose} />
+        <IconButton icon={X} label="Fechar" variant="soft" onPress={onClose} />
       </View>
-      <SegmentedControl label="Tipo de lançamento" options={TYPES} value={type} onChange={changeType} />
+      <SegmentedControl label="Tipo de lançamento" shape="block" options={TYPES} value={type} onChange={changeType} />
       <MoneyField
         large
         autoFocus
