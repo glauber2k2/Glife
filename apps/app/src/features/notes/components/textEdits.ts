@@ -10,7 +10,7 @@ export interface Edit {
   selection: Selection;
 }
 
-/** Native selection events may still refer to the text before the last edit. */
+/** Limita a seleção ao texto: o evento nativo pode ainda se referir ao texto anterior à última edição. */
 export function normalizeSelection(text: string, selection: Selection): Selection {
   const index = (value: number) => Number.isFinite(value) ? Math.max(0, Math.min(text.length, Math.trunc(value))) : 0;
   const start = index(selection.start);

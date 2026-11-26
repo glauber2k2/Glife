@@ -27,7 +27,7 @@ import {
   X,
   type LucideIcon,
 } from 'lucide-react-native';
-import { useCallback, useEffect, useRef, useState, type ComponentRef } from 'react';
+import { useCallback, useEffect, useMemo, useReducer, useRef, useState, type ComponentRef } from 'react';
 import {
   Keyboard,
   Platform,
@@ -72,7 +72,6 @@ import { NoteLinks } from '../components/NoteLinks';
 import {
   applyWikilink,
   insertAt,
-  normalizeSelection,
   prefixLines,
   toggleHeading,
   toggleWrap,
@@ -81,6 +80,7 @@ import {
   type Selection,
 } from '../components/textEdits';
 import { syncNoteLinks } from '../data/noteLinks';
+import { cursorIn, editorSelectionReducer, initialEditorSelection } from '../hooks/editorSelection';
 import { useNotesData } from '../hooks/NotesData';
 import { goBack, openNote, useTrashActions } from '../hooks/useNoteActions';
 
@@ -122,8 +122,8 @@ export function NoteEditorScreen() {
   const [noteTags, setNoteTags] = useState<TagModel[]>([]);
   const [tagDraft, setTagDraft] = useState('');
   const [scrolled, setScrolled] = useState(false);
-  const [selection, setSelection] = useState<Selection>({ start: 0, end: 0 });
-  const [forcedSelection, setForcedSelection] = useState<Selection | undefined>();
+  // Seleção crua do campo (o evento nativo pode chegar antes do texto novo); só é limitada ao texto ao usar.
+  const [cursor, dispatchCursor] = useReducer(editorSelectionReducer, initialEditorSelection);
   const [bodyFocused, setBodyFocused] = useState(false);
   const [keyboard, setKeyboard] = useState(false);
   const [linkVersion, setLinkVersion] = useState(0);
@@ -214,6 +214,9 @@ export function NoteEditorScreen() {
     [notes, id, flush],
   );
 
+  const selection = useMemo(() => cursorIn(body, cursor), [body, cursor]);
+  const forcedSelection = useMemo(() => cursor.forced && cursorIn(body, { raw: cursor.forced }), [body, cursor.forced]);
+
   // ---------- [[ sugestões ----------
   const query = mode === 'write' && bodyFocused ? wikilinkQuery(body, selection.start) : null;
   const q = query?.query ?? null;
@@ -232,9 +235,7 @@ export function NoteEditorScreen() {
   const applyEdit = (edit: Edit) => {
     setBody(edit.text);
     schedule({ body_md: edit.text });
-    const nextSelection = normalizeSelection(edit.text, edit.selection);
-    setForcedSelection(nextSelection);
-    setSelection(nextSelection);
+    dispatchCursor({ type: 'edit', edit });
   };
 
   const pickSuggestion = async (titleToLink: string, create = false) => {
@@ -245,8 +246,7 @@ export function NoteEditorScreen() {
   };
 
   const onSelectionChange = (e: TextInputSelectionChangeEvent) => {
-    setSelection(normalizeSelection(body, e.nativeEvent.selection));
-    if (forcedSelection) setForcedSelection(undefined);
+    dispatchCursor({ type: 'native', selection: e.nativeEvent.selection });
   };
 
   const openWikilink = async (target: string) => {
@@ -397,12 +397,11 @@ export function NoteEditorScreen() {
                   {...(LIVE ? { children: <LiveMarkdown markdown={body} /> } : { value: body })}
                   onChangeText={(v) => {
                     setBody(v);
-                    setSelection((current) => normalizeSelection(v, current));
-                    setForcedSelection(undefined);
+                    dispatchCursor({ type: 'text' });
                     schedule({ body_md: v });
                   }}
                   onSelectionChange={onSelectionChange}
-                  selection={forcedSelection && normalizeSelection(body, forcedSelection)}
+                  selection={forcedSelection}
                   onFocus={() => {
                     if (blurTimer.current) clearTimeout(blurTimer.current);
                     setBodyFocused(true);
