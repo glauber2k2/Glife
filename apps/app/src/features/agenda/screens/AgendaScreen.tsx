@@ -3,7 +3,7 @@
 import { agendaBetween, overdueReminders, type AgendaItem } from '@glife/domain/agenda';
 import { addDays, localNow, type IsoDate } from '@glife/domain/time';
 import { router } from 'expo-router';
-import { AlarmClock, CalendarPlus, ChevronLeft, ChevronRight, MapPin, Plus, Repeat } from 'lucide-react-native';
+import { AlarmClock, CalendarDays, CalendarPlus, ChevronLeft, ChevronRight, MapPin, Plus, Repeat } from 'lucide-react-native';
 import { useMemo, useState } from 'react';
 import { Pressable, View } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
@@ -93,6 +93,7 @@ export function AgendaScreen() {
       action={
         <View style={s.actions}>
           {!isToday && <Button label="Hoje" variant="neutral" size="sm" selfAlign="center" onPress={() => setDay(now.date)} />}
+          <IconButton icon={CalendarDays} label="Calendário do mês" onPress={() => router.push('/agenda/mes')} />
           <IconButton icon={Plus} label="Novo" onPress={() => setCreating(true)} />
         </View>
       }

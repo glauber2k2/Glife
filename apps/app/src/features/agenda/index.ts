@@ -5,3 +5,5 @@ export { EventFormScreen } from './screens/EventFormScreen';
 export { ReminderFormScreen } from './screens/ReminderFormScreen';
 export { TodayAgendaBlock } from './components/TodayAgendaBlock';
 export { useAgendaNotices } from './hooks/useAgendaNotices';
+export { AgendaMonthScreen } from './screens/AgendaMonthScreen';
+export { DayMarksProvider, type DayMarkSource } from './hooks/DayMarks';

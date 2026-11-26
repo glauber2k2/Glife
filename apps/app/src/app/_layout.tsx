@@ -12,8 +12,8 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { AppLockGate, AppLockProvider, createDeviceAppLock, deviceBiometrics, useAppLock } from '@/features/app-lock';
 import { AuthProvider, createSupabaseAuthService, useAuth } from '@/features/auth';
-import { AgendaProvider, agendaTables } from '@/features/agenda';
-import { DietProvider, dietTables } from '@/features/diet';
+import { AgendaProvider, DayMarksProvider, agendaTables } from '@/features/agenda';
+import { DietProvider, dietTables, useDietDayMarks } from '@/features/diet';
 import { FinanceProvider, createEdgeQuoteClient, financeTables, useFinanceTaggedSource } from '@/features/finance';
 import { LinksProvider, TaggedItemsProvider, linksTables, useLinksSearchSources } from '@/features/links';
 import { NotesProvider, notesSearchIndex, notesTables, useNotesSearchSources, useNotesTaggedSource } from '@/features/notes';
@@ -61,6 +61,13 @@ function SearchComposition({ enabled, children }: { enabled: boolean; children: 
   );
 }
 
+/** Calendário da agenda: as refeições do plano (dieta) viram pontos no mês, sem a agenda conhecer a dieta. */
+function DayMarksComposition({ children }: { children: ReactNode }) {
+  const diet = useDietDayMarks();
+  const sources = useMemo(() => [diet], [diet]);
+  return <DayMarksProvider sources={sources}>{children}</DayMarksProvider>;
+}
+
 /** Tela de uma tag: cada feature diz como mostrar os seus itens com tag (registro aberto da feature links). */
 function TaggedComposition({ children }: { children: ReactNode }) {
   const notes = useNotesTaggedSource();
@@ -97,6 +104,7 @@ function RootStack() {
           <AgendaProvider db={localSync.db} userId={userId}>
           <DietProvider db={localSync.db} userId={userId}>
           <NoticesSync scheduler={noticeScheduler} />
+          <DayMarksComposition>
           <SearchComposition enabled={stage === 'ready'}>
           <TaggedComposition>
           <ToastProvider>
@@ -147,6 +155,7 @@ function RootStack() {
                   <Stack.Screen name="financas/graficos" options={{ animation: animation.detail }} />
                   <Stack.Screen name="financas/grafico/[categoria]" options={{ animation: animation.detail }} />
                   <Stack.Screen name="biblia" options={{ animation: animation.detail }} />
+                  <Stack.Screen name="agenda/mes" options={{ animation: animation.detail }} />
                   <Stack.Screen name="agenda/evento/novo" options={{ animation: animation.detail }} />
                   <Stack.Screen name="agenda/evento/[id]" options={{ animation: animation.detail }} />
                   <Stack.Screen name="agenda/lembrete/novo" options={{ animation: animation.detail }} />
@@ -172,6 +181,7 @@ function RootStack() {
           </ToastProvider>
           </TaggedComposition>
           </SearchComposition>
+          </DayMarksComposition>
           </DietProvider>
           </AgendaProvider>
           </FinanceProvider>

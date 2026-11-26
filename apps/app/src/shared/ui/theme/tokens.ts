@@ -412,6 +412,8 @@ export const size = {
   dayWidth: 44,
   dayHeight: 64,
   dayDot: 4,
+  /** célula do dia no calendário do mês (7 colunas cabem em 360 dp) */
+  monthCell: 48,
   /** linha do agora na linha do tempo */
   nowLine: 2,
   nowDot: 10,
