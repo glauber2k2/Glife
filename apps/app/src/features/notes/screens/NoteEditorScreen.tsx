@@ -72,6 +72,7 @@ import { NoteLinks } from '../components/NoteLinks';
 import {
   applyWikilink,
   insertAt,
+  normalizeSelection,
   prefixLines,
   toggleHeading,
   toggleWrap,
@@ -231,8 +232,9 @@ export function NoteEditorScreen() {
   const applyEdit = (edit: Edit) => {
     setBody(edit.text);
     schedule({ body_md: edit.text });
-    setForcedSelection(edit.selection);
-    setSelection(edit.selection);
+    const nextSelection = normalizeSelection(edit.text, edit.selection);
+    setForcedSelection(nextSelection);
+    setSelection(nextSelection);
   };
 
   const pickSuggestion = async (titleToLink: string, create = false) => {
@@ -243,7 +245,7 @@ export function NoteEditorScreen() {
   };
 
   const onSelectionChange = (e: TextInputSelectionChangeEvent) => {
-    setSelection(e.nativeEvent.selection);
+    setSelection(normalizeSelection(body, e.nativeEvent.selection));
     if (forcedSelection) setForcedSelection(undefined);
   };
 
@@ -395,10 +397,12 @@ export function NoteEditorScreen() {
                   {...(LIVE ? { children: <LiveMarkdown markdown={body} /> } : { value: body })}
                   onChangeText={(v) => {
                     setBody(v);
+                    setSelection((current) => normalizeSelection(v, current));
+                    setForcedSelection(undefined);
                     schedule({ body_md: v });
                   }}
                   onSelectionChange={onSelectionChange}
-                  selection={forcedSelection}
+                  selection={forcedSelection && normalizeSelection(body, forcedSelection)}
                   onFocus={() => {
                     if (blurTimer.current) clearTimeout(blurTimer.current);
                     setBodyFocused(true);
@@ -652,7 +656,6 @@ function OptionRow({
 }
 
 const useStyles = makeStyles((t) => {
-  const bodyLine = Math.round(t.type.body.fontSize * 1.6);
   return {
     root: { flex: 1, backgroundColor: t.colors.bg },
     flex: { flex: 1 },
@@ -690,7 +693,7 @@ const useStyles = makeStyles((t) => {
       minHeight: t.size.captureFieldMinHeight * 2,
       fontFamily: t.type.body.font,
       fontSize: t.type.body.fontSize,
-      lineHeight: bodyLine,
+      lineHeight: t.type.body.lineHeight,
       color: t.colors.text,
       padding: t.space[0],
     },

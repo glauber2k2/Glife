@@ -1,6 +1,39 @@
 import { describe, expect, it } from 'vitest';
 
-import { applyWikilink, prefixLines, toggleBold, insertAt, wikilinkQuery } from '../src/features/notes/components/textEdits';
+import { applyWikilink, prefixLines, toggleBold, toggleHeading, toggleWrap, insertAt, normalizeSelection, wikilinkQuery } from '../src/features/notes/components/textEdits';
+
+describe('seleção após alterações e linhas vazias', () => {
+  it('normaliza índices atrasados, invertidos, fracionários e não finitos', () => {
+    expect(normalizeSelection('curto', { start: 20, end: 30 })).toEqual({ start: 5, end: 5 });
+    expect(normalizeSelection('abc', { start: 2.8, end: -4 })).toEqual({ start: 0, end: 2 });
+    expect(normalizeSelection('', { start: NaN, end: Infinity })).toEqual({ start: 0, end: 0 });
+  });
+
+  it('insere no final do texto encurtado em vez de enviar cursor além do conteúdo', () => {
+    expect(insertAt('a', { start: 12, end: 12 }, 'x')).toEqual({ text: 'ax', selection: { start: 2, end: 2 } });
+  });
+
+  it('formata a primeira linha vazia sem deslocar a quebra para cima', () => {
+    expect(prefixLines('\nitem', { start: 0, end: 0 }, '- ')).toEqual({ text: '- \nitem', selection: { start: 2, end: 2 } });
+    expect(toggleHeading('\nitem', { start: 0, end: 0 }, 1)).toEqual({ text: '# \nitem', selection: { start: 2, end: 2 } });
+  });
+
+  it('mantém cursor válido ao desmarcar no início de uma lista', () => {
+    expect(prefixLines('- item', { start: 0, end: 0 }, '- ')).toEqual({ text: 'item', selection: { start: 0, end: 0 } });
+  });
+
+  it('todas as ações respeitam limites mesmo com eventos de seleção antigos', () => {
+    const text = '- item\n\n  😀';
+    for (const selection of [{ start: 99, end: 99 }, { start: -8, end: 5 }, { start: 9, end: 2 }, { start: NaN, end: Infinity }]) {
+      const edits = [insertAt(text, selection, '[['), toggleWrap(text, selection, '**'), toggleHeading(text, selection, 1), prefixLines(text, selection, '- '), applyWikilink(text, selection.start, selection.end, 'Nota')];
+      for (const edit of edits) {
+        expect(edit.selection.start).toBeGreaterThanOrEqual(0);
+        expect(edit.selection.end).toBeGreaterThanOrEqual(edit.selection.start);
+        expect(edit.selection.end).toBeLessThanOrEqual(edit.text.length);
+      }
+    }
+  });
+});
 
 describe('edições da barra de formatação', () => {
   it('negrito envolve a seleção', () => {

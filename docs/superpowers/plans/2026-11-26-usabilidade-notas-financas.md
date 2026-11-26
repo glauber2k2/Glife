@@ -83,10 +83,10 @@
 
 **Interfaces:** produzir `normalizeSelection(text: string, selection: Selection): Selection` para clamping e ordenação de índices finitos no intervalo 0..text.length; todas as edições retornam `Edit` com seleção válida. `liveSpans` mantém concatenação exata, inclusive UTF-16 e linhas vazias; o componente mantém uma árvore de texto estilizado estável e métricas do corpo nas quebras/trechos sem estilo.
 
-- [ ] Confirmar hipótese pelo código do React Native instalado e por reprodução disponível. Registrar no ledger o caminho problemático, a evidência e a limitação de ausência de aparelho; não afirmar reprodução de crash nativo sem tê-la feito.
-- [ ] Adicionar testes de seleção após encurtar texto, índices fora do intervalo e primeira linha vazia; listas com duas quebras e espaços, CRLF, emoji e formatação depois dessas posições. Esperado RED para os índices inválidos atuais.
-- [ ] Implementar normalização no recebimento/eventos de seleção e na aplicação das edições. Corrigir o comportamento de trechos de texto nativos conforme a hipótese verificada, preservando texto/formatos, sem inserir caracteres invisíveis ou espaços artificiais.
-- [ ] Testar alternância entre texto simples/formatado, voltar cursor e excluir caracteres; confirmar concatenação e seleção no intervalo. Rodar testes alvo, lint, typecheck e suíte. Commit `fix(notas): estabilizar espaços e seleção no editor Markdown`.
+- [x] Confirmar hipótese pelo código do React Native instalado e por reprodução disponível. Registrar no ledger o caminho problemático, a evidência e a limitação de ausência de aparelho; não afirmar reprodução de crash nativo sem tê-la feito.
+- [x] Adicionar testes de seleção após encurtar texto, índices fora do intervalo e primeira linha vazia; listas com duas quebras e espaços, CRLF, emoji e formatação depois dessas posições. Esperado RED para os índices inválidos atuais.
+- [x] Implementar normalização no recebimento/eventos de seleção e na aplicação das edições. Corrigir o comportamento de trechos de texto nativos conforme a hipótese verificada, preservando texto/formatos, sem inserir caracteres invisíveis ou espaços artificiais.
+- [x] Testar alternância entre texto simples/formatado, voltar cursor e excluir caracteres; confirmar concatenação e seleção no intervalo. Rodar testes alvo, lint, typecheck e suíte. Commit `fix(notas): estabilizar espaços e seleção no editor Markdown`.
 
 ### Task 5: Revisão, integração e APK
 

@@ -11,8 +11,15 @@ describe('markdown ao vivo no campo de escrever', () => {
       '# Título\n## Sub\ntexto **negrito** e *itálico*\n\n- item\n1. um\n> citação — Rm 8',
       'a ++b++ ~~c~~ ==d== [[Nota]] [x](https://a.b) **sem fim',
       '***x*** * solto ** == ~~',
+      '- item\n\n  ',
+      '- item\n\n  **texto**\r\n\r\n😀 ++fim++',
     ];
     for (const md of samples) expect(join(md)).toBe(md);
+  });
+
+  it('reconstrói cada etapa ao inserir espaços, voltar o cursor e apagar uma lista', () => {
+    const steps = ['- item', '- item\n', '- item\n\n', '- item\n\n ', '- item\n\n  ', '- **item**\n\n  ', '- item\n\n  ', '\n\n  ', '  ', ''];
+    for (const text of steps) expect(join(text)).toBe(text);
   });
 
   it('marcações ficam apagadas e o conteúdo com o estilo', () => {
