@@ -1,5 +1,5 @@
 import { folderBreadcrumbs, folderChildren, folderPath, type NoteFolder, type NoteFolderSummary } from '@glife/domain/notes';
-import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
+import { router, useFocusEffect, useLocalSearchParams, useNavigation } from 'expo-router';
 import { Folder, FolderPlus } from 'lucide-react-native';
 import { useCallback, useEffect, useState } from 'react';
 import { ScrollView, View } from 'react-native';
@@ -11,6 +11,7 @@ import { NoteRows } from '../components/NoteRows';
 import { FolderNameSheet } from '../components/FolderNameSheet';
 import { FolderMenu, useNoteQuickActions } from '../components/NoteQuickActions';
 import { SubHeader } from '../components/SubHeader';
+import { folderUpAction } from '../hooks/folderNavigation';
 import { useNotesData } from '../hooks/NotesData';
 import { useNoteList } from '../hooks/useNoteList';
 import { openNote, useCreateNote } from '../hooks/useNoteActions';
@@ -25,6 +26,7 @@ interface TagIndex {
 export function FolderScreen() {
   const s = useStyles();
   const { id } = useLocalSearchParams<{ id: string }>();
+  const navigation = useNavigation();
   const { folders } = useNotesData();
   const { tags } = useLinksData();
   const [folder, setFolder] = useState<NoteFolder | null | undefined>(undefined);
@@ -76,7 +78,13 @@ export function FolderScreen() {
   const subfolders = folderChildren(allFolders, id);
   const path = folderBreadcrumbs(allFolders, id);
   const parent = path.at(-2);
-  const parentHref = parent ? `/pasta/${parent.id}` as const : '/pastas' as const;
+  // Volta quando a tela anterior já é a mãe (como goBack() das notas); senão troca, sem empilhar a mãe duas vezes.
+  const goUp = () => {
+    const state = navigation.getState() as Parameters<typeof folderUpAction>[0];
+    if (folderUpAction(state, parent?.id ?? null) === 'back' && router.canGoBack()) router.back();
+    else if (parent) router.replace({ pathname: '/pasta/[id]', params: { id: parent.id } });
+    else router.replace('/pastas');
+  };
   const notesInside = summaries.find((s) => s.folder.id === id)?.notes ?? items?.length ?? 0;
 
   if (folder === null) {
@@ -102,7 +110,7 @@ export function FolderScreen() {
     >
       {folder && (
         <View style={s.actions}>
-          <Button label={parent ? 'Pasta acima' : 'Todas as pastas'} size="sm" variant="secondary" selfAlign="center" onPress={() => router.replace(parentHref)} />
+          <Button label={parent ? 'Pasta acima' : 'Todas as pastas'} size="sm" variant="secondary" selfAlign="center" onPress={goUp} />
           <Button label="Nova subpasta" size="sm" variant="secondary" icon={FolderPlus} selfAlign="center" onPress={() => setCreating(true)} />
         </View>
       )}
@@ -139,7 +147,7 @@ export function FolderScreen() {
           onClose={() => setMenu(false)}
           onRenamed={reload}
           onMoved={reload}
-          onDeleted={() => router.replace(parentHref)}
+          onDeleted={goUp}
         />
       )}
       <FolderNameSheet visible={creating} parentId={id} onClose={() => setCreating(false)} onCreated={() => { setCreating(false); reload(); }} />
