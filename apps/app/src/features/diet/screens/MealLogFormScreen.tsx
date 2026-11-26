@@ -97,8 +97,8 @@ export function MealLogFormScreen() {
 }
 
 const useStyles = makeStyles((t) => ({
-  grow: { flex: 1, minWidth: 0 },
-  pair: { flexDirection: 'row', gap: t.space[3] },
+  grow: { flexGrow: 1, flexBasis: t.layout.calendarFieldMinWidth, minWidth: 0 },
+  pair: { flexDirection: 'row', flexWrap: 'wrap', gap: t.space[3] },
   block: { gap: t.space[3] },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: t.space[2] },
 }));

@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.6.0 — 2026-11-26
+
+- Início: olhinho no resumo financeiro, com a mesma preferência de visibilidade salva no Financeiro.
+- Finanças: em compras parceladas, escolha entre informar o total da compra e o valor de cada parcela; a simulação mostra o total e preserva os centavos.
+- Notas: criar e navegar por subpastas, mover pastas sem formar ciclos e escolher destinos pelo caminho completo; contagens agregadas sem carregar corpos das notas.
+- Editor: corrigidos índices inválidos de seleção e formatação da primeira linha vazia; estrutura de texto ao vivo estabilizada para espaços e quebras, preservando o Markdown. O crash relatado ainda precisa de confirmação em aparelho Android.
+- Agenda, dieta e finanças: tocar em data/hora abre o seletor nativo da plataforma; campos opcionais permitem limpar o valor.
+
 ## 0.5.0 — 2026-11-26
 
 - Finanças: gerenciar e ordenar categorias, contas e cartões, arquivar e ajustar saldo sem afetar o orçamento; olhinho com preferência salva para ocultar valores.

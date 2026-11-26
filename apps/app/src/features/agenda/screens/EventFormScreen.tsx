@@ -64,21 +64,21 @@ export function EventFormScreen() {
         <Switch label="Dia inteiro" value={form.allDay} onChange={(allDay) => setForm({ allDay })} />
       </View>
       <View style={s.pair}>
-        <View style={s.grow}>
+        <View style={s.calendarField}>
           <DateInput label="Início" value={form.startDate} onChange={(startDate) => setForm({ startDate })} />
         </View>
         {!form.allDay && (
-          <View style={s.grow}>
+          <View style={s.calendarField}>
             <TimeInput label="Hora" value={form.startTime} onChange={(startTime) => setForm({ startTime })} />
           </View>
         )}
       </View>
       <View style={s.pair}>
-        <View style={s.grow}>
+        <View style={s.calendarField}>
           <DateInput clearable label="Fim (opcional)" value={form.endDate} onChange={(endDate) => setForm({ endDate })} />
         </View>
         {!form.allDay && (
-          <View style={s.grow}>
+          <View style={s.calendarField}>
             <TimeInput clearable label="Hora do fim" value={form.endTime} onChange={(endTime) => setForm({ endTime })} />
           </View>
         )}
@@ -107,7 +107,8 @@ export function EventFormScreen() {
 
 const useStyles = makeStyles((t) => ({
   grow: { flex: 1, minWidth: 0 },
-  pair: { flexDirection: 'row', gap: t.space[3] },
+  calendarField: { flexGrow: 1, flexBasis: t.layout.calendarFieldMinWidth, minWidth: 0 },
+  pair: { flexDirection: 'row', flexWrap: 'wrap', gap: t.space[3] },
   switchRow: { flexDirection: 'row', alignItems: 'center', gap: t.space[3], minHeight: t.touch.minTarget },
   block: { gap: t.space[3] },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: t.space[2] },

@@ -95,6 +95,6 @@
 **Interfaces:** consome Tasks 1–4 completas; entrega versão 0.6.0/versionCode 6, APK/ZIP e código integrado no checkout original sem publicar Git ou alterar serviços externos.
 
 - [x] Revisão independente parcial do diff `dc2e23f..HEAD` pelo fluxo requesting-code-review, interrompida pela ferramenta por limite de créditos; revisão restante pelo autor. Dois achados importantes conferidos e corrigidos, além do tratamento de erro do picker; testes de comportamento RED→GREEN. Limite de validação nativa registrado no changelog e ledger.
-- [ ] Atualizar versão/changelog, executar lint/typecheck/test e `pnpm build:web` com saída conferida. Nenhuma suíte em paralelo à compilação nativa.
-- [ ] Compilar numa cópia curta conforme release-android; preservar debug.keystore anterior; incluir a nova lib com prebuild limpo. Conferir pacote, versão, assinatura igual à 0.5.0 e bundle dentro do APK; gerar `../Glife-0.6.0.apk` e ZIP.
-- [ ] Atualizar status (até 10 linhas) e plano, integrar localmente o trabalho autorizado e verificar working tree limpo. Commit `chore(release): versão 0.6.0 e ajustes de usabilidade`.
+- [x] Atualizar versão/changelog, executar lint/typecheck/test e `pnpm build:web` com saída conferida. Nenhuma suíte em paralelo à compilação nativa.
+- [x] Compilar numa cópia curta conforme release-android; preservar debug.keystore anterior; incluir a nova lib com prebuild limpo. Conferidos pacote, versão, assinatura igual à 0.5.0, permissões sem mudanças, bundle e 33 bibliotecas arm64. Gerados `../Glife-0.6.0.apk` e ZIP.
+- [ ] Atualizar status (até 10 linhas) e plano, integrar localmente o trabalho autorizado e verificar ausência de pendências desta tarefa, preservando alterações concorrentes. Commit `chore(release): versão 0.6.0 e ajustes de usabilidade`; integrar o histórico paralelo em branch isolada e verificar antes de avançar o checkout original.

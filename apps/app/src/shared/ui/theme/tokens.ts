@@ -310,6 +310,8 @@ export const layout = {
   sheetMaxWidth: 560,
   /** Seletores em folhas: área rolável; flexShrink permite telas ainda menores. */
   pickerListMaxHeight: 360,
+  /** Data/hora com ícone e ação de limpar: não comprimir o valor em pares estreitos. */
+  calendarFieldMinWidth: 220,
   authMaxWidth: 420,
   /** respiro acima da marca na tela Entrar */
   authTop: 72,
