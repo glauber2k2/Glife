@@ -3,10 +3,7 @@
   "version": "0.1.0",
   "main": "expo-router/entry",
   "dependencies": {
-    "@expo-google-fonts/crimson-pro": "^0.4.2",
     "@expo-google-fonts/dm-mono": "^0.4.2",
-    "@expo-google-fonts/hanken-grotesk": "^0.4.3",
-    "@expo-google-fonts/jetbrains-mono": "^0.4.1",
     "@expo-google-fonts/literata": "^0.4.3",
     "@expo-google-fonts/outfit": "^0.4.3",
     "@glife/domain": "workspace:*",

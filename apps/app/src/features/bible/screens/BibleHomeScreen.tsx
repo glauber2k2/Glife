@@ -2,7 +2,9 @@ import { formatRef, getBook, parseBibleRef, toOsis } from '@glife/domain/bible';
 import { useState } from 'react';
 import { View } from 'react-native';
 
-import { Input, Screen, Section, Text, makeStyles } from '@/shared/ui';
+import { BookOpen } from 'lucide-react-native';
+
+import { BackHeader, Card, EmptyState, Input, ModuleIcon, Screen, Text, makeStyles } from '@/shared/ui';
 
 export function BibleHomeScreen() {
   const s = useStyles();
@@ -10,7 +12,7 @@ export function BibleHomeScreen() {
   const ref = query.trim() ? parseBibleRef(query) : null;
 
   return (
-    <Screen title="Bíblia">
+    <Screen header={<BackHeader title="Bíblia" fallback="/" />}>
       <Input
         placeholder="Ir para… (ex.: Jo 3:16, Sl 23)"
         value={query}
@@ -20,23 +22,25 @@ export function BibleHomeScreen() {
         returnKeyType="go"
       />
       {ref && (
-        <View style={s.result}>
-          <Text variant="heading">{formatRef(ref, 'name')}</Text>
-          <Text variant="caption" tone="tertiary">
-            glife://bible/{toOsis(ref)} · {getBook(ref.book)?.testament === 'AT' ? 'Antigo' : 'Novo'} Testamento
-          </Text>
-        </View>
+        <Card>
+          <View style={s.result}>
+            <ModuleIcon icon={BookOpen} module="bible" />
+            <View style={s.texts}>
+              <Text variant="emphasis">{formatRef(ref, 'name')}</Text>
+              <Text variant="caption" tone="tertiary">
+                {getBook(ref.book)?.testament === 'AT' ? 'Antigo' : 'Novo'} Testamento · glife://bible/{toOsis(ref)}
+              </Text>
+            </View>
+          </View>
+        </Card>
       )}
-      {query.trim() !== '' && !ref && <Text tone="tertiary">Referência não reconhecida.</Text>}
-      <Section title="Texto">
-        <Text variant="scripture" tone="secondary">
-          O texto da Bíblia Livre (CC BY 4.0) chega na Fase 4.
-        </Text>
-      </Section>
+      {query.trim() !== '' && !ref && <EmptyState compact message="Referência não reconhecida." />}
+      <EmptyState title="Leitura em breve" message="O texto da Bíblia Livre (CC BY 4.0) chega na Fase 4." mood="dormindo" />
     </Screen>
   );
 }
 
 const useStyles = makeStyles((t) => ({
-  result: { gap: t.space[1] },
+  result: { flexDirection: 'row', alignItems: 'center', gap: t.space[3] },
+  texts: { flex: 1, gap: t.space[0.5] },
 }));

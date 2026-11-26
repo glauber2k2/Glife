@@ -1,7 +1,8 @@
 # Glife Cobalto v1.0 — design system
 
-Direção visual do redesign, adotada em 26/11/2026. Substitui a direção Glaciar/Sinóptico (`docs/design-system/`), que
-continua valendo para o código **até a Fase R** do plano terminar (`docs/PLANO_DE_IMPLEMENTACAO.md`).
+Direção visual do app desde 26/11/2026 (Fase R do plano). Substitui a direção Glaciar/Sinóptico
+(`docs/design-system/`, agora só histórico). Implementação em `apps/app/src/shared/ui/` (tokens, componentes e
+`moduleColors`, que converte os matizes oklch dos módulos para hexadecimal).
 
 - **Fonte original:** artifact "Glife Design System" no Claude (Cobalto · Mobile · v1.0 · nov 2026), exportado do
   Claude Design.

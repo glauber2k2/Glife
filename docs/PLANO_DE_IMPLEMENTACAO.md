@@ -68,7 +68,7 @@ Objetivo: o mesmo app abre no Android e no navegador, com login, banco local e s
 - Plano alimentar (refeições com horário e dias da semana), registro de refeições. ✅ 26/11/2026, versão básica.
 - Hoje: próximo compromisso e próxima refeição. ✅ 26/11/2026, versão básica.
 
-## Fase R — Redesign Cobalto do que já existe (≈ 3–4 semanas) ← próxima
+## Fase R — Redesign Cobalto do que já existe (≈ 3–4 semanas) ← falta conferir no aparelho
 
 Objetivo: todas as telas e funções já implementadas (Fases 0–3) passam para o design system Cobalto, sem mudar
 regras de negócio nem banco. Referência visual e de movimento: a ficha de cada tela no protótipo. "Pronto quando"
@@ -77,17 +77,17 @@ com "reduzir movimento" respeitado e `pnpm lint && pnpm typecheck && pnpm test` 
 
 | # | Entrega | Telas do protótipo | Status |
 |---|---------|--------------------|--------|
-| R.0 | Fundação: tokens claro/escuro de `design-system-cobalto/tokens.css` em `shared/ui/theme/tokens.ts`; fontes Outfit, DM Mono e Literata (`@expo-google-fonts`) no lugar de Hanken/Crimson/JetBrains; raios, sombras por nível (só no que flutua), tokens de movimento (durações 90–500 ms e curvas bezier; toque 0,96; cascata 70 ms, até 6) | — | ⏳ |
-| R.1 | Componentes `shared/ui` refeitos e novos: Button (52/44/36), IconButton 42, Input com halo, MoneyField grande, SegmentedControl, Chip, Switch, Checkbox/TaskItem, TopBar, PageHeader, SectionHeader, Card, ListGroup/ListItem com ModuleIcon, ModuleTile, StatValue, ProgressBar (com previsto listrado), ProgressRing, Toast, Alert, EmptyState com Mascot, Sheet r28, Dialog, AIInsight, LinkPanel | Demonstração em Ajustes | ⏳ |
-| R.2 | Navegação: barra de abas flutuante Início · Agenda · + · Notas · IA (botão + gira e abre a captura); web com barra no topo de 64 px, coluna de 720 px, folhas como janela central e Ctrl+K | Barra de abas; modo Web | ⏳ |
-| R.3 | Acesso e bloqueio | Entrar, Código, Configurar autenticador, Criar senha + digital, Bloqueio (6 estados), Segurança, Trocar senha | ⏳ |
-| R.4 | Início (ex-Hoje) e busca | Início (dia cheio, poucos módulos, primeiro uso), Busca universal | ⏳ |
-| R.5 | Notas | Lista, Ler/Escrever com sugestões de `[[`, Nova nota, Pastas, Pasta, Lixeira e folhas (mais ações, mover, tags, tipo, ligar) | ⏳ |
-| R.6 | Finanças | Início (mês atual/futuro/fechado/primeiro uso), Novo lançamento, Confirmar previsto, Extrato, Fatura + Pagar, Nova conta/cartão, Detalhe do lançamento, Recorrentes + editar, Orçamentos, Gráficos, Categoria | ⏳ |
-| R.7 | Compras e investimentos | Listas, Lista + Comprei, Investimentos, Ativo + movimento, Novo ativo | ⏳ |
-| R.8 | Agenda e dieta | Agenda (linha do tempo), Evento, Lembrete, Dieta, Refeição do plano, Registrar refeição | ⏳ |
-| R.9 | Ajustes | Aparência, notificações, dados, conta, sair deste aparelho | ⏳ |
-| R.10 | Fechamento: revisão geral das transições (empurrar, aba, folha, cartão que vira tela), remoção dos tokens e fontes do Glaciar, APK novo | Todas acima | ⏳ |
+| R.0 | Fundação: tokens claro/escuro de `design-system-cobalto/tokens.css` em `shared/ui/theme/tokens.ts`; fontes Outfit, DM Mono e Literata (`@expo-google-fonts`) no lugar de Hanken/Crimson/JetBrains; raios, sombras por nível (só no que flutua), tokens de movimento (durações 90–500 ms e curvas bezier; toque 0,96; cascata 70 ms, até 6) | — | ✅ 26/11/2026 |
+| R.1 | Componentes `shared/ui` refeitos e novos: Button (52/44/36), IconButton 42, Input com halo, MoneyField grande, SegmentedControl, Chip, Switch, Checkbox/TaskItem, TopBar, PageHeader, SectionHeader, Card, ListGroup/ListItem com ModuleIcon, ModuleTile, StatValue, ProgressBar (com previsto listrado), ProgressRing, Toast, Alert, EmptyState com Mascot, Sheet r28, Dialog, AIInsight, LinkPanel | Demonstração em Ajustes | ✅ demonstração em Ajustes |
+| R.2 | Navegação: barra de abas flutuante Início · Agenda · + · Notas · IA (botão + gira e abre a captura); web com barra no topo de 64 px, coluna de 720 px, folhas como janela central e Ctrl+K | Barra de abas; modo Web | ✅ a 5ª aba é Finanças até a IA existir (Fase 6); falta conferir no Android |
+| R.3 | Acesso e bloqueio | Entrar, Código, Configurar autenticador, Criar senha + digital, Bloqueio (6 estados), Segurança, Trocar senha | ✅ web conferido (Entrar); bloqueio sem teste no aparelho |
+| R.4 | Início (ex-Hoje) e busca | Início (dia cheio, poucos módulos, primeiro uso), Busca universal | ✅ sem conferência visual com login |
+| R.5 | Notas | Lista, Ler/Escrever com sugestões de `[[`, Nova nota, Pastas, Pasta, Lixeira e folhas (mais ações, mover, tags, tipo, ligar) | ✅ sem conferência visual com login |
+| R.6 | Finanças | Início (mês atual/futuro/fechado/primeiro uso), Novo lançamento, Confirmar previsto, Extrato, Fatura + Pagar, Nova conta/cartão, Detalhe do lançamento, Recorrentes + editar, Orçamentos, Gráficos, Categoria | ✅ sem conferência visual com login |
+| R.7 | Compras e investimentos | Listas, Lista + Comprei, Investimentos, Ativo + movimento, Novo ativo | ✅ sem conferência visual com login |
+| R.8 | Agenda e dieta | Agenda (linha do tempo), Evento, Lembrete, Dieta, Refeição do plano, Registrar refeição | ✅ sem conferência visual com login |
+| R.9 | Ajustes | Aparência, notificações, dados, conta, sair deste aparelho | ✅ notificações e exportar ficam para R2/Fase 7 |
+| R.10 | Fechamento: revisão geral das transições (empurrar, aba, folha, cartão que vira tela), remoção dos tokens e fontes do Glaciar, APK novo | Todas acima | 🟡 tokens e fontes do Glaciar removidos; falta revisão no aparelho (dois temas, 360 dp) e APK novo |
 
 Regras da fase: blocos e atalhos de módulos que ainda não existem (Bíblia, Galeria, IA) ficam recolhidos como no
 estado "Poucos módulos" do Início, sem levar a telas vazias. O que o protótipo mostra de funcionalidade nova fica

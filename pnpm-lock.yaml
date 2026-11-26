@@ -14,18 +14,9 @@ importers:
 
   apps/app:
     dependencies:
-      '@expo-google-fonts/crimson-pro':
-        specifier: ^0.4.2
-        version: 0.4.2
       '@expo-google-fonts/dm-mono':
         specifier: ^0.4.2
         version: 0.4.2
-      '@expo-google-fonts/hanken-grotesk':
-        specifier: ^0.4.3
-        version: 0.4.3
-      '@expo-google-fonts/jetbrains-mono':
-        specifier: ^0.4.1
-        version: 0.4.1
       '@expo-google-fonts/literata':
         specifier: ^0.4.3
         version: 0.4.3
@@ -670,17 +661,8 @@ packages:
     resolution: {integrity: sha512-43/qtrDUokr7LJqoF2c3+RInu/t4zfrpYdoSDfYyhg52rwLV6TnOvdG4fXm7IkSB3wErkcmJS9iEhjVtOSEjjA==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
 
-  '@expo-google-fonts/crimson-pro@0.4.2':
-    resolution: {integrity: sha512-X5pfxna/aQBhxB6CowczCL2mOsObwlxhI2EJ84fE6OMrxie1bd2ro9xBywCfeVg588eQYvzYBBdkHkPWmFTXug==}
-
   '@expo-google-fonts/dm-mono@0.4.2':
     resolution: {integrity: sha512-loMaZOkQRs1r7yt4rN39zcr9e0J+smwnSx929yuODkuiPfsY4PaW18C9SEZ0BvXfcBKoRhatGoIBl8V2MOYVPQ==}
-
-  '@expo-google-fonts/hanken-grotesk@0.4.3':
-    resolution: {integrity: sha512-TZn/Ux+nCxEjG/zAenCFbEhOAPxSXN3lo2YU2jHcPsNBPFeicm8feQStL81igJuAwJLCn62VvEOdTtmVEBDl0g==}
-
-  '@expo-google-fonts/jetbrains-mono@0.4.1':
-    resolution: {integrity: sha512-CslACrtMOcRwoWXCO7OMEI+9w3fukWSoBtvNz46OqPoogEuuoY0tkDY1O8sFumk8t0pC6Cx0Xr95O0TOQhpkug==}
 
   '@expo-google-fonts/literata@0.4.3':
     resolution: {integrity: sha512-AuxE7NB6Ae1laRK8uTcap5xI2MYTZOXrAWul4SNGBiq4igP7r/q8IO3vdvO/P1MGiRczuyZ1zhTwSm/CaYeq9A==}
@@ -5092,13 +5074,7 @@ snapshots:
       '@eslint/core': 0.17.0
       levn: 0.4.1
 
-  '@expo-google-fonts/crimson-pro@0.4.2': {}
-
   '@expo-google-fonts/dm-mono@0.4.2': {}
-
-  '@expo-google-fonts/hanken-grotesk@0.4.3': {}
-
-  '@expo-google-fonts/jetbrains-mono@0.4.1': {}
 
   '@expo-google-fonts/literata@0.4.3': {}
 
