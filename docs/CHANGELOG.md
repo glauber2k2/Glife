@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.5.1 — 2026-11-26
+
+- Avisos: "Feito" e "Adiar" funcionam também com o app fechado.
+- Finanças: restaurar um lançamento é recusado (com o motivo) quando a conta foi excluída ou quando é uma parcela isolada.
+- Mensagens de erro mostram o motivo real sem expor erro técnico; desfazer ajuste de saldo que falha avisa.
+- Item não encontrado com textos neutros; vínculos para itens sem tela não ficam mudos; abertura sem piscar no primeiro acesso.
+- Notas: nome do arquivo .md exportado usa a data local.
+
 ## 0.5.0 — 2026-11-26
 
 - Finanças: gerenciar e ordenar categorias, contas e cartões, arquivar e ajustar saldo sem afetar o orçamento; olhinho com preferência salva para ocultar valores.
