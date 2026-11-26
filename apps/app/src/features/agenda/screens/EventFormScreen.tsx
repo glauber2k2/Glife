@@ -75,11 +75,11 @@ export function EventFormScreen() {
       </View>
       <View style={s.pair}>
         <View style={s.grow}>
-          <DateInput label="Fim (opcional)" value={form.endDate} onChange={(endDate) => setForm({ endDate })} />
+          <DateInput clearable label="Fim (opcional)" value={form.endDate} onChange={(endDate) => setForm({ endDate })} />
         </View>
         {!form.allDay && (
           <View style={s.grow}>
-            <TimeInput label="Hora do fim" value={form.endTime} onChange={(endTime) => setForm({ endTime })} />
+            <TimeInput clearable label="Hora do fim" value={form.endTime} onChange={(endTime) => setForm({ endTime })} />
           </View>
         )}
       </View>

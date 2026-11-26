@@ -7,6 +7,7 @@ import Animated, { FadeIn, Keyframe, useAnimatedStyle, useSharedValue, withDelay
 
 import {
   Button,
+  DateInput,
   Icon,
   IconButton,
   Input,
@@ -25,7 +26,8 @@ import {
 } from '@/shared/ui';
 
 import { useMoneyVisibility } from '@/shared/lib/MoneyVisibility';
-import { digitsToCents, money, parseDmy, dmy } from './format';
+import { digitsToCents, money } from './format';
+import { formatDateInput, parseDateInput } from '@/shared/lib/calendarInput';
 
 // ---------- Seletor de mês / fatura ----------
 
@@ -392,60 +394,17 @@ export function DayField({
   );
 }
 
-/** Data em pílula ("Hoje, 10/12"); tocar abre o campo para digitar dd/mm/aaaa. */
-export function DateRow({
-  label = 'Data',
-  date,
-  display,
-  onChange,
-}: {
+/** ISO dates stay in the finance API; the shared field owns the platform picker. */
+export function DateRow({ label = 'Data', date, onChange }: {
   label?: string;
   date: string;
   display: string;
   onChange: (d: string) => void;
 }) {
-  const s = useStyles();
-  const t = useTheme();
-  const [editing, setEditing] = useState(false);
-  const [text, setText] = useState(dmy(date));
-  const valid = parseDmy(text);
-  return (
-    <View style={s.dateRow}>
-      <View style={s.dateLine}>
-        <Text variant="item">{label}</Text>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={`${label}: ${display}. Alterar`}
-          onPress={() => {
-            setText(dmy(date));
-            setEditing((e) => !e);
-          }}
-          style={({ pressed }) => [s.datePill, pressed && s.pressed]}
-        >
-          <Text variant="chip" numeric>
-            {display}
-          </Text>
-        </Pressable>
-      </View>
-      {editing && (
-        <View style={{ gap: t.space[2] }}>
-          <Input
-            label="dd/mm/aaaa"
-            value={text}
-            keyboardType="numbers-and-punctuation"
-            maxLength={10}
-            error={text.length >= 8 && !valid ? 'Data inválida' : undefined}
-            onChangeText={(v) => {
-              setText(v);
-              const d = parseDmy(v);
-              if (d) onChange(d);
-            }}
-            onSubmitEditing={() => setEditing(false)}
-          />
-        </View>
-      )}
-    </View>
-  );
+  return <DateInput label={label} value={formatDateInput(date)} onChange={(value) => {
+    const iso = parseDateInput(value);
+    if (iso) onChange(iso);
+  }} />;
 }
 
 /** Seletor de categoria sem nenhuma ativa daquele tipo: avisa e leva a criar uma. */

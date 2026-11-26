@@ -71,11 +71,11 @@
 
 **Interfaces:** `CalendarPickerProps { mode: 'date'|'time'; label: string; value: string; onChange(value: string): void; error?: string; clearable?: boolean }`. Valores de data seguem dd/mm/aaaa; hora HH:MM. Helpers puros convertem para/de Date local e `pickerResult(mode, eventType, date): string | null` retorna null ao cancelar/receber data inválida. API pública DateInput/TimeInput preservada, com clearable opcional. DateRow adapta ISO ↔ campo público sem alterar seus consumidores.
 
-- [ ] Testes: seleção de 31/12/2026 e 09:05, ano bissexto, cancelamento sem alteração e data inválida; data local em meia-noite preservada sem toISOString.
-- [ ] Rodar `pnpm --filter app exec vitest run tests/calendarPicker.test.ts`; esperado RED por helper ausente.
-- [ ] Instalar com `pnpm --filter app exec expo install @react-native-community/datetimepicker`, conferindo versão do SDK. Android usa DateTimePickerAndroid.open; iOS controle nativo com confirmação/cancelamento; web input date/time do navegador, encapsulado na mesma API.
-- [ ] Renderizar campos com visual Input e ação de abrir; limpar opcional explícito; adaptar DateRow e qualquer campo completo de data/hora que ainda só ofereça digitação. Manter dias do mês numéricos. Validar tipos da dependência instalada.
-- [ ] Rodar testes alvo, lint, typecheck e suíte; exportar web. Commit `feat(ui): abrir seletores nativos nos campos de data e hora`.
+- [x] Testes: seleção de 31/12/2026 e 09:05, ano bissexto, cancelamento sem alteração e data inválida; data local em meia-noite preservada sem toISOString.
+- [x] Rodar `pnpm --filter app exec vitest run tests/calendarPicker.test.ts`; esperado RED por helper ausente.
+- [x] Instalar com `pnpm --filter app exec expo install @react-native-community/datetimepicker`, conferindo versão do SDK. Android usa DateTimePickerAndroid.open; iOS controle nativo com confirmação/cancelamento; web input date/time do navegador, encapsulado na mesma API.
+- [x] Renderizar campos com visual Input e ação de abrir; limpar opcional explícito; adaptar DateRow e qualquer campo completo de data/hora que ainda só ofereça digitação. Manter dias do mês numéricos. Validar tipos da dependência instalada.
+- [x] Rodar testes alvo, lint, typecheck e suíte; exportar web. Commit `feat(ui): abrir seletores nativos nos campos de data e hora`.
 
 ### Task 4: Editor — espaços, linhas vazias e seleção
 

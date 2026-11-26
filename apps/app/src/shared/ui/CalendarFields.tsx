@@ -1,20 +1,21 @@
-// Campos de calendário (básicos; o visual vem no redesenho): data dd/mm/aaaa, hora HH:MM, dias da semana e repetição.
-// Todos usam o teclado numérico do aparelho. O formulário guarda o texto e converte ao salvar.
+// O formulário guarda dd/mm/aaaa e HH:MM; a fronteira de plataforma abre o seletor nativo.
 import type { Frequency } from '@glife/domain/time';
 import { View } from 'react-native';
 
-import { maskDate, maskTime, weekdayShort } from '../lib/calendarInput';
+import { weekdayShort } from '../lib/calendarInput';
+import { CalendarPicker } from './CalendarPicker';
+import type { CalendarPickerProps } from './CalendarPickerField';
 import { Chip } from './Chip';
 import { Input } from './Input';
 import { Text } from './Text';
 import { makeStyles } from './theme';
 
-export function DateInput({ label, value, onChange, error }: { label: string; value: string; onChange: (v: string) => void; error?: string }) {
-  return <Input label={label} value={value} onChangeText={(v) => onChange(maskDate(v))} keyboardType="number-pad" placeholder="dd/mm/aaaa" maxLength={10} error={error} />;
+export function DateInput(props: Omit<CalendarPickerProps, 'mode'>) {
+  return <CalendarPicker {...props} mode="date" />;
 }
 
-export function TimeInput({ label, value, onChange, error }: { label: string; value: string; onChange: (v: string) => void; error?: string }) {
-  return <Input label={label} value={value} onChangeText={(v) => onChange(maskTime(v))} keyboardType="number-pad" placeholder="hh:mm" maxLength={5} error={error} />;
+export function TimeInput(props: Omit<CalendarPickerProps, 'mode'>) {
+  return <CalendarPicker {...props} mode="time" />;
 }
 
 /** Sete chips (Dom … Sáb) que ligam e desligam o bit de cada dia. */
@@ -64,7 +65,7 @@ export function RepeatFields({ value, onChange }: { value: RepeatValue; onChange
             keyboardType="number-pad"
           />
           {value.frequency === 'weekly' && <WeekdayPicker value={value.weekdays} onChange={(weekdays) => set({ weekdays })} />}
-          <DateInput label="Até (opcional)" value={value.until} onChange={(until) => set({ until })} />
+          <DateInput clearable label="Até (opcional)" value={value.until} onChange={(until) => set({ until })} />
         </>
       )}
     </View>
