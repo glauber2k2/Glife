@@ -413,6 +413,30 @@ export function createFinanceRepositories(store: FinanceStore, userId: string, c
       ),
   };
 
+  /** Recusa (`conflict`, com o motivo em `cause`) quando o motivo do lançamento ainda está no lugar. */
+  const refuse = (reason: string) => new RepositoryError('conflict', { cause: new RangeError(reason) });
+
+  /**
+   * Restaurar um só lançamento não pode trazer de volta uma linha órfã: a conta (ou a de destino) excluída apagou os
+   * lançamentos dela, e uma parcela não volta sozinha se outras da mesma compra seguem excluídas (o desfazer da compra
+   * inteira usa `restoreMany`).
+   */
+  async function checkRestorable(db: FinanceStoreReads, t: Transaction) {
+    for (const accountId of [t.account_id, t.to_account_id]) {
+      if (!accountId) continue;
+      const account = await db.get('accounts', accountId);
+      if (!account || account.deleted_at !== null) throw refuse('A conta deste lançamento foi excluída.');
+    }
+    if (!t.installment_of || t.installment_index === null || t.installment_count === null) return;
+    // A série vai da parcela da primeira linha (a que dá o id do grupo) até a última.
+    const head = t.installment_of === t.id ? t : await db.get('transactions', t.installment_of);
+    const first = head?.installment_index ?? t.installment_index;
+    const alive = (await db.transactionsInRange({ ...ALL_DATES, accountId: t.account_id })).filter(
+      (x) => x.installment_of === t.installment_of && x.id !== t.id,
+    );
+    if (alive.length < t.installment_count - first) throw refuse('As outras parcelas desta compra também foram excluídas.');
+  }
+
   const transactions: TransactionsRepository = {
     get: (id) => guard(async () => ((r) => (r && r.deleted_at === null ? r : null))(await store.get('transactions', id))),
     listRange: (query) => guard(() => store.transactionsInRange(query)),
@@ -498,6 +522,7 @@ export function createFinanceRepositories(store: FinanceStore, userId: string, c
         store.transaction(async (db) => {
           const current = await db.get('transactions', id);
           if (!current) throw notFound();
+          if (current.deleted_at !== null) await checkRestorable(db, current);
           const t = restoreEntity(current, clock);
           await db.put('transactions', t);
           return t;

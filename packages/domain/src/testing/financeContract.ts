@@ -191,6 +191,35 @@ export function financeRepositoryContract(name: string, make: () => Promise<Fina
       expect((await finance.transactions.restore(t.id)).deleted_at).toBeNull();
     });
 
+    it('restaurar recusa (conflict) lançamento de conta excluída e nada volta', async () => {
+      const { finance, cc } = await setup(make);
+      const other = await finance.accounts.create({ name: 'Poupança', kind: 'savings', initial_balance_cents: 0 });
+      const spent = await finance.transactions.create({ type: 'expense', amount_cents: 500, date: '2026-12-01', account_id: other.id });
+      const moved = await finance.transactions.create({ type: 'transfer', amount_cents: 700, date: '2026-12-02', account_id: cc.id, to_account_id: other.id });
+      await finance.accounts.remove(other.id);
+      await expectCode(finance.transactions.restore(spent.id), 'conflict');
+      await expectCode(finance.transactions.restore(moved.id), 'conflict');
+      expect(await finance.transactions.listRange({ from: '2026-12-01', to: '2026-12-31' })).toEqual([]);
+      const refused: unknown = await finance.transactions.restore(moved.id).catch((e: unknown) => e);
+      expect((refused as { cause?: unknown }).cause).toBeInstanceOf(RangeError);
+    });
+
+    it('restaurar uma parcela sozinha é recusado quando outras da compra seguem excluídas', async () => {
+      const { finance, card } = await setup(make);
+      const rows = planInstallmentPurchase({ card, description: 'Sofá', category_id: null, totalCents: 30000, count: 3, date: '2026-11-20' });
+      await finance.transactions.createMany(rows);
+      const ids = rows.map((r) => r.id);
+      await finance.transactions.removeMany(ids);
+      await expectCode(finance.transactions.restore(ids[1]!), 'conflict');
+      await expectCode(finance.transactions.restore(ids[0]!), 'conflict');
+      expect(await finance.transactions.listRange({ from: '2026-11-01', to: '2027-12-31' })).toEqual([]);
+      // Só uma parcela excluída (as outras vivas): restaurar essa parcela vale.
+      await finance.transactions.restoreMany(ids);
+      await finance.transactions.remove(ids[2]!);
+      expect((await finance.transactions.restore(ids[2]!)).deleted_at).toBeNull();
+      expect((await finance.transactions.listRange({ from: '2026-11-01', to: '2027-12-31' })).length).toBe(3);
+    });
+
     it('watchRange emite agora e a cada mudança', async () => {
       const { finance, cc } = await setup(make);
       const seen: Transaction[][] = [];
