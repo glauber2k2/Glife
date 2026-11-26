@@ -11,6 +11,8 @@ export interface TagsContractSubject {
 
 const NOTE_A: TaggedEntity = { type: 'note', id: '9f2c0000-0000-4000-8000-00000000000a' };
 const NOTE_B: TaggedEntity = { type: 'note', id: '9f2c0000-0000-4000-8000-00000000000b' };
+const TX_A: TaggedEntity = { type: 'tx', id: '9f2c0000-0000-4000-8000-0000000000c1' };
+const MISSING = '00000000-0000-4000-8000-00000000dead';
 const names = (tags: Tag[]) => tags.map((t) => t.name);
 
 async function expectCode(p: Promise<unknown>, code: string) {
@@ -71,6 +73,93 @@ export function tagsRepositoryContract(name: string, make: () => Promise<TagsCon
       await tags.add(NOTE_B, 'estudo');
       expect((await tags.entitiesWithTag(t.id, 'note')).sort()).toEqual([NOTE_A.id, NOTE_B.id].sort());
       expect(await tags.entitiesWithTag(t.id, 'tx')).toEqual([]);
+    });
+
+    it('lista com a contagem por tipo de item', async () => {
+      const { tags } = await make();
+      const casa = await tags.add(NOTE_A, 'casa');
+      await tags.add(NOTE_B, 'casa');
+      await tags.add(TX_A, 'casa');
+      await tags.add(NOTE_A, 'vazia');
+      await tags.remove(NOTE_A, (await tags.list()).find((t) => t.name === 'vazia')!.id);
+      const rows = await tags.listWithCounts();
+      expect(rows.map((r) => r.tag.name)).toEqual(['casa', 'vazia']);
+      expect(rows[0]).toEqual({ tag: expect.objectContaining({ id: casa.id }), counts: { note: 2, tx: 1 } });
+      expect(rows[1]!.counts).toEqual({});
+    });
+
+    it('renomeia; recusa nome de outra tag (sem diferenciar maiúsculas) e tag inexistente', async () => {
+      const { tags } = await make();
+      const a = await tags.add(NOTE_A, 'mercado');
+      const b = await tags.add(NOTE_B, 'casa');
+      const renamed = await tags.rename(a.id, ' #Supermercado ');
+      expect(renamed).toMatchObject({ id: a.id, name: 'Supermercado' });
+      expect(names(await tags.forEntity(NOTE_A))).toEqual(['Supermercado']);
+      // Só mudar maiúsculas da própria tag é permitido.
+      expect((await tags.rename(a.id, 'SUPERMERCADO')).name).toBe('SUPERMERCADO');
+      await expectCode(tags.rename(a.id, 'CASA'), 'conflict');
+      await expectCode(tags.rename(b.id, ' '), 'validation');
+      await expectCode(tags.rename(MISSING, 'outra'), 'not_found');
+    });
+
+    it('junta: os itens passam para a escolhida sem duplicar e a de origem some', async () => {
+      const { tags } = await make();
+      const from = await tags.add(NOTE_A, 'feira');
+      await tags.add(NOTE_B, 'feira');
+      await tags.add(TX_A, 'feira');
+      const into = await tags.add(NOTE_A, 'mercado'); // NOTE_A já tem as duas
+      const merged = await tags.merge(from.id, into.id);
+      expect(merged.id).toBe(into.id);
+      expect(names(await tags.list())).toEqual(['mercado']);
+      expect(names(await tags.forEntity(NOTE_A))).toEqual(['mercado']);
+      expect((await tags.entitiesWithTag(into.id, 'note')).sort()).toEqual([NOTE_A.id, NOTE_B.id].sort());
+      expect(await tags.entitiesWithTag(into.id, 'tx')).toEqual([TX_A.id]);
+      expect((await tags.listWithCounts())[0]!.counts).toEqual({ note: 2, tx: 1 });
+      // A tag de origem não volta: aplicar o mesmo nome cria outra.
+      const again = await tags.add(NOTE_A, 'feira');
+      expect(again.id).not.toBe(from.id);
+    });
+
+    it('juntar com ela mesma ou com tag inexistente é recusado e não mexe em nada', async () => {
+      const { tags } = await make();
+      const a = await tags.add(NOTE_A, 'casa');
+      await expectCode(tags.merge(a.id, a.id), 'validation');
+      await expectCode(tags.merge(a.id, MISSING), 'not_found');
+      await expectCode(tags.merge(MISSING, a.id), 'not_found');
+      expect(names(await tags.forEntity(NOTE_A))).toEqual(['casa']);
+      expect(await tags.entitiesWithTag(a.id, 'note')).toEqual([NOTE_A.id]);
+    });
+
+    it('exclui a tag e os vínculos; os itens ficam e o nome pode voltar', async () => {
+      const { tags } = await make();
+      const a = await tags.add(NOTE_A, 'natal');
+      await tags.add(NOTE_A, 'casa');
+      await tags.add(TX_A, 'natal');
+      await tags.delete(a.id);
+      expect(names(await tags.list())).toEqual(['casa']);
+      expect(names(await tags.forEntity(NOTE_A))).toEqual(['casa']);
+      expect(await tags.entitiesWithTag(a.id, 'tx')).toEqual([]);
+      await expectCode(tags.delete(a.id), 'not_found');
+      const back = await tags.add(TX_A, 'natal');
+      expect(back.id).not.toBe(a.id);
+    });
+
+    it('aplica e tira tags de vários itens de uma vez, sem duplicar', async () => {
+      const { tags } = await make();
+      const casa = await tags.add(NOTE_A, 'casa');
+      await tags.applyMany([NOTE_A, NOTE_B], { add: ['Casa', 'novo'], remove: [] });
+      expect(names(await tags.forEntity(NOTE_A))).toEqual(['casa', 'novo']);
+      expect(names(await tags.forEntity(NOTE_B))).toEqual(['casa', 'novo']);
+      await tags.applyMany([NOTE_A, NOTE_B], { add: [], remove: [casa.id] });
+      expect(names(await tags.forEntity(NOTE_A))).toEqual(['novo']);
+      expect(names(await tags.forEntity(NOTE_B))).toEqual(['novo']);
+    });
+
+    it('aplicar em lote com um nome inválido não grava nada', async () => {
+      const { tags } = await make();
+      await expectCode(tags.applyMany([NOTE_A, NOTE_B], { add: ['boa', ' # '], remove: [] }), 'validation');
+      expect(await tags.list()).toEqual([]);
+      expect(await tags.forEntity(NOTE_A)).toEqual([]);
     });
 
     it('observa as tags da entidade até cancelar', async () => {

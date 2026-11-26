@@ -10,6 +10,7 @@ import {
   restore as restoreEntity,
   softDelete,
   type CursorKey,
+  type EntityType,
   type Listener,
   type Page,
   type PageRequest,
@@ -316,6 +317,11 @@ export function createInMemoryTags(userId: string): TagsRepository {
     const ids = new Set(linksOf(e).map((l) => l.tag_id));
     return aliveTags().filter((t) => ids.has(t.id)).sort(byName).map((t) => ({ ...t }));
   };
+  const aliveTag = (id: string) => {
+    const tag = tags.get(id);
+    if (!tag || tag.deleted_at !== null) throw new RepositoryError('not_found');
+    return tag;
+  };
 
   return {
     async list() {
@@ -359,6 +365,75 @@ export function createInMemoryTags(userId: string): TagsRepository {
     },
     async remove(entity, tagId) {
       for (const l of linksOf(entity)) if (l.tag_id === tagId) links.set(l.id, softDelete(l));
+      subs.notify();
+    },
+    async listWithCounts() {
+      return aliveTags()
+        .sort(byName)
+        .map((tag) => {
+          const counts: Partial<Record<EntityType, number>> = {};
+          for (const l of links.values()) {
+            if (l.deleted_at === null && l.tag_id === tag.id) counts[l.entity_type] = (counts[l.entity_type] ?? 0) + 1;
+          }
+          return { tag: { ...tag }, counts };
+        });
+    },
+    async rename(tagId, name) {
+      const clean = normalizeTagName(name);
+      const tag = aliveTag(tagId);
+      if (aliveTags().some((t) => t.id !== tagId && tagKey(t.name) === tagKey(clean))) throw new RepositoryError('conflict');
+      const next = { ...tag, name: clean, updated_at: nowIso() };
+      tags.set(tagId, next);
+      subs.notify();
+      return { ...next };
+    },
+    async merge(fromId, intoId) {
+      if (fromId === intoId) throw new RepositoryError('validation');
+      const from = aliveTag(fromId);
+      const into = aliveTag(intoId);
+      const has = new Set(
+        [...links.values()].filter((l) => l.deleted_at === null && l.tag_id === intoId).map((l) => `${l.entity_type}:${l.entity_id}`),
+      );
+      const now = nowIso();
+      for (const l of [...links.values()]) {
+        if (l.deleted_at !== null || l.tag_id !== fromId) continue;
+        const key = `${l.entity_type}:${l.entity_id}`;
+        if (has.has(key)) links.set(l.id, softDelete(l));
+        else {
+          links.set(l.id, { ...l, tag_id: intoId, updated_at: now });
+          has.add(key);
+        }
+      }
+      tags.set(fromId, softDelete(from));
+      subs.notify();
+      return { ...into };
+    },
+    async delete(tagId) {
+      const tag = aliveTag(tagId);
+      for (const l of [...links.values()]) if (l.deleted_at === null && l.tag_id === tagId) links.set(l.id, softDelete(l));
+      tags.set(tagId, softDelete(tag));
+      subs.notify();
+    },
+    async applyMany(entities, change) {
+      // Valida tudo antes de gravar qualquer coisa (atomicidade).
+      const list = entities.map((e) => parseOrThrow(taggedEntitySchema, e));
+      const cleanNames = change.add.map(normalizeTagName);
+      for (const name of cleanNames) {
+        let tag = aliveTags().find((t) => tagKey(t.name) === tagKey(name));
+        if (!tag) {
+          tag = newTag(name, userId);
+          tags.set(tag.id, tag);
+        }
+        for (const e of list) {
+          if (linksOf(e).some((l) => l.tag_id === tag.id)) continue;
+          const now = nowIso();
+          const row: EntityTag = { id: newId(), user_id: userId, tag_id: tag.id, entity_type: e.type, entity_id: e.id, created_at: now, updated_at: now, deleted_at: null };
+          links.set(row.id, row);
+        }
+      }
+      for (const tagId of change.remove) {
+        for (const e of list) for (const l of linksOf(e)) if (l.tag_id === tagId) links.set(l.id, softDelete(l));
+      }
       subs.notify();
     },
   };

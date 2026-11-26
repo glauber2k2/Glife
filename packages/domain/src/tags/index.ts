@@ -60,4 +60,60 @@ export interface TagsRepository {
   add(entity: TaggedEntity, name: string): Promise<Tag>;
   /** Tira a tag da entidade (a tag continua existindo para as outras). */
   remove(entity: TaggedEntity, tagId: string): Promise<void>;
+  /** Tags ativas, por nome, com quantos itens de cada tipo têm cada uma (tipos sem item ficam de fora). */
+  listWithCounts(): Promise<TagWithCounts[]>;
+  /** Novo nome; outra tag com o mesmo nome (sem diferenciar maiúsculas) → `conflict` (a saída é juntar). */
+  rename(tagId: string, name: string): Promise<Tag>;
+  /**
+   * Junta `fromId` em `intoId`: os itens passam para a escolhida (sem duplicar quem já tinha as duas) e a de
+   * origem é excluída. Tudo numa transação. Juntar com ela mesma → `validation`; inexistente → `not_found`.
+   */
+  merge(fromId: string, intoId: string): Promise<Tag>;
+  /** Exclui a tag e os vínculos (exclusão lógica); os itens ficam, só perdem a tag. */
+  delete(tagId: string): Promise<void>;
+  /** Em lote e tudo ou nada: aplica as tags `add` (por nome) e tira as `remove` (por id) de todas as entidades. */
+  applyMany(entities: readonly TaggedEntity[], change: { add: readonly string[]; remove: readonly string[] }): Promise<void>;
 }
+
+export interface TagWithCounts {
+  tag: Tag;
+  counts: Partial<Record<EntityType, number>>;
+}
+
+/** Item de qualquer módulo com uma tag, já pronto para a tela da tag. */
+export interface TaggedItem {
+  id: string;
+  title: string;
+  meta?: string;
+  /** rota interna (Expo Router) para abrir o item */
+  href: string;
+}
+
+/**
+ * Cada módulo diz como mostrar os seus itens com tag (registro aberto, como as fontes da busca).
+ * `resolve` ignora ids que não existem mais ou estão na lixeira.
+ */
+export interface TaggedItemSource {
+  type: EntityType;
+  /** rótulo do grupo e do filtro (ex.: "Notas", "Gastos") */
+  label: string;
+  resolve(ids: readonly string[]): Promise<TaggedItem[]>;
+}
+
+/** Texto curto "5 notas · 6 gastos" a partir das contagens; `units` dá singular/plural por tipo. */
+export function describeTagCounts(
+  counts: Partial<Record<EntityType, number>>,
+  units: Partial<Record<EntityType, readonly [string, string]>>,
+): string {
+  const parts: string[] = [];
+  for (const [type, n] of Object.entries(counts) as [EntityType, number][]) {
+    if (!n) continue;
+    const u = units[type] ?? ['item', 'itens'];
+    parts.push(`${n} ${n === 1 ? u[0] : u[1]}`);
+  }
+  return parts.join(' · ');
+}
+
+/** Total de itens de uma tag. */
+export const tagTotal = (counts: Partial<Record<EntityType, number>>) =>
+  Object.values(counts).reduce<number>((a, n) => a + (n ?? 0), 0);
