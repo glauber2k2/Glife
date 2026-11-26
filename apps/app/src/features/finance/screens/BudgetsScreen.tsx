@@ -2,15 +2,15 @@
 // limite quando estoura; categorias sem orçamento no fim, com "Definir".
 import { addMonths, lastDayOf, monthOf, monthOverview, type BudgetRow, type Month } from '@glife/domain/finance';
 import { useLocalSearchParams } from 'expo-router';
-import { CreditCard } from 'lucide-react-native';
+import { CreditCard, TriangleAlert } from 'lucide-react-native';
 import { useMemo, useState } from 'react';
 import { TextInput, View } from 'react-native';
 
-import { BackHeader, Button, Icon, Reveal, Screen, Text, makeStyles, noFocusRing, useTheme, useToast } from '@/shared/ui';
+import { Alert, BackHeader, Button, EmptyState, ModuleIcon, ProgressBar, Reveal, Screen, Tag, Text, makeStyles, noFocusRing, useTheme, useToast } from '@/shared/ui';
 
-import { categoryIcon } from '../components/categories';
+import { categoryHue, categoryIcon } from '../components/categories';
 import { balance, digitsToCents, money, monthName, todayIso } from '../components/format';
-import { Block, BlockHeader, BudgetBar, MonthSlide, MonthStepper } from '../components/ui';
+import { Block, BlockHeader, BudgetBar, Disc, MonthSlide, MonthStepper } from '../components/ui';
 import { useFinance } from '../hooks/FinanceData';
 import { useFinanceActions } from '../hooks/useFinanceActions';
 import { useOccurrences } from '../hooks/useFlows';
@@ -19,7 +19,6 @@ const monthOk = (m: unknown): m is Month => typeof m === 'string' && /^\d{4}-(0[
 
 export function BudgetsScreen() {
   const s = useStyles();
-  const t = useTheme();
   const today = todayIso();
   const params = useLocalSearchParams<{ mes?: string }>();
   const [month, setMonth] = useState<Month>(monthOk(params.mes) ? params.mes : monthOf(today));
@@ -43,35 +42,31 @@ export function BudgetsScreen() {
 
   return (
     <Screen>
-      <View>
-        <BackHeader title="Orçamentos" fallback="/financas" />
-        <View style={s.stepper}>
-          <MonthStepper label={name} onPrev={() => go(-1)} onNext={() => go(1)} />
-        </View>
+      <BackHeader title="Orçamentos" fallback="/financas" />
+      <View style={s.stepper}>
+        <MonthStepper label={name} onPrev={() => go(-1)} onNext={() => go(1)} />
       </View>
       <MonthSlide id={month} direction={dir}>
         <Reveal>
           <View style={s.hero}>
-            <Text variant="label" tone="tertiary">
+            <Text variant="small" tone="tertiary">
               {`Gasto em ${name}`}
             </Text>
-            <Text variant="display" numeric style={s.heroValue}>
+            <Text variant="big" numeric>
               {balance(spent)}
             </Text>
-            <Text tone="tertiary" numeric>
+            <Text variant="small" tone="tertiary" numeric>
               {`mais ${money(planned)} previsto · orçamento ${money(total)}`}
             </Text>
-            <View style={s.note}>
-              <Icon icon={CreditCard} size={t.icon.tiny} color="textTertiary" />
-              <Text variant="caption" tone="tertiary" style={s.flex}>
-                Compras no cartão contam no mês em que a fatura vence. Pagamento de fatura não entra aqui.
-              </Text>
-            </View>
+            {total > 0 && <ProgressBar value={spent / total} planned={planned / total} tone={spent > total ? 'danger' : 'neutral'} thickness="thick" />}
+            <Alert tone="neutral" icon={CreditCard}>
+              Compras no cartão contam no mês em que a fatura vence. Pagamento de fatura não entra aqui.
+            </Alert>
           </View>
 
           <Block>
             <BlockHeader title="Por categoria" right="orçamento mensal" />
-            {withBudget.length === 0 && <Text tone="tertiary">Nenhuma categoria com orçamento. Use “Definir” abaixo.</Text>}
+            {withBudget.length === 0 && <EmptyState compact message="Nenhuma categoria com orçamento. Use “Definir” abaixo." />}
             {withBudget.map((b, i) => (
               <BudgetLine key={b.category.id} b={b} month={month} index={i} divider={i > 0} />
             ))}
@@ -86,9 +81,9 @@ export function BudgetsScreen() {
                   'Nada no mês';
                 return (
                   <View key={b.category.id} style={[s.none, i > 0 && s.divider]}>
-                    <Icon icon={categoryIcon(b.category.icon)} size={t.icon.small} color="textTertiary" />
+                    <Disc icon={categoryIcon(b.category.icon)} hue={categoryHue(b.category.color)} muted />
                     <View style={s.flex}>
-                      <Text style={s.medium}>{b.category.name}</Text>
+                      <Text variant="item">{b.category.name}</Text>
                       <Text variant="caption" tone="tertiary" numeric>
                         {meta}
                       </Text>
@@ -139,13 +134,15 @@ function BudgetLine({ b, month, index, divider }: { b: BudgetRow; month: Month; 
   return (
     <View style={[s.line, divider && s.divider]}>
       <View style={s.lineTop}>
-        <Icon icon={categoryIcon(b.category.icon)} size={t.icon.small} color="textSecondary" />
-        <Text style={[s.flex, s.medium]}>{b.category.name}</Text>
+        <ModuleIcon icon={categoryIcon(b.category.icon)} module="finance" hue={categoryHue(b.category.color)} size="sm" />
+        <Text variant="item" style={s.flex}>
+          {b.category.name}
+        </Text>
         <TextInput
           accessibilityLabel={`Orçamento mensal de ${b.category.name}`}
           value={text}
           placeholder="R$ 0,00"
-          placeholderTextColor={t.colors.textTertiary}
+          placeholderTextColor={t.colors.textQuaternary}
           keyboardType="number-pad"
           inputMode="numeric"
           onFocus={() => setFocused(true)}
@@ -159,12 +156,10 @@ function BudgetLine({ b, month, index, divider }: { b: BudgetRow; month: Month; 
       <View style={s.stats}>
         <Stat label="Gasto" value={money(b.spent)} />
         <Stat label="Previsto" value={money(b.planned)} tone="secondary" />
-        <Stat label="Restante" value={budget !== null ? balance(rest) : '—'} tone={rest < 0 ? 'accent' : 'primary'} end />
+        <Stat label="Restante" value={budget !== null ? balance(rest) : '—'} tone={rest < 0 ? 'danger' : 'primary'} end />
       </View>
       {over && budget !== null && (
-        <Text variant="caption" tone="accent" style={s.medium}>
-          {`${money(b.spent - budget)} acima do orçamento`}
-        </Text>
+        <Tag tone="danger" icon={TriangleAlert} label={`${money(b.spent - budget)} acima do orçamento`} />
       )}
     </View>
   );
@@ -178,13 +173,13 @@ function Stat({
 }: {
   label: string;
   value: string;
-  tone?: 'primary' | 'secondary' | 'accent';
+  tone?: 'primary' | 'secondary' | 'danger';
   end?: boolean;
 }) {
   const s = useStyles();
   return (
     <View style={[s.stat, end && s.statEnd]}>
-      <Text variant="label" tone="tertiary">
+      <Text variant="micro" tone="tertiary">
         {label}
       </Text>
       <Text variant="small" tone={tone} numeric style={s.medium}>
@@ -195,15 +190,8 @@ function Stat({
 }
 
 const useStyles = makeStyles((t) => ({
-  stepper: { position: 'absolute', right: t.space[0], bottom: t.space[0] },
+  stepper: { alignItems: 'center' },
   hero: { gap: t.space[1.5] },
-  heroValue: { lineHeight: t.type.display.fontSize + t.space[1] },
-  note: {
-    flexDirection: 'row',
-    gap: t.space[2],
-    alignItems: 'flex-start',
-    marginTop: t.space[1.5],
-  },
   flex: { flex: 1, minWidth: 0 },
   medium: { fontFamily: t.type.chip.font },
   divider: { borderTopWidth: t.hairline, borderTopColor: t.colors.hairline },
@@ -215,9 +203,8 @@ const useStyles = makeStyles((t) => ({
   input: {
     width: t.size.budgetInputWidth,
     height: t.size.budgetInputHeight,
-    borderWidth: t.hairline,
-    borderColor: t.colors.hairline,
-    borderRadius: t.radius.field,
+    backgroundColor: t.colors.bg,
+    borderRadius: t.radius.field - t.space[1],
     paddingHorizontal: t.space[3],
     color: t.colors.text,
     fontFamily: t.type.chip.font,
@@ -225,7 +212,7 @@ const useStyles = makeStyles((t) => ({
     textAlign: 'right',
     fontVariant: ['tabular-nums'],
   },
-  inputFocused: { borderColor: t.colors.accent },
+  inputFocused: { boxShadow: `0px 0px 0px ${t.field.ring}px ${t.colors.accent}` },
   stats: { flexDirection: 'row' },
   stat: { flex: 1 },
   statEnd: { alignItems: 'flex-end' },

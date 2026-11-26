@@ -5,12 +5,29 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Platform, Pressable, View } from 'react-native';
 import Animated, { FadeIn, Keyframe, useAnimatedStyle, useSharedValue, withDelay, withSpring } from 'react-native-reanimated';
 
-import { Icon, IconButton, Input, Text, makeStyles, resolveSpring, useReduceMotion, useTheme, type TextTone } from '@/shared/ui';
+import {
+  Icon,
+  IconButton,
+  Input,
+  ModuleIcon,
+  Radio,
+  SurfaceProvider,
+  Text,
+  makeStyles,
+  resolveSpring,
+  useInListGroup,
+  usePress,
+  useReduceMotion,
+  useSurface,
+  useTheme,
+  type TextTone,
+} from '@/shared/ui';
 
 import { digitsToCents, money, parseDmy, dmy } from './format';
 
 // ---------- Seletor de mês / fatura ----------
 
+/** Seletor de mês em pílula branca: setas e o mês no meio (Cobalto). */
 export function MonthStepper(p: {
   label: string;
   onPrev: () => void;
@@ -22,14 +39,15 @@ export function MonthStepper(p: {
 }) {
   const s = useStyles();
   const t = useTheme();
+  const surface = useSurface();
   return (
-    <View style={s.stepper}>
+    <View style={[s.stepper, surface === 'card' && s.stepperOnCard]}>
       <View style={[!p.canPrev && p.canPrev !== undefined && s.dim]}>
         <IconButton
           icon={ChevronLeft}
           label={p.prevLabel ?? 'Mês anterior'}
           variant="ghost"
-          size={t.size.pillSmall + t.space[0.5]}
+          size={t.size.iconButtonSmall}
           color="textSecondary"
           disabled={p.canPrev === false}
           onPress={p.onPrev}
@@ -43,7 +61,7 @@ export function MonthStepper(p: {
           icon={ChevronRight}
           label={p.nextLabel ?? 'Próximo mês'}
           variant="ghost"
-          size={t.size.pillSmall + t.space[0.5]}
+          size={t.size.iconButtonSmall}
           color="textSecondary"
           disabled={p.canNext === false}
           onPress={p.onNext}
@@ -80,23 +98,17 @@ export function MonthSlide({ id, direction, children }: { id: string; direction:
 
 // ---------- Linhas ----------
 
-/** Círculo de 34 px contornado com o ícone da categoria. */
-export function Disc({ icon, muted }: { icon: LucideIcon; muted?: boolean }) {
-  const s = useStyles();
-  const t = useTheme();
-  return (
-    <View style={s.disc}>
-      <Icon icon={icon} size={t.icon.small} color={muted ? 'textTertiary' : 'textSecondary'} />
-    </View>
-  );
+/** Bloco de 40 px com o ícone da categoria no matiz dela (Finanças por padrão); `muted` fica neutro. */
+export function Disc({ icon, muted, hue }: { icon: LucideIcon; muted?: boolean; hue?: number }) {
+  return <ModuleIcon icon={icon} module="finance" hue={hue} tone={muted ? 'neutral' : 'module'} />;
 }
 
-/** Rótulo de bloco (11 px, caixa alta) com algo à direita. */
+/** Título do bloco (16/600, dentro do cartão) com algo à direita. */
 export function BlockHeader({ title, right }: { title: string; right?: ReactNode }) {
   const s = useStyles();
   return (
     <View style={s.blockHeader}>
-      <Text variant="label" tone="tertiary" accessibilityRole="header">
+      <Text variant="emphasis" accessibilityRole="header" style={s.blockTitle}>
         {title}
       </Text>
       {typeof right === 'string' ? (
@@ -110,10 +122,15 @@ export function BlockHeader({ title, right }: { title: string; right?: ReactNode
   );
 }
 
-/** Bloco separado por 18 px e uma linha de 1 px (nunca uma caixa). */
+/** Bloco do Cobalto: cartão branco r24 com título e conteúdo. `divider={false}` deixa o bloco sem cartão. */
 export function Block({ children, divider = true, gap }: { children: ReactNode; divider?: boolean; gap?: number }) {
   const s = useStyles();
-  return <View style={[s.block, divider && s.blockDivider, gap !== undefined && { gap }]}>{children}</View>;
+  if (!divider) return <View style={[s.bare, gap !== undefined && { gap }]}>{children}</View>;
+  return (
+    <SurfaceProvider value="card">
+      <View style={[s.block, gap !== undefined && { gap }]}>{children}</View>
+    </SurfaceProvider>
+  );
 }
 
 export interface MoneyRowProps {
@@ -139,12 +156,14 @@ export interface MoneyRowProps {
 export function MoneyRow(p: MoneyRowProps) {
   const s = useStyles();
   const t = useTheme();
+  const inGroup = useInListGroup();
+  const press = usePress(!p.onPress);
   const body = (
-    <View style={[s.row, p.divider && s.rowDivider]}>
+    <Animated.View style={[s.row, p.divider && !inGroup && s.rowDivider, press.style]}>
       {p.leading}
       <View style={s.rowText}>
         <View style={s.titleLine}>
-          <Text tone={p.dim ? 'secondary' : 'primary'} style={s.medium} numberOfLines={1}>
+          <Text variant="item" tone={p.dim ? 'secondary' : 'primary'} numberOfLines={1} style={s.shrink}>
             {p.title}
           </Text>
           {p.recurring && <Icon icon={Repeat} size={t.icon.tiny} color="textTertiary" />}
@@ -165,7 +184,7 @@ export function MoneyRow(p: MoneyRowProps) {
         )}
       </View>
       <View style={s.amountCol}>
-        <Text tone={p.amountTone ?? (p.dim ? 'tertiary' : 'primary')} numeric style={s.medium}>
+        <Text variant="amount" tone={p.amountTone ?? (p.dim ? 'tertiary' : 'primary')} numeric style={p.dim && s.amountDim}>
           {p.amount}
         </Text>
         {p.amountSub && (
@@ -175,7 +194,7 @@ export function MoneyRow(p: MoneyRowProps) {
         )}
       </View>
       {p.trailing}
-    </View>
+    </Animated.View>
   );
   if (!p.onPress) return body;
   return (
@@ -183,7 +202,8 @@ export function MoneyRow(p: MoneyRowProps) {
       accessibilityRole="button"
       accessibilityLabel={p.accessibilityLabel}
       onPress={p.onPress}
-      style={({ pressed }) => pressed && s.pressed}
+      onPressIn={press.onPressIn}
+      onPressOut={press.onPressOut}
     >
       {body}
     </Pressable>
@@ -386,7 +406,7 @@ export function DateRow({
   return (
     <View style={s.dateRow}>
       <View style={s.dateLine}>
-        <Text style={s.medium}>{label}</Text>
+        <Text variant="item">{label}</Text>
         <Pressable
           accessibilityRole="button"
           accessibilityLabel={`${label}: ${display}. Alterar`}
@@ -425,34 +445,24 @@ export function DateRow({
 /** Opção de rádio em linha (folhas de escolha e "Este cartão já está em uso?"). */
 export function RadioRow({ title, sub, selected, onPress }: { title: string; sub?: string; selected: boolean; onPress: () => void }) {
   const s = useStyles();
-  const reduceMotion = useReduceMotion();
-  const spring = resolveSpring('tap', reduceMotion);
-  const dot = useSharedValue(selected ? 1 : 0);
-  useEffect(() => {
-    dot.set(spring ? withSpring(selected ? 1 : 0, spring) : selected ? 1 : 0);
-  }, [selected, spring, dot]);
-  const dotStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: dot.get() }],
-  }));
+  const inGroup = useInListGroup();
   return (
     <Pressable
       accessibilityRole="radio"
       accessibilityState={{ checked: selected }}
       accessibilityLabel={title}
       onPress={onPress}
-      style={({ pressed }) => [s.radioRow, pressed && s.pressed]}
+      style={({ pressed }) => [s.radioRow, !inGroup && s.rowDivider, pressed && s.pressed]}
     >
-      <View style={[s.radio, selected && s.radioOn]}>
-        <Animated.View style={[s.radioDot, dotStyle]} />
-      </View>
       <View style={s.rowText}>
-        <Text style={s.medium}>{title}</Text>
+        <Text variant="item">{title}</Text>
         {sub ? (
           <Text variant="small" tone="tertiary" numeric>
             {sub}
           </Text>
         ) : null}
       </View>
+      <Radio selected={selected} />
     </Pressable>
   );
 }
@@ -460,10 +470,11 @@ export function RadioRow({ title, sub, selected, onPress }: { title: string; sub
 /** Linha com texto e interruptor (É previsto · Repetir). */
 export function SwitchRow({ title, sub, control }: { title: string; sub: string; control: ReactNode }) {
   const s = useStyles();
+  const inGroup = useInListGroup();
   return (
-    <View style={s.switchRow}>
+    <View style={[s.switchRow, !inGroup && s.rowDivider]}>
       <View style={s.rowText}>
-        <Text style={s.medium}>{title}</Text>
+        <Text variant="item">{title}</Text>
         <Text variant="caption" tone="tertiary">
           {sub}
         </Text>
@@ -522,42 +533,40 @@ const useStyles = makeStyles((t) => ({
   stepper: {
     flexDirection: 'row',
     alignItems: 'center',
-    height: t.size.pill,
-    borderWidth: t.hairline,
-    borderColor: t.colors.hairline,
+    height: t.size.buttonSmall + t.space[1],
+    backgroundColor: t.colors.card,
     borderRadius: t.radius.full,
     paddingHorizontal: t.space[0.5],
     alignSelf: 'flex-start',
   },
+  stepperOnCard: { backgroundColor: t.colors.bg },
   stepperLabel: { minWidth: t.size.monthLabel, paddingHorizontal: t.space[1] },
   dim: { opacity: t.opacity.faint },
-  disc: {
-    width: t.size.disc,
-    height: t.size.disc,
-    borderRadius: t.radius.full,
-    borderWidth: t.hairline,
-    borderColor: t.colors.hairline,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   blockHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     gap: t.space[3],
-    paddingBottom: t.space[1.5],
+    paddingBottom: t.space[1],
   },
-  block: { paddingTop: t.layout.blockGap, gap: t.space[1] },
-  blockDivider: {
-    borderTopWidth: t.hairline,
-    borderTopColor: t.colors.hairline,
+  blockTitle: { flexShrink: 1 },
+  block: {
+    backgroundColor: t.colors.card,
+    borderRadius: t.radius.card,
+    paddingHorizontal: t.space[4],
+    paddingTop: t.space[4],
+    paddingBottom: t.space[2],
+    gap: t.space[1],
   },
+  bare: { gap: t.space[1] },
+  shrink: { flexShrink: 1 },
+  amountDim: { fontFamily: t.type.chip.font },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: t.space[3],
-    minHeight: t.size.navRowTall,
-    paddingVertical: t.space[1],
+    minHeight: t.size.navRow,
+    paddingVertical: t.space[3],
   },
   rowDivider: { borderTopWidth: t.hairline, borderTopColor: t.colors.hairline },
   rowText: { flex: 1, minWidth: 0, gap: t.space[0.5] },
@@ -570,25 +579,24 @@ const useStyles = makeStyles((t) => ({
   medium: { fontFamily: t.type.chip.font },
   amountCol: { alignItems: 'flex-end' },
   badge: {
-    height: t.size.linkChip - t.space[1],
+    height: t.size.tag - t.space[1],
     paddingHorizontal: t.space[2],
     borderRadius: t.radius.full,
-    borderWidth: t.hairline,
-    borderColor: t.colors.hairline,
+    backgroundColor: t.colors.bg,
     justifyContent: 'center',
   },
-  badgeText: { fontFamily: t.type.label.font },
-  pressed: { backgroundColor: t.colors.soft },
+  badgeText: { fontFamily: t.type.tag.font },
+  pressed: { opacity: t.opacity.pressed },
   barWrap: { height: t.size.track, justifyContent: 'center' },
   barTrack: {
     flexDirection: 'row',
     height: t.size.track,
     borderRadius: t.radius.full,
-    backgroundColor: t.colors.hairline,
+    backgroundColor: t.colors.track,
     overflow: 'hidden',
   },
-  barSpent: { height: '100%', backgroundColor: t.colors.textTertiary },
-  barOver: { backgroundColor: t.colors.accent },
+  barSpent: { height: '100%', backgroundColor: t.colors.textSecondary, borderRadius: t.radius.full },
+  barOver: { backgroundColor: t.colors.dangerStrong },
   barPlanned: { height: '100%', backgroundColor: t.colors.planned },
   trackFill: {
     height: '100%',
@@ -609,69 +617,43 @@ const useStyles = makeStyles((t) => ({
     fontFamily: t.type.amountField.font,
     fontSize: t.type.amountField.fontSize,
     letterSpacing: t.type.amountField.letterSpacing,
+    lineHeight: t.type.amountField.lineHeight,
     minHeight: t.size.fieldLarge,
-    paddingTop: t.space[6] + t.space[0.5],
+    paddingTop: t.space[6],
   },
-  dateRow: {
-    gap: t.space[2],
-    borderTopWidth: t.hairline,
-    borderTopColor: t.colors.hairline,
-    paddingTop: t.space[1.5],
-  },
+  dateRow: { gap: t.space[2] },
   dateLine: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    minHeight: t.size.button,
+    minHeight: t.size.navRow,
   },
   datePill: {
-    height: t.size.pill,
-    paddingHorizontal: t.space[3],
+    height: t.size.buttonSmall,
+    paddingHorizontal: t.space[3.5],
     borderRadius: t.radius.full,
-    borderWidth: t.hairline,
-    borderColor: t.colors.hairline,
+    backgroundColor: t.colors.tonal,
     justifyContent: 'center',
   },
   radioRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: t.space[3] + t.space[0.5],
-    minHeight: t.size.button + t.space[3],
-    paddingVertical: t.space[2],
-    borderTopWidth: t.hairline,
-    borderTopColor: t.colors.hairline,
-  },
-  radio: {
-    width: t.size.radio,
-    height: t.size.radio,
-    borderRadius: t.radius.full,
-    borderWidth: t.size.radioBorder,
-    borderColor: t.colors.textTertiary,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  radioOn: { borderColor: t.colors.accent },
-  radioDot: {
-    width: t.size.radioDot,
-    height: t.size.radioDot,
-    borderRadius: t.radius.full,
-    backgroundColor: t.colors.accent,
+    minHeight: t.size.navRow,
+    paddingVertical: t.space[3],
   },
   switchRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: t.space[3],
-    minHeight: t.size.button,
-    borderTopWidth: t.hairline,
-    borderTopColor: t.colors.hairline,
-    paddingTop: t.space[2],
+    minHeight: t.size.navRow,
+    paddingVertical: t.space[2],
   },
   counter: {
     flexDirection: 'row',
     alignItems: 'center',
-    height: t.size.buttonSmall,
-    borderWidth: t.hairline,
-    borderColor: t.colors.hairline,
+    height: t.size.buttonSmall + t.space[1],
+    backgroundColor: t.colors.bg,
     borderRadius: t.radius.full,
     paddingHorizontal: t.space[1],
   },

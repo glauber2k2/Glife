@@ -6,11 +6,11 @@ import { ArrowLeftRight } from 'lucide-react-native';
 import { useMemo, useState } from 'react';
 import { View } from 'react-native';
 
-import { BackHeader, Button, Icon, Reveal, Screen, Text, makeStyles, useTheme } from '@/shared/ui';
+import { BackHeader, Button, Card, EmptyState, ProgressBar, Reveal, Screen, Tag, Text, makeStyles, useTheme } from '@/shared/ui';
 
-import { categoryIcon } from '../components/categories';
+import { categoryHue, categoryIcon } from '../components/categories';
 import { MONTH_NAMES, dm, money, signed, todayIso } from '../components/format';
-import { Block, BlockHeader, MoneyRow, MonthSlide, MonthStepper, ProgressTrack } from '../components/ui';
+import { Block, BlockHeader, Disc, MoneyRow, MonthSlide, MonthStepper } from '../components/ui';
 import { useFinance } from '../hooks/FinanceData';
 import { invoiceTitle, useOccurrences, usePayInvoice } from '../hooks/useFlows';
 import { INVOICE_STATUS } from '../components/status';
@@ -79,12 +79,7 @@ export function InvoiceScreen() {
 
   return (
     <Screen>
-      <View>
-        <BackHeader title={card.name} fallback="/financas" />
-        <Text variant="small" tone="tertiary" style={s.sub}>
-          {`Fecha dia ${card.closing_day} · vence dia ${card.due_day}${limit}`}
-        </Text>
-      </View>
+      <BackHeader title={card.name} subtitle={`Fecha dia ${card.closing_day} · vence dia ${card.due_day}${limit}`} fallback="/financas" />
       <MonthStepper
         label={invoiceTitle(month)}
         onPrev={() => go(-1)}
@@ -94,23 +89,20 @@ export function InvoiceScreen() {
       />
       <MonthSlide id={month} direction={dir}>
         <Reveal>
-          <View style={s.hero}>
+          <Card tone="inverse" gap={t.space[1.5]}>
             <View style={s.inline}>
-              <Icon icon={st.icon} size={t.icon.tiny} color={st.color} />
-              <Text variant="caption" tone={st.tone} style={s.semibold}>
-                {st.label}
-              </Text>
+              <Tag label={st.label} icon={st.icon} tone={st.tone === 'danger' ? 'danger' : st.tone === 'success' ? 'success' : st.tone === 'warning' ? 'warning' : 'tonal'} />
             </View>
-            <Text variant="display" numeric style={s.heroValue}>
+            <Text variant="display" tone="inverse" numeric style={s.heroValue}>
               {money(summary.total - plannedSum)}
             </Text>
             {hasPlanned && (
-              <Text tone="tertiary" numeric>
+              <Text tone="inverseMuted" numeric>
                 {`Com os previstos, fecha em ${money(summary.total)}`}
               </Text>
             )}
             <View style={s.track}>
-              <ProgressTrack ratio={summary.total > 0 ? summary.paid / summary.total : 0} />
+              <ProgressBar value={summary.total > 0 ? summary.paid / summary.total : 0} tone="accent" label="Pago da fatura" />
             </View>
             <View style={s.grid}>
               <Stat label="Pago" value={money(summary.paid)} />
@@ -118,7 +110,7 @@ export function InvoiceScreen() {
               <Stat label="Fechamento" value={dm(summary.closingDate)} />
               <Stat label="Vencimento" value={dm(summary.dueDate)} tone={summary.status === 'overdue' ? 'danger' : 'primary'} />
             </View>
-            <Text variant="small" tone="secondary" style={s.note}>
+            <Text variant="small" tone="inverseMuted" style={s.note}>
               {note}
             </Text>
             {summary.remaining > 0 && summary.status !== 'open' && (
@@ -128,10 +120,10 @@ export function InvoiceScreen() {
             )}
             {summary.remaining > 0 && summary.status === 'open' && (
               <View style={s.payBtn}>
-                <Button label="Pagar antes do fechamento" variant="secondary" onPress={() => pay.open(card.id, month)} />
+                <Button label="Pagar antes do fechamento" variant="neutral" onPress={() => pay.open(card.id, month)} />
               </View>
             )}
-          </View>
+          </Card>
 
           {hasPlanned && (
             <Block>
@@ -140,7 +132,7 @@ export function InvoiceScreen() {
                 <MoneyRow
                   key={p.key}
                   divider={i > 0}
-                  leading={<Icon icon={categoryIcon(categories.get(p.category_id ?? '')?.icon)} size={t.icon.small} color="textTertiary" />}
+                  leading={<Disc icon={categoryIcon(categories.get(p.category_id ?? '')?.icon)} muted />}
                   title={p.description || 'Previsto'}
                   dim
                   recurring={!!p.recurrenceId}
@@ -154,18 +146,14 @@ export function InvoiceScreen() {
 
           <Block>
             <BlockHeader title="Compras e estornos" right={`${detail.items.length} ${detail.items.length === 1 ? 'item' : 'itens'}`} />
-            {detail.items.length === 0 && (
-              <Text tone="tertiary" style={s.empty}>
-                Nenhuma compra nesta fatura.
-              </Text>
-            )}
+            {detail.items.length === 0 && <EmptyState compact message="Nenhuma compra nesta fatura." />}
             {detail.items.map((x, i) => {
               const cat = categories.get(x.category_id ?? '');
               return (
                 <MoneyRow
                   key={x.id}
                   divider={i > 0}
-                  leading={<Icon icon={categoryIcon(cat?.icon)} size={t.icon.small} color="textSecondary" />}
+                  leading={<Disc icon={categoryIcon(cat?.icon)} hue={categoryHue(cat?.color)} />}
                   title={x.description || cat?.name || 'Compra'}
                   badge={x.installment_index ? `${x.installment_index}/${x.installment_count}` : undefined}
                   meta={`${dm(x.date)}${cat ? ` · ${cat.name}` : ''}`}
@@ -183,7 +171,7 @@ export function InvoiceScreen() {
                 <MoneyRow
                   key={p.id}
                   divider={i > 0}
-                  leading={<Icon icon={ArrowLeftRight} size={t.icon.small} color="textSecondary" />}
+                  leading={<Disc icon={ArrowLeftRight} muted />}
                   title="Pagamento da fatura"
                   meta={`${dm(p.date)} · do ${data.accounts.find((a) => a.id === p.account_id)?.name ?? ''} · transferência`}
                   amount={money(p.amount_cents)}
@@ -209,10 +197,10 @@ function Stat({ label, value, tone = 'primary' }: { label: string; value: string
   const s = useStyles();
   return (
     <View style={s.stat}>
-      <Text variant="label" tone="tertiary">
+      <Text variant="micro" tone="inverseMuted">
         {label}
       </Text>
-      <Text variant="item" numeric tone={tone}>
+      <Text variant="item" numeric tone={tone === 'danger' ? 'danger' : 'inverse'}>
         {value}
       </Text>
     </View>
@@ -220,8 +208,6 @@ function Stat({ label, value, tone = 'primary' }: { label: string; value: string
 }
 
 const useStyles = makeStyles((t) => ({
-  sub: { marginTop: t.space[1.5] },
-  hero: { gap: t.space[1.5] },
   heroValue: { lineHeight: t.type.display.fontSize + t.space[1] },
   inline: { flexDirection: 'row', alignItems: 'center', gap: t.space[1.5] },
   semibold: { fontFamily: t.type.label.font },

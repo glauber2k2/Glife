@@ -5,11 +5,11 @@ import { useLocalSearchParams } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { ScrollView, View } from 'react-native';
 
-import { BackHeader, Button, Chip, Icon, Reveal, Screen, SearchField, Text, makeStyles, useTheme } from '@/shared/ui';
+import { BackHeader, Button, Chip, EmptyState, Reveal, Screen, SearchField, Tag, Text, makeStyles, useTheme } from '@/shared/ui';
 
-import { ACCOUNT_KIND_LABEL, TRANSFER_ICON, categoryIcon } from '../components/categories';
+import { ACCOUNT_KIND_LABEL, TRANSFER_ICON, categoryHue, categoryIcon } from '../components/categories';
 import { balance, dm, signed, todayIso, weekday } from '../components/format';
-import { Block, MoneyRow } from '../components/ui';
+import { Block, Disc, MoneyRow } from '../components/ui';
 import { DeleteAccountSheet, usePlannedSheet, useTransactionSheet } from '../components/deleteSheets';
 import { useFinance } from '../hooks/FinanceData';
 import { useOccurrences } from '../hooks/useFlows';
@@ -68,26 +68,16 @@ export function StatementScreen() {
 
   return (
     <Screen>
-      <View>
-        <BackHeader title={account.name} fallback="/financas" />
-        <Text variant="small" tone="tertiary" style={s.sub}>
-          {ACCOUNT_KIND_LABEL[account.kind]}
-        </Text>
-      </View>
+      <BackHeader title={account.name} subtitle={ACCOUNT_KIND_LABEL[account.kind]} fallback="/financas" />
       <Reveal>
         <View style={s.hero}>
-          <Text variant="label" tone="tertiary">
+          <Text variant="small" tone="tertiary">
             Saldo real
           </Text>
-          <Text variant="display" numeric style={s.heroValue}>
+          <Text variant="big" numeric>
             {balance(st.balance)}
           </Text>
-          <View style={s.expected}>
-            <Text tone="tertiary">Projetado em {dm(end)}</Text>
-            <Text variant="digit" numeric>
-              {balance(st.projected)}
-            </Text>
-          </View>
+          <Tag large tone={st.projected < 0 ? 'danger' : 'neutral'} label={`Projetado em ${dm(end)}: ${balance(st.projected)}`} />
         </View>
         <View style={s.filters}>
           <SearchField value={q} onChangeText={setQ} placeholder="Buscar no extrato" />
@@ -99,11 +89,11 @@ export function StatementScreen() {
             {hasTransfers && <Chip size="sm" label="Transferências" selected={filter === TRANSFERS} onPress={() => setFilter(TRANSFERS)} />}
           </ScrollView>
         </View>
-        {days.length === 0 && <Text tone="tertiary">Nada encontrado.</Text>}
+        {days.length === 0 && <EmptyState compact message="Nada encontrado." />}
         {days.map((d) => (
           <Block key={d.date} gap={t.space[0.5]}>
             <View style={s.dayHeader}>
-              <Text variant="label" tone={d.date === today ? 'accent' : 'tertiary'}>
+              <Text variant="item" tone={d.date === today ? 'accent' : 'primary'} style={s.semibold}>
                 {`${d.date === today ? 'Hoje · ' : ''}${weekday(d.date)}, ${dm(d.date)}`}
               </Text>
               <Text variant="caption" tone="tertiary" numeric>
@@ -118,10 +108,10 @@ export function StatementScreen() {
                   key={e.key}
                   divider={i > 0}
                   leading={
-                    <Icon
+                    <Disc
                       icon={e.type === 'transfer' ? TRANSFER_ICON : categoryIcon(cat?.icon)}
-                      size={t.icon.small}
-                      color={e.planned ? 'textTertiary' : 'textSecondary'}
+                      hue={categoryHue(cat?.color)}
+                      muted={e.planned || e.type === 'transfer'}
                     />
                   }
                   title={titleOf(e)}
@@ -164,16 +154,8 @@ export function StatementScreen() {
 }
 
 const useStyles = makeStyles((t) => ({
-  sub: { marginTop: t.space[1.5] },
   danger: { flexDirection: 'row', marginLeft: -(t.space[3] + t.space[0.5]) },
   hero: { gap: t.space[1.5] },
-  heroValue: { lineHeight: t.type.display.fontSize + t.space[1] },
-  expected: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
-    gap: t.space[2],
-    flexWrap: 'wrap',
-  },
   filters: { gap: t.space[3] },
   chipScroll: { marginHorizontal: -t.layout.gutter },
   chips: { gap: t.space[2], paddingHorizontal: t.layout.gutter },

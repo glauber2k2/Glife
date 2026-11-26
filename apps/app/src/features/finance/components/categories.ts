@@ -52,6 +52,10 @@ const ICONS: Record<string, LucideIcon> = {
 
 export const TRANSFER_ICON = ArrowLeftRight;
 
+/** Matiz (oklch) de cada cor de categoria: bloco suave com ícone forte, como os módulos do Cobalto. */
+const HUES: Record<CategoryColor, number> = { slate: 260, steel: 230, sage: 150, sand: 80, clay: 40, rose: 15, plum: 320, teal: 195 };
+export const categoryHue = (color: CategoryColor | null | undefined): number | undefined => (color ? HUES[color] : undefined);
+
 /** Ícone de uma categoria pelo nome gravado; desconhecido vira um ponto neutro. */
 export const categoryIcon = (name: string | null | undefined): LucideIcon => (name && ICONS[name]) || CircleDot;
 

@@ -17,9 +17,9 @@ import { Plus } from 'lucide-react-native';
 import { useState } from 'react';
 import { View } from 'react-native';
 
-import { BackHeader, Button, Input, Reveal, Screen, SegmentedControl, Text, makeStyles, useTheme, useToast } from '@/shared/ui';
+import { BackHeader, Button, EmptyState, IconButton, Input, Reveal, Screen, SegmentedControl, Text, makeStyles, useTheme, useToast } from '@/shared/ui';
 
-import { TRANSFER_ICON, categoryIcon } from '../components/categories';
+import { TRANSFER_ICON, categoryHue, categoryIcon } from '../components/categories';
 import { dm, dmy, money, signed, todayIso, weekday } from '../components/format';
 import { NewEntrySheet } from '../components/NewEntrySheet';
 import { ChoiceSheet } from '../components/sheets';
@@ -40,7 +40,6 @@ export function frequencyLabel(r: Pick<Recurrence, 'frequency' | 'interval_count
 const valueOf = (r: Pick<Recurrence, 'type' | 'amount_cents'>) => (r.type === 'income' ? r.amount_cents : -r.amount_cents);
 
 export function RecurrencesScreen() {
-  const s = useStyles();
   const today = todayIso();
   const { data } = useFinance();
   const occurrences = useOccurrences(addDays(today, 800));
@@ -61,17 +60,21 @@ export function RecurrencesScreen() {
 
   return (
     <Screen>
-      <View>
-        <BackHeader title="Recorrentes" fallback="/financas" />
-        <View style={s.newBtn}>
-          <Button label="Nova" icon={Plus} variant="ghost" onPress={() => setCreating(true)} />
-        </View>
-        <Text variant="small" tone="tertiary" style={s.sub}>
-          Regras que geram os previstos de cada mês.
-        </Text>
-      </View>
+      <BackHeader
+        title="Recorrentes"
+        subtitle="Geram os previstos de cada mês"
+        fallback="/financas"
+        right={<IconButton icon={Plus} label="Nova recorrência" onPress={() => setCreating(true)} />}
+      />
       <Reveal>
-        {groups.length === 0 && <Text tone="tertiary">Nenhuma recorrência ainda. Use “Nova” ou ligue “Repetir” num lançamento.</Text>}
+        {groups.length === 0 && (
+          <EmptyState
+            title="Nada recorrente ainda"
+            message="Salário, aluguel e assinaturas viram previstos todo mês. Crie aqui ou ligue “Repetir” num lançamento."
+            actionLabel="Nova recorrência"
+            onAction={() => setCreating(true)}
+          />
+        )}
         {groups.map((g) => (
           <Block key={g.title}>
             <BlockHeader title={g.title} />
@@ -86,7 +89,11 @@ export function RecurrencesScreen() {
                     key={r.id}
                     divider={i > 0}
                     leading={
-                      <Disc icon={r.type === 'transfer' ? TRANSFER_ICON : categoryIcon(categories.get(r.category_id ?? '')?.icon)} />
+                      <Disc
+                        icon={r.type === 'transfer' ? TRANSFER_ICON : categoryIcon(categories.get(r.category_id ?? '')?.icon)}
+                        hue={categoryHue(categories.get(r.category_id ?? '')?.color)}
+                        muted={r.type === 'transfer'}
+                      />
                     }
                     title={r.description || categories.get(r.category_id ?? '')?.name || 'Recorrência'}
                     meta={`${frequencyLabel(r)} · ${account?.name ?? ''}`}
@@ -128,9 +135,8 @@ export function RecurrenceScreen() {
   if (!data) return <Screen>{null}</Screen>;
   if (!rule) {
     return (
-      <Screen>
-        <BackHeader title="Recorrência" fallback="/financas/recorrentes" />
-        <Text tone="tertiary">Recorrência não encontrada.</Text>
+      <Screen header={<BackHeader title="Recorrência" fallback="/financas/recorrentes" />}>
+        <EmptyState title="Não encontrada" message="Esta recorrência não existe mais." mood="pensando" />
       </Screen>
     );
   }
@@ -272,12 +278,11 @@ function RuleEditor({ rule }: { rule: Recurrence }) {
 
   return (
     <Screen>
-      <View>
-        <BackHeader title={title} fallback="/financas/recorrentes" />
-        <Text variant="small" tone="tertiary" style={s.sub}>
-          {`Recorrente desde ${dmy(rule.start_date)}${category ? ` · ${category.name}` : ''} · ${account?.name ?? ''}`}
-        </Text>
-      </View>
+      <BackHeader
+        title={title}
+        subtitle={`Desde ${dmy(rule.start_date)}${category ? ` · ${category.name}` : ''} · ${account?.name ?? ''}`}
+        fallback="/financas/recorrentes"
+      />
       <Reveal>
         <View style={s.group}>
           <MoneyField
@@ -289,9 +294,7 @@ function RuleEditor({ rule }: { rule: Recurrence }) {
           <Input label="Descrição" value={desc} onChangeText={setDesc} maxLength={200} />
         </View>
         <Block gap={t.space[3] + t.space[0.5]}>
-          <Text variant="label" tone="tertiary">
-            Frequência
-          </Text>
+          <Text variant="emphasis">Frequência</Text>
           <SegmentedControl
             label="Frequência"
             options={[
@@ -307,7 +310,7 @@ function RuleEditor({ rule }: { rule: Recurrence }) {
             <Stepper label="Intervalo" value={every} onChange={setEvery} />
             <Text tone="secondary">{`${unit} · ${anchorTxt}`}</Text>
           </View>
-          <Text variant="label" tone="tertiary" style={s.top}>
+          <Text variant="emphasis" style={s.top}>
             Termina
           </Text>
           <SegmentedControl
@@ -323,7 +326,7 @@ function RuleEditor({ rule }: { rule: Recurrence }) {
         </Block>
         <Block>
           <BlockHeader title="Próximas ocorrências" />
-          {preview.length === 0 && <Text tone="tertiary">Nenhuma ocorrência futura.</Text>}
+          {preview.length === 0 && <EmptyState compact message="Nenhuma ocorrência futura." />}
           {preview.map((d, i) => (
             <View key={d} style={[s.occ, i > 0 && s.divider]}>
               <Text tone="secondary" numeric>
@@ -336,8 +339,8 @@ function RuleEditor({ rule }: { rule: Recurrence }) {
           ))}
         </Block>
         <View style={s.buttons}>
-          <Button label="Salvar alterações" haptic disabled={!value || applyOptions.length === 0} onPress={() => setSheet('apply')} />
-          <Button label="Encerrar recorrência" variant="ghostDanger" onPress={() => setSheet('end')} />
+          <Button label="Salvar alterações" haptic fullWidth disabled={!value || applyOptions.length === 0} onPress={() => setSheet('apply')} />
+          <Button label="Encerrar recorrência" variant="danger" fullWidth onPress={() => setSheet('end')} />
         </View>
       </Reveal>
 
@@ -371,12 +374,6 @@ function RuleEditor({ rule }: { rule: Recurrence }) {
 }
 
 const useStyles = makeStyles((t) => ({
-  sub: { marginTop: t.space[1.5] },
-  newBtn: {
-    position: 'absolute',
-    right: -t.space[3] - t.space[0.5],
-    bottom: t.space[6] + t.space[1],
-  },
   group: { gap: t.space[3] },
   inline: {
     flexDirection: 'row',
@@ -394,5 +391,5 @@ const useStyles = makeStyles((t) => ({
   },
   divider: { borderTopWidth: t.hairline, borderTopColor: t.colors.hairline },
   medium: { fontFamily: t.type.chip.font },
-  buttons: { gap: t.space[1.5], alignItems: 'flex-start' },
+  buttons: { gap: t.space[2.5] },
 }));
