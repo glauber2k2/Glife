@@ -3,12 +3,10 @@ import type { Tag as TagModel } from '@glife/domain/tags';
 import { useLocalSearchParams } from 'expo-router';
 import {
   Bold,
-  BookOpen,
-  Check,
   ChevronDown,
   ChevronLeft,
   CloudOff,
-  EllipsisVertical,
+  Ellipsis,
   FileText,
   Folder,
   FolderInput,
@@ -20,7 +18,6 @@ import {
   Italic,
   KeyboardOff,
   List,
-  PencilLine,
   Pin,
   PinOff,
   Plus,
@@ -53,8 +50,11 @@ import {
   Icon,
   IconButton,
   Input,
+  ListGroup,
   NavRow,
   Pill,
+  Radio,
+  SegmentedControl,
   Sheet,
   Text,
   makeStyles,
@@ -87,6 +87,10 @@ const SAVE_DELAY_MS = 600;
 const BAR_TITLE_AFTER = 70;
 type SheetKind = 'tipo' | 'mais' | 'pasta' | 'tags' | null;
 type Mode = 'read' | 'write';
+const MODES = [
+  { value: 'read' as const, label: 'Ler' },
+  { value: 'write' as const, label: 'Escrever' },
+];
 
 /**
  * Editor da nota (protótipo "Glife Notas"): Ler ⇄ Escrever, pasta e tags, salvamento silencioso,
@@ -298,41 +302,30 @@ export function NoteEditorScreen() {
   return (
     <SafeAreaView style={s.root} edges={['top', 'left', 'right', 'bottom']}>
       <KeyboardAvoidingView style={s.flex} behavior="padding">
-        {/* Barra: voltar, tipo (ou título ao rolar), Ler/Escrever, fixar, mais ações */}
+        {/* Barra (TopBar do Cobalto): voltar, estado de salvamento (ou o título ao rolar), fixar e mais ações */}
         <View style={[s.barWrap, scrolled && s.barLine]}>
           <View style={[s.column, s.bar]}>
-            <View style={s.edgeLeft}>
-              <IconButton icon={ChevronLeft} label="Voltar" variant="ghost" onPress={() => goBack()} />
-            </View>
+            <IconButton icon={ChevronLeft} label="Voltar" onPress={() => goBack()} />
             <View style={s.barMiddle}>
               {scrolled ? (
                 <Animated.View key="title" entering={fadeIn} exiting={fadeOut} style={s.barTitle}>
-                  <Text variant="button" numberOfLines={1} style={s.barTitleText}>
+                  <Text variant="emphasis" align="center" numberOfLines={1}>
                     {title || 'Sem título'}
                   </Text>
                 </Animated.View>
               ) : (
-                <Animated.View key="kind" entering={fadeIn} exiting={fadeOut}>
-                  <Pill
-                    label={KIND_LABEL[note.kind]}
-                    trailingIcon={ChevronDown}
-                    onPress={() => openSheet('tipo')}
-                    accessibilityLabel={`Tipo: ${KIND_LABEL[note.kind]}. Trocar`}
-                  />
+                <Animated.View key="save" entering={fadeIn} exiting={fadeOut}>
+                  <SaveStatus saving={saving} online={online} />
                 </Animated.View>
               )}
             </View>
-            <Pill label={mode === 'write' ? 'Ler' : 'Escrever'} icon={mode === 'write' ? BookOpen : PencilLine} onPress={toggleMode} />
             <IconButton
               icon={note.pinned ? Pin : PinOff}
               label={note.pinned ? 'Desafixar' : 'Fixar'}
-              variant="ghost"
-              color={note.pinned ? 'accentInk' : 'textSecondary'}
+              variant={note.pinned ? 'tonal' : 'card'}
               onPress={() => void saveNow({ pinned: !note.pinned })}
             />
-            <View style={s.edgeRight}>
-              <IconButton icon={EllipsisVertical} label="Mais ações" variant="ghost" onPress={() => openSheet('mais')} />
-            </View>
+            <IconButton icon={Ellipsis} label="Mais ações" onPress={() => openSheet('mais')} />
           </View>
         </View>
 
@@ -347,6 +340,22 @@ export function NoteEditorScreen() {
           }}
         >
           <View style={s.column}>
+            <View style={s.modeRow}>
+              <SegmentedControl
+                label="Modo"
+                options={MODES}
+                value={mode}
+                onChange={(m) => {
+                  if (m !== mode) toggleMode();
+                }}
+              />
+              <Pill
+                label={KIND_LABEL[note.kind]}
+                trailingIcon={ChevronDown}
+                onPress={() => openSheet('tipo')}
+                accessibilityLabel={`Tipo: ${KIND_LABEL[note.kind]}. Trocar`}
+              />
+            </View>
             <TextInput
               value={title}
               editable={mode === 'write'}
@@ -374,15 +383,12 @@ export function NoteEditorScreen() {
               {noteTags.map((tag) => (
                 <Pill key={tag.id} size="sm" label={`#${tag.name}`} tone="secondary" onPress={() => openSheet('tags')} />
               ))}
-              <Pill size="sm" bare icon={Plus} label="Tag" tone="tertiary" onPress={() => openSheet('tags')} />
-              <View style={s.metaSpacer} />
-              <SaveStatus saving={saving} online={online} />
+              <Pill size="sm" icon={Plus} label="Tag" tone="tertiary" onPress={() => openSheet('tags')} />
             </View>
 
-            <View style={s.divider} />
-
             {mode === 'write' ? (
-              <Animated.View key="write" entering={fadeIn}>
+              <Animated.View key="write" entering={fadeIn} style={s.pane}>
+                <View style={s.bodyCard}>
                 <TextInput
                   ref={bodyRef}
                   // Ao vivo: o texto vem como filhos estilizados (o mesmo markdown, com as marcações apagadas).
@@ -410,10 +416,11 @@ export function NoteEditorScreen() {
                   textAlignVertical="top"
                   style={[s.body, noFocusRing]}
                 />
+                </View>
                 {LIVE && <NoteLinks noteId={id} version={linkVersion} />}
               </Animated.View>
             ) : (
-              <Animated.View key="read" entering={fadeIn}>
+              <Animated.View key="read" entering={fadeIn} style={s.pane}>
                 {body.trim() ? (
                   <MarkdownView markdown={body} onWikilink={(target) => void openWikilink(target)} />
                 ) : (
@@ -493,7 +500,7 @@ export function NoteEditorScreen() {
 
       {/* Folhas */}
       <Sheet visible={sheet === 'tipo'} onClose={() => setSheet(null)} title="Tipo da nota">
-        <View>
+        <ListGroup>
           {KIND_OPTIONS.map((o) => (
             <OptionRow
               key={o.kind}
@@ -506,18 +513,18 @@ export function NoteEditorScreen() {
               }}
             />
           ))}
-        </View>
+        </ListGroup>
       </Sheet>
 
       <Sheet visible={sheet === 'mais'} onClose={() => setSheet(null)}>
-        <View>
-          <NavRow divider={false} icon={FolderInput} label="Mover para pasta" meta={folderName} onPress={() => setSheet('pasta')} />
+        <ListGroup>
+          <NavRow icon={FolderInput} label="Mover para pasta" meta={folderName} onPress={() => setSheet('pasta')} />
           <NavRow danger icon={Trash2} label="Mover para a lixeira" onPress={() => void trash()} />
-        </View>
+        </ListGroup>
       </Sheet>
 
       <Sheet visible={sheet === 'pasta'} onClose={() => setSheet(null)} title="Mover para pasta">
-        <View>
+        <ListGroup>
           <OptionRow
             icon={FolderX}
             label="Sem pasta"
@@ -548,7 +555,7 @@ export function NoteEditorScreen() {
               setNewFolder(true);
             }}
           />
-        </View>
+        </ListGroup>
       </Sheet>
 
       <Sheet visible={sheet === 'tags'} onClose={() => setSheet(null)} title="Tags">
@@ -571,7 +578,7 @@ export function NoteEditorScreen() {
             onPress={() => void addTag()}
           />
         </View>
-        <View>
+        <ListGroup>
           {noteTags.map((tag) => (
             <View key={tag.id} style={s.tagRow}>
               <Text variant="body" style={s.flex}>
@@ -580,7 +587,7 @@ export function NoteEditorScreen() {
               <IconButton icon={X} label={`Tirar #${tag.name}`} variant="ghost" onPress={() => void tags.remove({ type: 'note', id }, tag.id)} />
             </View>
           ))}
-        </View>
+        </ListGroup>
       </Sheet>
 
       <FolderNameSheet
@@ -595,14 +602,14 @@ export function NoteEditorScreen() {
   );
 }
 
-/** "Salvando…" sem ícone → "Salvo" com check; sem conexão, "Salvo no aparelho" com nuvem riscada. */
+/** "Salvando…" com ponto cinza → "Salvo" com ponto verde; sem conexão, "Salvo no aparelho" com nuvem riscada. */
 function SaveStatus({ saving, online }: { saving: boolean; online: boolean }) {
   const s = useStyles();
   const t = useTheme();
   const label = saving ? 'Salvando…' : online ? 'Salvo' : 'Salvo no aparelho';
   return (
     <View style={s.save} accessibilityLiveRegion="polite" accessibilityLabel={label}>
-      {!saving && <Icon icon={online ? Check : CloudOff} size={t.icon.tiny} color="textTertiary" />}
+      {online || saving ? <View style={[s.saveDot, saving ? s.saveDotBusy : s.saveDotOk]} /> : <Icon icon={CloudOff} size={t.icon.tiny} color="textTertiary" />}
       <Text variant="caption" tone="tertiary">
         {label}
       </Text>
@@ -659,10 +666,7 @@ function OptionRow({
           </Text>
         )}
       </View>
-      {/* espaço do check sempre reservado: marcar não muda a quebra de linha da descrição */}
-      <View style={[s.optionCheck, !selected && s.hidden]} importantForAccessibility="no-hide-descendants">
-        <Icon icon={Check} color="accentInk" />
-      </View>
+            <Radio selected={selected} />
     </Pressable>
   );
 }
@@ -672,7 +676,7 @@ const useStyles = makeStyles((t) => {
   return {
     root: { flex: 1, backgroundColor: t.colors.bg },
     flex: { flex: 1 },
-    soft: { backgroundColor: t.colors.soft },
+    soft: { backgroundColor: t.colors.bg },
     column: {
       width: '100%',
       maxWidth: t.layout.contentMaxWidth + 2 * t.layout.gutter,
@@ -681,26 +685,27 @@ const useStyles = makeStyles((t) => {
     },
     barWrap: { borderBottomWidth: t.hairline, borderBottomColor: 'transparent' },
     barLine: { borderBottomColor: t.colors.hairline },
-    bar: { height: t.size.editorBar, flexDirection: 'row', alignItems: 'center', gap: t.space[1] },
-    edgeLeft: { marginLeft: -(t.space[2] + t.space[0.5]) },
-    edgeRight: { marginRight: -(t.space[2] + t.space[0.5]) },
+    bar: { height: t.size.editorBar, flexDirection: 'row', alignItems: 'center', gap: t.space[2] },
     // alignItems flex-start: a pílula do tipo fica do tamanho do texto (não estica na coluna).
-    barMiddle: { flex: 1, minWidth: 0, justifyContent: 'center', alignItems: 'flex-start' },
-    barTitle: { paddingLeft: t.space[1], alignSelf: 'stretch' },
-    barTitleText: { fontFamily: t.type.item.font },
-    scroll: { paddingTop: t.space[3] + t.space[0.5], paddingBottom: t.space[12] },
+    barMiddle: { flex: 1, minWidth: 0, justifyContent: 'center', alignItems: 'center' },
+    barTitle: { alignSelf: 'stretch' },
+    modeRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: t.space[2.5], marginBottom: t.space[5] },
+    pane: { marginTop: t.space[5] },
+    scroll: { paddingTop: t.space[2], paddingBottom: t.space[12] },
     title: {
-      fontFamily: t.type.title2.font,
-      fontSize: t.type.title2.fontSize,
-      lineHeight: t.type.title2.lineHeight,
-      letterSpacing: t.type.title2.letterSpacing,
+      fontFamily: t.type.title.font,
+      fontSize: t.type.title.fontSize - t.space[1],
+      lineHeight: t.type.title.lineHeight - t.space[0.5],
+      letterSpacing: t.type.title.letterSpacing,
       color: t.colors.text,
       padding: t.space[0],
     },
     meta: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: t.space[1.5], marginTop: t.space[2] + t.space[0.5] },
-    metaSpacer: { flex: 1 },
-    save: { flexDirection: 'row', alignItems: 'center', gap: t.space[1] },
-    divider: { height: t.hairline, backgroundColor: t.colors.hairline, marginVertical: t.layout.blockGap },
+    save: { flexDirection: 'row', alignItems: 'center', gap: t.space[1.5] },
+    saveDot: { width: t.size.badge - t.space[0.5], height: t.size.badge - t.space[0.5], borderRadius: t.radius.full },
+    saveDotBusy: { backgroundColor: t.colors.textQuaternary },
+    saveDotOk: { backgroundColor: t.colors.success },
+    bodyCard: { backgroundColor: t.colors.card, borderRadius: t.radius.fieldLarge, paddingHorizontal: t.space[4], paddingVertical: t.space[3.5] },
     body: {
       minHeight: t.size.captureFieldMinHeight * 2,
       fontFamily: t.type.body.font,
@@ -714,10 +719,9 @@ const useStyles = makeStyles((t) => {
       width: '100%',
       maxWidth: t.layout.contentMaxWidth,
       alignSelf: 'center',
-      borderWidth: t.hairline,
-      borderColor: t.colors.hairline,
-      borderRadius: t.radius.field,
-      backgroundColor: t.colors.bg,
+      borderRadius: t.radius.tile,
+      backgroundColor: t.colors.card,
+      boxShadow: t.colors.shadow.level2,
       paddingVertical: t.space[1.5],
     },
     suggestLabel: { paddingHorizontal: t.space[4], paddingTop: t.space[2], paddingBottom: t.space[1.5] },
@@ -740,7 +744,7 @@ const useStyles = makeStyles((t) => {
       paddingRight: t.space[3],
       borderTopWidth: t.hairline,
       borderTopColor: t.colors.hairline,
-      backgroundColor: t.colors.bg,
+      backgroundColor: t.colors.card,
     },
     formatScroll: { flexDirection: 'row', alignItems: 'center', gap: t.space[0.5], paddingLeft: t.space[3], paddingRight: t.space[2] },
     linkButton: {
@@ -749,18 +753,15 @@ const useStyles = makeStyles((t) => {
       paddingHorizontal: t.space[3],
       marginLeft: t.space[1],
       borderRadius: t.radius.full,
-      borderWidth: t.hairline,
-      borderColor: t.colors.hairline,
+      backgroundColor: t.colors.bg,
     },
-    linkButtonActive: { borderColor: t.colors.accent },
+    linkButtonActive: { backgroundColor: t.colors.tonal },
     option: {
       flexDirection: 'row',
       alignItems: 'center',
       gap: t.space[3],
       minHeight: t.size.navRow,
       paddingVertical: t.space[3],
-      borderTopWidth: t.hairline,
-      borderTopColor: t.colors.hairline,
     },
     optionTexts: { flex: 1, gap: t.space[0.5] },
     optionLabel: { fontFamily: t.type.item.font },
@@ -771,8 +772,6 @@ const useStyles = makeStyles((t) => {
       flexDirection: 'row',
       alignItems: 'center',
       minHeight: t.size.navRow,
-      borderTopWidth: t.hairline,
-      borderTopColor: t.colors.hairline,
       paddingVertical: t.space[2],
     },
   };

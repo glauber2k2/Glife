@@ -72,7 +72,7 @@ export function MarkdownView({ markdown, onWikilink }: { markdown: string; onWik
           case 'quote':
             return (
               <View key={i} style={s.quote}>
-                <Text variant="scripture" style={s.quoteText}>
+                <Text variant="body" tone="secondary" style={s.quoteText}>
                   {inline(b.inline)}
                 </Text>
                 {b.cite && (
@@ -106,7 +106,7 @@ const useStyles = makeStyles((t) => {
     strike: { textDecorationLine: 'line-through', color: t.colors.textSecondary },
     /** marca-texto só na leitura: o mel da paleta de marcação */
     highlight: { backgroundColor: t.colors.highlight.yellow },
-    link: { textDecorationLine: 'underline', textDecorationColor: t.colors.hairline },
+    link: { color: t.colors.accentInk, fontFamily: t.type.chip.font, backgroundColor: t.colors.highlightSoft, borderRadius: t.space[1.5] },
     headingGap: { marginTop: t.space[1.5] },
     list: { gap: t.space[1] },
     item: { flexDirection: 'row', gap: t.space[2] + t.space[0.5] },
@@ -115,10 +115,10 @@ const useStyles = makeStyles((t) => {
       marginVertical: t.space[1.5],
       paddingVertical: t.space[1],
       paddingLeft: t.space[4],
-      borderLeftWidth: t.hairline,
-      borderLeftColor: t.colors.accent,
+      borderLeftWidth: t.space[0.5] + t.hairline,
+      borderLeftColor: t.colors.accentSoft,
       gap: t.space[1.5],
     },
-    quoteText: { fontSize: t.type.scripture.fontSize - 1, lineHeight: Math.round((t.type.scripture.fontSize - 1) * 1.5) },
+    quoteText: { lineHeight: bodyLine },
   };
 });

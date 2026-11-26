@@ -1,9 +1,8 @@
 import { router } from 'expo-router';
 import { Folder, FolderPlus } from 'lucide-react-native';
 import { useState } from 'react';
-import { View } from 'react-native';
 
-import { Button, NavRow, Screen, Text, makeStyles } from '@/shared/ui';
+import { Button, EmptyState, ListGroup, NavRow, Reveal, Screen } from '@/shared/ui';
 
 import { FolderNameSheet } from '../components/FolderNameSheet';
 import { SubHeader } from '../components/SubHeader';
@@ -12,7 +11,6 @@ import { useFocusData } from '../hooks/useFocusData';
 
 /** Um nível de pastas, com a contagem de notas de cada uma. */
 export function FoldersScreen() {
-  const s = useStyles();
   const { folders, notes } = useNotesData();
   const [creating, setCreating] = useState(false);
   const { data, reload } = useFocusData(
@@ -27,22 +25,31 @@ export function FoldersScreen() {
   const goFolder = (id: string) => router.push({ pathname: '/pasta/[id]', params: { id } });
 
   return (
-    <Screen>
-      <SubHeader eyebrow="Notas" title="Pastas" plusLabel="Nova pasta" onPlus={() => setCreating(true)} />
+    <Screen header={<SubHeader title="Pastas" plusLabel="Nova pasta" onPlus={() => setCreating(true)} />}>
       {data === null ? null : data.length === 0 ? (
-        <View style={s.empty}>
-          <Text tone="secondary">
-            Nenhuma pasta ainda. Agrupe notas por assunto: cada nota fica em uma pasta, e as tags atravessam todas elas.
-          </Text>
-          <Button label="Criar pasta" icon={FolderPlus} onPress={() => setCreating(true)} />
-        </View>
+        <EmptyState
+          title="Nenhuma pasta ainda"
+          message="Pastas ajudam quando as notas passam de algumas dezenas. Cada nota fica em uma pasta; as tags atravessam todas."
+          actionLabel="Criar pasta"
+          onAction={() => setCreating(true)}
+        />
       ) : (
-        <View>
-          {data.map((f) => (
-            <NavRow key={f.id} tall icon={Folder} label={f.name} meta={String(f.count)} onPress={() => goFolder(f.id)} />
-          ))}
-          <NavRow tall accent icon={FolderPlus} label="Nova pasta" onPress={() => setCreating(true)} />
-        </View>
+        <Reveal>
+          <ListGroup>
+            {data.map((f) => (
+              <NavRow
+                key={f.id}
+                icon={Folder}
+                iconSize="md"
+                module="notes"
+                label={f.name}
+                meta={f.count === 1 ? '1 nota' : `${f.count} notas`}
+                onPress={() => goFolder(f.id)}
+              />
+            ))}
+          </ListGroup>
+          <Button label="Nova pasta" icon={FolderPlus} variant="secondary" onPress={() => setCreating(true)} />
+        </Reveal>
       )}
       <FolderNameSheet
         visible={creating}
@@ -55,13 +62,3 @@ export function FoldersScreen() {
     </Screen>
   );
 }
-
-const useStyles = makeStyles((t) => ({
-  empty: {
-    gap: t.space[5],
-    alignItems: 'flex-start',
-    paddingTop: t.layout.blockGap,
-    borderTopWidth: t.hairline,
-    borderTopColor: t.colors.hairline,
-  },
-}));

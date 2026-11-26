@@ -1,26 +1,14 @@
 import type { Note } from '@glife/domain/notes';
 import { router } from 'expo-router';
-import { Pin, Plus } from 'lucide-react-native';
+import { Plus } from 'lucide-react-native';
 import { Pressable, View } from 'react-native';
-import Animated from 'react-native-reanimated';
 
 import { relativeDay } from '@/shared/lib/dates';
-import {
-  Button,
-  Icon,
-  ListGroup,
-  SectionHeader,
-  Text,
-  makeStyles,
-  moduleColors,
-  moduleHue,
-  usePress,
-  useExpandRows,
-  useTheme,
-} from '@/shared/ui';
+import { Button, ListGroup, SectionHeader, Text, makeStyles, useExpandRows } from '@/shared/ui';
 
 import { openNote, useCreateNote } from '../hooks/useNoteActions';
 import { noteExcerpt } from './excerpt';
+import { PinnedNoteCard } from './PinnedNoteCard';
 
 /** Bloco "Notas" do Início (Cobalto): fixadas em grade de cartões no tom das notas, recentes numa lista. */
 export function TodayNotesBlock({ notes }: { notes: Note[] }) {
@@ -48,7 +36,7 @@ export function TodayNotesBlock({ notes }: { notes: Note[] }) {
           {pinned.length > 0 && (
             <View style={s.grid}>
               {pinned.map((n) => (
-                <PinnedCard key={n.id} note={n} rowRef={expand.rowRef(n.id)} onPress={() => open(n.id)} />
+                <PinnedNoteCard key={n.id} note={n} rowRef={expand.rowRef(n.id)} onPress={() => open(n.id)} />
               ))}
             </View>
           )}
@@ -86,48 +74,11 @@ export function TodayNotesBlock({ notes }: { notes: Note[] }) {
   );
 }
 
-function PinnedCard({ note, onPress, rowRef }: { note: Note; onPress: () => void; rowRef: ReturnType<ReturnType<typeof useExpandRows>['rowRef']> }) {
-  const s = useStyles();
-  const t = useTheme();
-  const press = usePress();
-  const colors = moduleColors(moduleHue.notes, t.scheme);
-  const excerpt = noteExcerpt(note.body_md);
-  return (
-    <Pressable
-      ref={rowRef}
-      accessibilityRole="button"
-      accessibilityLabel={`${note.title || 'Sem título'}, fixada`}
-      onPress={onPress}
-      onPressIn={press.onPressIn}
-      onPressOut={press.onPressOut}
-      style={s.cell}
-    >
-      <Animated.View style={[s.pinned, { backgroundColor: colors.soft }, press.style]}>
-        <Icon icon={Pin} size={t.icon.small + t.space[0.5]} rawColor={colors.strong} />
-        <Text variant="item" numberOfLines={2} style={s.pinnedTitle}>
-          {note.title || 'Sem título'}
-        </Text>
-        {!!excerpt && (
-          <Text variant="caption" tone="secondary" numberOfLines={3}>
-            {excerpt}
-          </Text>
-        )}
-        <Text variant="micro" tone="tertiary" numeric>
-          {relativeDay(note.updated_at)}
-        </Text>
-      </Animated.View>
-    </Pressable>
-  );
-}
-
 const useStyles = makeStyles((t) => ({
   section: { gap: t.space[3] },
   empty: { flexDirection: 'row', alignItems: 'center', gap: t.space[3], minHeight: t.size.navRow, paddingVertical: t.space[2] },
   grow: { flex: 1 },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: t.space[3] },
-  cell: { flexBasis: '45%', flexGrow: 1 },
-  pinned: { borderRadius: t.radius.card - t.space[0.5], padding: t.space[3.5], gap: t.space[2], alignItems: 'flex-start' },
-  pinnedTitle: { fontFamily: t.type.emphasis.font },
   row: { flexDirection: 'row', alignItems: 'center', gap: t.space[3], minHeight: t.size.navRow, paddingVertical: t.space[2.5] },
   texts: { flex: 1, minWidth: 0, gap: t.space[0.5] },
 }));

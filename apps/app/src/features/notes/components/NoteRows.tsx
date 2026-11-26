@@ -1,9 +1,9 @@
 import type { Note } from '@glife/domain/notes';
 import { useMemo } from 'react';
-import { Platform, View } from 'react-native';
+import { Platform } from 'react-native';
 import Animated, { Easing, FadeOut, LinearTransition } from 'react-native-reanimated';
 
-import { riseIn, useReduceMotion, useTheme } from '@/shared/ui';
+import { ListGroup, riseIn, useReduceMotion, useTheme } from '@/shared/ui';
 
 import { NoteRow } from './NoteRow';
 
@@ -31,17 +31,17 @@ export function NoteRows({
   }, [reduceMotion, t]);
 
   return (
-    <View>
+    <ListGroup>
       {notes.map((n, i) => (
         <Animated.View
           key={n.id}
           layout={layout}
-          entering={reduceMotion ? undefined : riseIn(t.motion.enterOffset, t.motion.standard, Math.min(i, 8) * t.motion.stagger)}
+          entering={reduceMotion ? undefined : riseIn(t.motion.enterOffset, t.motion.standard, Math.min(i, t.motion.staggerMax) * t.motion.stagger)}
           exiting={reduceMotion ? undefined : FadeOut.duration(t.motion.tap)}
         >
           <NoteRow note={n} onPress={() => onOpen(n)} onLongPress={onLongPress ? () => onLongPress(n) : undefined} />
         </Animated.View>
       ))}
-    </View>
+    </ListGroup>
   );
 }

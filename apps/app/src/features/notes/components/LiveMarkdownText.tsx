@@ -26,7 +26,7 @@ const useStyles = makeStyles((t) => {
   const styles: Record<LiveStyle, TextStyle> = {
     h1: { fontFamily: t.type.heading.font, fontSize: t.type.heading.fontSize, lineHeight: t.type.heading.lineHeight + t.space[2] },
     h2: { fontFamily: t.type.item.font, fontSize: t.type.item.fontSize, color: t.colors.textSecondary },
-    quote: { fontFamily: t.type.reading.font, color: t.colors.textSecondary },
+    quote: { color: t.colors.textSecondary },
     bullet: { color: t.colors.textTertiary },
     bold: { fontFamily: t.type.button.font },
     italic: { fontStyle: 'italic' },

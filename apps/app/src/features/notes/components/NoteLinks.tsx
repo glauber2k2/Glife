@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { View } from 'react-native';
 
 import { useLinksData } from '@/features/links';
-import { NavRow, Text, makeStyles } from '@/shared/ui';
+import { ListGroup, NavRow, Section, makeStyles } from '@/shared/ui';
 
 import { useNotesData } from '../hooks/NotesData';
 import { openNote } from '../hooks/useNoteActions';
@@ -77,32 +77,31 @@ export function NoteLinks({ noteId, version }: { noteId: string; version: number
 
   const section = (title: string, rows: Row[], accent: boolean) =>
     rows.length > 0 && (
-      <View style={s.section}>
-        <Text variant="label" tone="tertiary" accessibilityRole="header" style={s.label}>
-          {title}
-        </Text>
-        {rows.map((r) => (
-          <NavRow
-            key={r.key}
-            icon={ICONS[r.kind]}
-            label={r.label}
-            meta={r.meta}
-            onPress={r.noteId ? () => openNote(r.noteId!) : undefined}
-          />
-        ))}
-      </View>
+      <Section title={title}>
+        <ListGroup>
+          {rows.map((r) => (
+            <NavRow
+              key={r.key}
+              icon={ICONS[r.kind]}
+              iconSize="md"
+              module={accent ? 'notes' : 'annotations'}
+              label={r.label}
+              meta={r.meta}
+              onPress={r.noteId ? () => openNote(r.noteId!) : undefined}
+            />
+          ))}
+        </ListGroup>
+      </Section>
     );
 
   return (
     <View style={s.root}>
-      {section('Vínculos', outgoing, true)}
+      {section('Liga para', outgoing, true)}
       {section('Mencionada em', backRows, false)}
     </View>
   );
 }
 
 const useStyles = makeStyles((t) => ({
-  root: { marginTop: t.space[5] + t.space[0.5], gap: t.space[6] },
-  section: {},
-  label: { paddingBottom: t.space[2] },
+  root: { marginTop: t.space[6], gap: t.space[6] },
 }));

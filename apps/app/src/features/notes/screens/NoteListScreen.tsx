@@ -1,13 +1,14 @@
 import type { NoteListQuery } from '@glife/domain/notes';
 import { router, useLocalSearchParams } from 'expo-router';
-import { Folder, Plus, Search, Trash2 } from 'lucide-react-native';
+import { Folder, Folders, SquarePen, Trash2 } from 'lucide-react-native';
 import { useEffect, useState } from 'react';
 import { ScrollView, View } from 'react-native';
 
 import { useLinksData } from '@/features/links';
-import { Chip, EmptyState, IconButton, NavRow, Screen, SearchField, Text, makeStyles } from '@/shared/ui';
+import { Alert, Button, Chip, EmptyState, IconButton, Screen, SearchField, Section, makeStyles } from '@/shared/ui';
 
 import { NoteRows } from '../components/NoteRows';
+import { PinnedNoteCard } from '../components/PinnedNoteCard';
 import { useNoteQuickActions } from '../components/NoteQuickActions';
 import { useNotesData } from '../hooks/NotesData';
 import { useFocusData } from '../hooks/useFocusData';
@@ -66,28 +67,24 @@ export function NoteListScreen() {
   const visible = items && tagId && tagged ? items.filter((n) => tagged.has(n.id)) : items;
   const filtered = kind !== 'all' || !!tagId || search.trim() !== '';
   const total = items?.length ?? 0;
-  const folderNames = side?.folders.map((f) => f.name) ?? [];
-  const folderSummary =
-    folderNames.length === 0
-      ? 'Nenhuma'
-      : folderNames.length <= 3
-        ? folderNames.join(', ')
-        : `${folderNames.slice(0, 3).join(', ')} +${folderNames.length - 3}`;
+  const pinned = !filtered && visible ? visible.filter((n) => n.pinned) : [];
+  const rest = !filtered && visible ? visible.filter((n) => !n.pinned) : visible;
 
   return (
     <Screen
       title="Notas"
       eyebrow={filtered || !items ? ' ' : `${total}${total === LIST_LIMIT ? '+' : ''} ${total === 1 ? 'nota' : 'notas'}`}
+      tabBar
       action={
         <View style={s.actions}>
-          <IconButton icon={Search} label="Buscar em tudo" variant="ghost" onPress={() => router.push('/busca')} />
-          <IconButton icon={Plus} label="Nova nota" onPress={() => void create({})} />
+          <IconButton icon={Folder} label="Pastas" onPress={() => router.push('/pastas')} />
+          <IconButton icon={SquarePen} label="Nova nota" onPress={() => void create({})} />
         </View>
       }
     >
       <View style={s.controls}>
         <SearchField value={search} onChangeText={setSearch} placeholder="Buscar notas" />
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.chips}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={s.bleed} contentContainerStyle={s.chips}>
           {KIND_FILTERS.map((f) => (
             <Chip
               key={f.value}
@@ -110,35 +107,55 @@ export function NoteListScreen() {
             />
           ))}
         </ScrollView>
+        {side && side.folders.length > 0 && (
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={s.bleed} contentContainerStyle={s.chips}>
+            {side.folders.map((f) => (
+              <Chip key={f.id} size="sm" icon={Folder} label={f.name} onPress={() => router.push({ pathname: '/pasta/[id]', params: { id: f.id } })} />
+            ))}
+            <Chip size="sm" icon={Folders} label="Todas" onPress={() => router.push('/pastas')} />
+          </ScrollView>
+        )}
       </View>
 
-      <View>
-        <NavRow icon={Folder} label="Pastas" meta={folderSummary} onPress={() => router.push('/pastas')} />
-        {failed ? (
-          <Text tone="secondary" style={s.message}>
-            Não foi possível ler as notas deste aparelho.
-          </Text>
-        ) : visible === null ? null : visible.length === 0 ? (
-          filtered ? (
-            <Text variant="small" tone="tertiary" style={s.message}>
-              Nenhuma nota encontrada.
-            </Text>
-          ) : (
-            <View style={s.empty}>
-              <EmptyState message="Nenhuma nota ainda." actionLabel="Nova nota" onAction={() => void create({})} />
-            </View>
-          )
+      {failed ? (
+        <Alert tone="danger">Não foi possível ler as notas deste aparelho.</Alert>
+      ) : visible === null ? null : visible.length === 0 ? (
+        filtered ? (
+          <EmptyState compact message="Nenhuma nota aqui ainda." />
         ) : (
-          <NoteRows notes={visible} onOpen={(n) => openNote(n.id)} onLongPress={quick.open} />
-        )}
-        <View style={s.trash}>
-          <NavRow
-            icon={Trash2}
-            label="Lixeira"
-            meta={side ? String(side.trash) : undefined}
-            onPress={() => router.push('/lixeira')}
+          <EmptyState
+            title="Sua primeira nota"
+            message="Crie sua primeira anotação e eu guardo pra você. Funciona sem internet."
+            actionLabel="Escrever nota"
+            onAction={() => void create({})}
           />
-        </View>
+        )
+      ) : (
+        <>
+          {pinned.length > 0 && (
+            <Section title="Fixadas">
+              <View style={s.grid}>
+                {pinned.map((n) => (
+                  <PinnedNoteCard key={n.id} note={n} onPress={() => openNote(n.id)} />
+                ))}
+              </View>
+            </Section>
+          )}
+          {rest && rest.length > 0 && (
+            <Section title={filtered ? 'Notas' : 'Recentes'}>
+              <NoteRows notes={rest} onOpen={(n) => openNote(n.id)} onLongPress={quick.open} />
+            </Section>
+          )}
+        </>
+      )}
+      <View style={s.footer}>
+        <Button
+          label={side ? `Lixeira · ${side.trash}` : 'Lixeira'}
+          icon={Trash2}
+          variant="subtle"
+          size="sm"
+          onPress={() => router.push('/lixeira')}
+        />
       </View>
       {quick.element}
     </Screen>
@@ -148,8 +165,8 @@ export function NoteListScreen() {
 const useStyles = makeStyles((t) => ({
   controls: { gap: t.space[3] },
   actions: { flexDirection: 'row', gap: t.space[2] },
-  chips: { gap: t.space[1.5] },
-  message: { paddingVertical: t.space[4], borderTopWidth: t.hairline, borderTopColor: t.colors.hairline },
-  empty: { borderTopWidth: t.hairline, borderTopColor: t.colors.hairline },
-  trash: { marginTop: t.layout.blockGap },
+  bleed: { marginHorizontal: -t.layout.gutter },
+  chips: { gap: t.space[2], paddingHorizontal: t.layout.gutter },
+  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: t.space[3] },
+  footer: { alignItems: 'center' },
 }));

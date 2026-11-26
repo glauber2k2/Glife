@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Platform, View } from 'react-native';
 import Animated, { Easing, FadeOut, LinearTransition } from 'react-native-reanimated';
 
-import { Button, IconButton, Screen, Sheet, Text, makeStyles, useReduceMotion, useTheme, useToast } from '@/shared/ui';
+import { Alert, Button, EmptyState, IconButton, ListGroup, Screen, Sheet, Text, makeStyles, useReduceMotion, useTheme, useToast } from '@/shared/ui';
 
 import { SubHeader } from '../components/SubHeader';
 
@@ -69,15 +69,13 @@ export function TrashScreen() {
   };
 
   return (
-    <Screen>
-      <SubHeader eyebrow="Notas" title="Lixeira" text="As notas ficam aqui até você esvaziar a lixeira." />
-
+    <Screen header={<SubHeader title="Lixeira" />}>
       {items === null ? null : items.length === 0 ? (
-        <Text tone="secondary" style={s.emptyText}>
-          A lixeira está vazia.
-        </Text>
+        <EmptyState title="Lixeira vazia" message="O que você apagar fica aqui até você esvaziar a lixeira." mood="dormindo" />
       ) : (
-        <View>
+        <View style={s.list}>
+          <Alert tone="neutral">As notas ficam aqui até você esvaziar a lixeira. Restaurar devolve a nota ao lugar dela.</Alert>
+          <ListGroup>
           {items.map((n) => (
             <Animated.View key={n.id} layout={layout} exiting={reduceMotion ? undefined : FadeOut.duration(t.motion.tap)}>
               <View style={s.row}>
@@ -97,13 +95,12 @@ export function TrashScreen() {
                   icon={RotateCcw}
                   onPress={() => void onRestore(n.id)}
                 />
-                <IconButton icon={Trash2} label="Apagar de vez" variant="ghost" color="danger" onPress={() => setForever(n)} />
+                <IconButton icon={Trash2} label="Apagar de vez" variant="soft" color="danger" onPress={() => setForever(n)} />
               </View>
             </Animated.View>
           ))}
-          <View style={s.footer}>
-            <Button label="Esvaziar lixeira" variant="ghostDanger" size="sm" onPress={() => setConfirm(true)} />
-          </View>
+          </ListGroup>
+          <Button label="Esvaziar lixeira" icon={Trash2} variant="danger" selfAlign="center" onPress={() => setConfirm(true)} />
         </View>
       )}
 
@@ -132,7 +129,7 @@ export function TrashScreen() {
             }
           }}
         />
-        <Button label="Cancelar" variant="secondary" fullWidth onPress={() => setForever(null)} />
+        <Button label="Cancelar" variant="neutral" fullWidth onPress={() => setForever(null)} />
       </Sheet>
 
       <Sheet visible={confirm} onClose={() => setConfirm(false)} title="Esvaziar lixeira?">
@@ -141,22 +138,14 @@ export function TrashScreen() {
           nos outros aparelhos. Não dá para desfazer.
         </Text>
         <Button label="Apagar de vez" variant="danger" fullWidth loading={emptying} onPress={() => void empty()} />
-        <Button label="Cancelar" variant="secondary" fullWidth onPress={() => setConfirm(false)} />
+        <Button label="Cancelar" variant="neutral" fullWidth onPress={() => setConfirm(false)} />
       </Sheet>
     </Screen>
   );
 }
 
 const useStyles = makeStyles((t) => ({
-  emptyText: { paddingTop: t.layout.blockGap, borderTopWidth: t.hairline, borderTopColor: t.colors.hairline },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: t.space[3],
-    paddingVertical: t.space[3] + t.space[0.5],
-    borderTopWidth: t.hairline,
-    borderTopColor: t.colors.hairline,
-  },
-  texts: { flex: 1, minWidth: 0, gap: t.space[1] },
-  footer: { borderTopWidth: t.hairline, borderTopColor: t.colors.hairline, paddingTop: t.space[3], marginLeft: -t.space[3] },
+  list: { gap: t.space[4] },
+  row: { flexDirection: 'row', alignItems: 'center', gap: t.space[2.5], minHeight: t.size.navRow, paddingVertical: t.space[3] },
+  texts: { flex: 1, minWidth: 0, gap: t.space[0.5] },
 }));

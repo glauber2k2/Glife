@@ -1,11 +1,10 @@
 import type { NoteFolder } from '@glife/domain/notes';
 import { router, useLocalSearchParams } from 'expo-router';
-import { Plus } from 'lucide-react-native';
 import { useEffect, useState } from 'react';
-import { ScrollView, View } from 'react-native';
+import { ScrollView } from 'react-native';
 
 import { useLinksData } from '@/features/links';
-import { Button, Chip, Screen, Text, makeStyles } from '@/shared/ui';
+import { Chip, EmptyState, Screen, makeStyles } from '@/shared/ui';
 
 import { NoteRows } from '../components/NoteRows';
 import { FolderMenu, useNoteQuickActions } from '../components/NoteQuickActions';
@@ -64,25 +63,27 @@ export function FolderScreen() {
 
   if (folder === null) {
     return (
-      <Screen>
-        <SubHeader eyebrow="Pastas" title="Pasta" />
-        <Text tone="secondary">Esta pasta não existe mais.</Text>
+      <Screen header={<SubHeader title="Pasta" />}>
+        <EmptyState title="Pasta não encontrada" message="Esta pasta não existe mais." mood="pensando" />
       </Screen>
     );
   }
 
   return (
-    <Screen>
-      <SubHeader
-        eyebrow="Pastas"
-        title={folder?.name ?? ' '}
-        plusLabel="Nova nota nesta pasta"
-        onPlus={newHere}
-        moreLabel="Mais ações da pasta"
-        onMore={folder ? () => setMenu(true) : undefined}
-      />
+    <Screen
+      header={
+        <SubHeader
+          title={folder?.name ?? ' '}
+          text={items ? (items.length === 1 ? '1 nota' : `${items.length} notas`) : undefined}
+          plusLabel="Nova nota nesta pasta"
+          onPlus={newHere}
+          moreLabel="Mais ações da pasta"
+          onMore={folder ? () => setMenu(true) : undefined}
+        />
+      }
+    >
       {tagIndex.length > 0 && (
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.chips}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={s.bleed} contentContainerStyle={s.chips}>
           <Chip size="sm" label="Todas" selected={!tagId} onPress={() => setTagId(null)} />
           {tagIndex.map((tag) => (
             <Chip key={tag.id} size="sm" label={`#${tag.name}`} selected={tagId === tag.id} onPress={() => setTagId(tag.id)} />
@@ -90,10 +91,7 @@ export function FolderScreen() {
         </ScrollView>
       )}
       {visible === null ? null : visible.length === 0 && !selected ? (
-        <View style={s.empty}>
-          <Text tone="secondary">Nenhuma nota nesta pasta.</Text>
-          <Button label="Nova nota aqui" size="sm" icon={Plus} onPress={newHere} />
-        </View>
+        <EmptyState title="Pasta vazia" message="Nenhuma nota nesta pasta ainda." actionLabel="Nova nota aqui" onAction={newHere} />
       ) : (
         <NoteRows notes={visible} onOpen={(n) => openNote(n.id)} onLongPress={quick.open} />
       )}
@@ -113,12 +111,6 @@ export function FolderScreen() {
 }
 
 const useStyles = makeStyles((t) => ({
-  chips: { gap: t.space[1.5] },
-  empty: {
-    gap: t.space[4],
-    alignItems: 'flex-start',
-    paddingTop: t.layout.blockGap,
-    borderTopWidth: t.hairline,
-    borderTopColor: t.colors.hairline,
-  },
+  bleed: { marginHorizontal: -t.layout.gutter },
+  chips: { gap: t.space[2], paddingHorizontal: t.layout.gutter },
 }));
