@@ -12,3 +12,4 @@ export {
   type Theme,
   type ThemePreference,
 } from './ThemeProvider';
+export { moduleColors, oklchToHex, type ModuleColors } from './moduleColors';

@@ -2,6 +2,7 @@ import { useEffect, useState, type ReactNode, type Ref } from 'react';
 import { TextInput, View, type TextInputInstance, type TextInputProps } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 
+import { useSurface } from './surface';
 import { Text } from './Text';
 import { noFocusRing } from './webStyles';
 import { resolveSpring } from './motion';
@@ -20,7 +21,7 @@ export interface InputProps extends TextInputProps {
   ref?: Ref<TextInputInstance>;
 }
 
-/** Campo contornado de 54 px, cantos de 16, rótulo que flutua para o topo ao focar ou preencher. */
+/** Campo preenchido de 52 px (branco no fundo, cinza no cartão), cantos de 16, anel e halo no foco, rótulo que flutua para o topo ao focar ou preencher. */
 export function Input({
   label,
   hint,
@@ -43,6 +44,7 @@ export function Input({
   const lift = useSharedValue(raised ? 1 : 0);
   const { labelLift, labelScale } = t.field;
   const hasError = !!error || !!invalid;
+  const surface = useSurface();
 
   useEffect(() => {
     const target = raised ? 1 : 0;
@@ -58,7 +60,7 @@ export function Input({
 
   return (
     <View style={s.root}>
-      <View style={[s.box, focused && s.focused, hasError && s.errorField]}>
+      <View style={[s.box, surface === 'card' && s.onCard, focused && s.focused, hasError && s.errorField, rest.editable === false && s.disabledField]}>
         {label && (
           <Animated.View pointerEvents="none" style={[s.label, !!trailing && s.labelWithTrailing, labelStyle]}>
             {/* uma linha só: em campo estreito o rótulo corta com reticências em vez de vazar a borda */}
@@ -68,7 +70,7 @@ export function Input({
           </Animated.View>
         )}
         <TextInput
-          placeholderTextColor={t.colors.textTertiary}
+          placeholderTextColor={t.colors.textQuaternary}
           selectionColor={t.colors.accent}
           value={value}
           // Com rótulo, o placeholder só aparece depois que o rótulo sobe, para não sobrepor.
@@ -102,8 +104,7 @@ const useStyles = makeStyles((t) => {
     box: {
       minHeight: t.size.field,
       borderRadius: t.radius.field,
-      borderWidth: t.hairline,
-      borderColor: t.colors.hairline,
+      backgroundColor: t.colors.card,
       justifyContent: 'center',
     },
     label: {
@@ -116,7 +117,7 @@ const useStyles = makeStyles((t) => {
     },
     field: {
       flexGrow: 1,
-      minHeight: t.size.field - 2 * t.hairline,
+      minHeight: t.size.field,
       paddingHorizontal: t.field.paddingX,
       paddingTop: t.field.paddingTop,
       paddingBottom: t.field.paddingBottom,
@@ -133,8 +134,11 @@ const useStyles = makeStyles((t) => {
     fieldNoLabel: { paddingTop: t.space[4], paddingBottom: t.space[4] },
     withTrailing: { paddingRight: t.touch.minTarget + t.space[2] },
     trailing: { position: 'absolute', right: t.space[1], top: t.space[1] },
-    focused: { borderColor: t.colors.accent },
-    errorField: { borderColor: t.colors.danger },
+    onCard: { backgroundColor: t.colors.bg },
+    // foco: anel de 2 px cobalto + halo tonal de 6 px; erro: anel vermelho
+    focused: { boxShadow: `0px 0px 0px ${t.field.ring}px ${t.colors.accent}, 0px 0px 0px ${t.field.ring + t.field.halo}px ${t.colors.tonal}` },
+    errorField: { boxShadow: `0px 0px 0px ${t.field.ring}px ${t.colors.dangerStrong}` },
+    disabledField: { opacity: t.opacity.fieldDisabled },
     below: { paddingLeft: t.field.paddingX },
   };
 });

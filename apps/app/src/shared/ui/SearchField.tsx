@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { TextInput, View } from 'react-native';
 
 import { Icon } from './Icon';
+import { useSurface } from './surface';
 import { makeStyles, useTheme } from './theme';
 import { noFocusRing } from './webStyles';
 
@@ -15,13 +16,14 @@ export interface SearchFieldProps {
   onSubmit?: () => void;
 }
 
-/** Busca em pílula (46 px) com ícone à esquerda; a borda e o ícone ganham o destaque no foco. */
+/** Busca em pílula de 48 px (branca no fundo), ícone à esquerda; anel cobalto no foco. */
 export function SearchField({ value, onChangeText, placeholder = 'Buscar', autoFocus, onSubmit }: SearchFieldProps) {
   const s = useStyles();
   const t = useTheme();
   const [focused, setFocused] = useState(false);
+  const surface = useSurface();
   return (
-    <View style={[s.root, focused && s.focused]}>
+    <View style={[s.root, surface === 'card' && s.onCard, focused && s.focused]}>
       <Icon icon={Search} size={t.icon.small} color={focused ? 'accentInk' : 'textTertiary'} />
       <TextInput
         value={value}
@@ -50,16 +52,16 @@ const useStyles = makeStyles((t) => ({
     height: t.size.search,
     paddingHorizontal: t.space[4],
     borderRadius: t.radius.full,
-    borderWidth: t.hairline,
-    borderColor: t.colors.hairline,
+    backgroundColor: t.colors.card,
   },
-  focused: { borderColor: t.colors.accent },
+  onCard: { backgroundColor: t.colors.bg },
+  focused: { boxShadow: `0px 0px 0px ${t.field.ring}px ${t.colors.accent}, 0px 0px 0px ${t.field.ring + t.field.halo}px ${t.colors.tonal}` },
   input: {
     flex: 1,
     minWidth: 0,
     height: '100%',
     color: t.colors.text,
     fontFamily: t.type.body.font,
-    fontSize: t.type.body.fontSize,
+    fontSize: t.type.item.fontSize,
   },
 }));

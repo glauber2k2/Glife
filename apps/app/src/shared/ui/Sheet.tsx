@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
-import { Modal, Pressable, View, useWindowDimensions } from 'react-native';
+import { Modal, Platform, Pressable, View, useWindowDimensions } from 'react-native';
 import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
-import Animated, { cancelAnimation, useAnimatedStyle, useSharedValue, withSpring, withTiming } from 'react-native-reanimated';
+import Animated, { Easing, cancelAnimation, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { scheduleOnRN } from 'react-native-worklets';
 
+import { SurfaceProvider } from './surface';
 import { Text } from './Text';
 import { resolveSpring } from './motion';
 import { makeStyles, useTheme } from './theme';
@@ -20,14 +21,18 @@ export interface SheetProps {
   children: ReactNode;
 }
 
-/** Folha inferior: sobe com a mola de ênfase; separa da página pelo véu e por uma linha de 1 px, sem sombra. */
+/** Folha inferior branca (r28 em cima, sombra nível 3): sobe em 400 ms e desce em 240 ms; véu sem desfoque. */
 export function Sheet({ visible, onClose, title, subtitle, children }: SheetProps) {
   const s = useStyles();
   const t = useTheme();
   const insets = useSafeAreaInsets();
   const reduceMotion = useReduceMotion();
   const spring = resolveSpring('emphasis', reduceMotion);
-  const { height } = useWindowDimensions();
+  const [x1, y1, x2, y2] = t.easing.enter;
+  const [e1, f1, e2, f2] = t.easing.exit;
+  const { height, width } = useWindowDimensions();
+  // Web largo: janela centralizada de 560 px perto do topo, sem puxador.
+  const wide = Platform.OS === 'web' && width >= t.layout.contentMaxWidth + 2 * t.layout.gutterWeb;
   const [presented, setPresented] = useState(visible);
   const transition = useRef(0);
   const hidden = t.opacity.hidden;
@@ -48,14 +53,14 @@ export function Sheet({ visible, onClose, title, subtitle, children }: SheetProp
   useEffect(() => {
     const version = ++transition.current;
     if (visible) {
-      progress.set(spring ? withSpring(full, spring) : full);
+      progress.set(spring ? withTiming(full, { duration: t.motion.sheetIn, easing: Easing.bezier(x1, y1, x2, y2) }) : full);
       scrimOpacity.set(spring ? withTiming(full, { duration: fadeDuration }) : full);
     } else if (!spring) {
       progress.set(hidden);
       scrimOpacity.set(hidden);
     } else {
-      scrimOpacity.set(withTiming(hidden, { duration: fadeDuration }));
-      progress.set(withSpring(hidden, spring, (finished) => {
+      scrimOpacity.set(withTiming(hidden, { duration: t.motion.sheetOut }));
+      progress.set(withTiming(hidden, { duration: t.motion.sheetOut, easing: Easing.bezier(e1, f1, e2, f2) }, (finished) => {
         if (finished) scheduleOnRN(finishClose, version);
       }));
     }
@@ -63,10 +68,11 @@ export function Sheet({ visible, onClose, title, subtitle, children }: SheetProp
       cancelAnimation(progress);
       cancelAnimation(scrimOpacity);
     };
-  }, [visible, spring, progress, scrimOpacity, full, hidden, fadeDuration, finishClose]);
+  }, [visible, spring, progress, scrimOpacity, full, hidden, fadeDuration, finishClose, t, x1, y1, x2, y2, e1, f1, e2, f2]);
 
   const sheetStyle = useAnimatedStyle(() => ({
-    transform: [{ translateY: reduceMotion ? hidden : (full - progress.get()) * sheetHeight.get() }],
+    opacity: wide ? progress.get() : full,
+    transform: [{ translateY: reduceMotion ? hidden : (full - progress.get()) * (wide ? t.space[6] : sheetHeight.get()) }],
   }));
   const scrimStyle = useAnimatedStyle(() => ({
     opacity: reduceMotion ? (visible ? full : hidden) : scrimOpacity.get(),
@@ -74,14 +80,14 @@ export function Sheet({ visible, onClose, title, subtitle, children }: SheetProp
 
   return (
     <Modal visible={visible || presented} transparent animationType="none" onRequestClose={onClose} statusBarTranslucent>
-      <KeyboardAvoidingView style={s.flex} behavior="padding">
+      <KeyboardAvoidingView style={[s.flex, wide && s.flexWide]} behavior="padding">
         <AnimatedPressable style={[s.scrim, scrimStyle]} onPress={onClose} accessibilityLabel="Fechar" />
         <Animated.View
           accessibilityViewIsModal
           onLayout={(event) => sheetHeight.set(event.nativeEvent.layout.height)}
-          style={[s.sheet, { paddingBottom: t.space[6] + t.space[1] + insets.bottom }, sheetStyle]}
+          style={[s.sheet, wide && s.sheetWide, { paddingBottom: t.space[6] + (wide ? t.space[0] : insets.bottom) }, sheetStyle]}
         >
-          <View style={s.grabber} />
+          {!wide && <View style={s.grabber} />}
           {(title || subtitle) && (
             <View style={s.titles}>
               {title && <Text variant="heading">{title}</Text>}
@@ -92,7 +98,7 @@ export function Sheet({ visible, onClose, title, subtitle, children }: SheetProp
               )}
             </View>
           )}
-          {children}
+          <SurfaceProvider value="card">{children}</SurfaceProvider>
         </Animated.View>
       </KeyboardAvoidingView>
     </Modal>
@@ -101,17 +107,16 @@ export function Sheet({ visible, onClose, title, subtitle, children }: SheetProp
 
 const useStyles = makeStyles((t) => ({
   flex: { flex: 1, justifyContent: 'flex-end' },
+  flexWide: { justifyContent: 'flex-start', paddingTop: t.layout.sheetTopWeb },
   scrim: {
     position: 'absolute',
     top: t.space[0], left: t.space[0], right: t.space[0], bottom: t.space[0],
     backgroundColor: t.colors.scrim,
   },
   sheet: {
-    backgroundColor: t.colors.bg,
-    borderTopWidth: t.hairline,
-    borderLeftWidth: t.hairline,
-    borderRightWidth: t.hairline,
-    borderColor: t.colors.hairline,
+    backgroundColor: t.colors.card,
+    boxShadow: t.colors.shadow.level3,
+    maxHeight: '92%',
     borderTopLeftRadius: t.radius.sheet,
     borderTopRightRadius: t.radius.sheet,
     paddingTop: t.space[2] + t.space[0.5],
@@ -121,12 +126,13 @@ const useStyles = makeStyles((t) => ({
     maxWidth: t.layout.sheetMaxWidth,
     alignSelf: 'center',
   },
+  sheetWide: { borderRadius: t.radius.sheet, maxHeight: '86%', paddingTop: t.space[6] },
   grabber: {
     alignSelf: 'center',
     width: t.size.grabberWidth,
     height: t.size.grabberHeight,
     borderRadius: t.radius.full,
-    backgroundColor: t.colors.hairline,
+    backgroundColor: t.colors.border,
     marginBottom: t.space[1],
   },
   titles: { gap: t.space[1] },

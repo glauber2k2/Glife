@@ -105,7 +105,7 @@ const useStyles = makeStyles((t) => {
     underline: { textDecorationLine: 'underline' },
     strike: { textDecorationLine: 'line-through', color: t.colors.textSecondary },
     /** marca-texto só na leitura: o mel da paleta de marcação */
-    highlight: { backgroundColor: t.colors.highlight.honey },
+    highlight: { backgroundColor: t.colors.highlight.yellow },
     link: { textDecorationLine: 'underline', textDecorationColor: t.colors.hairline },
     headingGap: { marginTop: t.space[1.5] },
     list: { gap: t.space[1] },

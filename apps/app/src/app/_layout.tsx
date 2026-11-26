@@ -1,15 +1,6 @@
-import {
-  CrimsonPro_400Regular,
-  CrimsonPro_400Regular_Italic,
-  CrimsonPro_500Medium,
-} from '@expo-google-fonts/crimson-pro';
-import {
-  HankenGrotesk_300Light,
-  HankenGrotesk_400Regular,
-  HankenGrotesk_500Medium,
-  HankenGrotesk_600SemiBold,
-} from '@expo-google-fonts/hanken-grotesk';
-import { JetBrainsMono_400Regular } from '@expo-google-fonts/jetbrains-mono';
+import { DMMono_400Regular } from '@expo-google-fonts/dm-mono';
+import { Literata_400Regular, Literata_400Regular_Italic, Literata_500Medium } from '@expo-google-fonts/literata';
+import { Outfit_400Regular, Outfit_500Medium, Outfit_600SemiBold, Outfit_700Bold } from '@expo-google-fonts/outfit';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ThemeProvider as NavigationThemeProvider, Stack } from 'expo-router';
 import { useFonts } from 'expo-font';
@@ -137,7 +128,7 @@ function RootStack() {
                   <Stack.Screen name="financas/orcamentos" options={{ animation: animation.detail }} />
                   <Stack.Screen name="financas/graficos" options={{ animation: animation.detail }} />
                   <Stack.Screen name="financas/grafico/[categoria]" options={{ animation: animation.detail }} />
-                  <Stack.Screen name="agenda" options={{ animation: animation.detail }} />
+                  <Stack.Screen name="biblia" options={{ animation: animation.detail }} />
                   <Stack.Screen name="agenda/evento/novo" options={{ animation: animation.detail }} />
                   <Stack.Screen name="agenda/evento/[id]" options={{ animation: animation.detail }} />
                   <Stack.Screen name="agenda/lembrete/novo" options={{ animation: animation.detail }} />
@@ -174,14 +165,14 @@ function RootStack() {
 
 export default function RootLayout() {
   const [loaded, error] = useFonts({
-    HankenGrotesk_300Light,
-    HankenGrotesk_400Regular,
-    HankenGrotesk_500Medium,
-    HankenGrotesk_600SemiBold,
-    CrimsonPro_400Regular,
-    CrimsonPro_400Regular_Italic,
-    CrimsonPro_500Medium,
-    JetBrainsMono_400Regular,
+    Outfit_400Regular,
+    Outfit_500Medium,
+    Outfit_600SemiBold,
+    Outfit_700Bold,
+    Literata_400Regular,
+    Literata_400Regular_Italic,
+    Literata_500Medium,
+    DMMono_400Regular,
   });
 
   if (!loaded && !error) return null;

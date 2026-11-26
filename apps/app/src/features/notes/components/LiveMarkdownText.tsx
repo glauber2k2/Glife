@@ -32,7 +32,7 @@ const useStyles = makeStyles((t) => {
     italic: { fontStyle: 'italic' },
     underline: { textDecorationLine: 'underline' },
     strike: { textDecorationLine: 'line-through', color: t.colors.textSecondary },
-    highlight: { backgroundColor: t.colors.highlight.honey },
+    highlight: { backgroundColor: t.colors.highlight.yellow },
     link: { color: t.colors.accentInk },
     // Por último: a marcação apaga a cor (e o fundo do marca-texto) do trecho em que está.
     mark: { color: t.colors.textTertiary, fontStyle: 'normal', textDecorationLine: 'none', backgroundColor: 'transparent' },

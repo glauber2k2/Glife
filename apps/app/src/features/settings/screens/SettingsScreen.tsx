@@ -69,7 +69,7 @@ export function SettingsScreen({ account, security }: { account?: ReactNode; sec
             Legenda 12,5
           </Text>
           <View style={s.row}>
-            {(['ice', 'honey', 'mint', 'lilac'] as const).map((c) => (
+            {(['yellow', 'green', 'blue', 'pink'] as const).map((c) => (
               <View key={c} style={[s.swatch, { backgroundColor: t.colors.highlight[c] }]} />
             ))}
           </View>

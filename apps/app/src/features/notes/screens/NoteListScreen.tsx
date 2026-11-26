@@ -134,7 +134,6 @@ export function NoteListScreen() {
         <View style={s.trash}>
           <NavRow
             icon={Trash2}
-            iconColor="textSecondary"
             label="Lixeira"
             meta={side ? String(side.trash) : undefined}
             onPress={() => router.push('/lixeira')}

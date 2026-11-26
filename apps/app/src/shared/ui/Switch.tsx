@@ -14,12 +14,12 @@ export interface SwitchProps {
   disabled?: boolean;
 }
 
-/** Interruptor 46 × 28 para ajustes imediatos: trilho vira destaque, bolinha desliza 18 px na mola standard. */
+/** Interruptor 50 × 30: trilho vira cobalto, a bolinha branca corre 20 px com mola (300 ms). */
 export function Switch({ value, onChange, label, disabled }: SwitchProps) {
   const s = useStyles();
   const t = useTheme();
   const reduceMotion = useReduceMotion();
-  const spring = resolveSpring('standard', reduceMotion);
+  const spring = resolveSpring('tap', reduceMotion);
   const travel = t.size.switchWidth - t.size.switchKnob - 2 * ((t.size.switchHeight - t.size.switchKnob) / 2);
   const on = useSharedValue(value ? 1 : 0);
 
@@ -50,7 +50,7 @@ const useStyles = makeStyles((t) => ({
     width: t.size.switchWidth,
     height: t.size.switchHeight,
     borderRadius: t.radius.full,
-    backgroundColor: t.colors.hairline,
+    backgroundColor: t.colors.border,
     padding: (t.size.switchHeight - t.size.switchKnob) / 2,
   },
   trackOn: { backgroundColor: t.colors.accent },
@@ -58,8 +58,9 @@ const useStyles = makeStyles((t) => ({
     width: t.size.switchKnob,
     height: t.size.switchKnob,
     borderRadius: t.radius.full,
-    backgroundColor: t.colors.bg,
+    backgroundColor: t.colors.knob,
+    boxShadow: t.colors.shadow.knob,
   },
-  knobOn: { backgroundColor: t.colors.onAccent },
+  knobOn: {},
   disabled: { opacity: t.opacity.disabled },
 }));

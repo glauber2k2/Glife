@@ -2,6 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { AccessibilityInfo, StyleSheet, useColorScheme, type ImageStyle, type TextStyle, type ViewStyle } from 'react-native';
 
 import {
+  easing,
   field,
   hairlineWidth,
   icon,
@@ -32,6 +33,7 @@ export interface Theme {
   icon: typeof icon;
   touch: typeof touch;
   motion: typeof motion;
+  easing: typeof easing;
   spring: typeof spring;
   pressScale: typeof pressScale;
   layout: typeof layout;
@@ -60,6 +62,7 @@ function buildTheme(scheme: ColorScheme): Theme {
     icon,
     touch,
     motion,
+    easing,
     spring,
     pressScale,
     layout,

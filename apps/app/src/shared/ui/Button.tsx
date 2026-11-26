@@ -1,24 +1,26 @@
 import * as Haptics from 'expo-haptics';
 import type { LucideIcon } from 'lucide-react-native';
-import { useEffect } from 'react';
 import { Platform, Pressable, View, type PressableProps } from 'react-native';
-import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
+import Animated from 'react-native-reanimated';
 
-import { Icon } from './Icon';
+import { Icon, type IconColor } from './Icon';
 import { Spinner } from './Spinner';
-import { Text } from './Text';
-import { resolveSpring } from './motion';
+import { Text, type TextTone } from './Text';
 import { makeStyles, useTheme } from './theme';
 import { useReduceMotion } from './theme/ThemeProvider';
+import { usePress } from './usePress';
 
-/** subtle: ghost em tom secundário, para saídas discretas ("Sair") */
-/** ghostDanger: ação destrutiva discreta ("Esvaziar lixeira"), sem borda */
-export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'subtle' | 'danger' | 'ghostDanger';
-export type ButtonSize = 'md' | 'sm';
+/**
+ * primary — cobalto com sombra azulada, a única ação principal da tela · secondary — tonal (ação secundária) ·
+ * neutral — cartão branco sobre o fundo · inverse — tinta escura · ghost — link em cobalto ·
+ * subtle — link discreto · danger — vermelho suave · ghostDanger — link vermelho.
+ */
+export type ButtonVariant = 'primary' | 'secondary' | 'neutral' | 'inverse' | 'ghost' | 'subtle' | 'danger' | 'ghostDanger';
+/** md 52 · compact 44 · sm 36 */
+export type ButtonSize = 'md' | 'compact' | 'sm';
 
 export interface ButtonProps extends Omit<PressableProps, 'children' | 'style'> {
   label: string;
-  /** primary é a única ação de destaque da tela; secondary/ghost para o resto */
   variant?: ButtonVariant;
   size?: ButtonSize;
   icon?: LucideIcon;
@@ -31,9 +33,22 @@ export interface ButtonProps extends Omit<PressableProps, 'children' | 'style'> 
    * 'center', senão o botão gruda no topo da linha.
    */
   selfAlign?: 'start' | 'center' | 'end';
+  /** ocupa o espaço que sobrar numa linha de botões (rodapé de folha) */
+  grow?: boolean;
 }
 
-/** Botão em pílula (48 / 40 px). Afunda 0,96 no toque com a mola tap. */
+const fgOf: Record<ButtonVariant, { tone: TextTone; icon: IconColor }> = {
+  primary: { tone: 'onAccent', icon: 'onAccent' },
+  secondary: { tone: 'tonal', icon: 'tonalInk' },
+  neutral: { tone: 'primary', icon: 'text' },
+  inverse: { tone: 'inverse', icon: 'inverseInk' },
+  ghost: { tone: 'accent', icon: 'accentInk' },
+  subtle: { tone: 'secondary', icon: 'textSecondary' },
+  danger: { tone: 'danger', icon: 'danger' },
+  ghostDanger: { tone: 'danger', icon: 'danger' },
+};
+
+/** Botão em pílula (52 / 44 / 36 px). Afunda 0,96 em 90 ms e volta com mola; o primário escurece. */
 export function Button({
   label,
   variant = 'primary',
@@ -43,6 +58,7 @@ export function Button({
   haptic,
   fullWidth,
   selfAlign = 'start',
+  grow,
   disabled,
   onPress,
   onPressIn,
@@ -53,23 +69,9 @@ export function Button({
   const t = useTheme();
   const isDisabled = disabled || loading;
   const reduceMotion = useReduceMotion();
-  const spring = resolveSpring('tap', reduceMotion);
-  const scale = useSharedValue<number>(t.pressScale.rest);
-  const restScale = t.pressScale.rest;
-  const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: reduceMotion ? restScale : scale.get() }],
-  }));
-
-  useEffect(() => {
-    if (reduceMotion || isDisabled) scale.set(restScale);
-  }, [reduceMotion, isDisabled, scale, restScale]);
-
-  const fg = (
-    { primary: 'onAccent', danger: 'danger', ghostDanger: 'danger', ghost: 'accentInk', subtle: 'textSecondary', secondary: 'text' } as const
-  )[variant];
-  const textTone = (
-    { onAccent: 'onAccent', danger: 'danger', accentInk: 'accent', textSecondary: 'secondary', text: 'primary' } as const
-  )[fg];
+  const press = usePress(isDisabled ?? undefined);
+  const fg = fgOf[variant];
+  const link = variant === 'ghost' || variant === 'subtle' || variant === 'ghostDanger';
 
   return (
     <Pressable
@@ -81,39 +83,42 @@ export function Button({
         onPress?.(e);
       }}
       onPressIn={(e) => {
-        scale.set(spring ? withSpring(t.pressScale.pressed, spring) : restScale);
+        press.onPressIn();
         onPressIn?.(e);
       }}
       onPressOut={(e) => {
-        scale.set(spring ? withSpring(restScale, spring) : restScale);
+        press.onPressOut();
         onPressOut?.(e);
       }}
-      style={[s.wrapper, selfAlign !== 'start' && s[selfAlign], fullWidth && s.fullWidth]}
+      style={[s.wrapper, selfAlign !== 'start' && s[selfAlign], (fullWidth || grow) && s.fullWidth, grow && s.grow]}
       {...rest}
     >
       {({ pressed }) => (
         <Animated.View
           style={[
             s.base,
-            size === 'sm' ? s.sm : s.md,
+            s[size],
             s[variant],
-            pressed && (reduceMotion ? s.reducedPressed : variant === 'primary' ? s.primaryPressed : s.pressed),
-            fullWidth && s.fullWidth,
-            isDisabled && s.disabled,
-            animatedStyle,
+            link && s.link,
+            pressed && variant === 'primary' && s.primaryPressed,
+            pressed && reduceMotion && s.reducedPressed,
+            (fullWidth || grow) && s.fullWidth,
+            isDisabled && !loading && !link && s.disabledFill,
+            isDisabled && link && s.disabledLink,
+            press.style,
           ]}
         >
           <View style={s.content}>
             {loading ? (
-              <Spinner color={fg} />
+              <Spinner color={fg.icon} />
             ) : (
-              icon && <Icon icon={icon} size={t.icon.small} color={fg} />
+              icon && <Icon icon={icon} size={size === 'sm' ? t.icon.small : t.icon.size - t.space[0.5]} color={isDisabled && !link ? 'textQuaternary' : fg.icon} />
             )}
             <Text
               variant="button"
-              tone={textTone}
+              tone={isDisabled && !link && !loading ? 'quaternary' : fg.tone}
               numberOfLines={1}
-              style={[(variant === 'secondary' || variant === 'subtle') && s.mediumWeight, size === 'sm' && s.smallText, s.label]}
+              style={[size === 'sm' && s.smallText, size === 'compact' && s.compactText, s.label]}
             >
               {label}
             </Text>
@@ -129,6 +134,7 @@ const useStyles = makeStyles((t) => ({
   wrapper: { alignSelf: 'flex-start', flexShrink: 0, maxWidth: '100%' },
   center: { alignSelf: 'center' },
   end: { alignSelf: 'flex-end' },
+  grow: { flexGrow: 1, flexBasis: 0, flexShrink: 1 },
   base: {
     borderRadius: t.radius.full,
     alignItems: 'center',
@@ -136,21 +142,25 @@ const useStyles = makeStyles((t) => ({
     alignSelf: 'flex-start',
     maxWidth: '100%',
   },
-  md: { minHeight: t.size.button, paddingHorizontal: t.space[6] },
-  sm: { minHeight: t.size.buttonSmall, paddingHorizontal: t.space[4] },
+  md: { minHeight: t.size.button, paddingHorizontal: t.space[5] + t.space[0.5] },
+  compact: { minHeight: t.size.buttonMedium, paddingHorizontal: t.space[4] + t.space[0.5] },
+  sm: { minHeight: t.size.buttonSmall, paddingHorizontal: t.space[3] + t.space[0.5] },
   content: { flexDirection: 'row', alignItems: 'center', gap: t.space[2], flexShrink: 1 },
-  primary: { backgroundColor: t.colors.accent },
+  primary: { backgroundColor: t.colors.accent, boxShadow: t.colors.shadow.fab },
   primaryPressed: { backgroundColor: t.colors.accentPressed },
-  secondary: { borderWidth: t.hairline, borderColor: t.colors.hairline, backgroundColor: 'transparent' },
-  ghost: { backgroundColor: 'transparent', paddingHorizontal: t.space[3] + t.space[0.5] },
-  subtle: { backgroundColor: 'transparent', paddingHorizontal: t.space[3] + t.space[0.5] },
-  ghostDanger: { backgroundColor: 'transparent', paddingHorizontal: t.space[3] + t.space[0.5] },
-  danger: { borderWidth: t.hairline, borderColor: t.colors.hairline, backgroundColor: 'transparent' },
-  pressed: { backgroundColor: t.colors.soft },
+  secondary: { backgroundColor: t.colors.tonal },
+  neutral: { backgroundColor: t.colors.card },
+  inverse: { backgroundColor: t.colors.inverse },
+  ghost: { backgroundColor: 'transparent' },
+  subtle: { backgroundColor: 'transparent' },
+  danger: { backgroundColor: t.colors.dangerSoft },
+  ghostDanger: { backgroundColor: 'transparent' },
+  link: { paddingHorizontal: t.space[3] },
   reducedPressed: { opacity: t.opacity.pressed },
   fullWidth: { alignSelf: 'stretch' },
-  disabled: { opacity: t.opacity.disabled },
-  mediumWeight: { fontFamily: t.type.chip.font },
+  disabledFill: { backgroundColor: t.colors.track, boxShadow: [] },
+  disabledLink: { opacity: t.opacity.disabled },
   smallText: { fontSize: t.type.chip.fontSize },
+  compactText: { fontSize: t.type.item.fontSize },
   label: { flexShrink: 1 },
 }));

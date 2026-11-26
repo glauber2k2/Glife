@@ -21,7 +21,7 @@ export interface ToastOptions {
 
 const ToastContext = createContext<(t: ToastOptions) => void>(() => {});
 
-/** Mostra uma confirmação curta: pílula escura por 4 s, sobe 16 px e esmaece. Uma por vez. */
+/** Mostra uma confirmação curta: cartão de tinta por 4 s, sobe com mola e esmaece. Uma por vez. */
 export function useToast() {
   return useContext(ToastContext);
 }
@@ -65,7 +65,7 @@ function ToastView({ toast, onAction }: { toast: (ToastOptions & { key: number }
   const t = useTheme();
   const insets = useSafeAreaInsets();
   const reduceMotion = useReduceMotion();
-  const spring = resolveSpring('standard', reduceMotion);
+  const spring = resolveSpring('emphasis', reduceMotion);
   const visible = useSharedValue(0);
   const [shown, setShown] = useState(toast);
 
@@ -83,7 +83,7 @@ function ToastView({ toast, onAction }: { toast: (ToastOptions & { key: number }
 
   const current = toast ?? shown;
   if (!current) return null;
-  const bottom = insets.bottom + (current.aboveTabBar ? t.size.tabBar + t.space[4] + t.space[0.5] : t.space[6]);
+  const bottom = insets.bottom + (current.aboveTabBar ? t.size.tabBar + t.layout.tabBarBottom + t.space[4] : t.space[7]);
 
   return (
     // Toques controlados por uma View comum: no web, pointerEvents no Animated.View não é confiável.
@@ -95,7 +95,7 @@ function ToastView({ toast, onAction }: { toast: (ToastOptions & { key: number }
       >
         {current.icon && (
           <View style={s.icon}>
-            <current.icon size={t.icon.small} strokeWidth={t.icon.strokeWidth} color={t.colors.bg} />
+            <current.icon size={t.icon.small} strokeWidth={t.icon.strokeWidth} color={t.colors.inverseInk} />
           </View>
         )}
         <Text variant="small" style={s.message} numberOfLines={1}>
@@ -121,27 +121,29 @@ function ToastView({ toast, onAction }: { toast: (ToastOptions & { key: number }
 }
 
 const useStyles = makeStyles((t) => ({
-  host: { position: 'absolute', left: t.space[0], right: t.space[0], alignItems: 'center' },
+  host: { position: 'absolute', left: t.space[0], right: t.space[0], alignItems: 'center', paddingHorizontal: t.space[4] },
+  // Cobalto: cartão de tinta r18 com sombra nível 2; a ação em azul claro.
   pill: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: t.space[2],
+    gap: t.space[3],
     minHeight: t.size.toast,
     paddingVertical: t.space[1],
     paddingLeft: t.space[4],
-    borderRadius: t.radius.full,
-    backgroundColor: t.colors.text,
+    borderRadius: t.radius.fieldLarge,
+    backgroundColor: t.colors.inverse,
+    boxShadow: t.colors.shadow.level2,
     maxWidth: t.layout.sheetMaxWidth,
-    marginHorizontal: t.layout.gutter,
+    width: '100%',
   },
   /** sem ação, a folga da direita é igual à da esquerda; com ação, a pílula da ação fica a 4 px da borda */
   pillPlain: { paddingRight: t.space[4] },
   pillWithAction: { paddingRight: t.space[1] },
   icon: { height: t.type.small.lineHeight, justifyContent: 'center' },
   message: {
-    color: t.colors.bg,
+    color: t.colors.inverseInk,
     fontFamily: t.type.chip.font,
-    flexShrink: 1,
+    flex: 1,
     includeFontPadding: false,
     textAlignVertical: 'center',
   },
@@ -151,9 +153,8 @@ const useStyles = makeStyles((t) => ({
     paddingHorizontal: t.space[3],
     borderRadius: t.radius.full,
     overflow: 'hidden',
-    color: t.colors.bg,
+    color: t.colors.inverseAccent,
     fontFamily: t.type.button.font,
-    textDecorationLine: 'underline',
     includeFontPadding: false,
     textAlignVertical: 'center',
   },

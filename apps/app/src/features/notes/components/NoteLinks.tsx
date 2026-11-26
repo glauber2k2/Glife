@@ -85,7 +85,6 @@ export function NoteLinks({ noteId, version }: { noteId: string; version: number
           <NavRow
             key={r.key}
             icon={ICONS[r.kind]}
-            iconColor={accent ? 'accentInk' : 'textSecondary'}
             label={r.label}
             meta={r.meta}
             onPress={r.noteId ? () => openNote(r.noteId!) : undefined}

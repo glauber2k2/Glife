@@ -1,14 +1,14 @@
-import { router } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import type { BottomTabBarProps } from 'expo-router/js-tabs';
 import { Plus, type LucideIcon } from 'lucide-react-native';
-import { useLayoutEffect, useRef, useState, type ReactNode } from 'react';
+import { useCallback, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { Pressable, View } from 'react-native';
-import Animated, { useAnimatedStyle, useSharedValue, withDelay, withSpring } from 'react-native-reanimated';
+import Animated, { Easing, useAnimatedStyle, useSharedValue, withSpring, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { Icon, IconButton, Text, makeStyles, resolveSpring, useReduceMotion, useTheme } from '@/shared/ui';
+import { Icon, Text, makeStyles, usePress, useReduceMotion, useTheme } from '@/shared/ui';
 
-import { getTabDirection, getTabLineInsets, getTabLineMotion } from './navigationMotion';
+import { getTabIndicatorX } from './navigationMotion';
 
 /**
  * Ícone de aba no padrão do design system. Cada rota declara o seu:
@@ -17,17 +17,18 @@ import { getTabDirection, getTabLineInsets, getTabLineMotion } from './navigatio
  */
 export function tabIcon(icon: LucideIcon) {
   function TabIcon({ focused }: { focused: boolean }) {
-    return <Icon icon={icon} color={focused ? 'accentInk' : 'textTertiary'} />;
+    return <Icon icon={icon} color={focused ? 'tonalInk' : 'textTertiary'} />;
   }
   return TabIcon;
 }
 
 /**
- * 70 px: quatro abas em volta de um + contornado. Um traço de 2 px no topo marca a aba ativa e estica
- * entre as abas: a borda da frente parte na mola de toque e a de trás segue na de ênfase.
+ * Barra de abas flutuante do Cobalto: cartão r26 a 14 px das laterais e 20 px do rodapé, sombra de navegação,
+ * cinco casas (duas abas, o + cobalto no centro, duas abas). A pílula tonal da aba ativa desliza em 340 ms.
  */
 export function TabBar({ state, descriptors, navigateToTab }: BottomTabBarProps) {
   const s = useStyles();
+  const t = useTheme();
   const insets = useSafeAreaInsets();
   const [barWidth, setBarWidth] = useState<number>(0);
 
@@ -51,17 +52,12 @@ export function TabBar({ state, descriptors, navigateToTab }: BottomTabBarProps)
   const middle = Math.ceil(tabs.length / 2);
 
   return (
-    <View style={[s.bar, { paddingBottom: insets.bottom }]}>
-      <View style={s.inner} onLayout={(event) => setBarWidth(event.nativeEvent.layout.width)}>
-        <ActiveLine index={state.index} tabCount={state.routes.length} barWidth={barWidth} />
+    <View pointerEvents="box-none" style={[s.host, { bottom: t.layout.tabBarBottom + insets.bottom }]}>
+      <View style={s.bar} onLayout={(event) => setBarWidth(event.nativeEvent.layout.width - 2 * t.space[1])}>
+        <Indicator index={state.index} tabCount={state.routes.length} barWidth={barWidth} />
         {tabs.slice(0, middle)}
         <View style={s.slot}>
-          <IconButton
-            icon={Plus}
-            label="Caixa de entrada"
-            color="textSecondary"
-            onPress={() => router.push('/caixa-de-entrada')}
-          />
+          <CaptureButton />
         </View>
         {tabs.slice(middle)}
       </View>
@@ -69,56 +65,67 @@ export function TabBar({ state, descriptors, navigateToTab }: BottomTabBarProps)
   );
 }
 
-function ActiveLine({ index, tabCount, barWidth }: { index: number; tabCount: number; barWidth: number }) {
+/** O + cobalto (r18): gira 45° ao abrir a captura e volta quando a barra reaparece. */
+function CaptureButton() {
   const s = useStyles();
   const t = useTheme();
   const reduceMotion = useReduceMotion();
-  const insets = getTabLineInsets(index, tabCount, barWidth, t.layout.gutter);
-  const left = useSharedValue(insets?.left ?? 0);
-  const right = useSharedValue(insets?.right ?? 0);
+  const press = usePress();
+  const turn = useSharedValue(0);
+  useFocusEffect(
+    useCallback(() => {
+      turn.set(reduceMotion ? 0 : withSpring(0, t.spring.tap));
+    }, [turn, reduceMotion, t]),
+  );
+  const iconStyle = useAnimatedStyle(() => ({ transform: [{ rotate: `${turn.get() * 45}deg` }] }));
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel="Capturar"
+      onPressIn={press.onPressIn}
+      onPressOut={press.onPressOut}
+      onPress={() => {
+        if (!reduceMotion) turn.set(withSpring(1, t.spring.tap));
+        router.push('/caixa-de-entrada');
+      }}
+    >
+      <Animated.View style={[s.fab, press.style]}>
+        <Animated.View style={iconStyle}>
+          <Icon icon={Plus} size={t.icon.large} color="onAccent" />
+        </Animated.View>
+      </Animated.View>
+    </Pressable>
+  );
+}
+
+function Indicator({ index, tabCount, barWidth }: { index: number; tabCount: number; barWidth: number }) {
+  const s = useStyles();
+  const t = useTheme();
+  const reduceMotion = useReduceMotion();
+  const target = getTabIndicatorX(index, tabCount, barWidth, t.size.tabIndicatorWidth);
+  const x = useSharedValue(target ?? 0);
   const previous = useRef({ index, barWidth });
 
   useLayoutEffect(() => {
-    if (!insets) return;
+    if (target === null) return;
     const before = previous.current;
     previous.current = { index, barWidth };
-    const lead = resolveSpring('tap', reduceMotion);
-    const trail = resolveSpring('emphasis', reduceMotion);
-    // Mudou só a largura (ou ainda não havia medida): acompanha sem esticar.
-    if (!lead || !trail || before.index === index || before.barWidth <= 0) {
-      left.set(insets.left);
-      right.set(insets.right);
+    if (reduceMotion || before.index === index || before.barWidth <= 0) {
+      x.set(target);
       return;
     }
-    const motion = getTabLineMotion(getTabDirection(before.index, index));
-    const to = (edge: 'lead' | 'trail', value: number) =>
-      edge === 'lead' ? withSpring(value, lead) : withDelay(t.motion.tabLineDelay, withSpring(value, trail));
-    left.set(to(motion.left, insets.left));
-    right.set(to(motion.right, insets.right));
-  }, [index, barWidth, insets?.left, insets?.right, reduceMotion, left, right, t.motion.tabLineDelay]); // eslint-disable-line react-hooks/exhaustive-deps
+    const [a, b, c, d] = t.easing.standard;
+    x.set(withTiming(target, { duration: t.motion.indicator, easing: Easing.bezier(a, b, c, d) }));
+  }, [index, barWidth, target, reduceMotion, x, t]);
 
-  const lineStyle = useAnimatedStyle(() => ({ left: left.get(), right: right.get() }));
-
-  if (!insets) return null;
-  return (
-    <Animated.View
-      testID="tab-active-indicator"
-      pointerEvents="none"
-      accessible={false}
-      style={[s.line, lineStyle]}
-    />
-  );
+  const style = useAnimatedStyle(() => ({ transform: [{ translateX: x.get() }] }));
+  if (target === null) return null;
+  return <Animated.View testID="tab-active-indicator" pointerEvents="none" accessible={false} style={[s.indicator, style]} />;
 }
 
 function Tab({ title, focused, icon, onPress }: { title: string; focused: boolean; icon: ReactNode; onPress: () => void }) {
   const s = useStyles();
-  const t = useTheme();
-  const reduceMotion = useReduceMotion();
-  const spring = resolveSpring('tap', reduceMotion);
-  const scale = useSharedValue<number>(t.pressScale.rest);
-  const pressStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.get() }] }));
-  const pressTo = (value: number) => scale.set(spring ? withSpring(value, spring) : t.pressScale.rest);
-
+  const press = usePress();
   return (
     <Pressable
       accessibilityRole="tab"
@@ -127,12 +134,12 @@ function Tab({ title, focused, icon, onPress }: { title: string; focused: boolea
       accessibilityLabel={title}
       style={s.slot}
       onPress={onPress}
-      onPressIn={() => pressTo(t.pressScale.pressedSmall)}
-      onPressOut={() => pressTo(t.pressScale.rest)}
+      onPressIn={press.onPressIn}
+      onPressOut={press.onPressOut}
     >
-      <Animated.View style={[s.tab, pressStyle]}>
-        {icon}
-        <Text variant="tab" tone={focused ? 'accent' : 'tertiary'} style={focused && s.tabActive}>
+      <Animated.View style={[s.tab, press.style]}>
+        <View style={s.iconBox}>{icon}</View>
+        <Text variant="tab" tone={focused ? 'tonal' : 'tertiary'} style={focused && s.tabActive} numberOfLines={1}>
           {title}
         </Text>
       </Animated.View>
@@ -141,28 +148,38 @@ function Tab({ title, focused, icon, onPress }: { title: string; focused: boolea
 }
 
 const useStyles = makeStyles((t) => ({
+  host: { position: 'absolute', left: t.layout.tabBarInset, right: t.layout.tabBarInset, alignItems: 'center' },
   bar: {
-    backgroundColor: t.colors.bg,
-    borderTopWidth: t.hairline,
-    borderTopColor: t.colors.hairline,
-  },
-  inner: {
     flexDirection: 'row',
     alignItems: 'center',
     width: '100%',
-    maxWidth: t.layout.contentMaxWidth,
-    alignSelf: 'center',
+    maxWidth: t.layout.sheetMaxWidth,
     height: t.size.tabBar,
+    paddingHorizontal: t.space[1],
+    borderRadius: t.radius.dialog,
+    backgroundColor: t.colors.card,
+    boxShadow: t.colors.shadow.nav,
   },
   slot: { flex: 1, alignItems: 'center', justifyContent: 'center', height: t.size.tabBar },
-  tab: { alignItems: 'center', gap: t.space[1] },
-  tabActive: { fontFamily: t.type.label.font },
-  /** sobe 1 px para cobrir a linha da borda superior */
-  line: {
+  tab: { alignItems: 'center', gap: t.space[0.5] + t.hairline },
+  iconBox: { width: t.size.tabIndicatorWidth, height: t.size.tabIndicatorHeight, alignItems: 'center', justifyContent: 'center' },
+  tabActive: { fontFamily: t.type.tag.font },
+  indicator: {
     position: 'absolute',
-    top: -t.hairline,
-    height: t.size.trackThin,
+    top: t.space[2.5],
+    left: t.space[1],
+    width: t.size.tabIndicatorWidth,
+    height: t.size.tabIndicatorHeight,
     borderRadius: t.radius.full,
+    backgroundColor: t.colors.tonal,
+  },
+  fab: {
+    width: t.size.fab,
+    height: t.size.fab,
+    borderRadius: t.radius.fieldLarge,
     backgroundColor: t.colors.accent,
+    alignItems: 'center',
+    justifyContent: 'center',
+    boxShadow: t.colors.shadow.fab,
   },
 }));

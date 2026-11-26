@@ -8,11 +8,12 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 
-import { makeStyles, useTheme, type Palette } from './theme';
+import type { IconColor } from './Icon';
+import { makeStyles, useTheme } from './theme';
 import { useReduceMotion } from './theme/ThemeProvider';
 
 export interface SpinnerProps {
-  color?: keyof Pick<Palette, 'text' | 'textSecondary' | 'textTertiary' | 'onAccent' | 'accentInk' | 'danger'>;
+  color?: IconColor;
 }
 
 /** Anel de 16 px, traço 1,5. Única animação em laço do sistema, e só enquanto há espera. Parado ao reduzir movimento. */
