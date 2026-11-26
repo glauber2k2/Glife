@@ -26,3 +26,27 @@ export function sortByIds<T extends { id: string }>(items: readonly T[], order: 
     .sort((x, y) => x.key - y.key)
     .map((x) => x.item);
 }
+
+/**
+ * Fila de gravação da ordem: uma por vez, na ordem dos toques. Se uma falha, as que já estavam na fila (montadas
+ * sobre a ordem que falhou) são descartadas; as pedidas depois disso gravam normalmente.
+ */
+export function createOrderQueue() {
+  let tail: Promise<void> = Promise.resolve();
+  let generation = 0;
+  return {
+    push(task: () => Promise<void>, onError: (e: unknown) => void): Promise<void> {
+      const gen = generation;
+      tail = tail.then(async () => {
+        if (gen !== generation) return;
+        try {
+          await task();
+        } catch (e) {
+          generation++;
+          onError(e);
+        }
+      });
+      return tail;
+    },
+  };
+}

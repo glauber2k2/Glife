@@ -299,5 +299,40 @@ export function financeRepositoryContract(name: string, make: () => Promise<Fina
       await finance.budgets.remove(b.id);
       expect(await finance.budgets.list()).toEqual([]);
     });
+
+    it('orçamento 0 é aceito (encerra); negativo é recusado', async () => {
+      const { finance, mercado } = await setup(make);
+      const zero = await finance.budgets.set(mercado.id, '2027-01', 0);
+      expect(zero.amount_cents).toBe(0);
+      await expectCode(finance.budgets.set(mercado.id, '2027-02', -1), 'validation');
+    });
+
+    it('createWithBudget grava categoria e orçamento juntos', async () => {
+      const { finance } = await setup(make);
+      const c = await finance.categories.createWithBudget(
+        { name: 'Viagens', kind: 'expense', color: 'teal', icon: 'plane', sort_order: 9 },
+        { month: '2026-12', amount_cents: 50000 },
+      );
+      expect(await finance.categories.get(c.id)).toMatchObject({ name: 'Viagens', sort_order: 9 });
+      expect((await finance.budgets.list()).map((b) => [b.category_id, b.starts_month, b.amount_cents])).toEqual([[c.id, '2026-12', 50000]]);
+      const bare = await finance.categories.createWithBudget({ name: 'Bico', kind: 'income', color: 'sage', icon: 'gift' }, null);
+      expect(await finance.categories.get(bare.id)).not.toBeNull();
+      expect(await finance.budgets.list()).toHaveLength(1);
+    });
+
+    it('createWithBudget é tudo ou nada: orçamento recusado não deixa a categoria', async () => {
+      const { finance } = await setup(make);
+      const before = (await finance.categories.list({ includeArchived: true })).length;
+      await expectCode(
+        finance.categories.createWithBudget({ name: 'Extra', kind: 'income', color: 'sage', icon: 'gift' }, { month: '2026-12', amount_cents: 100 }),
+        'validation',
+      );
+      await expectCode(
+        finance.categories.createWithBudget({ name: 'Viagens', kind: 'expense', color: 'teal', icon: 'plane' }, { month: '2026-12', amount_cents: -5 }),
+        'validation',
+      );
+      expect(await finance.categories.list({ includeArchived: true })).toHaveLength(before);
+      expect(await finance.budgets.list()).toEqual([]);
+    });
   });
 }

@@ -13,6 +13,7 @@ import {
   newBudget,
   newRecurrence,
   newTransaction,
+  planBudgetChange,
   projectBalance,
   suggestInvoiceToPay,
   type Transaction,
@@ -134,6 +135,57 @@ describe('budgetFor', () => {
     expect(budgetFor(MERCADO, '2026-12', budgets)).toBe(80000);
     expect(budgetFor(MERCADO, '2027-02', budgets)).toBe(90000);
     expect(budgetFor(MERCADO, '2026-09', budgets)).toBeNull();
+  });
+
+  it('registro 0 encerra: "sem orçamento" daquele mês em diante, meses anteriores intactos', () => {
+    const budgets = [
+      newBudget({ category_id: MERCADO, starts_month: '2026-10', amount_cents: 80000 }, USER),
+      newBudget({ category_id: MERCADO, starts_month: '2026-12', amount_cents: 0 }, USER),
+    ];
+    expect(budgetFor(MERCADO, '2026-11', budgets)).toBe(80000);
+    expect(budgetFor(MERCADO, '2026-12', budgets)).toBeNull();
+    expect(budgetFor(MERCADO, '2027-05', budgets)).toBeNull();
+  });
+});
+
+describe('planBudgetChange (orçamento a partir do mês)', () => {
+  const b = (starts_month: string, amount_cents: number) => newBudget({ category_id: MERCADO, starts_month, amount_cents }, USER);
+
+  it('valor novo grava no mês e tira só os registros futuros', () => {
+    const old = b('2026-05', 5000);
+    const future = b('2027-02', 9000);
+    expect(planBudgetChange(MERCADO, '2026-11', 7000, [old, future])).toEqual({ set: 7000, remove: [future] });
+  });
+
+  it('mesmo valor em vigor não grava', () => {
+    expect(planBudgetChange(MERCADO, '2026-11', 5000, [b('2026-05', 5000)])).toEqual({ set: null, remove: [] });
+  });
+
+  it('zero sem orçamento valendo: nada a fazer', () => {
+    expect(planBudgetChange(MERCADO, '2026-11', 0, [])).toEqual({ set: null, remove: [] });
+  });
+
+  it('zero com orçamento anterior: cria 0 no mês, o anterior fica', () => {
+    expect(planBudgetChange(MERCADO, '2026-11', 0, [b('2026-05', 5000)])).toEqual({ set: 0, remove: [] });
+  });
+
+  it('zero com registro no próprio mês e anterior valendo: o do mês vira 0', () => {
+    const future = b('2027-01', 9000);
+    expect(planBudgetChange(MERCADO, '2026-11', 0, [b('2026-05', 5000), b('2026-11', 6000), future])).toEqual({
+      set: 0,
+      remove: [future],
+    });
+  });
+
+  it('zero com registro só no próprio mês: ele sai (sem anterior, já fica sem orçamento)', () => {
+    const now = b('2026-11', 6000);
+    expect(planBudgetChange(MERCADO, '2026-11', 0, [now])).toEqual({ set: null, remove: [now] });
+  });
+
+  it('ignora outras categorias e recusa negativo', () => {
+    const other = newBudget({ category_id: 'ca700000-0000-4000-8000-000000000002', starts_month: '2026-05', amount_cents: 5000 }, USER);
+    expect(planBudgetChange(MERCADO, '2026-11', 0, [other])).toEqual({ set: null, remove: [] });
+    expect(() => planBudgetChange(MERCADO, '2026-11', -1, [])).toThrow(RangeError);
   });
 });
 

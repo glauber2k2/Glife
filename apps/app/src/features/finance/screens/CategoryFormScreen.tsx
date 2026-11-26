@@ -43,7 +43,7 @@ import { failureReason } from '../components/errors';
 import { todayIso } from '../components/format';
 import { MoneyField } from '../components/ui';
 import { useFinance } from '../hooks/FinanceData';
-import { CategoryBudgetError, useFinanceActions } from '../hooks/useFinanceActions';
+import { useFinanceActions } from '../hooks/useFinanceActions';
 
 const KINDS = [
   { value: 'expense', label: 'Gasto' },
@@ -83,13 +83,14 @@ function CategoryEditor({ category, initialKind }: { category: Category | null; 
   const toast = useToast();
   const month = monthOf(todayIso());
   const { data } = useFinance();
-  const { saveCategory, archiveCategory } = useFinanceActions();
+  const { saveCategory, archiveCategory, unarchiveCategory } = useFinanceActions();
   const currentBudget = category ? budgetFor(category.id, month, data?.budgets ?? []) : null;
   const [form, setForm] = useState<CategoryForm>(() => (category ? categoryFormFrom(category, currentBudget) : emptyCategoryForm(initialKind)));
   const [saving, setSaving] = useState(false);
-  // Tentativa anterior criou a categoria, mas não o orçamento: a próxima edita em vez de duplicar.
-  const createdId = useRef<string | null>(null);
   const set = (patch: Partial<CategoryForm>) => setForm((f) => ({ ...f, ...patch }));
+  // Célula de ~35 × 36 dp em 360 dp: a área de toque cresce até 44 nos dois sentidos.
+  const slopY = (t.touch.minTarget - t.size.iconButtonSmall) / 2;
+  const iconSlop = { top: slopY, bottom: slopY, left: slopY + t.hairline, right: slopY + t.hairline };
 
   // Tipo fixo quando já há lançamentos ou recorrências: mudar deixaria o histórico incoerente.
   const used =
@@ -110,20 +111,25 @@ function CategoryEditor({ category, initialKind }: { category: Category | null; 
     }
     setSaving(true);
     try {
-      await saveCategory(category?.id ?? createdId.current, read.value, month);
+      await saveCategory(category?.id ?? null, read.value, month);
       toast({ message: 'Categoria salva' });
       back();
     } catch (e) {
-      if (e instanceof CategoryBudgetError) {
-        createdId.current = e.createdId;
-        console.warn('Falha ao salvar o orçamento da categoria', e.reason);
-        toast({ message: `A categoria foi criada, mas o orçamento não: ${failureReason(e.reason, 'confira o valor.')} Toque em Salvar de novo.` });
-      } else {
-        console.warn('Falha ao salvar a categoria', e);
-        toast({ message: `Não foi possível salvar: ${failureReason(e, 'confira o nome e o valor.')}` });
-      }
+      console.warn('Falha ao salvar a categoria', e);
+      toast({ message: `Não foi possível salvar: ${failureReason(e, 'confira o nome e o valor.')}` });
     } finally {
       setSaving(false);
+    }
+  };
+
+  const reactivate = async () => {
+    if (!category) return;
+    try {
+      await unarchiveCategory(category.id);
+      toast({ message: 'Categoria de volta às escolhas' });
+    } catch (e) {
+      console.warn('Falha ao reativar a categoria', e);
+      toast({ message: `Não foi possível reativar: ${failureReason(e)}` });
     }
   };
 
@@ -181,6 +187,7 @@ function CategoryEditor({ category, initialKind }: { category: Category | null; 
                       accessibilityRole="radio"
                       accessibilityState={{ checked: on }}
                       accessibilityLabel={`Ícone ${CATEGORY_ICON_NAMES[name]}`}
+                      hitSlop={iconSlop}
                       onPress={() => set({ icon: name })}
                       style={({ pressed }) => [s.iconCell, on && s.iconOn, pressed && s.pressed]}
                     >
@@ -231,6 +238,12 @@ function CategoryEditor({ category, initialKind }: { category: Category | null; 
               Compra no cartão conta no mês em que a fatura vence.
             </Alert>
           </View>
+        )}
+
+        {category?.archived && (
+          <Alert tone="neutral" icon={Archive} actionLabel="Reativar" onAction={() => void reactivate()}>
+            Categoria arquivada: fora das escolhas, mas os lançamentos antigos continuam com ela.
+          </Alert>
         )}
 
         {category && !category.archived && (

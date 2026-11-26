@@ -228,7 +228,8 @@ export function applyRecurrencePatch(rule: Recurrence, changes: RecurrencePatch,
 const budgetFields = z.object({
   category_id: z.uuid(),
   starts_month: monthSchema,
-  amount_cents: positiveCents,
+  /** 0 = "sem orçamento a partir deste mês" (encerra o anterior sem apagar o histórico). */
+  amount_cents: centsSchema.refine((v) => v >= 0, 'Orçamento não pode ser negativo'),
 });
 
 export const budgetSchema = baseEntitySchema.extend(budgetFields.shape);

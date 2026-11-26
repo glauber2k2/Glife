@@ -1,6 +1,6 @@
-// Formulário de categoria (nome, tipo, ícone, cor e orçamento mensal) e o plano de orçamento que ele grava.
-// Puro: a tela guarda o estado e as ações gravam pelo repositório.
-import { CATEGORY_COLORS, CATEGORY_NAME_MAX, type Budget, type Category, type CategoryColor, type CategoryKind, type Month } from '@glife/domain/finance';
+// Formulário de categoria (nome, tipo, ícone, cor e orçamento mensal). Puro: a tela guarda o estado e as ações
+// gravam pelo repositório (o plano do orçamento é `planBudgetChange`, no domínio).
+import { CATEGORY_COLORS, CATEGORY_NAME_MAX, type Category, type CategoryColor, type CategoryKind } from '@glife/domain/finance';
 
 /** Grade de 16 ícones Lucide do protótipo (8 por linha). */
 export const CATEGORY_ICON_CHOICES = [
@@ -59,29 +59,6 @@ export function readCategoryForm(f: CategoryForm): { ok: true; value: CategoryFo
   const cents = f.kind === 'expense' ? (f.budgetCents ?? 0) : 0;
   if (!Number.isSafeInteger(cents) || cents < 0) return { ok: false, error: 'Orçamento inválido' };
   return { ok: true, value: { name, kind: f.kind, icon: f.icon, color: f.color, budgetCents: cents } };
-}
-
-/** O que mudou no orçamento: `set` grava a partir de `month`; `remove` são os registros que saem. */
-export interface BudgetPlan {
-  set: number | null;
-  remove: Budget[];
-}
-
-/**
- * Orçamento a partir do mês atual. Valor novo: grava em `month` e tira os registros que começariam depois (senão
- * eles mandariam nos meses seguintes). Zero: tira os registros de `month` em diante e, se um anterior ainda valeria,
- * ele também sai: o orçamento só começa por registro (não existe "zero"), então a categoria perde todos.
- */
-export function budgetPlan(categoryId: string, budgets: readonly Budget[], month: Month, cents: number): BudgetPlan {
-  const mine = budgets.filter((b) => b.deleted_at === null && b.category_id === categoryId);
-  const current = [...mine].filter((b) => b.starts_month <= month).sort((a, b) => (a.starts_month < b.starts_month ? 1 : -1))[0] ?? null;
-  const later = mine.filter((b) => b.starts_month > month);
-  if (cents > 0) {
-    const same = current?.amount_cents === cents;
-    return { set: same ? null : cents, remove: later };
-  }
-  // Tirar só os de agora em diante deixaria um anterior valendo: sem "zero" no registro, saem todos.
-  return { set: null, remove: mine };
 }
 
 /** Linha da lista: "Receita", "Orçamento R$ 1.500,00" ou "Sem orçamento". */

@@ -5,6 +5,7 @@ import {
   cycleOf,
   materializeOccurrence,
   paidByOther,
+  planBudgetChange,
   planInstallmentPurchase,
   planOngoingInstallments,
   planPreviousBalance,
@@ -26,7 +27,6 @@ import {
 } from '@glife/domain/finance';
 import { useMemo } from 'react';
 
-import { budgetPlan } from '../components/categoryForm';
 import { useFinance } from './FinanceData';
 
 export interface EntryForm {
@@ -64,17 +64,6 @@ export interface CardForm {
 }
 
 type Undo = () => Promise<void>;
-
-/** A categoria nova foi criada, mas o orçamento não: a nova tentativa edita `createdId` em vez de duplicar. */
-export class CategoryBudgetError extends Error {
-  readonly createdId: string;
-  readonly reason: unknown;
-  constructor(createdId: string, reason: unknown) {
-    super('Orçamento não gravado');
-    this.createdId = createdId;
-    this.reason = reason;
-  }
-}
 
 export interface CategoryInput {
   name: string;
@@ -353,51 +342,77 @@ export function useFinanceActions() {
     // ---------- Categorias ----------
 
     /**
-     * Grava a categoria e o orçamento a partir de `month`, tudo ou nada: se o orçamento falhar, a categoria volta
-     * como estava (edição). Na criação, `existingId` (de uma tentativa anterior que criou a categoria mas não o
-     * orçamento) faz a nova tentativa editar em vez de duplicar.
+     * Grava a categoria e o orçamento a partir de `month`, tudo ou nada. Nova: categoria e orçamento numa transação
+     * só (`createWithBudget`). Edição: se o orçamento falhar, a categoria volta como estava. Gasto que vira receita
+     * encerra o orçamento neste mês (antes de trocar o tipo, enquanto ainda é gasto); os meses passados ficam.
      */
     async function saveCategory(id: string | null, input: CategoryInput, month: Month): Promise<Category> {
       const fields = { name: input.name, kind: input.kind, icon: input.icon, color: input.color };
-      const before = id ? data?.categories.find((c) => c.id === id) : undefined;
-      let saved: Category;
-      if (id) {
-        saved = await repos.categories.update(id, fields);
-      } else {
+      if (!id) {
         const sameKind = (data?.categories ?? []).filter((c) => c.kind === input.kind);
         const last = sameKind.reduce((max, c) => Math.max(max, c.sort_order), -1);
-        saved = await repos.categories.create({ ...fields, sort_order: last + 1 });
+        const budget = input.kind === 'expense' && input.budgetCents > 0 ? { month, amount_cents: input.budgetCents } : null;
+        const created = await repos.categories.createWithBudget({ ...fields, sort_order: last + 1 }, budget);
+        await refresh();
+        return created;
       }
+
+      const before = data?.categories.find((c) => c.id === id);
+      if (!before) throw new Error('Categoria não encontrada');
+      const restore = { name: before.name, kind: before.kind, icon: before.icon, color: before.color };
+      const endsBudget = before.kind === 'expense' && input.kind !== 'expense';
+      let undoEnd: Undo | null = null;
       try {
-        if (saved.kind === 'expense') await applyBudget(saved.id, month, input.budgetCents);
-      } catch (e) {
-        if (before) {
-          await repos.categories
-            .update(before.id, { name: before.name, kind: before.kind, icon: before.icon, color: before.color })
-            .catch(() => undefined);
+        if (endsBudget) undoEnd = await applyBudget(id, month, 0);
+        const saved = await repos.categories.update(id, fields);
+        if (saved.kind === 'expense') {
+          try {
+            await applyBudget(id, month, input.budgetCents);
+          } catch (e) {
+            await repos.categories.update(id, restore).catch(() => undefined);
+            throw e;
+          }
         }
         await refresh();
-        if (!id) throw new CategoryBudgetError(saved.id, e);
+        return saved;
+      } catch (e) {
+        if (undoEnd) await undoEnd();
+        await refresh();
         throw e;
       }
-      await refresh();
-      return saved;
     }
 
-    /** Aplica o plano do orçamento; se uma parte falhar, devolve os registros já tirados. */
-    async function applyBudget(categoryId: string, month: Month, cents: number) {
-      const plan = budgetPlan(categoryId, data?.budgets ?? [], month, cents);
-      const removed: typeof plan.remove = [];
+    /**
+     * Aplica `planBudgetChange` (orçamento de `month` em diante; meses passados intactos). Se uma parte falhar,
+     * desfaz o que já gravou. Devolve como desfazer tudo.
+     */
+    async function applyBudget(categoryId: string, month: Month, cents: number): Promise<Undo> {
+      const budgets = data?.budgets ?? [];
+      const plan = planBudgetChange(categoryId, month, cents, budgets);
+      const atMonth = budgets.find((b) => b.deleted_at === null && b.category_id === categoryId && b.starts_month === month) ?? null;
+      const done: Undo[] = [];
+      const undoAll = async () => {
+        for (const undo of [...done].reverse()) await undo().catch(() => undefined);
+      };
       try {
         for (const b of plan.remove) {
           await repos.budgets.remove(b.id);
-          removed.push(b);
+          done.push(async () => {
+            await repos.budgets.set(b.category_id, b.starts_month, b.amount_cents);
+          });
         }
-        if (plan.set !== null) await repos.budgets.set(categoryId, month, plan.set);
+        if (plan.set !== null) {
+          const row = await repos.budgets.set(categoryId, month, plan.set);
+          done.push(async () => {
+            if (atMonth) await repos.budgets.set(categoryId, month, atMonth.amount_cents);
+            else await repos.budgets.remove(row.id);
+          });
+        }
       } catch (e) {
-        for (const b of removed) await repos.budgets.set(b.category_id, b.starts_month, b.amount_cents).catch(() => undefined);
+        await undoAll();
         throw e;
       }
+      return undoAll;
     }
 
     async function archiveCategory(id: string): Promise<Undo> {

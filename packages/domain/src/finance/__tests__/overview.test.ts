@@ -114,6 +114,13 @@ describe('monthOverview', () => {
     expect(moradia).toMatchObject({ spent: 0, planned: 11990 + 185000, budget: null });
   });
 
+  it('orçamento 0 a partir de janeiro: "sem orçamento" em janeiro, dezembro mantém o valor', () => {
+    const zero = newBudget({ category_id: MERCADO.id, starts_month: '2027-01', amount_cents: 0 }, USER);
+    const d0 = data({ budgets: [...d.budgets, zero] });
+    expect(monthOverview(d0, occ, TODAY, '2027-01').budgets.find((b) => b.category.id === MERCADO.id)!.budget).toBeNull();
+    expect(monthOverview(d0, occ, TODAY, '2026-12').budgets.find((b) => b.category.id === MERCADO.id)!.budget).toBe(50000);
+  });
+
   it('mês futuro: nada a confirmar; fatura de janeiro aparece nos próximos', () => {
     const jan = monthOverview(d, occ, TODAY, '2027-01');
     expect(jan.toConfirm).toEqual([]);

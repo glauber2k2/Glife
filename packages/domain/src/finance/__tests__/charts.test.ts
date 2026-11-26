@@ -219,6 +219,8 @@ describe('gráficos: mês até agora e escala', () => {
     expect(m).toMatchObject({ month: '2026-11', spent: 60000, planned: 4000, budget: 150000 });
     expect(m.top).toMatchObject({ key: MERCADO.id, total: 50000 });
     expect(monthSoFar([], [MERCADO], [], TODAY)).toMatchObject({ budget: null, top: null, spent: 0 });
+    const ended = [...budgets, newBudget({ category_id: LAZER.id, starts_month: '2026-11', amount_cents: 0 }, USER)];
+    expect(monthSoFar(entries, [MERCADO, LAZER, SALARIO], ended, TODAY).budget).toBe(120000);
   });
 
   it('referência redonda acima do máximo', () => {

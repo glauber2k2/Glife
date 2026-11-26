@@ -76,6 +76,11 @@ export interface CategoriesRepository {
   list(query?: { kind?: CategoryKind; includeArchived?: boolean }): Promise<Category[]>;
   get(id: string): Promise<Category | null>;
   create(draft: CategoryDraft): Promise<Category>;
+  /**
+   * Cria a categoria e o orçamento dela a partir de `budget.month`, juntos (tudo ou nada). `null` ou valor 0 = sem
+   * orçamento. Orçamento em categoria de receita ou valor inválido recusa tudo (`validation`): a categoria não fica.
+   */
+  createWithBudget(draft: CategoryDraft, budget: { month: Month; amount_cents: number } | null): Promise<Category>;
   update(id: string, patch: CategoryPatch): Promise<Category>;
   archive(id: string): Promise<Category>;
   unarchive(id: string): Promise<Category>;
@@ -145,7 +150,7 @@ export interface RecurrencesRepository {
 
 export interface BudgetsRepository {
   list(): Promise<Budget[]>;
-  /** Um por categoria de despesa e mês: substitui o valor se já existir. */
+  /** Um por categoria de despesa e mês: substitui o valor se já existir. 0 = sem orçamento desse mês em diante. */
   set(categoryId: string, startsMonth: Month, amountCents: number): Promise<Budget>;
   remove(id: string): Promise<void>;
 }
@@ -372,6 +377,15 @@ export function createFinanceRepositories(store: FinanceStore, userId: string, c
         await store.put('categories', c);
         return c;
       }),
+    createWithBudget: (draft, budget) =>
+      guard(() =>
+        store.transaction(async (db) => {
+          const c = newCategory(draft, userId, clock);
+          await db.put('categories', c);
+          if (budget && budget.amount_cents !== 0) await putBudget(db, c.id, budget.month, budget.amount_cents);
+          return c;
+        }),
+      ),
     update: (id, patch) =>
       guard(() =>
         store.transaction(async (db) => {
@@ -538,6 +552,19 @@ export function createFinanceRepositories(store: FinanceStore, userId: string, c
       ),
   };
 
+  /** Grava o orçamento (só categoria de despesa), com id fixo por categoria e mês. */
+  async function putBudget(db: FinanceStoreTx, categoryId: string, startsMonth: Month, amountCents: number): Promise<Budget> {
+    const category = await aliveOrInvalid(db, 'categories', categoryId);
+    if (category.kind !== 'expense') throw invalid();
+    // Id fixo por categoria e mês: dois aparelhos offline gravam a mesma linha (sem esbarrar no índice único).
+    const id = budgetId(categoryId, startsMonth);
+    const candidate = { ...newBudget({ category_id: categoryId, starts_month: startsMonth, amount_cents: amountCents }, userId, clock), id };
+    const existing = await db.get('budgets', id);
+    const row = existing ? { ...existing, amount_cents: candidate.amount_cents, deleted_at: null, updated_at: nowIso(clock) } : candidate;
+    await db.put('budgets', row);
+    return row;
+  }
+
   const budgets: BudgetsRepository = {
     list: () =>
       guard(async () =>
@@ -546,21 +573,7 @@ export function createFinanceRepositories(store: FinanceStore, userId: string, c
         ),
       ),
     set: (categoryId, startsMonth, amountCents) =>
-      guard(() =>
-        store.transaction(async (db) => {
-          const category = await aliveOrInvalid(db, 'categories', categoryId);
-          if (category.kind !== 'expense') throw invalid();
-          // Id fixo por categoria e mês: dois aparelhos offline gravam a mesma linha (sem esbarrar no índice único).
-          const id = budgetId(categoryId, startsMonth);
-          const candidate = { ...newBudget({ category_id: categoryId, starts_month: startsMonth, amount_cents: amountCents }, userId, clock), id };
-          const existing = await db.get('budgets', id);
-          const row = existing
-            ? { ...existing, amount_cents: candidate.amount_cents, deleted_at: null, updated_at: nowIso(clock) }
-            : candidate;
-          await db.put('budgets', row);
-          return row;
-        }),
-      ),
+      guard(() => store.transaction((db) => putBudget(db, categoryId, startsMonth, amountCents))),
     remove: (id) =>
       guard(() =>
         store.transaction(async (db) => {

@@ -1,31 +1,14 @@
-import type { Budget, Category } from '@glife/domain/finance';
+import type { Category } from '@glife/domain/finance';
 import { describe, expect, it } from 'vitest';
 
 import {
   CATEGORY_ICON_CHOICES,
-  budgetPlan,
   categoryFormFrom,
   categoryMeta,
   emptyCategoryForm,
   readCategoryForm,
 } from '../src/features/finance/components/categoryForm';
-import { moveWithin, sortByIds } from '../src/features/finance/components/ordering';
-
-const CAT = '11111111-1111-4111-8111-111111111111';
-
-function budget(starts_month: string, amount_cents: number, extra: Partial<Budget> = {}): Budget {
-  return {
-    id: `b-${starts_month}`,
-    user_id: 'u',
-    created_at: '2026-01-01T00:00:00.000Z',
-    updated_at: '2026-01-01T00:00:00.000Z',
-    deleted_at: null,
-    category_id: CAT,
-    starts_month,
-    amount_cents,
-    ...extra,
-  } as Budget;
-}
+import { createOrderQueue, moveWithin, sortByIds } from '../src/features/finance/components/ordering';
 
 describe('ordenar contas e categorias', () => {
   it('troca com o vizinho do grupo e mantém quem está fora no lugar', () => {
@@ -50,6 +33,24 @@ describe('ordenar contas e categorias', () => {
   it('sortByIds segue a ordem dada; os de fora vão para o fim', () => {
     const items = [{ id: 'a' }, { id: 'b' }, { id: 'c' }];
     expect(sortByIds(items, ['c', 'a']).map((i) => i.id)).toEqual(['c', 'a', 'b']);
+  });
+});
+
+describe('fila de gravação da ordem', () => {
+  it('grava em ordem; falha descarta o que estava na fila e libera os pedidos seguintes', async () => {
+    const q = createOrderQueue();
+    const saved: string[] = [];
+    const errors: unknown[] = [];
+    const onError = (e: unknown) => errors.push(e);
+    q.push(async () => void saved.push('a'), onError);
+    q.push(async () => {
+      throw new Error('falhou');
+    }, onError);
+    await q.push(async () => void saved.push('c (montada sobre a falha)'), onError);
+    expect(saved).toEqual(['a']);
+    expect(errors).toHaveLength(1);
+    await q.push(async () => void saved.push('d'), onError);
+    expect(saved).toEqual(['a', 'd']);
   });
 });
 
@@ -83,36 +84,5 @@ describe('formulário de categoria', () => {
     expect(categoryMeta('income', 100, money)).toBe('Receita');
     expect(categoryMeta('expense', null, money)).toBe('Sem orçamento');
     expect(categoryMeta('expense', 150000, money)).toBe('Orçamento R$ 1500');
-  });
-});
-
-describe('plano do orçamento mensal (a partir do mês atual)', () => {
-  it('sem orçamento e zero: nada a fazer', () => {
-    expect(budgetPlan(CAT, [], '2026-11', 0)).toEqual({ set: null, remove: [] });
-  });
-
-  it('valor novo grava no mês e tira registros futuros', () => {
-    const later = budget('2027-01', 9000);
-    const plan = budgetPlan(CAT, [budget('2026-05', 5000), later], '2026-11', 7000);
-    expect(plan).toEqual({ set: 7000, remove: [later] });
-  });
-
-  it('mesmo valor em vigor: não grava', () => {
-    expect(budgetPlan(CAT, [budget('2026-05', 5000)], '2026-11', 5000)).toEqual({ set: null, remove: [] });
-  });
-
-  it('zero tira o registro do mês e o anterior que ainda valeria', () => {
-    const old = budget('2026-05', 5000);
-    const now = budget('2026-11', 6000);
-    const future = budget('2027-02', 7000);
-    const plan = budgetPlan(CAT, [old, now, future], '2026-11', 0);
-    expect(plan.set).toBeNull();
-    expect(plan.remove.map((b) => b.starts_month).sort()).toEqual(['2026-05', '2026-11', '2027-02']);
-  });
-
-  it('ignora excluídos e outras categorias', () => {
-    const gone = budget('2026-05', 5000, { deleted_at: '2026-06-01T00:00:00.000Z' });
-    const other = budget('2026-05', 5000, { category_id: '22222222-2222-4222-8222-222222222222' });
-    expect(budgetPlan(CAT, [gone, other], '2026-11', 0)).toEqual({ set: null, remove: [] });
   });
 });

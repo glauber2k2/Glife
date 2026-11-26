@@ -189,12 +189,48 @@ export function monthSummary(
   return summary;
 }
 
-/** Orçamento da categoria no mês: o registro mais recente com `starts_month` até o mês. */
+/**
+ * Orçamento da categoria no mês: o registro mais recente com `starts_month` até o mês. Registro de valor 0 encerra
+ * o orçamento daquele mês em diante: devolve `null` ("Sem orçamento"), nunca um limite zero sempre estourado.
+ */
 export function budgetFor(categoryId: string, month: Month, budgets: readonly Budget[]): number | null {
   const valid = budgets
     .filter((b) => b.deleted_at === null && b.category_id === categoryId && b.starts_month <= month)
     .sort((a, b) => (a.starts_month < b.starts_month ? 1 : -1));
-  return valid[0]?.amount_cents ?? null;
+  const amount = valid[0]?.amount_cents ?? null;
+  return amount ? amount : null;
+}
+
+/** O que gravar para mudar o orçamento de `month` em diante: `set` (valor, 0 = encerrar) e os registros que saem. */
+export interface BudgetChange {
+  set: number | null;
+  remove: Budget[];
+}
+
+/**
+ * Orçamento a partir de `month`, sem mexer nos meses anteriores. Valor novo: grava em `month` (se mudou). Zero: se
+ * havia orçamento valendo, encerra — o registro do próprio mês vira 0 (ou sai, se nenhum anterior valeria sem ele);
+ * sem registro no mês, cria um 0 em `month`. Em ambos, registros que começariam depois de `month` saem (senão
+ * mandariam nos meses seguintes).
+ */
+export function planBudgetChange(categoryId: string, month: Month, cents: number, budgets: readonly Budget[]): BudgetChange {
+  if (!Number.isSafeInteger(cents) || cents < 0) throw new RangeError('Orçamento inválido');
+  const mine = budgets.filter((b) => b.deleted_at === null && b.category_id === categoryId);
+  const later = mine.filter((b) => b.starts_month > month);
+  const current = budgetFor(categoryId, month, mine);
+  if (cents > 0) return { set: current === cents ? null : cents, remove: later };
+  const atMonth = mine.find((b) => b.starts_month === month) ?? null;
+  const before = budgetFor(
+    categoryId,
+    month,
+    mine.filter((b) => b.starts_month < month),
+  );
+  if (atMonth) {
+    // Sem anterior valendo, apagar o registro do mês já deixa "sem orçamento"; com anterior, ele vira 0.
+    if (before === null) return { set: null, remove: [atMonth, ...later] };
+    return { set: atMonth.amount_cents === 0 ? null : 0, remove: later };
+  }
+  return { set: current === null ? null : 0, remove: later };
 }
 
 // ---------- Previsão ----------

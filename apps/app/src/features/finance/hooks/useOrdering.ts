@@ -1,12 +1,13 @@
 // Estado do modo "Ordenar": a ordem muda na hora (as linhas abrem espaço com a mola) e é gravada em fila, sempre
-// com a lista completa daquele tipo. Falhou: volta à ordem gravada e avisa.
-import { useRef, useState } from 'react';
+// com a lista completa daquele tipo. Falhou: volta à ordem gravada, avisa e descarta o que estava na fila montado
+// sobre a ordem que falhou.
+import { useState } from 'react';
 
-import { moveWithin, sortByIds } from '../components/ordering';
+import { createOrderQueue, moveWithin, sortByIds } from '../components/ordering';
 
 export function useOrdering(fullIds: readonly string[], persist: (ids: readonly string[]) => Promise<void>, onError: (e: unknown) => void) {
   const [order, setOrder] = useState<string[] | null>(null);
-  const queue = useRef<Promise<void>>(Promise.resolve());
+  const [queue] = useState(createOrderQueue);
   const current = order ?? [...fullIds];
 
   const sort = <T extends { id: string }>(items: readonly T[]): T[] => (order ? sortByIds(items, order) : [...items]);
@@ -16,13 +17,15 @@ export function useOrdering(fullIds: readonly string[], persist: (ids: readonly 
     const next = moveWithin(current, group.map((g) => g.id), id, delta);
     if (!next) return;
     setOrder(next);
-    queue.current = queue.current
-      .then(() => persist(next))
-      .catch((e: unknown) => {
+    queue.push(
+      () => persist(next),
+      (e) => {
         setOrder(null);
         onError(e);
-      });
+      },
+    );
   };
 
+  // Sair do modo não cancela a fila: o que já foi tocado continua sendo gravado.
   return { sort, move, reset: () => setOrder(null) };
 }
