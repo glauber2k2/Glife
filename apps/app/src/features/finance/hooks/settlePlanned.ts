@@ -2,6 +2,8 @@
 // Usado pelas telas de Finanças e pela central de notificações ("Confirmar" na linha).
 import { materializeOccurrence, type FinanceData, type FinanceRepositories, type IsoDate, type PlannedItem } from '@glife/domain/finance';
 
+import { UserFacingError } from '@/shared/lib/errorText';
+
 export type Undo = () => Promise<void>;
 
 export async function settlePlanned(
@@ -20,9 +22,9 @@ export async function settlePlanned(
     };
   }
   const rule = data?.rules.find((x) => x.id === item.recurrenceId);
-  if (!rule) throw new Error('Recorrência não encontrada');
+  if (!rule) throw new UserFacingError('Recorrência não encontrada.');
   const account = data?.accounts.find((x) => x.id === rule.account_id);
-  if (!account) throw new Error('Conta não encontrada');
+  if (!account) throw new UserFacingError('Conta não encontrada.');
   const row = materializeOccurrence(rule, item.occurrenceDate!, { status, ...changes }, account);
   await repos.transactions.upsertOccurrence(row);
   // A linha excluída faz a ocorrência voltar a ser calculada (prevista).

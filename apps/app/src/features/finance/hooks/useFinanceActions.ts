@@ -27,6 +27,8 @@ import {
 } from '@glife/domain/finance';
 import { useMemo } from 'react';
 
+import { UserFacingError } from '@/shared/lib/errorText';
+
 import { useFinance } from './FinanceData';
 import { settlePlanned, type Undo } from './settlePlanned';
 
@@ -79,7 +81,7 @@ export function useFinanceActions() {
   return useMemo(() => {
     const accountOf = (id: string): Account => {
       const a = data?.accounts.find((x) => x.id === id);
-      if (!a) throw new Error('Conta não encontrada');
+      if (!a) throw new UserFacingError('Conta não encontrada.');
       return a;
     };
 
@@ -336,7 +338,7 @@ export function useFinanceActions() {
       }
 
       const before = data?.categories.find((c) => c.id === id);
-      if (!before) throw new Error('Categoria não encontrada');
+      if (!before) throw new UserFacingError('Categoria não encontrada.');
       const restore = { name: before.name, kind: before.kind, icon: before.icon, color: before.color };
       const endsBudget = before.kind === 'expense' && input.kind !== 'expense';
       let undoEnd: Undo | null = null;
