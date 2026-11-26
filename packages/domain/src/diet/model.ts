@@ -73,3 +73,28 @@ export function newMealLog(draft: MealLogDraft, userId: string, clock?: () => Da
 export function applyMealLogPatch(log: MealLog, changes: MealLogPatch, clock?: () => Date): MealLog {
   return updateEntity(logData, log, changes, clock);
 }
+
+// ---------- Metas diárias ----------
+
+/** Limites das metas e dos valores da refeição (os mesmos do banco). */
+export const KCAL_MAX = 20000;
+export const MACRO_MAX = 2000;
+
+const goalFields = z.object({
+  kcal_target: nutrition.kcal,
+  protein_g_target: nutrition.protein_g,
+  carbs_g_target: nutrition.carbs_g,
+  fat_g_target: nutrition.fat_g,
+});
+
+export type DietGoals = z.infer<typeof goalFields> & BaseEntity;
+export type DietGoalsInput = Partial<z.input<typeof goalFields>>;
+
+const GOAL_DEFAULTS = { kcal_target: null, protein_g_target: null, carbs_g_target: null, fat_g_target: null };
+
+export function newDietGoals(input: DietGoalsInput, userId: string, clock?: () => Date): DietGoals {
+  return createEntity(goalFields, GOAL_DEFAULTS, input, userId, clock) as DietGoals;
+}
+export function applyDietGoalsPatch(goals: DietGoals, changes: DietGoalsInput, clock?: () => Date): DietGoals {
+  return updateEntity(goalFields, goals, changes, clock);
+}

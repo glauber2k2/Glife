@@ -1,10 +1,14 @@
 // Repositório da dieta sobre um RowStore. Registro só pode apontar para refeição do plano que existe (e é do dono).
 import { RepositoryError, aliveRow, guardRules, repositoryErrorOf, restore, softDelete, type ErrorListener, type Listener, type RowStore, type RowStoreReads, type Unsubscribe } from '../core/index.ts';
 import {
+  applyDietGoalsPatch,
   applyMealLogPatch,
   applyMealPlanPatch,
+  newDietGoals,
   newMealLog,
   newMealPlanItem,
+  type DietGoals,
+  type DietGoalsInput,
   type MealLog,
   type MealLogDraft,
   type MealLogPatch,
@@ -16,12 +20,15 @@ import {
 export type DietRows = {
   meal_plans: MealPlanItem;
   meals: MealLog;
+  diet_goals: DietGoals;
 };
-export const DIET_TABLES = ['meal_plans', 'meals'] as const;
+export const DIET_TABLES = ['meal_plans', 'meals', 'diet_goals'] as const;
 
 export interface DietSnapshot {
   plan: MealPlanItem[];
   logs: MealLog[];
+  /** metas diárias (null = ainda não definidas) */
+  goals: DietGoals | null;
 }
 
 export interface DietRepository {
@@ -38,10 +45,20 @@ export interface DietRepository {
   updateLog(id: string, patch: MealLogPatch): Promise<MealLog>;
   removeLog(id: string): Promise<void>;
   restoreLog(id: string): Promise<void>;
+  getGoals(): Promise<DietGoals | null>;
+  /** Cria ou atualiza a linha única de metas do dono (campo null = sem meta). */
+  setGoals(input: DietGoalsInput): Promise<DietGoals>;
 }
 
 export function createDietRepository(store: RowStore<DietRows>, userId: string, clock?: () => Date): DietRepository {
-  const read = async (): Promise<DietSnapshot> => ({ plan: await store.listAlive('meal_plans'), logs: await store.listAlive('meals') });
+  /** Uma linha viva por dono; se o sync trouxer mais de uma, vale a editada por último. */
+  const goalsOf = async (db: RowStoreReads<DietRows>) =>
+    (await db.listAlive('diet_goals')).sort((a, b) => (a.updated_at < b.updated_at ? 1 : -1))[0] ?? null;
+  const read = async (): Promise<DietSnapshot> => ({
+    plan: await store.listAlive('meal_plans'),
+    logs: await store.listAlive('meals'),
+    goals: await goalsOf(store),
+  });
 
   /** Refeição do plano referida pelo registro precisa existir, ser do dono e não estar excluída. */
   const checkPlan = async (db: RowStoreReads<DietRows>, log: MealLog) => {
@@ -88,7 +105,10 @@ export function createDietRepository(store: RowStore<DietRows>, userId: string, 
           // Registro de uma refeição do plano guarda o que ela era (o plano pode mudar ou sair depois).
           const plan = draft.plan_id ? await tx.get('meal_plans', draft.plan_id) : null;
           const description = draft.description?.trim() || (plan ? plan.description || plan.name : '');
-          const log = newMealLog({ ...draft, description }, userId, clock);
+          // kcal e macros não informados (undefined) vêm da refeição do plano; null explícito fica vazio.
+          const pick = <K extends 'kcal' | 'protein_g' | 'carbs_g' | 'fat_g'>(k: K) => (draft[k] === undefined ? (plan?.[k] ?? null) : draft[k]);
+          const nutrition = { kcal: pick('kcal'), protein_g: pick('protein_g'), carbs_g: pick('carbs_g'), fat_g: pick('fat_g') };
+          const log = newMealLog({ ...draft, ...nutrition, description }, userId, clock);
           await checkPlan(tx, log);
           await tx.put('meals', log);
           return log;
@@ -97,5 +117,16 @@ export function createDietRepository(store: RowStore<DietRows>, userId: string, 
     updateLog: (id, patch) => change('meals', id, (l) => applyMealLogPatch(l, patch, clock)),
     removeLog: (id) => remove('meals', id),
     restoreLog: (id) => undelete('meals', id),
+    getGoals: () => guardRules(() => goalsOf(store)),
+    setGoals: (input) =>
+      guardRules(() =>
+        store.transaction(async (tx) => {
+          const current = await goalsOf(tx);
+          // Id fixo (o do dono): dois aparelhos que criam metas sem internet gravam a mesma linha, sem duplicar.
+          const next = current ? applyDietGoalsPatch(current, input, clock) : { ...newDietGoals(input, userId, clock), id: userId };
+          await tx.put('diet_goals', next);
+          return next;
+        }),
+      ),
   };
 }
