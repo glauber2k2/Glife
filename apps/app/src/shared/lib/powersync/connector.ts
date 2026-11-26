@@ -94,15 +94,21 @@ export interface ConnectorOptions {
   endpoint: string;
   client: UploadClient;
   onDiscard?: (info: DiscardInfo) => void;
+  /** avisa se o servidor ainda pode receber a sessão deste aparelho (false = precisa entrar de novo) */
+  onCredentials?: (ok: boolean) => void;
 }
 
-export function createSupabaseConnector({ supabase, endpoint, client, onDiscard }: ConnectorOptions) {
+export function createSupabaseConnector({ supabase, endpoint, client, onDiscard, onCredentials }: ConnectorOptions) {
   return {
     /** Token só de sessão com MFA: o banco recusa aal1, e o PowerSync também não deve entregar dados a ela. */
     async fetchCredentials() {
       const { data } = await supabase.auth.getSession();
       const token = data.session?.access_token;
-      if (!token || sessionAal(token) !== 'aal2') return null;
+      if (!token || sessionAal(token) !== 'aal2') {
+        onCredentials?.(false);
+        return null;
+      }
+      onCredentials?.(true);
       return { endpoint, token };
     },
     async uploadData(db: { getNextCrudTransaction: () => Promise<CrudTx | null> }) {

@@ -1,5 +1,5 @@
 export { DietProvider } from './hooks/DietData';
-export { dietTables } from './data/schema';
+export { dietTableLabels, dietTables } from './data/schema';
 export { DietScreen } from './screens/DietScreen';
 export { MealPlanFormScreen } from './screens/MealPlanFormScreen';
 export { MealLogFormScreen } from './screens/MealLogFormScreen';
@@ -8,3 +8,4 @@ export { useDietNotices } from './hooks/useDietNotices';
 export { useDietDayMarks } from './hooks/useDietDayMarks';
 export { DietHistoryScreen } from './screens/DietHistoryScreen';
 export { useDietNotifications, usePendingMeal } from './hooks/useDietNotifications';
+export { useDietTargetSource } from './hooks/useDietTargetSource';

@@ -2,12 +2,13 @@
 // ação direto na linha (Pagar, Confirmar, Registrar, Feito). "Marcar lidas" faz os pontos encolherem em cascata;
 // resolver na linha recolhe a linha e sobe o aviso de confirmação. Os avisos de Bíblia e IA chegam com os módulos.
 import { relativeTime, type AppNotification, type FeedItem } from '@glife/domain/notifications';
-import { router, type Href } from 'expo-router';
+import { router } from 'expo-router';
 import { AlarmClock, Apple, Check, CheckCheck, CreditCard, Receipt, Settings2, type LucideIcon } from 'lucide-react-native';
 import { useEffect, useMemo, useState } from 'react';
 import { Platform, Pressable, View } from 'react-native';
 import Animated, { Easing, FadeOut, LinearTransition, useAnimatedStyle, useSharedValue, withDelay, withTiming } from 'react-native-reanimated';
 
+import { useOpenRoute } from '@/features/links';
 import { errorText } from '@/shared/lib/errorText';
 import {
   BackHeader,
@@ -44,6 +45,7 @@ export function NotificationsScreen() {
   const s = useStyles();
   const toast = useToast();
   const { feed, ready, now, markAllRead, resolve } = useNotifications();
+  const openRoute = useOpenRoute();
   // Resolvidos na linha somem na hora (os dados chegam logo depois pelo watch).
   const [gone, setGone] = useState<ReadonlySet<string>>(new Set());
   const groups = useMemo(
@@ -61,7 +63,7 @@ export function NotificationsScreen() {
   const act = async (n: FeedItem) => {
     if (!n.action) return;
     if (n.action.kind === 'open') {
-      if (n.route) router.push(n.route as Href);
+      if (n.route) void openRoute(n.route);
       return;
     }
     setGone((g) => new Set(g).add(n.id));
@@ -121,6 +123,7 @@ export function NotificationsScreen() {
 }
 
 function NotificationRow({ n, now, dotIndex, onAction }: { n: FeedItem; now: Date; dotIndex: number; onAction: () => void }) {
+  const openRoute = useOpenRoute();
   const s = useStyles();
   const t = useTheme();
   const reduceMotion = useReduceMotion();
@@ -144,7 +147,7 @@ function NotificationRow({ n, now, dotIndex, onAction }: { n: FeedItem; now: Dat
         accessibilityRole={n.route ? 'button' : undefined}
         accessibilityLabel={`${n.unread ? 'Novo: ' : ''}${n.title}`}
         disabled={!n.route}
-        onPress={() => n.route && router.push(n.route as Href)}
+        onPress={() => n.route && void openRoute(n.route)}
         onPressIn={press.onPressIn}
         onPressOut={press.onPressOut}
       >

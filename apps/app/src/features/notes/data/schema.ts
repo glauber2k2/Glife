@@ -2,6 +2,8 @@
 // `id` é implícito; booleano vira integer (0/1); datas e uuids são texto.
 import { Table, column } from '@powersync/common';
 
+import type { SyncTableLabel } from '@/shared/lib/powersync';
+
 export const notesTables = {
   note_folders: new Table(
     {
@@ -28,4 +30,10 @@ export const notesTables = {
     },
     { indexes: { recent: ['updated_at'], folder: ['folder_id'] } },
   ),
+};
+
+/** Nome de cada tabela na fila de envio e nas contagens de Ajustes › Sincronização (nunca o conteúdo). */
+export const notesTableLabels: Record<keyof typeof notesTables, SyncTableLabel> = {
+  note_folders: { noun: 'Pasta', gender: 'f' },
+  notes: { noun: 'Nota', gender: 'f', count: 'notes' },
 };

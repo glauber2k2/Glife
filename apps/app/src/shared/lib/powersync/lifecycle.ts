@@ -45,5 +45,17 @@ export function createSyncController<C>(
       });
       return queue;
     },
+    /** "Sincronizar agora": reconecta (envia a fila e baixa) só se a sincronização estiver ligada. */
+    reconnect(): Promise<void> {
+      queue = queue.then(async () => {
+        if (last !== 'connect') return;
+        try {
+          await db.connect(connector);
+        } catch (e) {
+          onError(e);
+        }
+      });
+      return queue;
+    },
   };
 }

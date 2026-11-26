@@ -4,6 +4,7 @@
 // Sem sessão (saiu da conta), todos os avisos do Glife somem, adiados inclusive, e nenhuma ação pendente é feita.
 import { useAgendaNotices, useCompleteReminder, usePendingReminder } from '@/features/agenda';
 import { useDietNotices, usePendingMeal } from '@/features/diet';
+import { useOpenRoute } from '@/features/links';
 import { localNow, upcomingNotices, type NoticeRef } from '@glife/domain/time';
 import { router, type Href } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
@@ -52,7 +53,9 @@ export function NoticesSync({ scheduler, signedOut }: { scheduler: NoticeSchedul
     return () => clearTimeout(t);
   }, [signedOut, agenda, diet, reminderPending, mealPending, scheduler]);
 
-  useEffect(() => scheduler.onOpen((url) => router.push(url as Href)), [scheduler]);
+  // Aviso tocado: abre a tela; se o item do aviso foi excluído ou ainda não chegou, mostra "Item não encontrado".
+  const openRoute = useOpenRoute();
+  useEffect(() => scheduler.onOpen((url) => void openRoute(url)), [scheduler, openRoute]);
 
   const complete = useRef<((e: NoticeActionEvent) => void) | null>(null);
   useEffect(() => {

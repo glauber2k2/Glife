@@ -1,6 +1,8 @@
 // Tabelas locais (SQLite via PowerSync) do grafo de links e das tags. Espelham supabase/migrations.
 import { Table, column } from '@powersync/common';
 
+import type { SyncTableLabel } from '@/shared/lib/powersync';
+
 export const linksTables = {
   links: new Table(
     {
@@ -36,4 +38,11 @@ export const linksTables = {
     },
     { indexes: { entity: ['entity_type', 'entity_id'] } },
   ),
+};
+
+/** Nome de cada tabela na fila de envio e nas contagens de Ajustes › Sincronização (nunca o conteúdo). */
+export const linksTableLabels: Record<keyof typeof linksTables, SyncTableLabel> = {
+  links: { noun: 'Vínculo', gender: 'm' },
+  tags: { noun: 'Tag', gender: 'f' },
+  entity_tags: { noun: 'Tag de item', gender: 'f' },
 };

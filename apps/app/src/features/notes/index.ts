@@ -1,4 +1,4 @@
-export { notesTables } from './data/schema';
+export { notesTableLabels, notesTables } from './data/schema';
 export { notesSearchIndex } from './data/notesSearch';
 export { NotesProvider, useNotesSearchSources } from './hooks/NotesData';
 export { useNotesTaggedSource } from './hooks/useNotesTaggedSource';
@@ -12,3 +12,4 @@ export { NewNoteScreen } from './screens/NewNoteScreen';
 export { NoteEditorScreen } from './screens/NoteEditorScreen';
 export { NoteListScreen } from './screens/NoteListScreen';
 export { TrashScreen } from './screens/TrashScreen';
+export { useNotesTargetSource } from './hooks/useNotesTargetSource';

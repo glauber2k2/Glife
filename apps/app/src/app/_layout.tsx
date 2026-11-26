@@ -12,13 +12,28 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { AppLockGate, AppLockProvider, createDeviceAppLock, deviceBiometrics, useAppLock } from '@/features/app-lock';
 import { AuthProvider, createSupabaseAuthService, useAuth } from '@/features/auth';
-import { AgendaProvider, DayMarksProvider, agendaTables } from '@/features/agenda';
-import { DietProvider, dietTables, useDietDayMarks } from '@/features/diet';
-import { FinanceProvider, createEdgeQuoteClient, financeTables, useFinanceTaggedSource } from '@/features/finance';
-import { LinksProvider, TaggedItemsProvider, linksTables, useLinksSearchSources } from '@/features/links';
-import { NotesProvider, notesSearchIndex, notesTables, useNotesSearchSources, useNotesTaggedSource } from '@/features/notes';
+import { AgendaProvider, DayMarksProvider, agendaTableLabels, agendaTables, useAgendaTargetSources } from '@/features/agenda';
+import { DietProvider, dietTableLabels, dietTables, useDietDayMarks, useDietTargetSource } from '@/features/diet';
+import {
+  FinanceProvider,
+  createEdgeQuoteClient,
+  financeTableLabels,
+  financeTables,
+  useFinanceTaggedSource,
+  useFinanceTargetSource,
+} from '@/features/finance';
+import { LinksProvider, TaggedItemsProvider, TargetsProvider, linksTableLabels, linksTables, useLinksSearchSources } from '@/features/links';
+import {
+  NotesProvider,
+  notesSearchIndex,
+  notesTableLabels,
+  notesTables,
+  useNotesSearchSources,
+  useNotesTaggedSource,
+  useNotesTargetSource,
+} from '@/features/notes';
 import { SearchProvider, useSearchShortcut } from '@/features/search';
-import { NoticesSync, NotificationsProvider } from '@/features/today';
+import { FirstSyncGate, NoticesSync, NotificationsProvider } from '@/features/today';
 import { installIdGenerator } from '@/shared/lib/ids';
 import { MoneyVisibilityProvider } from '@/shared/lib/MoneyVisibility';
 import { createMoneyVisibilityStore } from '@/shared/lib/moneyVisibilityStore';
@@ -44,6 +59,8 @@ const appLock = createDeviceAppLock();
 const signOut = () => authService.signOut();
 // Banco local com as tabelas das features; sincroniza com o Supabase via PowerSync.
 const localSync = createLocalSync({ ...notesTables, ...linksTables, ...financeTables, ...agendaTables, ...dietTables }, [notesSearchIndex]);
+/** Nome de cada tabela (fila de envio e contagens de Ajustes › Sincronização), entregue por cada módulo. */
+const syncLabels = { ...notesTableLabels, ...linksTableLabels, ...financeTableLabels, ...agendaTableLabels, ...dietTableLabels };
 /** Avisos locais do aparelho (agenda e dieta); no web não faz nada. */
 const noticeScheduler = createNoticeScheduler();
 /** "Visto até" da central de notificações (preferência do aparelho). */
@@ -79,6 +96,16 @@ function TaggedComposition({ children }: { children: ReactNode }) {
   return <TaggedItemsProvider sources={sources}>{children}</TaggedItemsProvider>;
 }
 
+/** Alvos de vínculos e avisos: cada módulo diz a tabela, a tela e como restaurar ("item não encontrado"). */
+function TargetsComposition({ children }: { children: ReactNode }) {
+  const notes = useNotesTargetSource();
+  const finance = useFinanceTargetSource();
+  const agenda = useAgendaTargetSources();
+  const diet = useDietTargetSource();
+  const sources = useMemo(() => [notes, finance, diet, ...agenda].filter((s) => s !== null), [notes, finance, agenda, diet]);
+  return <TargetsProvider sources={sources}>{children}</TargetsProvider>;
+}
+
 function RootStack() {
   const t = useTheme();
   const reduceMotion = useReduceMotion();
@@ -100,7 +127,7 @@ function RootStack() {
   const userId = stage === 'ready' ? (state?.userId ?? null) : null;
   return (
     <AppLockProvider lock={appLock} bio={deviceBiometrics} signedOut={stage === 'signed_out'} signOut={signOut}>
-    <SyncStatusProvider subscribe={localSync.onConnectedChange}>
+    <SyncStatusProvider sync={localSync} labels={syncLabels}>
       <NotesProvider db={localSync.db} userId={userId}>
         <LinksProvider db={localSync.db} userId={userId}>
           <FinanceProvider db={localSync.db} userId={userId} quotes={quoteClient}>
@@ -110,6 +137,7 @@ function RootStack() {
           <DayMarksComposition>
           <SearchComposition enabled={stage === 'ready'}>
           <TaggedComposition>
+          <TargetsComposition>
           <ToastProvider>
             {/* Dentro do aviso (toast): um "Feito" do aviso que falhar diz o motivo. */}
             <NoticesSync scheduler={noticeScheduler} signedOut={stage === 'signed_out'} />
@@ -117,6 +145,8 @@ function RootStack() {
               <StatusBar style={t.scheme === 'dark' ? 'light' : 'dark'} />
               {/* Com sessão pronta, nada do app aparece sem a senha do app ou a biometria. */}
               <AppLockGate active={stage === 'ready'}>
+              {/* Primeiro acesso do aparelho: traz os dados uma vez (depois do bloqueio); nas outras aberturas, nada. */}
+              <FirstSyncGate active={stage === 'ready'}>
               <ExpandProvider>
               <Stack
                 screenOptions={{
@@ -134,6 +164,8 @@ function RootStack() {
                     options={{ presentation: 'modal', animation: animation.modal }}
                   />
                   <Stack.Screen name="ajustes" options={{ animation: animation.detail }} />
+                  <Stack.Screen name="ajustes/sincronizacao" options={{ animation: animation.detail }} />
+                  <Stack.Screen name="nao-encontrado" options={{ animation: animation.detail }} />
                   <Stack.Screen name="busca" options={{ presentation: 'modal', animation: animation.modal }} />
                   <Stack.Screen name="notificacoes" options={{ animation: animation.detail }} />
                   <Stack.Screen name="nota/nova" options={{ animation: 'none' }} />
@@ -183,9 +215,11 @@ function RootStack() {
                 </Stack.Protected>
               </Stack>
               </ExpandProvider>
+              </FirstSyncGate>
               </AppLockGate>
             </NavigationThemeProvider>
           </ToastProvider>
+          </TargetsComposition>
           </TaggedComposition>
           </SearchComposition>
           </DayMarksComposition>

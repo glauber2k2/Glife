@@ -2,10 +2,11 @@
 // a demonstração dos componentes do design system. "Sair deste aparelho" é secundário, sem cor de alerta.
 import Constants from 'expo-constants';
 import { router } from 'expo-router';
-import { FileText, Receipt, Trash2 } from 'lucide-react-native';
+import { CloudCheck, CloudOff, FileText, KeyRound, Receipt, Trash2 } from 'lucide-react-native';
 import { useRef, useState, type ReactNode } from 'react';
 import { View } from 'react-native';
 
+import { syncScreenState, useSyncState } from '@/shared/lib/powersync';
 import {
   AIInsight,
   Alert,
@@ -42,11 +43,18 @@ const THEMES: { value: ThemePreference; label: string }[] = [
 
 const VERSION = Constants.expoConfig?.version ?? '';
 
+const SYNC_ROW = {
+  emdia: { icon: CloudCheck, meta: 'Tudo em dia' },
+  offline: { icon: CloudOff, meta: 'Sem internet · tudo salvo no aparelho' },
+  sessao: { icon: KeyRound, meta: 'Entre de novo para sincronizar' },
+} as const;
+
 /** `account` e `security`: compostas na rota (Ajustes não conhece as features de autenticação e bloqueio). */
 export function SettingsScreen({ account, security }: { account?: ReactNode; security?: ReactNode } = {}) {
   const s = useStyles();
   const t = useTheme();
   const { preference, setPreference } = useThemePreference();
+  const sync = SYNC_ROW[syncScreenState(useSyncState())];
 
   return (
     <Screen header={<BackHeader fallback="/" />}>
@@ -84,6 +92,7 @@ export function SettingsScreen({ account, security }: { account?: ReactNode; sec
 
         <Section title="Dados">
           <ListGroup>
+            <NavRow icon={sync.icon} label="Sincronização" meta={sync.meta} onPress={() => router.push('/ajustes/sincronizacao')} />
             <NavRow icon={Trash2} label="Lixeira" meta="Notas apagadas, para restaurar" onPress={() => router.push('/lixeira')} />
           </ListGroup>
         </Section>

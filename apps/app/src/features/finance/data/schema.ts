@@ -2,6 +2,8 @@
 // `id` é implícito; booleano e números (centavos, dias) viram integer; datas, meses e uuids são texto.
 import { Table, column } from '@powersync/common';
 
+import type { SyncTableLabel } from '@/shared/lib/powersync';
+
 const base = {
   user_id: column.text,
   created_at: column.text,
@@ -116,4 +118,17 @@ export const financeTables = {
     },
     { indexes: { by_asset: ['asset_id'] } },
   ),
+};
+
+/** Nome de cada tabela na fila de envio e nas contagens de Ajustes › Sincronização (nunca o conteúdo). */
+export const financeTableLabels: Record<keyof typeof financeTables, SyncTableLabel> = {
+  accounts: { noun: 'Conta', gender: 'f' },
+  categories: { noun: 'Categoria', gender: 'f' },
+  recurrences: { noun: 'Recorrente', gender: 'm' },
+  transactions: { noun: 'Lançamento', gender: 'm', count: 'transactions' },
+  budgets: { noun: 'Orçamento', gender: 'm' },
+  shopping_lists: { noun: 'Lista de compras', gender: 'f' },
+  shopping_items: { noun: 'Item de compra', gender: 'm' },
+  investment_assets: { noun: 'Investimento', gender: 'm' },
+  investment_movements: { noun: 'Movimentação', gender: 'f' },
 };

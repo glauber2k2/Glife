@@ -1,5 +1,5 @@
 export { AgendaProvider } from './hooks/AgendaData';
-export { agendaTables } from './data/schema';
+export { agendaTableLabels, agendaTables } from './data/schema';
 export { AgendaScreen } from './screens/AgendaScreen';
 export { EventFormScreen } from './screens/EventFormScreen';
 export { ReminderFormScreen } from './screens/ReminderFormScreen';
@@ -8,3 +8,4 @@ export { useAgendaNotices } from './hooks/useAgendaNotices';
 export { AgendaMonthScreen } from './screens/AgendaMonthScreen';
 export { DayMarksProvider, type DayMarkSource } from './hooks/DayMarks';
 export { useAgendaNotifications, useCompleteReminder, usePendingReminder } from './hooks/useAgendaNotifications';
+export { useAgendaTargetSources } from './hooks/useAgendaTargetSources';

@@ -1,9 +1,10 @@
+import type { EntityType } from '@glife/domain/core';
 import type { Link } from '@glife/domain/links';
 import { BookOpen, FileText, NotebookPen } from 'lucide-react-native';
 import { useEffect, useState } from 'react';
 import { View } from 'react-native';
 
-import { useLinksData } from '@/features/links';
+import { useLinksData, useOpenTarget } from '@/features/links';
 import { ListGroup, NavRow, Section, makeStyles } from '@/shared/ui';
 
 import { useNotesData } from '../hooks/NotesData';
@@ -16,6 +17,8 @@ interface Row {
   meta: string;
   kind: 'note' | 'journal' | 'bible' | 'other';
   noteId?: string;
+  /** alvo que não está vivo (lixeira, ainda não chegou, excluído): abre "Item não encontrado" */
+  target?: { type: EntityType; id: string };
 }
 
 const ICONS = { note: FileText, journal: NotebookPen, bible: BookOpen, other: FileText } as const;
@@ -25,6 +28,7 @@ export function NoteLinks({ noteId, version }: { noteId: string; version: number
   const s = useStyles();
   const { notes } = useNotesData();
   const { links } = useLinksData();
+  const openTarget = useOpenTarget();
   const [outgoing, setOutgoing] = useState<Row[]>([]);
   const [backlinks, setBacklinks] = useState<Link[]>([]);
   const [backRows, setBackRows] = useState<Row[]>([]);
@@ -38,10 +42,12 @@ export function NoteLinks({ noteId, version }: { noteId: string; version: number
         out.map(async (l): Promise<Row | null> => {
           if (l.target_type === 'note') {
             const n = await notes.get(l.target_ref);
-            return n ? { key: l.id, label: n.title || 'Sem título', meta: 'Nota', kind: n.kind === 'journal' ? 'journal' : 'note', noteId: n.id } : null;
+            return n
+              ? { key: l.id, label: n.title || 'Sem título', meta: 'Nota', kind: n.kind === 'journal' ? 'journal' : 'note', noteId: n.id }
+              : { key: l.id, label: 'Nota indisponível', meta: 'Vínculo quebrado', kind: 'note', target: { type: 'note', id: l.target_ref } };
           }
           if (l.target_type === 'bible') return { key: l.id, label: l.target_ref, meta: 'Bíblia', kind: 'bible' };
-          return { key: l.id, label: l.target_ref, meta: l.target_type, kind: 'other' };
+          return { key: l.id, label: 'Item vinculado', meta: 'Abrir', kind: 'other', target: { type: l.target_type, id: l.target_ref } };
         }),
       );
       if (active) setOutgoing(rows.filter((r): r is Row => r !== null));
@@ -87,7 +93,7 @@ export function NoteLinks({ noteId, version }: { noteId: string; version: number
               module={accent ? 'notes' : 'annotations'}
               label={r.label}
               meta={r.meta}
-              onPress={r.noteId ? () => openNote(r.noteId!) : undefined}
+              onPress={r.noteId ? () => openNote(r.noteId!) : r.target ? () => void openTarget(r.target!.type, r.target!.id) : undefined}
             />
           ))}
         </ListGroup>

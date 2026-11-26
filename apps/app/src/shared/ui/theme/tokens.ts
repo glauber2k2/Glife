@@ -204,6 +204,9 @@ export const moduleHue = {
 } as const;
 export type ModuleKey = keyof typeof moduleHue;
 
+/** Matiz dos blocos de ícone de estado do sistema (sincronização): em dia (verde) e atenção (âmbar). */
+export const statusHue = { ok: 150, attention: 45 } as const;
+
 export const moduleTone = {
   light: { soft: { l: 0.95, c: 0.035 }, strong: { l: 0.47, c: 0.13 }, chart: { l: 0.62, c: 0.12 } },
   dark: { soft: { l: 0.31, c: 0.05 }, strong: { l: 0.85, c: 0.1 }, chart: { l: 0.72, c: 0.12 } },
@@ -317,6 +320,8 @@ export const layout = {
   tabBarBottom: 20,
   /** largura máxima da frase de estado vazio */
   emptyTextMax: 280,
+  /** coluna de botões do estado vazio e das telas de sistema (item não encontrado, abertura) */
+  emptyActionsMax: 300,
   /** deslocamento das folhas no web largo (7% do topo) */
   sheetTopWeb: 56,
 } as const;
