@@ -32,6 +32,7 @@ import {
   folderNameSchema,
   newNote,
   newNoteFolder,
+  FOLDER_CYCLE_MESSAGE,
   wouldCreateFolderCycle,
   type Note,
   type NoteFolder,
@@ -234,7 +235,7 @@ export function createInMemoryNotes(userId: string): { notes: NotesRepository; f
       const f = aliveFolder(id);
       if (parentId !== null && parentId !== id) aliveFolder(parentId);
       if (wouldCreateFolderCycle(id, parentId, (x) => folders.get(x)?.parent_id ?? null)) {
-        throw new RepositoryError('validation');
+        throw new RepositoryError('validation', { cause: new RangeError(FOLDER_CYCLE_MESSAGE) });
       }
       return save(folders, id, { ...f, parent_id: parentId, updated_at: nowIso() });
     },

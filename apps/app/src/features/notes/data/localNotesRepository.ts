@@ -16,6 +16,7 @@ import {
   folderNameSchema,
   newNote,
   newNoteFolder,
+  FOLDER_CYCLE_MESSAGE,
   wouldCreateFolderCycle,
   type Note,
   type NoteFolder,
@@ -324,7 +325,9 @@ export function createLocalNoteFoldersRepository(db: LocalDb, userId: string): N
             (r) => [r.id, r.parent_id] as const,
           ),
         );
-        if (wouldCreateFolderCycle(id, parentId, (x) => parents.get(x) ?? null)) throw new RepositoryError('validation');
+        if (wouldCreateFolderCycle(id, parentId, (x) => parents.get(x) ?? null)) {
+          throw new RepositoryError('validation', { cause: new RangeError(FOLDER_CYCLE_MESSAGE) });
+        }
         const moved = { ...f, parent_id: parentId, updated_at: nowIso() };
         await writeFolder(tx, moved, false);
         return moved;

@@ -14,6 +14,7 @@ export {
   notePatchSchema,
   noteSchema,
   trashCutoff,
+  FOLDER_CYCLE_MESSAGE,
   wouldCreateFolderCycle,
   type Note,
   type NoteDraft,

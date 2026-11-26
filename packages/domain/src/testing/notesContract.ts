@@ -3,7 +3,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { decodeCursor, encodeCursor, isRepositoryError } from '../core/index.ts';
-import type { Note, NoteFoldersRepository, NotesRepository } from '../notes/index.ts';
+import { FOLDER_CYCLE_MESSAGE, type Note, type NoteFoldersRepository, type NotesRepository } from '../notes/index.ts';
 
 export interface NotesContractSubject {
   notes: NotesRepository;
@@ -279,6 +279,19 @@ export function notesRepositoryContract(name: string, make: () => Promise<NotesC
       await expectCode(folders.move(a.id, a.id), 'validation');
       await expectCode(folders.move(a.id, MISSING), 'not_found');
       expect((await folders.move(c.id, null)).parent_id).toBeNull();
+    });
+
+    it('recusa ciclo com o motivo para o usuário', async () => {
+      const { folders } = await make();
+      const a = await folders.create({ name: 'A' });
+      const b = await folders.create({ name: 'B', parent_id: a.id });
+      for (const target of [b.id, a.id]) {
+        const error = await folders.move(a.id, target).then(() => null, (e: unknown) => e);
+        expect(isRepositoryError(error, 'validation')).toBe(true);
+        const cause = (error as { cause?: unknown }).cause;
+        expect(cause).toBeInstanceOf(RangeError);
+        expect((cause as RangeError).message).toBe(FOLDER_CYCLE_MESSAGE);
+      }
     });
 
     it('só exclui pasta vazia', async () => {

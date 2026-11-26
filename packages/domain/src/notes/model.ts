@@ -74,6 +74,9 @@ export function newNoteFolder(draft: NoteFolderDraft, userId: string, clock?: ()
   return stampNew(parseOrThrow(noteFolderDraftSchema, draft), userId, clock);
 }
 
+/** Motivo mostrado ao recusar mover uma pasta para dentro dela mesma (ou de uma subpasta dela). */
+export const FOLDER_CYCLE_MESSAGE = 'A pasta não pode ir para dentro dela mesma.';
+
 /**
  * Mover `folderId` para dentro de `newParentId` criaria ciclo?
  * Sobe a partir do novo pai; se encontrar a própria pasta (ou um ciclo já existente), recusa.
