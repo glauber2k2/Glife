@@ -22,9 +22,11 @@ import {
   CreditCard,
   Ellipsis,
   HandCoins,
+  Landmark,
   PencilLine,
   Plus,
   Repeat,
+  Shapes,
   SkipForward,
   type LucideIcon,
   ShoppingCart,
@@ -510,6 +512,13 @@ export function FinanceHomeScreen() {
                 meta="Entradas, gastos e saldo"
                 onPress={() => router.push({ pathname: '/financas/graficos', params: { modo: '6m', de: 'Finanças' } })}
               />
+              <PlanRow
+                icon={Landmark}
+                label="Contas e cartões"
+                meta="Saldos, ordem, ajuste e arquivadas"
+                onPress={() => router.push('/financas/contas')}
+              />
+              <PlanRow icon={Shapes} label="Categorias" meta="Cores, ícones e ordem" onPress={() => router.push('/financas/categorias')} />
             </Block>
           </Reveal>
         </MonthSlide>

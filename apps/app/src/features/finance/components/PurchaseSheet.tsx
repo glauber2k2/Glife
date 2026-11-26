@@ -20,6 +20,7 @@ import {
   type ShoppingList,
   type TransactionInput,
 } from '@glife/domain/finance';
+import { router } from 'expo-router';
 import { CreditCard, Landmark, ReceiptText } from 'lucide-react-native';
 import { useState } from 'react';
 import { ScrollView, View, useWindowDimensions } from 'react-native';
@@ -31,7 +32,7 @@ import { useOccurrences } from '../hooks/useFlows';
 import { categoryIcon } from './categories';
 import { MONTH_NAMES, balance, dayLabel, dm, money } from './format';
 import { NoFundsNote } from './sheets';
-import { DateRow, MoneyField, RadioRow } from './ui';
+import { DateRow, MoneyField, NoCategoriesNote, RadioRow } from './ui';
 
 const PARCS = Array.from({ length: 12 }, (_, i) => i + 1);
 const monthLabel = (m: string) => MONTH_NAMES[Number(m.slice(5, 7)) - 1]!;
@@ -63,7 +64,7 @@ export function PurchaseSheet(props: Props) {
   );
 }
 
-function PurchaseForm({ list, items, today, onDone }: Props & { list: ShoppingList }) {
+function PurchaseForm({ list, items, today, onDone, onClose }: Props & { list: ShoppingList }) {
   const s = useStyles();
   const t = useTheme();
   const { height } = useWindowDimensions();
@@ -232,6 +233,15 @@ function PurchaseForm({ list, items, today, onDone }: Props & { list: ShoppingLi
         <Text variant="label" tone="tertiary">
           Categoria
         </Text>
+        {categories.length === 0 && (
+          <NoCategoriesNote
+            kind="expense"
+            onCreate={() => {
+              onClose();
+              router.push({ pathname: '/financas/categoria/[id]', params: { id: 'novo', tipo: 'expense' } });
+            }}
+          />
+        )}
         <View style={s.chips}>
           {categories.map((c) => (
             <Chip

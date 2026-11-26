@@ -1,13 +1,13 @@
 // Tela 8 do protótipo: Extrato de uma conta. Saldo real e projetado no fim do mês; dias do mais novo ao mais
 // antigo (previstos no topo, Hoje marcado), com o saldo ao fim de cada dia; busca e filtro por categoria.
-import { lastDayOf, monthOf, plannedItems, statement } from '@glife/domain/finance';
+import { ADJUSTMENT_DESCRIPTION, lastDayOf, monthOf, plannedItems, statement } from '@glife/domain/finance';
 import { useLocalSearchParams } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { ScrollView, View } from 'react-native';
 
 import { BackHeader, Button, Chip, EmptyState, Reveal, Screen, SearchField, Tag, Text, makeStyles, useTheme } from '@/shared/ui';
 
-import { ACCOUNT_KIND_LABEL, TRANSFER_ICON, categoryHue, categoryIcon } from '../components/categories';
+import { ACCOUNT_KIND_LABEL, ADJUSTMENT_ICON, TRANSFER_ICON, categoryHue, categoryIcon } from '../components/categories';
 import { balance, dm, signed, todayIso, weekday } from '../components/format';
 import { Block, Disc, MoneyRow } from '../components/ui';
 import { DeleteAccountSheet, usePlannedSheet, useTransactionSheet } from '../components/deleteSheets';
@@ -47,6 +47,7 @@ export function StatementScreen() {
 
   const categories = new Map(data.categories.map((c) => [c.id, c]));
   const cards = new Map(data.accounts.map((a) => [a.id, a]));
+  const adjustments = new Set(data.transactions.filter((tx) => tx.is_adjustment).map((tx) => tx.id));
   const invested = new Set((data.flows ?? []).map((f) => f.key));
   const used = [...new Set(st.days.flatMap((d) => d.entries.map((e) => e.category_id)).filter((c): c is string => !!c))];
   const hasTransfers = st.days.some((d) => d.entries.some((e) => e.type === 'transfer'));
@@ -102,6 +103,7 @@ export function StatementScreen() {
             </View>
             {d.entries.map((e, i) => {
               const cat = categories.get(e.category_id ?? '');
+              const adjustment = adjustments.has(e.key);
               const tag = e.late ? 'Atrasado · ' : e.today && e.planned ? 'A confirmar · ' : e.planned ? 'Previsto · ' : '';
               return (
                 <MoneyRow
@@ -109,9 +111,9 @@ export function StatementScreen() {
                   divider={i > 0}
                   leading={
                     <Disc
-                      icon={e.type === 'transfer' ? TRANSFER_ICON : categoryIcon(cat?.icon)}
+                      icon={adjustment ? ADJUSTMENT_ICON : e.type === 'transfer' ? TRANSFER_ICON : categoryIcon(cat?.icon)}
                       hue={categoryHue(cat?.color)}
-                      muted={e.planned || e.type === 'transfer'}
+                      muted={e.planned || e.type === 'transfer' || adjustment}
                     />
                   }
                   title={titleOf(e)}
@@ -122,7 +124,13 @@ export function StatementScreen() {
                       <Text variant="caption" tone={e.late ? 'danger' : 'secondary'} style={s.semibold}>
                         {tag}
                       </Text>
-                      {invested.has(e.key) ? 'Investimento' : e.type === 'transfer' ? 'Transferência' : (cat?.name ?? 'Sem categoria')}
+                      {invested.has(e.key)
+                        ? 'Investimento'
+                        : adjustment
+                          ? ADJUSTMENT_DESCRIPTION
+                          : e.type === 'transfer'
+                            ? 'Transferência'
+                            : (cat?.name ?? 'Sem categoria')}
                     </Text>
                   }
                   amount={signed(e.amount)}

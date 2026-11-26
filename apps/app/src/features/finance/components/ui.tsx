@@ -1,11 +1,12 @@
 // Peças visuais das telas de Finanças (protótipo "Glife Finanças"): seletor de mês, disco de ícone, linhas de
 // valor, barra do orçamento, rádio, campo de dinheiro e campo de data.
-import { ChevronLeft, ChevronRight, Repeat, type LucideIcon } from 'lucide-react-native';
+import { ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Repeat, type LucideIcon } from 'lucide-react-native';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Platform, Pressable, View } from 'react-native';
-import Animated, { FadeIn, Keyframe, useAnimatedStyle, useSharedValue, withDelay, withSpring } from 'react-native-reanimated';
+import Animated, { FadeIn, Keyframe, useAnimatedStyle, useSharedValue, withDelay, withSequence, withSpring, withTiming } from 'react-native-reanimated';
 
 import {
+  Button,
   Icon,
   IconButton,
   Input,
@@ -442,6 +443,67 @@ export function DateRow({
   );
 }
 
+/** Seletor de categoria sem nenhuma ativa daquele tipo: avisa e leva a criar uma. */
+export function NoCategoriesNote({ kind, onCreate }: { kind: 'expense' | 'income'; onCreate: () => void }) {
+  const s = useStyles();
+  return (
+    <View style={s.noCats}>
+      <Text variant="small" tone="tertiary" style={s.rowText}>
+        {kind === 'income' ? 'Nenhuma categoria de receita ativa.' : 'Nenhuma categoria de gasto ativa.'}
+      </Text>
+      <Button selfAlign="center" label="Criar categoria" variant="secondary" size="sm" onPress={onCreate} />
+    </View>
+  );
+}
+
+/** Modo "Ordenar": subir e descer a linha (no lugar de arrastar). As pontas ficam apagadas, sem mudar a largura. */
+export function OrderArrows({ name, first, last, onMove }: { name: string; first: boolean; last: boolean; onMove: (delta: -1 | 1) => void }) {
+  const s = useStyles();
+  const t = useTheme();
+  return (
+    <View style={s.arrows}>
+      <IconButton
+        icon={ChevronUp}
+        label={`Subir ${name}`}
+        variant="soft"
+        size={t.size.iconButtonSmall}
+        color="textSecondary"
+        disabled={first}
+        onPress={() => onMove(-1)}
+      />
+      <IconButton
+        icon={ChevronDown}
+        label={`Descer ${name}`}
+        variant="soft"
+        size={t.size.iconButtonSmall}
+        color="textSecondary"
+        disabled={last}
+        onPress={() => onMove(1)}
+      />
+    </View>
+  );
+}
+
+/** Linha que pisca de leve no tom de sucesso quando `flash` muda (ex.: saldo ajustado). */
+export function FlashRow({ flash, children }: { flash: number; children: ReactNode }) {
+  const s = useStyles();
+  const t = useTheme();
+  const reduceMotion = useReduceMotion();
+  const k = useSharedValue(0);
+  useEffect(() => {
+    if (!flash) return;
+    const half = reduceMotion ? t.motion.reduced : t.motion.emphasis;
+    k.set(withSequence(withTiming(t.opacity.full, { duration: half }), withTiming(t.opacity.hidden, { duration: half })));
+  }, [flash, reduceMotion, k, t.motion.reduced, t.motion.emphasis, t.opacity.full, t.opacity.hidden]);
+  const style = useAnimatedStyle(() => ({ opacity: k.get() }));
+  return (
+    <View>
+      <Animated.View pointerEvents="none" style={[s.flash, style]} />
+      {children}
+    </View>
+  );
+}
+
 /** Opção de rádio em linha (folhas de escolha e "Este cartão já está em uso?"). */
 export function RadioRow({ title, sub, selected, onPress }: { title: string; sub?: string; selected: boolean; onPress: () => void }) {
   const s = useStyles();
@@ -665,5 +727,16 @@ const useStyles = makeStyles((t) => ({
     borderRadius: t.radius.full,
   },
   counterSign: { fontSize: t.type.heading.fontSize },
+  arrows: { flexDirection: 'row', alignItems: 'center', gap: t.space[1] },
+  noCats: { flexDirection: 'row', alignItems: 'center', gap: t.space[3], minHeight: t.size.buttonSmall },
+  flash: {
+    position: 'absolute',
+    top: t.space[0],
+    bottom: t.space[0],
+    left: -t.space[2],
+    right: -t.space[2],
+    borderRadius: t.radius.field,
+    backgroundColor: t.colors.successSoft,
+  },
   counterValue: {},
 }));

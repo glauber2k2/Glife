@@ -3,11 +3,17 @@
 import type { AccountKind, CategoryColor, CategoryKind } from '@glife/domain/finance';
 import {
   ArrowLeftRight,
+  Baby,
   Briefcase,
   Building2,
   Car,
   CircleDot,
+  Church,
   CreditCard,
+  Dog,
+  Dumbbell,
+  Gift,
+  GraduationCap,
   HandCoins,
   HeartHandshake,
   HeartPulse,
@@ -15,8 +21,14 @@ import {
   Landmark,
   Music,
   PiggyBank,
+  Plane,
+  Popcorn,
+  Repeat,
+  Scale,
+  Shirt,
   ShoppingBag,
   ShoppingCart,
+  Smartphone,
   Sofa,
   Ticket,
   Tv,
@@ -48,9 +60,23 @@ const ICONS: Record<string, LucideIcon> = {
   'piggy-bank': PiggyBank,
   wallet: Wallet,
   'credit-card': CreditCard,
+  // Grade do editor de categoria (protótipo).
+  popcorn: Popcorn,
+  repeat: Repeat,
+  'graduation-cap': GraduationCap,
+  gift: Gift,
+  plane: Plane,
+  shirt: Shirt,
+  dog: Dog,
+  baby: Baby,
+  dumbbell: Dumbbell,
+  smartphone: Smartphone,
+  church: Church,
 };
 
 export const TRANSFER_ICON = ArrowLeftRight;
+/** Ajuste de saldo: sem categoria, com a balança. */
+export const ADJUSTMENT_ICON = Scale;
 
 /** Matiz (oklch) de cada cor de categoria: bloco suave com ícone forte, como os módulos do Cobalto. */
 const HUES: Record<CategoryColor, number> = { slate: 260, steel: 230, sage: 150, sand: 80, clay: 40, rose: 15, plum: 320, teal: 195 };

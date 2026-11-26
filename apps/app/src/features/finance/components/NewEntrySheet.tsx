@@ -12,6 +12,7 @@ import {
   type IsoDate,
   type TxType,
 } from '@glife/domain/finance';
+import { router } from 'expo-router';
 import { ArrowLeftRight, CreditCard, X } from 'lucide-react-native';
 import { useMemo, useState } from 'react';
 import { ScrollView, View, useWindowDimensions } from 'react-native';
@@ -22,7 +23,7 @@ import { useFinance } from '../hooks/FinanceData';
 import { useFinanceActions } from '../hooks/useFinanceActions';
 import { accountIcon, categoryIcon } from './categories';
 import { MONTH_NAMES, dayLabel, dm, dmy, money, weekday } from './format';
-import { DateRow, DayField, MoneyField, Stepper, SwitchRow } from './ui';
+import { DateRow, DayField, MoneyField, NoCategoriesNote, Stepper, SwitchRow } from './ui';
 
 type Freq = 'weekly' | 'monthly' | 'yearly' | 'every';
 const PARCS = [1, 2, 3, 4, 5, 6, 8, 10, 12, 18, 24] as const;
@@ -289,6 +290,15 @@ function EntryForm({ onClose, today, preset, aboveTabBar }: Props) {
             <Text variant="label" tone="tertiary">
               Categoria
             </Text>
+            {catsForType.length === 0 && (
+              <NoCategoriesNote
+                kind={type === 'income' ? 'income' : 'expense'}
+                onCreate={() => {
+                  onClose();
+                  router.push({ pathname: '/financas/categoria/[id]', params: { id: 'novo', tipo: type === 'income' ? 'income' : 'expense' } });
+                }}
+              />
+            )}
             <View style={s.chips}>
               {catsForType.map((c) => (
                 <Chip

@@ -10,6 +10,10 @@ import {
   planPreviousBalance,
   suggestInvoiceToPay,
   type Account,
+  type AccountPatch,
+  type Category,
+  type CategoryColor,
+  type CategoryKind,
   type Frequency,
   type IsoDate,
   type Month,
@@ -22,6 +26,7 @@ import {
 } from '@glife/domain/finance';
 import { useMemo } from 'react';
 
+import { budgetPlan } from '../components/categoryForm';
 import { useFinance } from './FinanceData';
 
 export interface EntryForm {
@@ -59,6 +64,26 @@ export interface CardForm {
 }
 
 type Undo = () => Promise<void>;
+
+/** A categoria nova foi criada, mas o orçamento não: a nova tentativa edita `createdId` em vez de duplicar. */
+export class CategoryBudgetError extends Error {
+  readonly createdId: string;
+  readonly reason: unknown;
+  constructor(createdId: string, reason: unknown) {
+    super('Orçamento não gravado');
+    this.createdId = createdId;
+    this.reason = reason;
+  }
+}
+
+export interface CategoryInput {
+  name: string;
+  kind: CategoryKind;
+  icon: string;
+  color: CategoryColor;
+  /** orçamento mensal (só despesa); 0 tira o orçamento */
+  budgetCents: number;
+}
 
 export function useFinanceActions() {
   const { repos, data, refresh } = useFinance();
@@ -325,7 +350,121 @@ export function useFinanceActions() {
       await refresh();
     }
 
+    // ---------- Categorias ----------
+
+    /**
+     * Grava a categoria e o orçamento a partir de `month`, tudo ou nada: se o orçamento falhar, a categoria volta
+     * como estava (edição). Na criação, `existingId` (de uma tentativa anterior que criou a categoria mas não o
+     * orçamento) faz a nova tentativa editar em vez de duplicar.
+     */
+    async function saveCategory(id: string | null, input: CategoryInput, month: Month): Promise<Category> {
+      const fields = { name: input.name, kind: input.kind, icon: input.icon, color: input.color };
+      const before = id ? data?.categories.find((c) => c.id === id) : undefined;
+      let saved: Category;
+      if (id) {
+        saved = await repos.categories.update(id, fields);
+      } else {
+        const sameKind = (data?.categories ?? []).filter((c) => c.kind === input.kind);
+        const last = sameKind.reduce((max, c) => Math.max(max, c.sort_order), -1);
+        saved = await repos.categories.create({ ...fields, sort_order: last + 1 });
+      }
+      try {
+        if (saved.kind === 'expense') await applyBudget(saved.id, month, input.budgetCents);
+      } catch (e) {
+        if (before) {
+          await repos.categories
+            .update(before.id, { name: before.name, kind: before.kind, icon: before.icon, color: before.color })
+            .catch(() => undefined);
+        }
+        await refresh();
+        if (!id) throw new CategoryBudgetError(saved.id, e);
+        throw e;
+      }
+      await refresh();
+      return saved;
+    }
+
+    /** Aplica o plano do orçamento; se uma parte falhar, devolve os registros já tirados. */
+    async function applyBudget(categoryId: string, month: Month, cents: number) {
+      const plan = budgetPlan(categoryId, data?.budgets ?? [], month, cents);
+      const removed: typeof plan.remove = [];
+      try {
+        for (const b of plan.remove) {
+          await repos.budgets.remove(b.id);
+          removed.push(b);
+        }
+        if (plan.set !== null) await repos.budgets.set(categoryId, month, plan.set);
+      } catch (e) {
+        for (const b of removed) await repos.budgets.set(b.category_id, b.starts_month, b.amount_cents).catch(() => undefined);
+        throw e;
+      }
+    }
+
+    async function archiveCategory(id: string): Promise<Undo> {
+      await repos.categories.archive(id);
+      await refresh();
+      return async () => {
+        await repos.categories.unarchive(id);
+        await refresh();
+      };
+    }
+
+    async function unarchiveCategory(id: string) {
+      await repos.categories.unarchive(id);
+      await refresh();
+    }
+
+    async function reorderCategories(ids: readonly string[]) {
+      await repos.categories.reorder(ids);
+      await refresh();
+    }
+
+    // ---------- Contas ----------
+
+    async function updateAccount(id: string, patch: AccountPatch) {
+      const a = await repos.accounts.update(id, patch);
+      await refresh();
+      return a;
+    }
+
+    async function archiveAccount(id: string): Promise<Undo> {
+      await repos.accounts.archive(id);
+      await refresh();
+      return async () => {
+        await repos.accounts.unarchive(id);
+        await refresh();
+      };
+    }
+
+    async function unarchiveAccount(id: string) {
+      await repos.accounts.unarchive(id);
+      await refresh();
+    }
+
+    async function reorderAccounts(ids: readonly string[]) {
+      await repos.accounts.reorder(ids);
+      await refresh();
+    }
+
+    /** Leva o saldo ao do banco; `null` = nada a ajustar. O desfazer exclui o lançamento de ajuste. */
+    async function adjustBalance(accountId: string, bankCents: number, date: IsoDate): Promise<Undo | null> {
+      const tx = await repos.transactions.adjustBalance(accountId, bankCents, date);
+      if (!tx) return null;
+      return async () => {
+        await repos.transactions.remove(tx.id);
+      };
+    }
+
     return {
+      saveCategory,
+      archiveCategory,
+      unarchiveCategory,
+      reorderCategories,
+      updateAccount,
+      archiveAccount,
+      unarchiveAccount,
+      reorderAccounts,
+      adjustBalance,
       deleteTransactions,
       removalImpact,
       deleteAccount,

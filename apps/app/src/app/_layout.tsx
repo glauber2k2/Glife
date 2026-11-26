@@ -126,6 +126,9 @@ function RootStack() {
                   <Stack.Screen name="financas/recorrentes" options={{ animation: animation.detail }} />
                   <Stack.Screen name="financas/recorrente/[id]" options={{ animation: animation.detail }} />
                   <Stack.Screen name="financas/orcamentos" options={{ animation: animation.detail }} />
+                  <Stack.Screen name="financas/categorias" options={{ animation: animation.detail }} />
+                  <Stack.Screen name="financas/categoria/[id]" options={{ animation: animation.detail }} />
+                  <Stack.Screen name="financas/contas" options={{ animation: animation.detail }} />
                   <Stack.Screen name="financas/graficos" options={{ animation: animation.detail }} />
                   <Stack.Screen name="financas/grafico/[categoria]" options={{ animation: animation.detail }} />
                   <Stack.Screen name="biblia" options={{ animation: animation.detail }} />
