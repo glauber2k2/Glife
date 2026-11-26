@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.4.0 — 2026-11-26
+
+- Redesign Cobalto em todo o app: fonte Outfit, fundo cinza com cartões brancos, cobalto só nas ações, cor própria em cada módulo e mascote nos estados vazios; tema escuro refeito.
+- Navegação: barra de abas flutuante (Início · Agenda · + · Notas · Finanças); no web, barra no topo com busca (Ctrl+K) e folhas como janela central.
+- Início: saudação, "Para hoje" com lembretes que se riscam, mês até agora, próxima refeição, notas fixadas em cartões e atalhos de "Seus espaços".
+- Agenda virou aba: faixa da semana, lembretes com check e linha do tempo com a marca de agora.
+- Notas, Finanças, Compras, Investimentos, Dieta, Ajustes, acesso e bloqueio refeitos no novo visual; Dieta mostra quantas refeições do plano já foram feitas.
+- Movimento mais curto: toque afunda e volta com mola, listas em cascata, folhas sobem em 400 ms.
+
 ## 0.3.2 — 2026-11-25
 
 - Notas (Android): a formatação aparece enquanto se escreve (títulos, negrito, itálico, sublinhado, tachado, marca-texto, citação e vínculos), com as marcações em cinza claro; saiu a troca Escrever/Ler. Ligações e "Mencionada em" ficam no fim da nota.
