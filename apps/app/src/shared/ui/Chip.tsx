@@ -1,4 +1,4 @@
-import { Check, type LucideIcon } from 'lucide-react-native';
+import { Check, Minus, type LucideIcon } from 'lucide-react-native';
 import { useEffect } from 'react';
 import { Pressable } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring, withTiming } from 'react-native-reanimated';
@@ -20,13 +20,15 @@ export interface ChipProps {
   icon?: LucideIcon;
   /** algarismos tabulares (ex.: "10×") */
   numeric?: boolean;
+  /** estado misto (só em md): traço no lugar do check, mesmo tamanho — ex.: tag que só parte da seleção tem */
+  mixed?: boolean;
 }
 
 /**
  * Chip em pílula: branco no fundo, cinza dentro de cartões. Marcado = tonal cobalto com check que surge com mola;
  * o espaço do check é sempre reservado, então marcar nunca muda a largura.
  */
-export function Chip({ label, selected, onPress, size = 'md', icon, numeric }: ChipProps) {
+export function Chip({ label, selected, onPress, size = 'md', icon, numeric, mixed }: ChipProps) {
   const s = useStyles();
   const t = useTheme();
   const surface = useSurface();
@@ -48,7 +50,7 @@ export function Chip({ label, selected, onPress, size = 'md', icon, numeric }: C
   return (
     <Pressable
       accessibilityRole={onPress ? 'button' : 'text'}
-      accessibilityState={{ selected: !!selected }}
+      accessibilityState={mixed !== undefined ? { checked: selected ? true : mixed ? 'mixed' : false } : { selected: !!selected }}
       onPress={onPress}
       onPressIn={press.onPressIn}
       onPressOut={press.onPressOut}
@@ -58,11 +60,16 @@ export function Chip({ label, selected, onPress, size = 'md', icon, numeric }: C
       <Animated.View
         style={[s.chip, surface === 'card' && s.onCard, size === 'sm' && s.small, selected && s.selected, press.style]}
       >
-        {showCheck && (
-          <Animated.View style={[s.check, checkStyle]}>
-            <Icon icon={Check} size={t.icon.small} color="tonalInk" />
-          </Animated.View>
-        )}
+        {showCheck &&
+          (mixed && !selected ? (
+            <Animated.View style={s.check}>
+              <Icon icon={Minus} size={t.icon.small} color="textSecondary" />
+            </Animated.View>
+          ) : (
+            <Animated.View style={[s.check, checkStyle]}>
+              <Icon icon={Check} size={t.icon.small} color="tonalInk" />
+            </Animated.View>
+          ))}
         {icon && <Icon icon={icon} size={t.icon.small} color={selected ? 'tonalInk' : 'text'} />}
         <Text variant="chip" tone={selected ? 'tonal' : 'primary'} numeric={numeric}>
           {label}

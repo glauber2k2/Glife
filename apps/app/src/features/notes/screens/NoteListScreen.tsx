@@ -1,7 +1,7 @@
 import type { NoteListQuery } from '@glife/domain/notes';
 import { router, useLocalSearchParams, useNavigation } from 'expo-router';
 import { Folder, Folders, Hash, ListChecks, SquarePen, Trash2 } from 'lucide-react-native';
-import { useEffect, useLayoutEffect, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useState } from 'react';
 import { BackHandler, ScrollView, View } from 'react-native';
 
 import { useLinksData } from '@/features/links';
@@ -12,7 +12,7 @@ import { NoteRows } from '../components/NoteRows';
 import { PinnedNoteCard } from '../components/PinnedNoteCard';
 import { SelectionBar, type BulkAction } from '../components/SelectionBar';
 import { useNotesData } from '../hooks/NotesData';
-import { selectionLabel } from '../hooks/selection';
+import { bulkPinTarget, selectionKey, selectionLabel } from '../hooks/selection';
 import { useFocusData } from '../hooks/useFocusData';
 import { useNoteList } from '../hooks/useNoteList';
 import { openNote, useCreateNote } from '../hooks/useNoteActions';
@@ -38,7 +38,6 @@ export function NoteListScreen() {
   const s = useStyles();
   const navigation = useNavigation();
   const selection = useNoteSelection();
-  const bulk = useBulkNoteActions();
   const [sheet, setSheet] = useState<'move' | 'tags' | null>(null);
   const [busy, setBusy] = useState(false);
   const { notes, folders } = useNotesData();
@@ -65,6 +64,7 @@ export function NoteListScreen() {
       return { folders: allFolders, tags: allTags, trash };
     },
   );
+  const bulk = useBulkNoteActions(reload);
   const [tagged, setTagged] = useState<Set<string> | null>(null);
   useEffect(() => {
     let active = true;
@@ -89,14 +89,17 @@ export function NoteListScreen() {
     return () => sub.remove();
   }, [selecting, cancel]);
 
-  const visible = items && tagId && tagged ? items.filter((n) => tagged.has(n.id)) : items;
+  const visible = useMemo(() => (items && tagId && tagged ? items.filter((n) => tagged.has(n.id)) : items), [items, tagId, tagged]);
   const filtered = kind !== 'all' || !!tagId || search.trim() !== '';
   const total = items?.length ?? 0;
   const pinned = !filtered && visible ? visible.filter((n) => n.pinned) : [];
   const rest = !filtered && visible ? visible.filter((n) => !n.pinned) : visible;
   // Na seleção, uma lista só (fixadas primeiro), como no protótipo.
   const ordered = visible ? [...pinned, ...(rest ?? [])] : [];
-  const chosen = ordered.filter((n) => selection.ids.has(n.id));
+  // Mesma lista enquanto a seleção e as notas não mudam (as folhas não recarregam a cada renderização).
+  const key = selectionKey(selection.ids);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- `key` resume `selection.ids`
+  const chosen = useMemo(() => (visible ?? []).filter((n) => selection.ids.has(n.id)), [visible, key]);
 
   const finish = async (work: () => Promise<boolean>) => {
     setBusy(true);
@@ -144,7 +147,11 @@ export function NoteListScreen() {
             <NoteRows notes={ordered} onOpen={(n) => selection.toggle(n.id)} selection={selection.ids} />
           )}
         </Screen>
-        <SelectionBar disabled={!chosen.length || busy} onAction={onBulk} />
+        <SelectionBar
+          disabled={!chosen.length || busy}
+          pinLabel={chosen.length && !bulkPinTarget(chosen) ? 'Desafixar' : 'Fixar'}
+          onAction={onBulk}
+        />
         <MoveNotesSheet
           visible={sheet === 'move'}
           folders={side?.folders ?? []}

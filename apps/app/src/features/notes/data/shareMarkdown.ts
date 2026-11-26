@@ -5,7 +5,8 @@ import { Platform, Share } from 'react-native';
 /** Tempo para o navegador começar o download antes de liberar o endereço do arquivo. */
 const REVOKE_AFTER_MS = 1000;
 
-export async function shareMarkdown(fileName: string, markdown: string): Promise<void> {
+/** true quando entregou (baixou ou compartilhou); false se a pessoa fechou o compartilhar sem escolher. */
+export async function shareMarkdown(fileName: string, markdown: string): Promise<boolean> {
   if (Platform.OS === 'web') {
     const doc = globalThis.document;
     const url = URL.createObjectURL(new Blob([markdown], { type: 'text/markdown;charset=utf-8' }));
@@ -16,7 +17,8 @@ export async function shareMarkdown(fileName: string, markdown: string): Promise
     a.click();
     a.remove();
     setTimeout(() => URL.revokeObjectURL(url), REVOKE_AFTER_MS);
-    return;
+    return true;
   }
-  await Share.share({ title: fileName, message: markdown });
+  const result = await Share.share({ title: fileName, message: markdown });
+  return result.action !== Share.dismissedAction;
 }

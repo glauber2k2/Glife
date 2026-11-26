@@ -1,12 +1,12 @@
 import type { EntityType } from '@glife/domain/core';
 import type { Tag, TaggedItem } from '@glife/domain/tags';
 import { router, useLocalSearchParams, type Href } from 'expo-router';
-import { Hash, ReceiptText, StickyNote, type LucideIcon } from 'lucide-react-native';
+import type { LucideIcon } from 'lucide-react-native';
 import { useState } from 'react';
 import { ScrollView } from 'react-native';
 
 import { useLinksData, useTaggedItemSources } from '@/features/links';
-import { Alert, Chip, EmptyState, ListGroup, NavRow, Reveal, Screen, Section, makeStyles } from '@/shared/ui';
+import { Alert, Chip, EmptyState, ListGroup, NavRow, Reveal, Screen, Section, makeStyles, type ModuleKey } from '@/shared/ui';
 
 import { SubHeader } from '../components/SubHeader';
 import { useFocusData } from '../hooks/useFocusData';
@@ -14,10 +14,10 @@ import { useFocusData } from '../hooks/useFocusData';
 interface Group {
   type: EntityType;
   label: string;
+  icon: LucideIcon;
+  module: ModuleKey;
   items: TaggedItem[];
 }
-
-const ICONS: Partial<Record<EntityType, LucideIcon>> = { note: StickyNote, tx: ReceiptText };
 
 /** Tudo o que tem a tag, de todos os módulos, agrupado por tipo (cada módulo entrega os seus pelo registro de links). */
 export function TagScreen() {
@@ -31,7 +31,7 @@ export function TagScreen() {
       const tag = (await tags.list()).find((x) => x.id === id) ?? null;
       if (!tag) return { tag: null, groups: [] };
       const groups = await Promise.all(
-        sources.map(async (src) => ({ type: src.type, label: src.label, items: await src.resolve(await tags.entitiesWithTag(tag.id, src.type)) })),
+        sources.map(async (src) => ({ type: src.type, label: src.label, icon: src.icon, module: src.module, items: await src.resolve(await tags.entitiesWithTag(tag.id, src.type)) })),
       );
       return { tag, groups: groups.filter((g) => g.items.length > 0) };
     } catch (e) {
@@ -74,8 +74,8 @@ export function TagScreen() {
                 {g.items.map((item) => (
                   <NavRow
                     key={item.id}
-                    icon={ICONS[g.type] ?? Hash}
-                    module={g.type === 'tx' ? 'finance' : 'notes'}
+                    icon={g.icon}
+                    module={g.module}
                     iconSize="md"
                     label={item.title}
                     meta={item.meta}

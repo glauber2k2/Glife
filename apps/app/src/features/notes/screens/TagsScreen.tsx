@@ -5,9 +5,10 @@ import { useMemo, useState } from 'react';
 import { Platform, View } from 'react-native';
 import Animated, { Easing, FadeOut, LinearTransition } from 'react-native-reanimated';
 
-import { useLinksData } from '@/features/links';
+import { liveTagCounts, useLinksData, useTaggedItemSources } from '@/features/links';
 import { Alert, EmptyState, IconButton, ListGroup, ListItem, Reveal, Screen, SearchField, Text, makeStyles, useReduceMotion, useTheme } from '@/shared/ui';
 
+import { NewTagSheet } from '../components/NewTagSheet';
 import { SubHeader } from '../components/SubHeader';
 import { TagActionsSheet } from '../components/TagActionsSheet';
 import { TAG_UNITS } from '../components/tagUnits';
@@ -19,11 +20,14 @@ export function TagsScreen() {
   const t = useTheme();
   const reduceMotion = useReduceMotion();
   const { tags } = useLinksData();
+  const sources = useTaggedItemSources();
+  const [creating, setCreating] = useState(false);
   const [filter, setFilter] = useState('');
   const [open, setOpen] = useState<TagWithCounts | null>(null);
   const { data, reload } = useFocusData(async () => {
     try {
-      return { rows: await tags.listWithCounts(), failed: false };
+      // Contagens só com itens vivos (fora da lixeira), para baterem com a tela da tag.
+      return { rows: await liveTagCounts(await tags.listWithCounts(), tags, sources), failed: false };
     } catch (e) {
       console.warn('Falha ao ler as tags', e);
       return { rows: [] as TagWithCounts[], failed: true };
@@ -43,13 +47,15 @@ export function TagsScreen() {
   const visible = query ? rows.filter((r) => tagKey(r.tag.name).includes(query)) : rows;
 
   return (
-    <Screen header={<SubHeader title="Tags" />}>
+    <Screen header={<SubHeader title="Tags" plusLabel="Nova tag" onPlus={() => setCreating(true)} />}>
       {data === null ? null : data.failed ? (
         <Alert tone="danger">Não foi possível ler as tags deste aparelho.</Alert>
       ) : rows.length === 0 ? (
         <EmptyState
           title="Nenhuma tag ainda"
-          message="Tags valem para qualquer coisa: notas, gastos e, depois, eventos e fotos. Aplique uma no editor da nota."
+          message="Tags valem para qualquer coisa: notas, gastos e, depois, eventos e fotos. Crie uma aqui ou aplique no editor da nota."
+          actionLabel="Nova tag"
+          onAction={() => setCreating(true)}
         />
       ) : (
         <Reveal>
@@ -83,6 +89,7 @@ export function TagsScreen() {
         </Reveal>
       )}
       <TagActionsSheet row={open} all={rows} onClose={() => setOpen(null)} onChanged={reload} />
+      <NewTagSheet visible={creating} onClose={() => setCreating(false)} onCreated={reload} />
     </Screen>
   );
 }

@@ -1,22 +1,28 @@
-import type { TaggedItemSource } from '@glife/domain/tags';
+import { StickyNote } from 'lucide-react-native';
 import { useMemo } from 'react';
+
+import type { TaggedItemUiSource } from '@/features/links';
 
 import { noteExcerpt } from '../components/excerpt';
 import { useNotesDataMaybe } from './NotesData';
 
 /** Como as notas aparecem na tela de uma tag; null sem sessão. */
-export function useNotesTaggedSource(): TaggedItemSource | null {
+export function useNotesTaggedSource(): TaggedItemUiSource | null {
   const data = useNotesDataMaybe();
   return useMemo(() => {
     if (!data) return null;
     const { notes } = data;
+    const live = async (ids: readonly string[]) => (await Promise.all(ids.map((id) => notes.get(id)))).filter((n) => n !== null);
     return {
       type: 'note',
       label: 'Notas',
+      icon: StickyNote,
+      module: 'notes',
+      async alive(ids) {
+        return (await live(ids)).map((n) => n.id);
+      },
       async resolve(ids) {
-        const found = await Promise.all(ids.map((id) => notes.get(id)));
-        return found
-          .filter((n) => n !== null)
+        return (await live(ids))
           .sort((a, b) => (a.updated_at < b.updated_at ? 1 : -1))
           .map((n) => ({ id: n.id, title: n.title || 'Sem título', meta: noteExcerpt(n.body_md) || undefined, href: `/nota/${n.id}` }));
       },

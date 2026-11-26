@@ -1,6 +1,6 @@
 // Barra flutuante da seleção múltipla (protótipo `notas`, estado "Seleção"): Mover · Tags · Fixar · Exportar · Lixeira.
 // Fica no lugar da barra de abas, com a mesma sombra de navegação; sobe com esmaecer ao entrar na seleção.
-import { FileDown, FolderInput, Pin, Tag as TagIcon, Trash2, type LucideIcon } from 'lucide-react-native';
+import { FileDown, FolderInput, Pin, PinOff, Tag as TagIcon, Trash2, type LucideIcon } from 'lucide-react-native';
 import { Pressable, View } from 'react-native';
 import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -17,7 +17,16 @@ const ACTIONS: { key: BulkAction; label: string; icon: LucideIcon }[] = [
   { key: 'trash', label: 'Lixeira', icon: Trash2 },
 ];
 
-export function SelectionBar({ disabled, onAction }: { disabled: boolean; onAction: (action: BulkAction) => void }) {
+export function SelectionBar({
+  disabled,
+  pinLabel,
+  onAction,
+}: {
+  disabled: boolean;
+  /** "Desafixar" quando todas as selecionadas já estão fixadas */
+  pinLabel: 'Fixar' | 'Desafixar';
+  onAction: (action: BulkAction) => void;
+}) {
   const s = useStyles();
   const t = useTheme();
   const insets = useSafeAreaInsets();
@@ -31,7 +40,13 @@ export function SelectionBar({ disabled, onAction }: { disabled: boolean; onActi
     >
       <View style={s.bar} accessibilityRole="toolbar">
         {ACTIONS.map((a) => (
-          <BarButton key={a.key} label={a.label} icon={a.icon} disabled={disabled} onPress={() => onAction(a.key)} />
+          <BarButton
+            key={a.key}
+            label={a.key === 'pin' ? pinLabel : a.label}
+            icon={a.key === 'pin' && pinLabel === 'Desafixar' ? PinOff : a.icon}
+            disabled={disabled}
+            onPress={() => onAction(a.key)}
+          />
         ))}
       </View>
     </Animated.View>

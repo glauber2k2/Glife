@@ -2,13 +2,13 @@
 import { TAG_NAME_MAX, normalizeTagName, tagKey, type Tag } from '@glife/domain/tags';
 import type { Note, NoteFolder } from '@glife/domain/notes';
 import { Folder, FolderOpen, Hash } from 'lucide-react-native';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { View } from 'react-native';
 
 import { useLinksData } from '@/features/links';
 import { Button, Chip, Input, ListGroup, NavRow, Sheet, Text, makeStyles } from '@/shared/ui';
 
-import { commonTagState, type TagState } from '../hooks/selection';
+import { commonTagState, nextTagState, tagChange, type TagState } from '../hooks/selection';
 
 export function MoveNotesSheet({
   visible,
@@ -34,8 +34,8 @@ export function MoveNotesSheet({
 }
 
 /**
- * Tags das notas selecionadas: chip marcado = todas têm (só algumas = desmarcado); tocar marca para todas ou tira de todas.
- * "Pronto" grava tudo numa transação (`applyMany`).
+ * Tags das notas selecionadas: chip marcado = todas têm; traço = só algumas (algumas → todas → nenhuma → algumas).
+ * Carrega uma vez ao abrir. "Pronto" grava só o que mudou, numa transação (`applyMany`).
  */
 export function BulkTagsSheet({
   visible,
@@ -56,9 +56,15 @@ export function BulkTagsSheet({
   const [fresh, setFresh] = useState<string[]>([]);
   const [draft, setDraft] = useState('');
   const [error, setError] = useState<string | undefined>();
+  // As notas são lidas ao abrir: re-renderizações da tela (lista nova a cada render) não recarregam a folha.
+  const notesRef = useRef(notes);
+  useEffect(() => {
+    notesRef.current = notes;
+  });
 
   useEffect(() => {
     if (!visible) return;
+    const notes = notesRef.current;
     let active = true;
     void (async () => {
       const [list, perNote] = await Promise.all([
@@ -79,7 +85,7 @@ export function BulkTagsSheet({
     return () => {
       active = false;
     };
-  }, [visible, notes, tags]);
+  }, [visible, tags]);
 
   const addDraft = () => {
     let name: string;
@@ -95,17 +101,7 @@ export function BulkTagsSheet({
     setDraft('');
   };
 
-  const done = () => {
-    const add = [...fresh];
-    const remove: string[] = [];
-    for (const x of all) {
-      const before = initial.get(x.id);
-      const after = wanted.get(x.id);
-      if (after === 'all' && before !== 'all') add.push(x.name);
-      if (after === 'none' && before !== 'none') remove.push(x.id);
-    }
-    onDone({ add, remove });
-  };
+  const done = () => onDone(tagChange(all, initial, wanted, fresh));
 
   return (
     <Sheet visible={visible} onClose={onClose} title="Tags" subtitle={notes.length === 1 ? '1 nota' : `${notes.length} notas`}>
@@ -133,7 +129,10 @@ export function BulkTagsSheet({
               key={x.id}
               label={`#${x.name}`}
               selected={wanted.get(x.id) === 'all'}
-              onPress={() => setWanted((m) => new Map(m).set(x.id, m.get(x.id) === 'all' ? 'none' : 'all'))}
+              mixed={wanted.get(x.id) === 'some'}
+              onPress={() =>
+                setWanted((m) => new Map(m).set(x.id, nextTagState(initial.get(x.id) ?? 'none', m.get(x.id) ?? 'none')))
+              }
             />
           ))}
         </View>

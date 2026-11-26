@@ -1,5 +1,5 @@
 // Seleção múltipla da lista de notas: estado da seleção e as ações em lote (cada uma numa transação, com "Desfazer"
-// quando dá: fixar, mover e lixeira).
+// em fixar, mover, tags e lixeira).
 import type { Note } from '@glife/domain/notes';
 import { FileDown, Folder, Pin, PinOff, Tag as TagIcon, Trash2 } from 'lucide-react-native';
 import { useCallback, useState } from 'react';
@@ -45,8 +45,11 @@ export function useNoteSelection(): NoteSelection {
 const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
 const today = () => new Date().toISOString().slice(0, 10);
 
-/** Ações em lote sobre as notas selecionadas. Cada uma devolve true se gravou (a tela então sai da seleção). */
-export function useBulkNoteActions() {
+/**
+ * Ações em lote sobre as notas selecionadas. Cada uma devolve true se gravou (a tela então sai da seleção).
+ * `onChanged` roda depois de um "Desfazer" (ex.: recontar a lixeira).
+ */
+export function useBulkNoteActions(onChanged?: () => void) {
   const { notes } = useNotesData();
   const { tags } = useLinksData();
   const toast = useToast();
@@ -75,11 +78,11 @@ export function useBulkNoteActions() {
         aboveTabBar: true,
         actionLabel: 'Desfazer',
         onAction: () =>
-          void notes.updateMany(selected.map((x) => ({ id: x.id, patch: { pinned: x.pinned } }))).catch((e) => fail('desfazer', e)),
+          void notes.updateMany(selected.map((x) => ({ id: x.id, patch: { pinned: x.pinned } }))).then(onChanged, (e: unknown) => fail('desfazer', e)),
       });
       return true;
     },
-    [notes, toast, fail],
+    [notes, toast, fail, onChanged],
   );
 
   const move = useCallback(
@@ -95,11 +98,11 @@ export function useBulkNoteActions() {
         aboveTabBar: true,
         actionLabel: 'Desfazer',
         onAction: () =>
-          void notes.updateMany(selected.map((x) => ({ id: x.id, patch: { folder_id: x.folder_id } }))).catch((e) => fail('desfazer', e)),
+          void notes.updateMany(selected.map((x) => ({ id: x.id, patch: { folder_id: x.folder_id } }))).then(onChanged, (e: unknown) => fail('desfazer', e)),
       });
       return true;
     },
-    [notes, toast, fail],
+    [notes, toast, fail, onChanged],
   );
 
   const trash = useCallback(
@@ -115,17 +118,18 @@ export function useBulkNoteActions() {
         icon: Trash2,
         aboveTabBar: true,
         actionLabel: 'Desfazer',
-        onAction: () => void notes.restoreMany(ids).catch((e) => fail('desfazer', e)),
+        onAction: () => void notes.restoreMany(ids).then(onChanged, (e: unknown) => fail('desfazer', e)),
       });
       return true;
     },
-    [notes, toast, fail],
+    [notes, toast, fail, onChanged],
   );
 
   const exportMd = useCallback(
     async (selected: readonly Note[]) => {
       try {
-        await shareMarkdown(exportFileName(selected, today()), notesToMarkdown(selected));
+        // Fechou o compartilhar sem escolher: nada aconteceu, continua na seleção.
+        if (!(await shareMarkdown(exportFileName(selected, today()), notesToMarkdown(selected)))) return false;
       } catch (e) {
         return fail('exportar', e);
       }
@@ -138,18 +142,25 @@ export function useBulkNoteActions() {
   const applyTags = useCallback(
     async (selected: readonly Note[], change: { add: string[]; remove: string[] }) => {
       if (!change.add.length && !change.remove.length) return true;
+      const entities = selected.map((n) => ({ type: 'note' as const, id: n.id }));
+      let before: { entity: (typeof entities)[number]; tagIds: string[] }[];
       try {
-        await tags.applyMany(
-          selected.map((n) => ({ type: 'note' as const, id: n.id })),
-          change,
-        );
+        // Retrato das tags de cada nota antes, para o "Desfazer" voltar exatamente a ele (numa transação).
+        before = await Promise.all(entities.map(async (entity) => ({ entity, tagIds: (await tags.forEntity(entity)).map((x) => x.id) })));
+        await tags.applyMany(entities, change);
       } catch (e) {
         return fail('atualizar as tags', e);
       }
-      toast({ message: 'Tags atualizadas', icon: TagIcon, aboveTabBar: true });
+      toast({
+        message: 'Tags atualizadas',
+        icon: TagIcon,
+        aboveTabBar: true,
+        actionLabel: 'Desfazer',
+        onAction: () => void tags.replaceMany(before).then(onChanged, (e: unknown) => fail('desfazer', e)),
+      });
       return true;
     },
-    [tags, toast, fail],
+    [tags, toast, fail, onChanged],
   );
 
   return { pin, move, trash, exportMd, applyTags };

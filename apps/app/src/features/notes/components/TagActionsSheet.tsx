@@ -1,5 +1,5 @@
 // Folha "…" de uma tag (protótipo `tagMais`): renomear, juntar com outra e excluir.
-import { isRepositoryError, type EntityType } from '@glife/domain/core';
+import { ENTITY_TYPES, isRepositoryError } from '@glife/domain/core';
 import { TAG_NAME_MAX, type Tag, type TagWithCounts } from '@glife/domain/tags';
 import { Hash, Merge, Tag as TagIcon, Trash2 } from 'lucide-react-native';
 import { useState } from 'react';
@@ -69,13 +69,30 @@ export function TagActionsSheet({
       }
     });
 
+  const undoFailed = (e: unknown) => {
+    console.warn('Falha ao desfazer na tag', e);
+    toast({
+      message: isRepositoryError(e, 'conflict')
+        ? 'Não deu para desfazer: já existe outra tag com esse nome.'
+        : `Não deu para desfazer: ${errorText(e)}`,
+      aboveTabBar: true,
+    });
+    onChanged();
+  };
+
   const merge = (from: Tag, into: Tag) =>
     run(async () => {
       try {
-        await tags.merge(from.id, into.id);
+        const receipt = await tags.merge(from.id, into.id);
         onClose();
         onChanged(from.id);
-        toast({ message: `#${from.name} juntou-se a #${into.name}`, icon: Merge, aboveTabBar: true });
+        toast({
+          message: `#${from.name} juntou-se a #${into.name}`,
+          icon: Merge,
+          aboveTabBar: true,
+          actionLabel: 'Desfazer',
+          onAction: () => void tags.unmerge(receipt).then(() => onChanged(), (e: unknown) => undoFailed(e)),
+        });
       } catch (e) {
         toast({ message: `Não foi possível juntar: ${errorText(e)}`, aboveTabBar: true });
       }
@@ -84,22 +101,22 @@ export function TagActionsSheet({
   const remove = (current: TagWithCounts) =>
     run(async () => {
       try {
-        // Guarda quem tinha a tag para o "Desfazer" (aplica o mesmo nome de novo, numa transação).
-        const types = Object.keys(current.counts) as EntityType[];
+        // Guarda quem tinha a tag (de todos os tipos, inclusive itens na lixeira) para o "Desfazer":
+        // aplica o mesmo nome de novo aos mesmos itens, numa transação.
         const owners = (
-          await Promise.all(types.map(async (type) => (await tags.entitiesWithTag(current.tag.id, type)).map((id) => ({ type, id }))))
+          await Promise.all(ENTITY_TYPES.map(async (type) => (await tags.entitiesWithTag(current.tag.id, type)).map((id) => ({ type, id }))))
         ).flat();
         await tags.delete(current.tag.id);
         onClose();
         onChanged(current.tag.id);
+        const undo = () =>
+          owners.length ? tags.applyMany(owners, { add: [current.tag.name], remove: [] }) : tags.create(current.tag.name).then(() => undefined);
         toast({
           message: 'Tag excluída · os itens ficaram',
           icon: Trash2,
           aboveTabBar: true,
-          actionLabel: owners.length ? 'Desfazer' : undefined,
-          onAction: owners.length
-            ? () => void tags.applyMany(owners, { add: [current.tag.name], remove: [] }).then(() => onChanged(), () => onChanged())
-            : undefined,
+          actionLabel: 'Desfazer',
+          onAction: () => void undo().then(() => onChanged(), (e: unknown) => undoFailed(e)),
         });
       } catch (e) {
         toast({ message: `Não foi possível excluir: ${errorText(e)}`, aboveTabBar: true });
