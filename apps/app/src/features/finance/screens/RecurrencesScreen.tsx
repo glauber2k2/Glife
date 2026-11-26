@@ -325,7 +325,7 @@ function RuleEditor({ rule }: { rule: Recurrence }) {
             value={ends}
             onChange={setEnds}
           />
-          {ends === 'date' && <DateRow label="Última" date={endDate} display={dmy(endDate)} onChange={setEndDate} />}
+          {ends === 'date' && <DateRow label="Última" date={endDate} onChange={setEndDate} />}
         </Block>
         <Block>
           <BlockHeader title="Próximas ocorrências" />

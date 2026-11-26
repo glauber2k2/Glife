@@ -9,6 +9,7 @@ import {
   money,
   monthName,
   parseDmy,
+  relativeDay,
   signed,
 } from '../src/features/finance/components/format';
 
@@ -43,5 +44,14 @@ describe('formatação de Finanças', () => {
   it('nome do mês ganha o ano só quando está longe', () => {
     expect(monthName('2027-01', '2026-12-10')).toBe('janeiro');
     expect(monthName('2028-01', '2026-12-10')).toBe('janeiro de 2028');
+  });
+});
+
+describe('dica do campo de data', () => {
+  it('diz Hoje, Ontem ou Amanhã; nos outros dias a própria data basta', () => {
+    expect(relativeDay('2026-12-10', '2026-12-10')).toBe('Hoje');
+    expect(relativeDay('2026-12-09', '2026-12-10')).toBe('Ontem');
+    expect(relativeDay('2026-12-11', '2026-12-10')).toBe('Amanhã');
+    expect(relativeDay('2026-12-01', '2026-12-10')).toBeUndefined();
   });
 });

@@ -14,25 +14,27 @@ export interface CalendarPickerProps {
   value: string;
   onChange: (value: string) => void;
   error?: string;
+  /** Texto de apoio abaixo do campo (ex.: "Hoje"); o erro tem prioridade. */
+  hint?: string;
   clearable?: boolean;
 }
 
-/** Shared appearance; platform adapters own the picker and its lifecycle. */
-export function CalendarPickerField({ mode, label, value, onChange, error, clearable, onOpen, focused, children }: CalendarPickerProps & { onOpen?: () => void; focused?: boolean; children?: ReactNode }) {
+/** Aparência comum; cada plataforma cuida do seletor e do ciclo de vida dele. */
+export function CalendarPickerField({ mode, label, value, onChange, error, hint, clearable, onOpen, focused, children }: CalendarPickerProps & { onOpen?: () => void; focused?: boolean; children?: ReactNode }) {
   const s = useStyles();
   return (
     <View style={s.row}>
       <Pressable
         style={[s.field, focused && s.focused]}
         accessibilityRole="button"
-        accessibilityLabel={`${label}: ${value || 'Selecionar'}`}
+        accessibilityLabel={`${label}: ${value || 'Selecionar'}${hint && !error ? `, ${hint}` : ''}`}
         accessibilityHint={`Abrir seletor de ${mode === 'date' ? 'data' : 'hora'}`}
         accessible={!children}
         focusable={!children}
         onPress={onOpen}
       >
         <View pointerEvents="none">
-          <Input label={label} value={value} error={error} readOnly accessible={false} tabIndex={-1} trailing={<View style={s.icon}><Icon icon={mode === 'date' ? CalendarDays : Clock} color="textTertiary" /></View>} />
+          <Input label={label} value={value} error={error} hint={hint} readOnly accessible={false} tabIndex={-1} trailing={<View style={s.icon}><Icon icon={mode === 'date' ? CalendarDays : Clock} color="textTertiary" /></View>} />
         </View>
         {children}
       </Pressable>

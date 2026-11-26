@@ -31,7 +31,7 @@ import { Button, Chip, Icon, SegmentedControl, Sheet, Text, makeStyles, useTheme
 import { useFinance } from '../hooks/FinanceData';
 import { useOccurrences } from '../hooks/useFlows';
 import { categoryIcon } from './categories';
-import { MONTH_NAMES, dayLabel, dm } from './format';
+import { MONTH_NAMES, dm, relativeDay } from './format';
 import { useMoneyFormat } from '../hooks/useMoneyFormat';
 import { InstallmentAmountChoice } from './InstallmentAmountChoice';
 import { NoFundsNote } from './sheets';
@@ -271,7 +271,7 @@ function PurchaseForm({ list, items, today, onDone, onClose }: Props & { list: S
           </Text>
         )}
 
-        <DateRow label="Data" date={date} display={dayLabel(date, today)} onChange={setDate} />
+        <DateRow label="Data" date={date} hint={relativeDay(date, today)} onChange={setDate} />
 
         <View style={s.afterBlock}>
           <Text variant="caption" tone="tertiary">

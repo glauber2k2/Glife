@@ -101,12 +101,15 @@ export const monthShort = (d: IsoDate) => MONTH_NAMES[Number(d.slice(5, 7)) - 1]
 export const daysBetween = (a: IsoDate, b: IsoDate) =>
   Math.round((Date.parse(`${b}T12:00:00Z`) - Date.parse(`${a}T12:00:00Z`)) / 86_400_000);
 
+/** "Hoje" · "Ontem" · "Amanhã"; nos outros dias, nada (a data já diz tudo). */
+export function relativeDay(d: IsoDate, today: IsoDate): string | undefined {
+  return ({ [-1]: 'Ontem', 0: 'Hoje', 1: 'Amanhã' } as Record<number, string>)[daysBetween(today, d)];
+}
+
 /** "Hoje, 10/12" · "Ontem, 09/12" · "Amanhã, 11/12" · "08/12/2026". */
 export function dayLabel(d: IsoDate, today: IsoDate): string {
-  const diff = daysBetween(today, d);
-  if (diff === 0) return `Hoje, ${dm(d)}`;
-  if (diff === -1) return `Ontem, ${dm(d)}`;
-  if (diff === 1) return `Amanhã, ${dm(d)}`;
+  const near = relativeDay(d, today);
+  if (near) return `${near}, ${dm(d)}`;
   return d.slice(0, 4) === today.slice(0, 4) ? dm(d) : dmy(d);
 }
 

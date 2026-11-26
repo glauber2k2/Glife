@@ -7,7 +7,7 @@ import { View } from 'react-native';
 import { Button, Chip, Icon, Input, Sheet, Text, makeStyles, useTheme } from '@/shared/ui';
 
 import { accountIcon } from './categories';
-import { dayLabel, dm, lateText } from './format';
+import { dm, lateText, relativeDay } from './format';
 import { useMoneyFormat } from '../hooks/useMoneyFormat';
 import { DateRow, MoneyField, RadioRow } from './ui';
 
@@ -140,7 +140,7 @@ function ConfirmForm({
       <Text variant="caption" tone={diff === 0 ? 'tertiary' : 'accent'} numeric style={s.hint}>
         {hint}
       </Text>
-      <DateRow date={date} display={dayLabel(date, today)} onChange={setDate} />
+      <DateRow date={date} hint={relativeDay(date, today)} onChange={setDate} />
       {other && <PaidByOtherFields who={who} onWho={setWho} what="a conta" />}
       {short && <NoFundsNote accountName={accountName} available={available!} cents={value} />}
       <View style={{ gap: t.space[1] }}>
@@ -271,7 +271,7 @@ export function PaySheet({
         {ledgerId && <Chip size="sm" icon={HandCoins} label="Outra pessoa pagou" selected={other} onPress={() => setOther(true)} />}
       </View>
       {other && <PaidByOtherFields who={who} onWho={setWho} what="a fatura" />}
-      <DateRow date={date} display={dayLabel(date, today)} onChange={setDate} />
+      <DateRow date={date} hint={relativeDay(date, today)} onChange={setDate} />
       {!other && (
         <View style={s.note}>
           <Icon icon={ArrowLeftRight} size={t.icon.tiny} color="textTertiary" />

@@ -24,7 +24,7 @@ import { useFinance } from '../hooks/FinanceData';
 import { useFinanceActions } from '../hooks/useFinanceActions';
 import { InstallmentAmountChoice } from './InstallmentAmountChoice';
 import { accountIcon, categoryIcon } from './categories';
-import { MONTH_NAMES, dayLabel, dm, dmy, weekday } from './format';
+import { MONTH_NAMES, dm, dmy, relativeDay, weekday } from './format';
 import { useMoneyFormat } from '../hooks/useMoneyFormat';
 import { DateRow, DayField, MoneyField, NoCategoriesNote, Stepper, SwitchRow } from './ui';
 
@@ -330,7 +330,7 @@ function EntryForm({ onClose, today, preset, aboveTabBar }: Props) {
         <DateRow
           label={monthly ? 'A partir de' : 'Data'}
           date={date}
-          display={dayLabel(date, today)}
+          hint={relativeDay(date, today)}
           onChange={setDate}
         />
         <SwitchRow
@@ -389,7 +389,7 @@ function EntryForm({ onClose, today, preset, aboveTabBar }: Props) {
                 onChange={setEnds}
               />
             </View>
-            {ends === 'date' && <DateRow label="Última" date={endDate} display={dmy(endDate)} onChange={setEndDate} />}
+            {ends === 'date' && <DateRow label="Última" date={endDate} onChange={setEndDate} />}
           </View>
         )}
       </ScrollView>

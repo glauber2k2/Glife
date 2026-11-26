@@ -15,7 +15,7 @@ import { View } from 'react-native';
 
 import { Button, Chip, Input, SegmentedControl, Sheet, Text, makeStyles, type TextTone } from '@/shared/ui';
 
-import { dayLabel, dm } from './format';
+import { dm, relativeDay } from './format';
 import { useMoneyFormat } from '../hooks/useMoneyFormat';
 import { parseQuantity, pctSigned, quantityText } from './investmentFormat';
 import { MOVEMENT_LABELS, resultTone } from './investmentRows';
@@ -164,7 +164,7 @@ function MovementForm({ asset, movements, accounts, editing, initialKind, today,
           hint={qtyText.trim() !== '' && qty === null ? 'Use até 8 casas decimais.' : undefined}
         />
       )}
-      <DateRow date={date} display={dayLabel(date, today)} onChange={setDate} />
+      <DateRow date={date} hint={relativeDay(date, today)} onChange={setDate} />
       {flow && accounts.length > 0 && (
         <View style={s.accounts}>
           <Text variant="label" tone="tertiary">

@@ -394,14 +394,14 @@ export function DayField({
   );
 }
 
-/** ISO dates stay in the finance API; the shared field owns the platform picker. */
-export function DateRow({ label = 'Data', date, onChange }: {
+/** Finanças falam em data ISO; o campo compartilhado abre o seletor da plataforma. `hint`: "Hoje", "Ontem"… */
+export function DateRow({ label = 'Data', date, hint, onChange }: {
   label?: string;
   date: string;
-  display: string;
+  hint?: string;
   onChange: (d: string) => void;
 }) {
-  return <DateInput label={label} value={formatDateInput(date)} onChange={(value) => {
+  return <DateInput label={label} hint={hint} value={formatDateInput(date)} onChange={(value) => {
     const iso = parseDateInput(value);
     if (iso) onChange(iso);
   }} />;
