@@ -96,3 +96,32 @@ describe('sugestões de [[', () => {
     expect(applyWikilink('[[Le]] fim', 0, 4, 'Lectio')).toEqual({ text: '[[Lectio]] fim', selection: { start: 10, end: 10 } });
   });
 });
+
+describe('nenhuma edição devolve seleção fora do texto', () => {
+  it('vale para textos com listas e linhas vazias e qualquer cursor, inclusive atrasado ou inválido', () => {
+    const texts = ['', '- a', '- a\n', '- a\n\n', '- a\n\n\n', '1. um\n\n  ', '# T\n\n- b\n\n', '\n\n'];
+    const cursors = [-3, 0, 1, 2, 3, 4, 5, 7, 12, NaN, Infinity];
+    for (const text of texts) {
+      for (const a of cursors) {
+        for (const b of [a, 0, 4, 99]) {
+          const sel = { start: a, end: b };
+          const edits = [
+            insertAt(text, sel, '[['),
+            toggleWrap(text, sel, '**'),
+            toggleBold(text, sel),
+            toggleHeading(text, sel, 1),
+            toggleHeading(text, sel, 2),
+            prefixLines(text, sel, '- '),
+            prefixLines(text, sel, '> '),
+            applyWikilink(text, a, b, 'Nota'),
+          ];
+          for (const edit of edits) {
+            const { start, end } = edit.selection;
+            expect(Number.isInteger(start) && Number.isInteger(end), JSON.stringify({ text, sel })).toBe(true);
+            expect(0 <= start && start <= end && end <= edit.text.length, JSON.stringify({ text, sel, edit })).toBe(true);
+          }
+        }
+      }
+    }
+  });
+});

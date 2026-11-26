@@ -101,12 +101,26 @@ function lineSpans(line: string): LiveSpan[] {
   return out;
 }
 
-/** O texto todo em trechos; as quebras de linha ficam em trechos sem estilo. */
+/**
+ * O texto todo em trechos. A quebra de linha fica no FIM do trecho da linha dela (nunca vira um trecho sozinho nem
+ * começa um trecho), e trechos vizinhos com o mesmo estilo se juntam. Trechos só de "\n" (um por linha vazia, por
+ * exemplo depois de uma lista) viravam filhos `<Text>` à parte no campo nativo, cada um com a própria altura de linha
+ * cobrindo só a quebra; no Android isso deixava a altura das linhas inconsistente ao reaplicar o texto.
+ */
 export function liveSpans(markdown: string): LiveSpan[] {
   const out: LiveSpan[] = [];
+  const push = (span: LiveSpan) => {
+    const prev = out[out.length - 1];
+    if (prev && prev.styles.join() === span.styles.join()) prev.text += span.text;
+    else out.push({ text: span.text, styles: [...span.styles] });
+  };
   markdown.split('\n').forEach((line, i) => {
-    if (i > 0) out.push({ text: '\n', styles: [] });
-    out.push(...lineSpans(line));
+    if (i > 0) {
+      const prev = out[out.length - 1];
+      if (prev) prev.text += '\n';
+      else out.push({ text: '\n', styles: [] });
+    }
+    lineSpans(line).forEach(push);
   });
   return out;
 }

@@ -25,7 +25,7 @@ export function insertAt(text: string, sel: Selection, insert: string): Edit {
   sel = normalizeSelection(text, sel);
   const next = text.slice(0, sel.start) + insert + text.slice(sel.end);
   const cursor = sel.start + insert.length;
-  return { text: next, selection: { start: cursor, end: cursor } };
+  return editResult(next, { start: cursor, end: cursor });
 }
 
 /**
@@ -39,15 +39,15 @@ export function toggleWrap(text: string, sel: Selection, mark: string): Edit {
   const wrapped = start >= n && text.slice(start - n, start) === mark && text.slice(end, end + n) === mark;
   const insideBold = mark === '*' && text[start - 2] === '*' && text[end + 1] === '*' && text[start - 3] !== '*';
   if (wrapped && !insideBold) {
-    return {
-      text: text.slice(0, start - n) + text.slice(start, end) + text.slice(end + n),
-      selection: { start: start - n, end: end - n },
-    };
+    return editResult(
+      text.slice(0, start - n) + text.slice(start, end) + text.slice(end + n),
+      { start: start - n, end: end - n },
+    );
   }
-  return {
-    text: `${text.slice(0, start)}${mark}${text.slice(start, end)}${mark}${text.slice(end)}`,
-    selection: { start: start + n, end: end + n },
-  };
+  return editResult(
+    `${text.slice(0, start)}${mark}${text.slice(start, end)}${mark}${text.slice(end)}`,
+    { start: start + n, end: end + n },
+  );
 }
 
 /** **negrito** em volta da seleção; se ela já estiver entre **, tira. */
@@ -109,5 +109,5 @@ export function applyWikilink(text: string, start: number, cursor: number, title
   const after = text.slice(cursor).startsWith(']]') ? text.slice(cursor + 2) : text.slice(cursor);
   const link = `[[${title}]]`;
   const end = start + link.length;
-  return { text: text.slice(0, start) + link + after, selection: { start: end, end } };
+  return editResult(text.slice(0, start) + link + after, { start: end, end });
 }
