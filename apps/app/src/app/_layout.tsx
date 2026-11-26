@@ -106,12 +106,13 @@ function RootStack() {
           <FinanceProvider db={localSync.db} userId={userId} quotes={quoteClient}>
           <AgendaProvider db={localSync.db} userId={userId}>
           <DietProvider db={localSync.db} userId={userId}>
-          <NoticesSync scheduler={noticeScheduler} />
           <NotificationsProvider store={seenStore}>
           <DayMarksComposition>
           <SearchComposition enabled={stage === 'ready'}>
           <TaggedComposition>
           <ToastProvider>
+            {/* Dentro do aviso (toast): um "Feito" do aviso que falhar diz o motivo. */}
+            <NoticesSync scheduler={noticeScheduler} signedOut={stage === 'signed_out'} />
             <NavigationThemeProvider value={navigationTheme}>
               <StatusBar style={t.scheme === 'dark' ? 'light' : 'dark'} />
               {/* Com sessão pronta, nada do app aparece sem a senha do app ou a biometria. */}

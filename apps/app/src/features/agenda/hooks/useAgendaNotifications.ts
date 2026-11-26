@@ -1,6 +1,6 @@
 // O que a agenda leva à central de notificações (lembretes de hoje e atrasados) e o "Feito" dos lembretes, usado
 // também pelo botão do aviso do aparelho.
-import { agendaNotifications } from '@glife/domain/agenda';
+import { agendaNotifications, isReminderPending } from '@glife/domain/agenda';
 import type { NotificationSource } from '@glife/domain/notifications';
 import { localNow } from '@glife/domain/time';
 import { useMemo } from 'react';
@@ -32,4 +32,10 @@ export function useAgendaNotifications(now: Date): NotificationSource | null {
 export function useCompleteReminder(): ((id: string, date: string) => Promise<void>) | null {
   const repo = useAgendaMaybe()?.repo ?? null;
   return useMemo(() => (repo ? async (id, date) => void (await repo.completeReminder(id, date)) : null), [repo]);
+}
+
+/** O lembrete ainda está pendente nesta data? (um adiamento do aviso só vale se sim) null antes da leitura. */
+export function usePendingReminder(): ((id: string, date: string) => boolean) | null {
+  const reminders = useAgendaMaybe()?.data?.reminders ?? null;
+  return useMemo(() => (reminders ? (id, date) => isReminderPending(reminders, id, date) : null), [reminders]);
 }

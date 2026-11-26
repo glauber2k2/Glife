@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { setIdGenerator } from '../../core/index.ts';
-import { dietNotices, dietNotifications, newMealLog, newMealPlanItem } from '../index.ts';
+import { dietNotices, dietNotifications, isMealPending, newMealLog, newMealPlanItem } from '../index.ts';
 
 const USER = '11110000-0000-4000-8000-000000000001';
 let seq = 0;
@@ -35,5 +35,15 @@ describe('dieta: notificações', () => {
   it('o aviso do aparelho leva a refeição (para "Registrar" e "Adiar")', () => {
     const [n] = dietNotices([almoco], '2026-11-26', 0);
     expect(n!.ref).toEqual({ kind: 'meal', id: almoco.id, date: '2026-11-26' });
+  });
+});
+
+describe('dieta: adiamento ainda vale?', () => {
+  it('só refeição do plano ainda sem registro naquela data', () => {
+    expect(isMealPending([almoco], [], almoco.id, '2026-11-26')).toBe(true);
+    const comi = newMealLog({ date: '2026-11-26', time: '12:40', plan_id: almoco.id }, USER, clock);
+    expect(isMealPending([almoco], [comi], almoco.id, '2026-11-26')).toBe(false);
+    expect(isMealPending([almoco], [comi], almoco.id, '2026-11-27')).toBe(true);
+    expect(isMealPending([], [], almoco.id, '2026-11-26')).toBe(false);
   });
 });

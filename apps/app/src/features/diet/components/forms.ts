@@ -69,3 +69,15 @@ export function readLogForm(f: LogForm): FormResult<MealLogDraft> {
   if (!n.ok) return n;
   return { ok: true, value: { date, time, description: f.description, plan_id: f.planId, ...n.value } };
 }
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+
+/**
+ * Registro aberto com `plano` no endereço (botão "Registrar"): liga à refeição e preenche a estimativa dela — só se
+ * a refeição existe nos dados do dono (id de fora nunca vira chave estrangeira). null = não ligar.
+ */
+export function linkLogToPlan(f: LogForm, planId: unknown, plans: readonly MealPlanItem[]): LogForm | null {
+  if (typeof planId !== 'string' || !UUID_RE.test(planId)) return null;
+  const plan = plans.find((p) => p.id === planId && p.deleted_at === null);
+  return plan ? { ...f, planId: plan.id, ...fillFromPlan(f, plan) } : null;
+}

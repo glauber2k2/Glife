@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { setIdGenerator } from '../../core/index.ts';
-import { agendaNotices, agendaNotifications, completeReminder, newReminder } from '../index.ts';
+import { agendaNotices, agendaNotifications, completeReminder, isReminderPending, newReminder } from '../index.ts';
 
 const USER = '11110000-0000-4000-8000-000000000001';
 let seq = 0;
@@ -36,5 +36,16 @@ describe('agenda: notificações', () => {
   it('o aviso do aparelho leva o lembrete e a data (para "Feito" e "Adiar")', () => {
     const [n] = agendaNotices([], [luz], '2026-11-24', 0);
     expect(n!.ref).toEqual({ kind: 'reminder', id: luz.id, date: '2026-11-24' });
+  });
+});
+
+describe('agenda: adiamento ainda vale?', () => {
+  it('só lembrete vivo, não concluído e sem a data pulada', () => {
+    expect(isReminderPending([luz, remedio], luz.id, '2026-11-24')).toBe(true);
+    expect(isReminderPending([feito], feito.id, '2026-11-26')).toBe(false);
+    const pulado = completeReminder(remedio, '2026-11-26', clock);
+    expect(isReminderPending([pulado], remedio.id, '2026-11-26')).toBe(false);
+    expect(isReminderPending([pulado], remedio.id, '2026-11-27')).toBe(true);
+    expect(isReminderPending([], luz.id, '2026-11-24')).toBe(false);
   });
 });

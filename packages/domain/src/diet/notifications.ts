@@ -20,3 +20,9 @@ export function dietNotifications(plan: readonly MealPlanItem[], logs: readonly 
     },
   ];
 }
+
+/** A refeição do plano ainda não foi registrada nesta data? Um adiamento só vale se sim. */
+export function isMealPending(plan: readonly MealPlanItem[], logs: readonly MealLog[], id: string, date: IsoDate): boolean {
+  if (!plan.some((p) => p.id === id && p.deleted_at === null)) return false;
+  return !logs.some((l) => l.deleted_at === null && l.plan_id === id && l.date === date);
+}

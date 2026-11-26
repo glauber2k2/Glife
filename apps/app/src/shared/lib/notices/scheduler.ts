@@ -2,5 +2,5 @@
 import type { NoticeScheduler } from './types';
 
 export function createNoticeScheduler(): NoticeScheduler {
-  return { replaceAll: async () => {}, onOpen: () => () => {}, onAction: () => () => {} };
+  return { replaceAll: async () => {}, clearAll: async () => {}, onOpen: () => () => {}, onAction: () => () => {} };
 }

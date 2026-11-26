@@ -20,7 +20,7 @@ export {
   type ReminderPatch,
 } from './model.ts';
 export { agendaBetween, agendaNotices, byWhen, nextEvent, overdueReminders, type AgendaItem, type NextEvent } from './schedule.ts';
-export { agendaNotifications } from './notifications.ts';
+export { agendaNotifications, isReminderPending } from './notifications.ts';
 export {
   AGENDA_TABLES,
   createAgendaRepository,

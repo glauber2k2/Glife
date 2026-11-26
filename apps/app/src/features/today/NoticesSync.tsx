@@ -1,25 +1,37 @@
 // Junta os avisos da agenda e da dieta e entrega ao agendador do aparelho (injetado na raiz). Recalcula quando os
 // dados mudam e quando o app volta ao primeiro plano (a janela de dias anda). Tocar num aviso abre a tela dele; os
 // botões do aviso: "Feito" conclui o lembrete, "Registrar" abre o registro já na refeição ("Adiar" o agendador faz).
-import { useAgendaNotices, useCompleteReminder } from '@/features/agenda';
-import { useDietNotices } from '@/features/diet';
-import { localNow, upcomingNotices } from '@glife/domain/time';
+// Sem sessão (saiu da conta), todos os avisos do Glife somem, adiados inclusive, e nenhuma ação pendente é feita.
+import { useAgendaNotices, useCompleteReminder, usePendingReminder } from '@/features/agenda';
+import { useDietNotices, usePendingMeal } from '@/features/diet';
+import { localNow, upcomingNotices, type NoticeRef } from '@glife/domain/time';
 import { router, type Href } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { AppState } from 'react-native';
 
+import { errorText } from '@/shared/lib/errorText';
 import { mealLogRoute, type NoticeActionEvent, type NoticeScheduler } from '@/shared/lib/notices';
+import { useToast } from '@/shared/ui';
+
+import { freshPending, type PendingAction } from './pendingActions';
 
 /** Janela agendada: 7 dias, no máximo 60 avisos (o Android limita alarmes por app). */
 const DAYS = 7;
 const MAX = 60;
 const DEBOUNCE_MS = 1000;
-
-export function NoticesSync({ scheduler }: { scheduler: NoticeScheduler }) {
+export function NoticesSync({ scheduler, signedOut }: { scheduler: NoticeScheduler; signedOut: boolean }) {
+  const toast = useToast();
   const [, setTick] = useState(0);
   const agenda = useAgendaNotices(DAYS);
   const diet = useDietNotices(DAYS);
+  const reminderPending = usePendingReminder();
+  const mealPending = usePendingMeal();
   const completeReminder = useCompleteReminder();
+  const pending = useRef<PendingAction[]>([]);
+  const signedOutNow = useRef(signedOut);
+  useEffect(() => {
+    signedOutNow.current = signedOut;
+  }, [signedOut]);
 
   useEffect(() => {
     const sub = AppState.addEventListener('change', (s) => s === 'active' && setTick((n) => n + 1));
@@ -27,27 +39,31 @@ export function NoticesSync({ scheduler }: { scheduler: NoticeScheduler }) {
   }, []);
 
   useEffect(() => {
-    // Sem sessão (os dois nulos): nada agendado. Só um carregado ainda: espera o outro.
-    if (agenda === null && diet === null) {
-      void scheduler.replaceAll([]);
+    // Saiu da conta: nada do Glife fica agendado nem na gaveta, e a fila de ações é esquecida.
+    if (signedOut) {
+      pending.current = [];
+      void scheduler.clearAll();
       return;
     }
-    if (agenda === null || diet === null) return;
-    const t = setTimeout(() => void scheduler.replaceAll(upcomingNotices([...agenda, ...diet], localNow(), MAX)), DEBOUNCE_MS);
+    // Sem os dados ainda (lendo ou esperando o MFA): não mexe no que está agendado.
+    if (agenda === null || diet === null || !reminderPending || !mealPending) return;
+    const keepSnoozed = (ref: NoticeRef) => (ref.kind === 'reminder' ? reminderPending(ref.id, ref.date) : mealPending(ref.id, ref.date));
+    const t = setTimeout(() => void scheduler.replaceAll(upcomingNotices([...agenda, ...diet], localNow(), MAX), keepSnoozed), DEBOUNCE_MS);
     return () => clearTimeout(t);
-  }, [agenda, diet, scheduler]);
+  }, [signedOut, agenda, diet, reminderPending, mealPending, scheduler]);
 
   useEffect(() => scheduler.onOpen((url) => router.push(url as Href)), [scheduler]);
 
-  // "Feito" pode chegar antes de a sessão abrir (app aberto pelo botão): espera o repositório da agenda.
-  const pending = useRef<NoticeActionEvent[]>([]);
-  const complete = useRef(completeReminder);
+  const complete = useRef<((e: NoticeActionEvent) => void) | null>(null);
   useEffect(() => {
-    complete.current = completeReminder;
+    complete.current = completeReminder
+      ? (e) => void completeReminder(e.notice.id, e.notice.date).catch((err) => toast({ message: `Lembrete não concluído: ${errorText(err)}` }))
+      : null;
     if (!completeReminder) return;
-    const queued = pending.current.splice(0);
-    for (const e of queued) void completeReminder(e.notice.id, e.notice.date).catch((err) => console.warn('Falha ao concluir o lembrete', err));
-  }, [completeReminder]);
+    const queued = freshPending(pending.current, Date.now());
+    pending.current = [];
+    queued.forEach((p) => complete.current?.(p.event));
+  }, [completeReminder, toast]);
 
   useEffect(
     () =>
@@ -57,13 +73,10 @@ export function NoticesSync({ scheduler }: { scheduler: NoticeScheduler }) {
           if (url) router.push(url as Href);
           return;
         }
-        if (e.action !== 'done' || e.notice.kind !== 'reminder') return;
-        const done = complete.current;
-        if (!done) {
-          pending.current.push(e);
-          return;
-        }
-        void done(e.notice.id, e.notice.date).catch((err) => console.warn('Falha ao concluir o lembrete', err));
+        // Sem conta aberta, nada é feito (o aviso pode ser de outra conta).
+        if (e.action !== 'done' || e.notice.kind !== 'reminder' || signedOutNow.current) return;
+        if (complete.current) complete.current(e);
+        else pending.current = [...freshPending(pending.current, Date.now()), { event: e, at: Date.now() }];
       }),
     [scheduler],
   );

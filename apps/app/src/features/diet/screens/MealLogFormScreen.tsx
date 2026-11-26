@@ -2,18 +2,18 @@
 import { planFor } from '@glife/domain/diet';
 import { localNow } from '@glife/domain/time';
 import { useLocalSearchParams } from 'expo-router';
+import { useEffect, useRef } from 'react';
 import { View } from 'react-native';
 
 import { useEntityForm } from '@/shared/hooks/useEntityForm';
 import { parseDateInput } from '@/shared/lib/calendarInput';
 import { BackHeader, Button, EmptyState, Chip, DateInput, Input, Screen, Text, TimeInput, makeStyles } from '@/shared/ui';
 
-import { emptyLogForm, fillFromPlan, logToForm, readLogForm } from '../components/forms';
+import { emptyLogForm, fillFromPlan, linkLogToPlan, logToForm, readLogForm } from '../components/forms';
 import { NutritionFields } from '../components/NutritionFields';
 import { useDiet } from '../hooks/DietData';
 
 const isoOk = (v: unknown): v is string => typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v);
-const uuidOk = (v: unknown): v is string => typeof v === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(v);
 
 export function MealLogFormScreen() {
   const s = useStyles();
@@ -24,11 +24,10 @@ export function MealLogFormScreen() {
     id: params.id,
     load: (id) => repo.getLog(id),
     toForm: logToForm,
-    // `plano` (botão "Registrar" do aviso ou da central): o registro já vem ligado à refeição, com a estimativa dela.
+    // `plano` (botão "Registrar" do aviso ou da central): liga à refeição só se ela existe nos dados (ver abaixo).
     empty: () => {
-      const plan = uuidOk(params.plano) ? (data?.plan.find((p) => p.id === params.plano) ?? null) : null;
-      const base = emptyLogForm(isoOk(params.data) ? params.data : now.date, now.time, uuidOk(params.plano) ? params.plano : null);
-      return plan ? { ...base, ...fillFromPlan(base, plan) } : base;
+      const base = emptyLogForm(isoOk(params.data) ? params.data : now.date, now.time, null);
+      return linkLogToPlan(base, params.plano, data?.plan ?? []) ?? base;
     },
     read: readLogForm,
     create: (d) => repo.createLog(d),
@@ -38,6 +37,18 @@ export function MealLogFormScreen() {
     removedMessage: 'Registro excluído',
   });
   const { form, setForm } = f;
+
+  // Aberto a frio pelo aviso, o plano pode chegar depois do formulário: liga e preenche uma vez, quando chegar.
+  const planLinked = useRef(false);
+  useEffect(() => {
+    if (planLinked.current || !f.isNew || !params.plano || !data) return;
+    planLinked.current = true;
+    if (form.planId !== null) return;
+    const linked = linkLogToPlan(form, params.plano, data.plan);
+    if (linked) setForm(linked);
+    // Só quando os dados chegam (o formulário muda a cada tecla).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data]);
 
   if (f.state === 'missing') {
     return (

@@ -29,3 +29,9 @@ export function agendaNotifications(reminders: readonly Reminder[], now: { date:
   }
   return [...out.values()];
 }
+
+/** O lembrete ainda pede atenção nesta data (vivo, não concluído, data não pulada)? Um adiamento só vale se sim. */
+export function isReminderPending(reminders: readonly Reminder[], id: string, date: IsoDate): boolean {
+  const r = reminders.find((x) => x.id === id);
+  return !!r && r.deleted_at === null && r.done_at === null && !r.skipped_dates.includes(date);
+}

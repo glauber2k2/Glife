@@ -1,11 +1,11 @@
 // Android/iOS: avisos locais (funcionam offline) com expo-notifications. Cada aparelho agenda os seus; nada disso
 // sincroniza. Os avisos do Glife levam `data.glife` para não mexer em outros que existam. Lembrete e refeição trazem
 // botões (categorias): "Feito"/"Registrar" e "Adiar" (+10 min, reagendado aqui mesmo).
-import { localNow, type ScheduledNotice } from '@glife/domain/time';
+import { localNow, type NoticeRef, type ScheduledNotice } from '@glife/domain/time';
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 
-import { SAFE_NOTICE_ROUTES, parseNoticeRef, type NoticeAction, type NoticeActionEvent, type NoticeScheduler } from './types';
+import { SAFE_NOTICE_ROUTES, parseNoticeRef, staleNotices, type NoticeAction, type NoticeActionEvent, type NoticeScheduler } from './types';
 
 const CHANNEL = 'lembretes';
 const SNOOZE_MINUTES = 10;
@@ -101,8 +101,8 @@ export function createNoticeScheduler(): NoticeScheduler {
     void Notifications.dismissNotificationAsync(request.identifier).catch(() => undefined);
     if (action === 'snooze') void snooze(request).catch((e) => console.warn('Falha ao adiar o aviso', e));
     else {
-      const base = request.identifier.endsWith(SNOOZED) ? request.identifier : request.identifier + SNOOZED;
-      void Notifications.cancelScheduledNotificationAsync(base).catch(() => undefined);
+      const snoozedId = request.identifier.endsWith(SNOOZED) ? request.identifier : request.identifier + SNOOZED;
+      void Notifications.cancelScheduledNotificationAsync(snoozedId).catch(() => undefined);
     }
     actionListeners.forEach((l) => l({ action, notice }));
   }
@@ -126,16 +126,19 @@ export function createNoticeScheduler(): NoticeScheduler {
     }
   }
 
+  /** Cancela os avisos do Glife agendados, menos os adiados que `keepSnoozed` mantém. */
+  async function cancel(keepSnoozed: (ref: NoticeRef) => boolean) {
+    const scheduled = (await Notifications.getAllScheduledNotificationsAsync()).map((n) => ({ identifier: n.identifier, data: n.content.data }));
+    await Promise.all(staleNotices(scheduled, keepSnoozed).map((id) => Notifications.cancelScheduledNotificationAsync(id)));
+  }
+
   return {
     // Em fila: duas trocas seguidas não se atropelam.
-    replaceAll: (notices) => {
+    replaceAll: (notices, keepSnoozed) => {
       running = running
         .then(async () => {
-          // Os adiados ficam: a pessoa pediu para ser lembrada de novo daqui a pouco.
-          const ours = (await Notifications.getAllScheduledNotificationsAsync()).filter(
-            (n) => n.content.data?.glife === true && n.content.data?.snoozed !== true,
-          );
-          await Promise.all(ours.map((n) => Notifications.cancelScheduledNotificationAsync(n.identifier)));
+          // Adiado fica só enquanto o lembrete/refeição dele ainda está pendente (concluído em qualquer lugar, some).
+          await cancel(keepSnoozed);
           if (notices.length === 0 || !(await ready())) return;
           const now = localNow();
           for (const n of notices) {
@@ -148,6 +151,16 @@ export function createNoticeScheduler(): NoticeScheduler {
           }
         })
         .catch((e) => console.warn('Falha ao agendar os avisos', e));
+      return running;
+    },
+    clearAll: () => {
+      running = running
+        .then(async () => {
+          await cancel(() => false);
+          const shown = (await Notifications.getPresentedNotificationsAsync()).filter((n) => n.request.content.data?.glife === true);
+          await Promise.all(shown.map((n) => Notifications.dismissNotificationAsync(n.request.identifier)));
+        })
+        .catch((e) => console.warn('Falha ao limpar os avisos', e));
       return running;
     },
     onOpen: (listener) => {
