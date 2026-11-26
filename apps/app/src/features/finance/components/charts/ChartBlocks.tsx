@@ -104,7 +104,7 @@ export function FlowBlock(p: { buckets: FlowBucket[]; barWidth: number; today: s
           <View style={s.legend}>
             <LegendRow swatch="outline" label="Entradas" value={money(totals.income.confirmed)} />
             <LegendRow swatch="fill" label="Saídas" value={outflow(totals.expense.confirmed, fmt)} />
-            <LegendRow label="Saldo do período" value={signed(net)} tone={net < 0 ? 'danger' : 'success'} strong />
+            <LegendRow label="Saldo do período" value={signed(net)} tone={fmt.toneOf(net < 0 ? 'danger' : 'success', 'tertiary')} strong />
             {planned && p.plannedUntil && (
               <LegendRow
                 swatch="planned"

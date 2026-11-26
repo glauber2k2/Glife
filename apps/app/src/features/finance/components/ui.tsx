@@ -24,6 +24,7 @@ import {
   type TextTone,
 } from '@/shared/ui';
 
+import { useMoneyVisibility } from '@/shared/lib/MoneyVisibility';
 import { digitsToCents, money, parseDmy, dmy } from './format';
 
 // ---------- Seletor de mês / fatura ----------
@@ -37,6 +38,8 @@ export function MonthStepper(p: {
   canNext?: boolean;
   prevLabel?: string;
   nextLabel?: string;
+  /** rótulo estreito, para dividir a barra com outro botão */
+  compact?: boolean;
 }) {
   const s = useStyles();
   const t = useTheme();
@@ -54,7 +57,7 @@ export function MonthStepper(p: {
           onPress={p.onPrev}
         />
       </View>
-      <Text variant="chip" align="center" style={s.stepperLabel}>
+      <Text variant="chip" align="center" numberOfLines={1} style={[s.stepperLabel, p.compact && s.stepperLabelCompact]}>
         {p.label}
       </Text>
       <View style={[!p.canNext && p.canNext !== undefined && s.dim]}>
@@ -284,10 +287,11 @@ export function ProgressTrack({ ratio }: { ratio: number }) {
 export function useCountUp(value: number): number {
   const t = useTheme();
   const reduceMotion = useReduceMotion();
+  const { hidden } = useMoneyVisibility();
   const [shown, setShown] = useState(value);
   const from = useRef(value);
   useEffect(() => {
-    if (reduceMotion) {
+    if (reduceMotion || hidden) {
       from.current = value;
       return;
     }
@@ -304,8 +308,8 @@ export function useCountUp(value: number): number {
     };
     raf = requestAnimationFrame(step);
     return () => cancelAnimationFrame(raf);
-  }, [value, reduceMotion, t.motion.emphasis]);
-  return reduceMotion ? value : shown;
+  }, [value, reduceMotion, hidden, t.motion.emphasis]);
+  return reduceMotion || hidden ? value : shown;
 }
 
 // ---------- Teclado e campos ----------
@@ -604,6 +608,7 @@ const useStyles = makeStyles((t) => ({
   },
   stepperOnCard: { backgroundColor: t.colors.bg },
   stepperLabel: { minWidth: t.size.monthLabel, paddingHorizontal: t.space[1] },
+  stepperLabelCompact: { minWidth: t.size.monthLabelCompact, flexShrink: 1 },
   dim: { opacity: t.opacity.faint },
   blockHeader: {
     flexDirection: 'row',

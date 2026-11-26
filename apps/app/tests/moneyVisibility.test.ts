@@ -4,6 +4,7 @@ import { createMoneyFormat } from '../src/features/finance/components/format';
 import {
   createMoneyVisibilityStore,
   parseMoneyHidden,
+  resolveHidden,
   type KeyValueStorage,
 } from '../src/shared/lib/moneyVisibilityStore';
 
@@ -23,6 +24,14 @@ describe('parseMoneyHidden', () => {
     expect(parseMoneyHidden('1')).toBe(true);
     expect(parseMoneyHidden('0')).toBe(false);
     for (const bad of [null, '', 'true', '2']) expect(parseMoneyHidden(bad)).toBeNull();
+  });
+});
+
+describe('resolveHidden', () => {
+  it('antes de ler o armazenamento (null), os valores ficam ocultos: nada pisca na abertura', () => {
+    expect(resolveHidden(null)).toBe(true);
+    expect(resolveHidden(true)).toBe(true);
+    expect(resolveHidden(false)).toBe(false);
   });
 });
 
@@ -62,14 +71,14 @@ describe('createMoneyFormat', () => {
     expect(f.balance(-1000)).toBe('− R$ 10,00');
   });
 
-  it('oculto: máscara de largura fixa, mantendo o sinal', () => {
+  it('oculto: máscara neutra de largura fixa, sem revelar o sinal', () => {
     const f = createMoneyFormat(true);
     expect(f.money(123456)).toBe('R$ ••••');
     expect(f.money(5)).toBe('R$ ••••');
-    expect(f.signed(-1999)).toBe('− R$ ••••');
-    expect(f.signed(500000)).toBe('+ R$ ••••');
+    expect(f.signed(-1999)).toBe('R$ ••••');
+    expect(f.signed(500000)).toBe('R$ ••••');
     expect(f.signed(0)).toBe('R$ ••••');
-    expect(f.balance(-1000)).toBe('− R$ ••••');
+    expect(f.balance(-1000)).toBe('R$ ••••');
     expect(f.balance(1000)).toBe('R$ ••••');
   });
 });

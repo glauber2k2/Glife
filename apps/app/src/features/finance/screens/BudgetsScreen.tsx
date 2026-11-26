@@ -109,7 +109,7 @@ export function BudgetsScreen() {
 }
 
 function BudgetLine({ b, month, index, divider }: { b: BudgetRow; month: Month; index: number; divider: boolean }) {
-  const { money, balance, hidden } = useMoneyFormat();
+  const { money, balance, hidden, toneOf } = useMoneyFormat();
   const s = useStyles();
   const t = useTheme();
   const toast = useToast();
@@ -159,7 +159,7 @@ function BudgetLine({ b, month, index, divider }: { b: BudgetRow; month: Month; 
       <View style={s.stats}>
         <Stat label="Gasto" value={money(b.spent)} />
         <Stat label="Previsto" value={money(b.planned)} tone="secondary" />
-        <Stat label="Restante" value={budget !== null ? balance(rest) : '—'} tone={rest < 0 ? 'danger' : 'primary'} end />
+        <Stat label="Restante" value={budget !== null ? balance(rest) : '—'} tone={toneOf(rest < 0 ? 'danger' : 'primary', 'primary')} end />
       </View>
       {over && budget !== null && (
         <Tag tone="danger" icon={TriangleAlert} label={`${money(b.spent - budget)} acima do orçamento`} />

@@ -60,7 +60,7 @@ const VALUE_LABELS: Record<MovementKind, string> = {
 };
 
 function MovementForm({ asset, movements, accounts, editing, initialKind, today, onSave, onDelete }: MovementSheetProps) {
-  const { money, signed, balance } = useMoneyFormat();
+  const { money, signed, balance, toneOf } = useMoneyFormat();
   const s = useStyles();
   const auto = isAutoQuoted(asset.kind);
   const [kind, setKind] = useState<MovementKind>(editing?.kind ?? initialKind);
@@ -103,7 +103,7 @@ function MovementForm({ asset, movements, accounts, editing, initialKind, today,
   } else if (v > 0) {
     const d = v - base.current;
     helper = `${signed(d)} (${pctSigned(base.current > 0 ? d / base.current : 0)}) em relação a ${money(base.current)}${base.lastQuoteDate ? ` de ${dm(base.lastQuoteDate)}` : ''}`;
-    helperTone = resultTone(d);
+    helperTone = toneOf(resultTone(d), 'tertiary');
   } else {
     helper = `Valor anterior: ${money(base.current)}${base.lastQuoteDate ? ` em ${dm(base.lastQuoteDate)}` : ''}`;
   }

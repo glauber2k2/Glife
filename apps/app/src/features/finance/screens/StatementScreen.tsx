@@ -5,6 +5,7 @@ import { useLocalSearchParams } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { ScrollView, View } from 'react-native';
 
+import { MoneyFade } from '@/shared/lib/MoneyVisibility';
 import { BackHeader, Button, Chip, EmptyState, Reveal, Screen, SearchField, Tag, Text, makeStyles, useTheme } from '@/shared/ui';
 
 import { ACCOUNT_KIND_LABEL, ADJUSTMENT_ICON, TRANSFER_ICON, categoryHue, categoryIcon } from '../components/categories';
@@ -19,7 +20,7 @@ import { useOccurrences } from '../hooks/useFlows';
 const TRANSFERS = '__transfer__';
 
 export function StatementScreen() {
-  const { signed, balance } = useMoneyFormat();
+  const { signed, balance, toneOf } = useMoneyFormat();
   const s = useStyles();
   const t = useTheme();
   const today = todayIso();
@@ -73,6 +74,7 @@ export function StatementScreen() {
   return (
     <Screen>
       <BackHeader title={account.name} subtitle={ACCOUNT_KIND_LABEL[account.kind]} fallback="/financas" right={<MoneyEyeButton />} />
+<MoneyFade>
       <Reveal>
         <View style={s.hero}>
           <Text variant="small" tone="tertiary">
@@ -81,7 +83,7 @@ export function StatementScreen() {
           <Text variant="big" numeric>
             {balance(st.balance)}
           </Text>
-          <Tag large tone={st.projected < 0 ? 'danger' : 'neutral'} label={`Projetado em ${dm(end)}: ${balance(st.projected)}`} />
+          <Tag large tone={toneOf(st.projected < 0 ? 'danger' : 'neutral', 'neutral')} label={`Projetado em ${dm(end)}: ${balance(st.projected)}`} />
         </View>
         <View style={s.filters}>
           <SearchField value={q} onChangeText={setQ} placeholder="Buscar no extrato" />
@@ -157,6 +159,7 @@ export function StatementScreen() {
           <Button label="Excluir conta" variant="ghostDanger" onPress={() => setDeleting(true)} />
         </View>
       </Reveal>
+</MoneyFade>
       {txSheet.element}
       {plannedSheet.element}
       <DeleteAccountSheet account={account} open={deleting} onClose={() => setDeleting(false)} />

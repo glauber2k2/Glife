@@ -75,7 +75,7 @@ const capital = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 const warn = (what: string) => (e: unknown) => console.warn(what, e);
 
 export function InvestmentAssetScreen() {
-  const { money, signed, balance } = useMoneyFormat();
+  const { money, signed, balance, toneOf } = useMoneyFormat();
   const s = useStyles();
   const t = useTheme();
   const toast = useToast();
@@ -351,7 +351,7 @@ export function InvestmentAssetScreen() {
             label="Resultado"
             value={signed(pos.result)}
             sub={pctSigned(pos.pct)}
-            tone={resultTone(pos.result)}
+            tone={toneOf(resultTone(pos.result), 'tertiary')}
           />
           {auto && pos.units !== null && (
             <Stat

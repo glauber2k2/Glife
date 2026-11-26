@@ -381,6 +381,8 @@ export const size = {
   dateColumn: 30,
   /** rótulo do seletor de mês entre as setas */
   monthLabel: 96,
+  /** o mesmo, enxuto (cabe ao lado do olhinho em 360 dp; mês longo vira reticências) */
+  monthLabelCompact: 72,
   /** campo do valor em destaque (confirmar, pagar) */
   fieldLarge: 72,
   /** campo de orçamento editável na linha */

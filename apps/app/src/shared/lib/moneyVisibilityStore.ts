@@ -36,3 +36,11 @@ export function createMoneyVisibilityStore(storage: KeyValueStorage): MoneyVisib
     },
   };
 }
+
+/**
+ * Escolha ainda não lida do armazenamento (null) conta como "oculto": um valor sensível nunca aparece por um
+ * instante na abertura do app só porque a leitura é assíncrona.
+ */
+export function resolveHidden(choice: boolean | null): boolean {
+  return choice ?? true;
+}

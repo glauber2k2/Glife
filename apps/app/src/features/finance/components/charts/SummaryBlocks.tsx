@@ -59,7 +59,7 @@ export function ChartsSummaryBlock() {
         </View>
         <View style={s.line}>
           <Text variant="chip" tone="secondary" style={s.regular}>{`Saldo de ${monthLower(src.thisMonth)}`}</Text>
-          <Text variant="chip" tone={net < 0 ? 'danger' : 'success'} numeric style={s.semibold}>
+          <Text variant="chip" tone={fmt.toneOf(net < 0 ? 'danger' : 'success', 'tertiary')} numeric style={s.semibold}>
             {signed(net)}
           </Text>
         </View>

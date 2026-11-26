@@ -33,7 +33,7 @@ const monthOk = (m: unknown): m is Month => typeof m === 'string' && /^\d{4}-(0[
 const joinNames = (names: string[]) => (names.length <= 1 ? (names[0] ?? '') : `${names.slice(0, -1).join(', ')} e ${names[names.length - 1]}`);
 
 export function ChartsScreen() {
-  const { signed, balance } = useMoneyFormat();
+  const { signed, balance, toneOf } = useMoneyFormat();
   const s = useStyles();
   const t = useTheme();
   const params = useLocalSearchParams<{ modo?: string; mes?: string; de?: string }>();
@@ -133,7 +133,7 @@ export function ChartsScreen() {
             first
               ? {
                   text: `${signed(dv)} · ${signedPct(first.value ? dv / first.value : 0)} no período`,
-                  tone: dv < 0 ? 'danger' : dv > 0 ? 'success' : 'tertiary',
+                  tone: toneOf(dv < 0 ? 'danger' : dv > 0 ? 'success' : 'tertiary', 'tertiary'),
                   strong: true,
                 }
               : null

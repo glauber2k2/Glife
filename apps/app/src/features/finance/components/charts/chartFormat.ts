@@ -43,7 +43,7 @@ export function previousLabel(p: ChartPeriod): string | null {
   return first === last ? nameOf(first) : `${nameOf(first)} a ${nameOf(last)}`;
 }
 
-/** Valor curto da linha de referência: "R$ 500" · "R$ 10 mil" · "R$ 1,5 mi". */
+/** Valor curto da linha de referência (só o BarChart usa, e ele troca por MONEY_MASK com os valores ocultos): "R$ 500" · "R$ 10 mil" · "R$ 1,5 mi". */
 export function compactMoney(cents: number): string {
   const reais = Math.abs(cents) / 100;
   const one = (v: number) => {

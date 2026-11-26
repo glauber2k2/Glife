@@ -7,6 +7,7 @@ import { ArrowUpDown, Archive, Check, CreditCard, Ellipsis, Plus } from 'lucide-
 import { useMemo, useState, type ReactNode } from 'react';
 import { View } from 'react-native';
 
+import { MoneyFade } from '@/shared/lib/MoneyVisibility';
 import { BackHeader, Button, EmptyState, IconButton, ListGroup, ListItem, Reveal, Screen, Section, Text, makeStyles, moduleHue, useTheme, useToast } from '@/shared/ui';
 
 import { AccountActionsSheet } from '../components/AccountActionsSheet';
@@ -123,6 +124,7 @@ export function AccountsScreen() {
           </>
         }
       />
+<MoneyFade>
       <Reveal>
         {live.length === 0 ? (
           <EmptyState
@@ -215,6 +217,7 @@ export function AccountsScreen() {
           </Section>
         )}
       </Reveal>
+</MoneyFade>
 
       <AccountActionsSheet
         account={menuFor}

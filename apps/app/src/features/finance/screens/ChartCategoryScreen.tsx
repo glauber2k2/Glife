@@ -94,7 +94,7 @@ export function ChartCategoryScreen() {
               <Text variant="small" tone="secondary" numeric>{`${money(b.spent)} de ${money(b.budget)}`}</Text>
               <Text variant="small" tone="secondary" numeric>
                 {over ? '' : 'Restam '}
-                <Text variant="small" tone={over ? 'danger' : 'primary'} numeric style={s.medium}>
+                <Text variant="small" tone={fmt.toneOf(over ? 'danger' : 'primary', 'primary')} numeric style={s.medium}>
                   {money(over ? b.spent - b.budget : b.budget - b.spent)}
                 </Text>
                 {over ? ' acima' : ''}

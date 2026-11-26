@@ -36,6 +36,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Platform, Pressable, View } from 'react-native';
 import Animated, { Easing, FadeOut, LinearTransition, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 
+import { MoneyFade } from '@/shared/lib/MoneyVisibility';
 import { Button, EmptyState, Icon, IconButton, Reveal, Screen, Tag, Text, makeStyles, moduleHue, useReduceMotion, useTheme } from '@/shared/ui';
 
 import { ACCOUNT_KIND_LABEL, accountIcon, categoryIcon, TRANSFER_ICON } from '../components/categories';
@@ -63,7 +64,7 @@ const FREQ_LABEL = {
 type Leaving = { item: PlannedItem; kind: 'confirmed' | 'skipped' };
 
 export function FinanceHomeScreen() {
-  const { money, signed, balance } = useMoneyFormat();
+  const { money, signed, balance, toneOf } = useMoneyFormat();
   const s = useStyles();
   const t = useTheme();
   const reduceMotion = useReduceMotion();
@@ -172,6 +173,7 @@ export function FinanceHomeScreen() {
         hasAccounts ? (
           <View style={s.topActions}>
             <MonthStepper
+              compact
               label={name}
               onPrev={() => goMonth(-1)}
               onNext={() => goMonth(1)}
@@ -192,6 +194,7 @@ export function FinanceHomeScreen() {
           onAction={() => router.push('/financas/nova-conta')}
         />
       ) : (
+<MoneyFade>
         <MonthSlide id={month} direction={dir}>
           <Reveal>
             {/* Saldo */}
@@ -202,7 +205,7 @@ export function FinanceHomeScreen() {
               <Text variant="big" numeric accessibilityLabel={`Saldo hoje ${balance(overview.balanceToday)}`}>
                 {balance(saldo)}
               </Text>
-              <Tag large tone={esperado < 0 ? 'danger' : 'success'} icon={TrendingUp} label={`Esperado em ${dm(overview.endDate)}: ${balance(esperado)}`} />
+              <Tag large tone={toneOf(esperado < 0 ? 'danger' : 'success', 'neutral')} icon={TrendingUp} label={`Esperado em ${dm(overview.endDate)}: ${balance(esperado)}`} />
               <View style={s.heroAction}>
                 <Button label="Novo lançamento" icon={Plus} haptic onPress={() => setEntryOpen(true)} />
               </View>
@@ -528,6 +531,7 @@ export function FinanceHomeScreen() {
             </Block>
           </Reveal>
         </MonthSlide>
+</MoneyFade>
       )}
 
       <NewEntrySheet visible={entryOpen} onClose={() => setEntryOpen(false)} today={today} aboveTabBar />
@@ -676,7 +680,7 @@ const useStyles = makeStyles((t) => ({
   flex: { flex: 1, minWidth: 0, gap: t.space[0.5] },
   medium: { fontFamily: t.type.chip.font },
   semibold: { fontFamily: t.type.label.font },
-  topActions: { flexDirection: 'row', alignItems: 'center', gap: t.space[2] },
+  topActions: { flexDirection: 'row', alignItems: 'center', gap: t.space[2], flexShrink: 1, minWidth: 0 },
   hero: { gap: t.space[1.5] },
   heroAction: { marginTop: t.space[3], flexDirection: 'row' },
   divider: { borderTopWidth: t.hairline, borderTopColor: t.colors.hairline },

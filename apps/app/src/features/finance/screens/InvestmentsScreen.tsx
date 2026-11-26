@@ -28,7 +28,7 @@ function subOf({ asset, position }: PositionedAsset, closed: boolean, notFound: 
 }
 
 export function InvestmentsScreen() {
-  const { money, signed, balance } = useMoneyFormat();
+  const { money, signed, balance, toneOf } = useMoneyFormat();
   const s = useStyles();
   const today = todayIso();
   const snap = useInvestments();
@@ -59,10 +59,10 @@ export function InvestmentsScreen() {
               {balance(total)}
             </Text>
             <View style={s.resultLine}>
-              <Text tone={resultTone(p.result)} numeric style={s.medium}>
+              <Text tone={toneOf(resultTone(p.result), 'tertiary')} numeric style={s.medium}>
                 {signed(p.result)}
               </Text>
-              <Text tone={resultTone(p.result)} numeric style={s.medium}>
+              <Text tone={toneOf(resultTone(p.result), 'tertiary')} numeric style={s.medium}>
                 {pctSigned(p.pct)}
               </Text>
               {p.updated && (
@@ -91,7 +91,7 @@ export function InvestmentsScreen() {
                       sub={subOf(x, false, notFound)}
                       value={money(x.position.current)}
                       pct={pctSigned(x.position.pct)}
-                      pctTone={resultTone(x.position.result)}
+                      pctTone={toneOf(resultTone(x.position.result), 'tertiary')}
                       onPress={() => openAsset(x.asset.id)}
                     />
                   ))}
@@ -111,7 +111,7 @@ export function InvestmentsScreen() {
                         sub={subOf(x, true, notFound)}
                         value={money(0)}
                         pct={signed(x.position.result)}
-                        pctTone={resultTone(x.position.result)}
+                        pctTone={toneOf(resultTone(x.position.result), 'tertiary')}
                         onPress={() => openAsset(x.asset.id)}
                       />
                     ))}
