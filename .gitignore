@@ -18,3 +18,4 @@ apps/app/public/@powersync/
 
 # Notas locais com identificadores de infraestrutura (nunca publicar)
 *.local.md
+.superpowers/
