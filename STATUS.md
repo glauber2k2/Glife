@@ -1,7 +1,7 @@
 # Status: 2026-11-26
-- Tarefa atual: Fase 3 (agenda, lembretes, dieta) em versão básica, sem design (redesenho geral virá depois)
+- Tarefa atual: redesign Cobalto planejado; próxima é a Fase R (redesign do que já existe), depois R2 e Fases 4–7
 - Branch: master
-- Feito: domínio `time` (repetição, avisos), `agenda` e `diet` com testes; RowStore genérico (domain + SQLite) reutilizável; migração 20261126000001 com RLS, FK composta e sync; telas Agenda/Evento/Lembrete/Dieta/Refeição/Registro; blocos em Hoje; avisos locais (expo-notifications, 7 dias, até 60); notas com markdown ao vivo e volta do Ler; lint, tipos, testes e build web verdes
-- Falta: **usuário:** `PENDENCIAS.md` (instalar APK novo e testar avisos). Migração 20261126000001 e sync-streams v7 já publicados (25/11, sem backup: Docker travou). **Próximo:** APK 0.4.0 com `prebuild --clean` (lib nativa nova) e teste dos avisos offline; depois Fase 4
-- Atenção (riscos/decisões): repetição em campos (não RRULE); editar uma ocorrência muda a série; avisos nunca sincronizam (cada aparelho agenda); nada visto rodando com login
-- Último commit: faa56a8
+- Feito: Fase 3 básica (agenda, lembretes, dieta); design system Cobalto em `docs/design-system-cobalto/`; protótipo de todas as telas em `docs/prototipos/redesign-cobalto/` (63 telas, 38 folhas, celular e web); plano reordenado
+- Falta: **usuário:** `PENDENCIAS.md` (APK novo e teste dos avisos) e as 3 decisões pendentes do plano (aba IA antes da Fase 6, tema escuro derivado, fonte serifada de leitura). **Próximo:** R.0 (tokens, fontes e movimento Cobalto)
+- Atenção (riscos/decisões): Cobalto permite cartões e sombra no que flutua (o Glaciar proibia); dieta com calorias exige migração (Fase R2); repetição em campos (não RRULE); avisos nunca sincronizam
+- Último commit: f5304b6

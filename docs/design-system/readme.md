@@ -1,3 +1,5 @@
+> **Substituído em 26/11/2026** pelo Glife Cobalto (`docs/design-system-cobalto/`). Continua valendo para o código atual até a Fase R do plano terminar.
+
 # Glife Design System
 
 Glife is a personal-organisation app ("Organizador de vida"), written in Brazilian Portuguese. Its four tabs are **Hoje** (today: next appointment, meal, reminders, monthly spend, devotional), **Notas** (notes with links), **Finanças** (spend by category, investments, transactions) and **Bíblia** (reader with highlighter). A central **+** opens the *Caixa de entrada*, a sheet where you write freely and AI splits the text into items.

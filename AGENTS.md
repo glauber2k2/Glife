@@ -4,8 +4,9 @@ Organizador de vida pessoal: app único (Expo SDK 58 + Expo Router + TypeScript)
 Local-first: tudo é lido/gravado no SQLite do aparelho e sincronizado com o Supabase via PowerSync.
 Módulos: notas, finanças, investimentos, compras, agenda, dieta, Bíblia/devocionais, galeria, caixa de entrada com IA.
 O coração é o **grafo de links**: toda entidade tem UUID e endereço `glife://<tipo>/<ref>`; qualquer uma aponta para qualquer outra.
-Planejamento: `../Glife — Planejamento do Projeto.md` · Design: `docs/design-system/` · Fases: `docs/PLANO_DE_IMPLEMENTACAO.md`
-· Protótipos (Claude Design): `docs/prototipos/` · Histórico antigo: `docs/arquivo/`.
+Planejamento: `../Glife — Planejamento do Projeto.md` · Design: `docs/design-system-cobalto/` (o antigo
+`docs/design-system/` vale até a Fase R terminar) · Fases: `docs/PLANO_DE_IMPLEMENTACAO.md`
+· Protótipos: `docs/prototipos/` (todas as telas do redesign em `docs/prototipos/redesign-cobalto/`) · Histórico antigo: `docs/arquivo/`.
 
 ## Fluxo de trabalho entre IAs ("modo reserva")
 
@@ -77,6 +78,12 @@ O Claude é o agente principal; o Codex só assume quando os créditos do Claude
 
 ## Interface e movimento
 
+- **Redesign em andamento (desde 26/11/2026):** a direção passa a ser **Glife Cobalto v1.0** (`docs/design-system-cobalto/`):
+  Outfit, cobalto `#2D5BFF` só em ações e itens ativos, cartões brancos r24, sombra só no que flutua, barra de abas
+  flutuante (Início · Agenda · + · Notas · IA), movimento "curto e gentil" (90–500 ms, curvas bezier). Tela nova ou
+  refeita segue o Cobalto e a ficha da tela no protótipo `docs/prototipos/redesign-cobalto/`. As regras abaixo sobre
+  Glaciar, sombras e caixas valem para o código que ainda não passou pela Fase R; as demais (tokens, makeStyles,
+  teclado, campos, respiro, tudo ou nada) continuam valendo sempre.
 - Direção **Glaciar** (cor/forma) + **Sinóptico** (tipo): neutros azulados, um destaque azul-aço, Hanken Grotesk na
   interface (títulos grandes e leves), Crimson Pro só para leitura, controles em pílula, campos raio 16, margem lateral 22.
 - Só tokens de `shared/ui/theme/tokens.ts` (`t.space`, `t.colors`, `t.size`, `t.layout`, `t.opacity`…): **nada de hex
