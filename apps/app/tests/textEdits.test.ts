@@ -22,6 +22,13 @@ describe('seleção após alterações e linhas vazias', () => {
     expect(prefixLines('- item', { start: 0, end: 0 }, '- ')).toEqual({ text: 'item', selection: { start: 0, end: 0 } });
   });
 
+  it('não seleciona a linha anterior ao remover o marcador de uma linha seguinte', () => {
+    for (const cursor of [4, 5, 6]) {
+      expect(prefixLines('- a\n- b', { start: cursor, end: cursor }, '- ')).toEqual({ text: '- a\nb', selection: { start: 4, end: 4 } });
+    }
+    expect(prefixLines('- a\n- b', { start: 4, end: 7 }, '- ')).toEqual({ text: '- a\nb', selection: { start: 4, end: 5 } });
+  });
+
   it('todas as ações respeitam limites mesmo com eventos de seleção antigos', () => {
     const text = '- item\n\n  😀';
     for (const selection of [{ start: 99, end: 99 }, { start: -8, end: 5 }, { start: 9, end: 2 }, { start: NaN, end: Infinity }]) {

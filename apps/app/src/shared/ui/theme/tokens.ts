@@ -308,6 +308,8 @@ export const layout = {
   blockGap: 24,
   contentMaxWidth: 720,
   sheetMaxWidth: 560,
+  /** Seletores em folhas: área rolável; flexShrink permite telas ainda menores. */
+  pickerListMaxHeight: 360,
   authMaxWidth: 420,
   /** respiro acima da marca na tela Entrar */
   authTop: 72,

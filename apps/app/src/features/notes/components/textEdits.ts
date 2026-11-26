@@ -88,7 +88,7 @@ export function prefixLines(text: string, sel: Selection, prefix: string): Edit 
   const delta = (remove ? -1 : 1) * prefix.length;
   return editResult(text.slice(0, lineStart) + changed.join('\n') + text.slice(lineEnd), {
     start: Math.max(lineStart, sel.start + delta),
-    end: sel.end + delta * lines.length,
+    end: Math.max(lineStart, sel.end + delta * lines.length),
   });
 }
 

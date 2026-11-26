@@ -6,6 +6,7 @@ import { pickerDate, pickerResult } from '../lib/calendarPicker';
 import { Button } from './Button';
 import { CalendarPickerField, type CalendarPickerProps } from './CalendarPickerField';
 import { Sheet } from './Sheet';
+import { useToast } from './Toast';
 import { makeStyles, useTheme } from './theme';
 
 export function CalendarPicker(props: CalendarPickerProps) {
@@ -15,8 +16,9 @@ export function CalendarPicker(props: CalendarPickerProps) {
   const opened = useRef(false);
   const t = useTheme();
   const s = useStyles();
+  const toast = useToast();
   useEffect(() => () => {
-    if (Platform.OS === 'android' && opened.current) void DateTimePickerAndroid.dismiss(mode);
+    if (Platform.OS === 'android' && opened.current) void DateTimePickerAndroid.dismiss(mode).catch(() => {});
   }, [mode]);
 
   const open = () => {
@@ -33,6 +35,10 @@ export function CalendarPicker(props: CalendarPickerProps) {
           if (result !== null) onChange(result);
         },
         onDismiss: () => { opened.current = false; },
+        onError: () => {
+          opened.current = false;
+          toast({ message: 'Não foi possível abrir o seletor. Tente novamente.' });
+        },
       });
     } else {
       setDraft(date);
