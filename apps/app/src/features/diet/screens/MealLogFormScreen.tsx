@@ -6,7 +6,7 @@ import { View } from 'react-native';
 
 import { useEntityForm } from '@/shared/hooks/useEntityForm';
 import { parseDateInput } from '@/shared/lib/calendarInput';
-import { BackHeader, Button, Chip, DateInput, Input, Screen, Text, TimeInput, makeStyles } from '@/shared/ui';
+import { BackHeader, Button, EmptyState, Chip, DateInput, Input, Screen, Text, TimeInput, makeStyles } from '@/shared/ui';
 
 import { emptyLogForm, logToForm, readLogForm } from '../components/forms';
 import { useDiet } from '../hooks/DietData';
@@ -36,7 +36,7 @@ export function MealLogFormScreen() {
     return (
       <Screen>
         <BackHeader title="Registro" fallback="/dieta" />
-        <Text tone="tertiary">Registro não encontrado.</Text>
+        <EmptyState title="Não encontrado" message="Registro não encontrado." mood="pensando" />
       </Screen>
     );
   }
@@ -72,7 +72,7 @@ export function MealLogFormScreen() {
       )}
       <Input label="O que comeu" value={form.description} onChangeText={(description) => setForm({ description })} multiline maxLength={500} />
       <Button label="Salvar" onPress={() => void f.save()} loading={f.saving} haptic fullWidth />
-      {!f.isNew && <Button label="Excluir registro" variant="ghost" onPress={() => void f.remove()} fullWidth />}
+      {!f.isNew && <Button label="Excluir registro" variant="danger" onPress={() => void f.remove()} fullWidth />}
     </Screen>
   );
 }

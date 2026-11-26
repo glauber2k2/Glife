@@ -3,7 +3,7 @@ import { useLocalSearchParams } from 'expo-router';
 import { View } from 'react-native';
 
 import { useEntityForm } from '@/shared/hooks/useEntityForm';
-import { BackHeader, Button, Input, Screen, Switch, Text, TimeInput, WeekdayPicker, makeStyles } from '@/shared/ui';
+import { BackHeader, Button, EmptyState, Input, Screen, Switch, Text, TimeInput, WeekdayPicker, makeStyles } from '@/shared/ui';
 
 import { emptyPlanForm, planToForm, readPlanForm } from '../components/forms';
 import { useDiet } from '../hooks/DietData';
@@ -30,7 +30,7 @@ export function MealPlanFormScreen() {
     return (
       <Screen>
         <BackHeader title="Refeição" fallback="/dieta" />
-        <Text tone="tertiary">Refeição não encontrada.</Text>
+        <EmptyState title="Não encontrado" message="Refeição não encontrada." mood="pensando" />
       </Screen>
     );
   }
@@ -53,7 +53,7 @@ export function MealPlanFormScreen() {
         <Switch label="Avisar no horário" value={form.remind} onChange={(remind) => setForm({ remind })} />
       </View>
       <Button label="Salvar" onPress={() => void f.save()} loading={f.saving} haptic fullWidth />
-      {!f.isNew && <Button label="Tirar do plano" variant="ghost" onPress={() => void f.remove()} fullWidth />}
+      {!f.isNew && <Button label="Tirar do plano" variant="danger" onPress={() => void f.remove()} fullWidth />}
     </Screen>
   );
 }

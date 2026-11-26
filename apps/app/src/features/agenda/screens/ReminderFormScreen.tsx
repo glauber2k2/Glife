@@ -4,7 +4,7 @@ import { useLocalSearchParams } from 'expo-router';
 import { View } from 'react-native';
 
 import { useEntityForm } from '@/shared/hooks/useEntityForm';
-import { BackHeader, Button, DateInput, Input, RepeatFields, Screen, Text, TimeInput, makeStyles } from '@/shared/ui';
+import { BackHeader, Button, EmptyState, Tag, DateInput, Input, RepeatFields, Screen, TimeInput, makeStyles } from '@/shared/ui';
 
 import { emptyReminderForm, readReminderForm, reminderToForm } from '../components/forms';
 import { useAgenda } from '../hooks/AgendaData';
@@ -34,7 +34,7 @@ export function ReminderFormScreen() {
     return (
       <Screen>
         <BackHeader title="Lembrete" fallback="/agenda" />
-        <Text tone="tertiary">Lembrete não encontrado.</Text>
+        <EmptyState title="Não encontrado" message="Lembrete não encontrado." mood="pensando" />
       </Screen>
     );
   }
@@ -54,9 +54,9 @@ export function ReminderFormScreen() {
       </View>
       <RepeatFields value={form.repeat} onChange={(repeat) => setForm({ repeat })} />
       <Input label="Notas" value={form.notes} onChangeText={(notes) => setForm({ notes })} multiline maxLength={1000} />
-      {f.entity?.done_at && <Text tone="tertiary">Concluído.</Text>}
+      {f.entity?.done_at && <Tag tone="success" label="Concluído" />}
       <Button label="Salvar" onPress={() => void f.save()} loading={f.saving} haptic fullWidth />
-      {!f.isNew && <Button label="Excluir lembrete" variant="ghost" onPress={() => void f.remove()} fullWidth />}
+      {!f.isNew && <Button label="Excluir lembrete" variant="danger" onPress={() => void f.remove()} fullWidth />}
     </Screen>
   );
 }

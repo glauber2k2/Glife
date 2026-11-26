@@ -7,7 +7,7 @@ import { View } from 'react-native';
 import { useEntityForm } from '@/shared/hooks/useEntityForm';
 import { errorText } from '@/shared/lib/errorText';
 import { formatDateInput } from '@/shared/lib/calendarInput';
-import { BackHeader, Button, Chip, DateInput, Input, RepeatFields, Screen, Switch, Text, TimeInput, makeStyles, useToast } from '@/shared/ui';
+import { BackHeader, Button, EmptyState, Chip, DateInput, Input, RepeatFields, Screen, Switch, Text, TimeInput, makeStyles, useToast } from '@/shared/ui';
 
 import { REMIND_OPTIONS, emptyEventForm, eventToForm, readEventForm } from '../components/forms';
 import { useAgenda } from '../hooks/AgendaData';
@@ -38,7 +38,7 @@ export function EventFormScreen() {
     return (
       <Screen>
         <BackHeader title="Evento" fallback="/agenda" />
-        <Text tone="tertiary">Evento não encontrado.</Text>
+        <EmptyState title="Não encontrado" message="Evento não encontrado." mood="pensando" />
       </Screen>
     );
   }
@@ -100,7 +100,7 @@ export function EventFormScreen() {
       {!f.isNew && f.entity?.frequency !== 'none' && isoOk(params.data) && (
         <Button label={`Pular só ${formatDateInput(params.data)}`} variant="secondary" onPress={() => void skip()} fullWidth />
       )}
-      {!f.isNew && <Button label="Excluir evento" variant="ghost" onPress={() => void f.remove()} fullWidth />}
+      {!f.isNew && <Button label="Excluir evento" variant="danger" onPress={() => void f.remove()} fullWidth />}
     </Screen>
   );
 }
