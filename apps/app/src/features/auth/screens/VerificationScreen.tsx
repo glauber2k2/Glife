@@ -6,7 +6,7 @@ import { View } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
 import { SvgXml } from 'react-native-svg';
 
-import { Button, Icon, Spinner, Text, makeStyles, useReduceMotion, useTheme } from '@/shared/ui';
+import { Button, Card, Icon, Spinner, Text, makeStyles, useReduceMotion, useTheme } from '@/shared/ui';
 
 import { AuthBlock, AuthStep } from '../components/AuthLayout';
 import { AuthMessage } from '../components/AuthMessage';
@@ -31,11 +31,11 @@ function VerifyTotp() {
 
   return (
     <AuthStep
-      title="Verificação"
+      title="Código do autenticador"
       onSignOut={() => void action.run(() => service.signOut())}
       intro={
         <>
-          <Text tone="secondary">Digite o código do seu app autenticador.</Text>
+          <Text tone="tertiary">Abra o app autenticador e digite os 6 números do Glife.</Text>
           {state?.email && (
             <View style={s.account}>
               <Icon icon={CircleUser} size={t.icon.tiny} color="textTertiary" />
@@ -47,14 +47,12 @@ function VerifyTotp() {
         </>
       }
     >
-      <View style={s.codeGap} />
       <CodeEntry context="verify" action={action} submitLabel={['Confirmar', 'Confirmando']} onSubmit={confirm} autoFocus />
     </AuthStep>
   );
 }
 
 function EnrollTotp() {
-  const s = useStyles();
   const { service } = useAuth();
   const action = useAuthAction();
   const [enrollment, setEnrollment] = useState<TotpEnrollment | null>(null);
@@ -81,22 +79,17 @@ function EnrollTotp() {
 
   return (
     <AuthStep
-      title="Proteja sua conta"
+      title="Ligue o app autenticador"
       onSignOut={() => void action.run(() => service.signOut())}
       intro={
-        <Text tone="secondary">
-          O Glife exige verificação em duas etapas: leia o QR code com um app autenticador e digite o código que ele
-          mostrar.
+        <Text tone="tertiary">
+          O Glife exige verificação em duas etapas. Escaneie o código com o Google Authenticator, 1Password ou outro
+          app de sua preferência e digite o código que ele mostrar.
         </Text>
       }
     >
-      <AuthBlock label="1 · Leia o QR code">
-        <Text variant="caption" tone="tertiary" style={s.apps}>
-          Google Authenticator, Microsoft Authenticator ou 1Password
-        </Text>
-        <QrBlock enrollment={enrollment} failure={failure} onRetry={retry} />
-      </AuthBlock>
-      <AuthBlock label="2 · Digite o código" last />
+      <QrBlock enrollment={enrollment} failure={failure} onRetry={retry} />
+      <AuthBlock label="Digite o código" />
       <CodeEntry
         context="enroll"
         action={action}
@@ -151,45 +144,47 @@ function QrBlock({
   };
 
   return (
-    <View style={s.qrRow}>
-      {enrollment ? (
-        <Animated.View entering={fade(0)} style={s.qrPaper} accessibilityLabel="QR code para o app autenticador">
-          <SvgXml xml={enrollment.qrSvg} width={t.size.qrCode} height={t.size.qrCode} color={t.colors.qrInk} />
-        </Animated.View>
-      ) : (
-        <View style={s.qrLoading}>
-          <Spinner color="textTertiary" />
-          <Text variant="caption" tone="tertiary">
-            Preparando
-          </Text>
-        </View>
-      )}
-      <View style={s.keyColumn}>
-        <View style={s.keyText}>
-          <Text variant="caption" tone="tertiary">
-            Sem câmera? Digite a chave:
-          </Text>
-          {enrollment ? (
-            <Animated.View entering={fade(t.motion.stagger)}>
-              <Text variant="mono" selectable accessibilityLabel={`Chave: ${enrollment.secret}`}>
-                {formatTotpSecret(enrollment.secret).join('\n')}
-              </Text>
-            </Animated.View>
-          ) : (
-            <Text variant="small" tone="tertiary">
-              Gerando chave
+    <Card gap={t.space[4]} style={s.qrCard}>
+      <View style={s.qrCenter}>
+        {enrollment ? (
+          <Animated.View entering={fade(0)} style={s.qrPaper} accessibilityLabel="QR code para o app autenticador">
+            <SvgXml xml={enrollment.qrSvg} width={t.size.qrCode} height={t.size.qrCode} color={t.colors.qrInk} />
+          </Animated.View>
+        ) : (
+          <View style={s.qrLoading}>
+            <Spinner color="textTertiary" />
+            <Text variant="caption" tone="tertiary">
+              Preparando
             </Text>
-          )}
-        </View>
-        <Button
-          label={copied ? 'Copiada' : 'Copiar'}
-          variant="secondary"
-          icon={copied ? Check : Copy}
-          disabled={!enrollment}
-          onPress={() => void copy()}
-        />
+          </View>
+        )}
       </View>
-    </View>
+      <View style={s.keyText}>
+        <Text variant="micro" tone="tertiary" align="center">
+          Ou digite a chave
+        </Text>
+        {enrollment ? (
+          <Animated.View entering={fade(t.motion.stagger)}>
+            <Text variant="mono" align="center" selectable accessibilityLabel={`Chave: ${enrollment.secret}`} style={s.key}>
+              {formatTotpSecret(enrollment.secret).join(' ')}
+            </Text>
+          </Animated.View>
+        ) : (
+          <Text variant="small" tone="tertiary" align="center">
+            Gerando chave
+          </Text>
+        )}
+      </View>
+      <Button
+        label={copied ? 'Copiada' : 'Copiar'}
+        variant="secondary"
+        size="sm"
+        selfAlign="center"
+        icon={copied ? Check : Copy}
+        disabled={!enrollment}
+        onPress={() => void copy()}
+      />
+    </Card>
   );
 }
 
@@ -247,29 +242,28 @@ function CodeEntry({
 }
 
 const useStyles = makeStyles((t) => ({
-  apps: { marginTop: t.space[2] },
   account: { flexDirection: 'row', alignItems: 'center', gap: t.space[1.5] },
-  codeGap: { height: t.space[4] },
-  qrRow: { flexDirection: 'row', gap: t.space[5], marginTop: t.space[5], alignItems: 'stretch' },
+  qrCard: { alignSelf: 'stretch' },
+  qrCenter: { alignItems: 'center' },
   qrPaper: {
     width: t.size.qrBox,
     height: t.size.qrBox,
     padding: t.space[3],
-    borderRadius: t.radius.field,
+    borderRadius: t.radius.fieldLarge,
     backgroundColor: t.colors.qrPaper,
   },
   qrLoading: {
     width: t.size.qrBox,
     height: t.size.qrBox,
-    borderRadius: t.radius.field,
-    backgroundColor: t.colors.soft,
+    borderRadius: t.radius.fieldLarge,
+    backgroundColor: t.colors.bg,
     alignItems: 'center',
     justifyContent: 'center',
     gap: t.space[2],
   },
-  qrFailure: { marginTop: t.space[5], minHeight: t.size.qrBox, gap: t.space[4], alignItems: 'flex-start' },
-  keyColumn: { flex: 1, minWidth: 0, justifyContent: 'space-between', gap: t.space[3] },
-  keyText: { gap: t.space[2] },
+  qrFailure: { minHeight: t.size.qrBox, gap: t.space[4], alignItems: 'flex-start' },
+  keyText: { gap: t.space[1.5] },
+  key: { fontSize: t.type.item.fontSize, letterSpacing: t.type.label.letterSpacing },
   codeEntry: { gap: t.space[4] },
-  action: { marginTop: t.space[4] },
+  action: { marginTop: t.space[2] },
 }));

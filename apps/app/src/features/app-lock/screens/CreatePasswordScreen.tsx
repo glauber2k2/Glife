@@ -56,9 +56,9 @@ function CreateStep({ offer, onCreated }: { offer: boolean; onCreated: () => voi
         <Text variant="title" accessibilityRole="header" style={s.title}>
           Crie a senha do app
         </Text>
-        <Text tone="secondary" style={s.intro}>
-          Ela desbloqueia o Glife só neste aparelho e é diferente da senha da conta e do PIN do celular. Se esquecer,
-          será preciso entrar com a conta de novo.
+        <Text tone="tertiary" style={s.intro}>
+          Ela protege o Glife neste aparelho e é diferente da senha da conta e do PIN do celular. Se esquecer, será
+          preciso entrar com a conta de novo.
         </Text>
         <View style={s.fields}>
           <PasswordInput label="Senha do app" value={pwd} onChangeText={setPwd} autoFocus returnKeyType="next" />
@@ -114,8 +114,8 @@ function OfferBiometrics({ onDone }: { onDone: () => void }) {
       footer={
         <Reveal delay={t.motion.stepDelay}>
           <View style={s.offerActions}>
-            <Button label="Usar biometria" icon={Fingerprint} fullWidth loading={busy} onPress={() => void accept()} />
-            <Button label="Agora não" variant="subtle" fullWidth onPress={onDone} />
+            <Button label="Usar digital" icon={Fingerprint} fullWidth loading={busy} onPress={() => void accept()} />
+            <Button label="Agora não" variant="neutral" fullWidth onPress={onDone} />
             <Text variant="caption" tone="tertiary" align="center" style={s.later}>
               Dá para mudar depois em Ajustes › Segurança.
             </Text>
@@ -125,32 +125,45 @@ function OfferBiometrics({ onDone }: { onDone: () => void }) {
     >
       <LockHeader />
       <Reveal delay={t.motion.stepDelay}>
-        <View style={s.created}>
-          <Icon icon={Check} size={t.icon.small} color="success" />
-          <Text variant="small" tone="success">
-            Senha do app criada
+        <View style={s.offer}>
+          <View style={s.bio}>
+            <Icon icon={Fingerprint} size={t.icon.large * 2 - t.space[1]} color="tonalInk" />
+          </View>
+          <View style={s.created}>
+            <Icon icon={Check} size={t.icon.small} color="success" />
+            <Text variant="small" tone="success">
+              Senha do app criada
+            </Text>
+          </View>
+          <Text variant="title2" align="center" accessibilityRole="header">
+            Desbloquear com a digital?
+          </Text>
+          <Text tone="tertiary" align="center" style={s.offerText}>
+            É o caminho mais rápido. Se a digital falhar, o Glife pede a senha do app, nunca o PIN do celular.
           </Text>
         </View>
-        <Text variant="title" accessibilityRole="header" style={s.offerTitle}>
-          Desbloquear com a digital?
-        </Text>
-        <Text tone="secondary" style={s.intro}>
-          É o jeito normal de abrir o Glife neste celular. Quando a biometria falhar ou for cancelada, ele pede a senha
-          do app.
-        </Text>
       </Reveal>
     </LockLayout>
   );
 }
 
 const useStyles = makeStyles((t) => ({
-  title: { paddingTop: t.space[8] },
-  intro: { marginTop: t.space[4] },
-  fields: { marginTop: t.space[8], gap: t.space[4] },
+  title: { paddingTop: t.space[6] },
+  intro: { marginTop: t.space[2] },
+  fields: { marginTop: t.space[6], gap: t.space[3.5] },
   field: { gap: t.space[1.5] },
   action: { marginTop: t.space[4] },
-  created: { flexDirection: 'row', alignItems: 'center', gap: t.space[2], paddingTop: t.space[8] },
-  offerTitle: { marginTop: t.space[4] },
-  offerActions: { gap: t.space[2], paddingBottom: t.space[4] },
+  offer: { alignItems: 'center', gap: t.space[4], paddingTop: t.space[10] },
+  bio: {
+    width: t.size.fab + t.space[10],
+    height: t.size.fab + t.space[10],
+    borderRadius: t.radius.sheet + t.space[0.5],
+    backgroundColor: t.colors.tonal,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  created: { flexDirection: 'row', alignItems: 'center', gap: t.space[2] },
+  offerText: { maxWidth: t.layout.emptyTextMax + t.space[5] },
+  offerActions: { gap: t.space[2.5], paddingBottom: t.space[4] },
   later: { marginTop: t.space[1] },
 }));

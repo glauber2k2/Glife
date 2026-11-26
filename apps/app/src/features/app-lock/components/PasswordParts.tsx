@@ -1,10 +1,11 @@
 import { APP_PASSWORD_MAX, APP_PASSWORD_MIN } from '@glife/domain/applock';
-import { Circle, CircleAlert, CircleCheck, Eye, EyeOff, Timer, type LucideIcon } from 'lucide-react-native';
+import { CircleAlert, Eye, EyeOff, Timer, type LucideIcon } from 'lucide-react-native';
 import { useState, type ReactNode, type Ref } from 'react';
 import { View, type TextInputInstance } from 'react-native';
 import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 
 import {
+  Checkbox,
   IconButton,
   Icon,
   Input,
@@ -56,12 +57,11 @@ export function PasswordInput({
 /** "Pelo menos 6 caracteres": círculo vazio em terciário; cumprida, em verde. */
 export function LengthRule({ value }: { value: string }) {
   const s = useStyles();
-  const t = useTheme();
   const ok = value.length >= APP_PASSWORD_MIN;
   return (
     <View style={s.rule}>
-      <Icon icon={ok ? CircleCheck : Circle} size={t.icon.small} color={ok ? 'success' : 'textTertiary'} />
-      <Text variant="small" tone={ok ? 'success' : 'tertiary'}>
+      <Checkbox checked={ok} />
+      <Text variant="small" tone={ok ? 'primary' : 'tertiary'}>
         Pelo menos {APP_PASSWORD_MIN} caracteres
       </Text>
     </View>
@@ -113,7 +113,7 @@ export function LockMessage({
 }
 
 const useStyles = makeStyles((t) => ({
-  disabled: { opacity: t.opacity.fieldDisabled, backgroundColor: t.colors.soft, borderRadius: t.radius.field },
+  disabled: { opacity: t.opacity.fieldDisabled },
   rule: { flexDirection: 'row', alignItems: 'center', gap: t.space[2], paddingLeft: t.space[0.5] },
   message: { flexDirection: 'row', alignItems: 'flex-start', gap: t.space[2] },
   messageIcon: { paddingTop: t.space[0.5] },

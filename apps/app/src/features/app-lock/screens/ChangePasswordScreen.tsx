@@ -5,7 +5,7 @@ import { router } from 'expo-router';
 import { useState } from 'react';
 import { View } from 'react-native';
 
-import { BackHeader, Button, Screen, makeStyles, useToast } from '@/shared/ui';
+import { BackHeader, Button, Screen, Text, makeStyles, useToast } from '@/shared/ui';
 
 import { AccountSheet } from '../components/AccountSheet';
 import { LengthRule, LockMessage, PasswordInput } from '../components/PasswordParts';
@@ -63,8 +63,7 @@ export function ChangePasswordScreen() {
   const currentWrong = problem?.kind === 'wrong' || problem?.kind === 'wait';
 
   return (
-    <Screen>
-      <BackHeader title="Trocar a senha do app" />
+    <Screen header={<BackHeader title="Senha do app" backLabel="Segurança" fallback="/seguranca" />}>
       <View style={s.fields}>
         <View style={[s.field, !currentWrong && s.afterCurrent]}>
           <PasswordInput
@@ -103,6 +102,9 @@ export function ChangePasswordScreen() {
           {mismatch && <LockMessage kind="error">As senhas não são iguais.</LockMessage>}
         </View>
         <LengthRule value={next} />
+        <Text variant="caption" tone="tertiary">
+          Vale só neste aparelho. No computador, a senha do app é outra.
+        </Text>
         {problem?.kind === 'same' && (
           <LockMessage kind="error">A nova senha precisa ser diferente da atual.</LockMessage>
         )}
@@ -110,7 +112,7 @@ export function ChangePasswordScreen() {
           <LockMessage kind="error">Não foi possível trocar a senha. Tente de novo.</LockMessage>
         )}
         <View style={s.action}>
-          <Button label="Salvar" fullWidth loading={busy} disabled={!ready} onPress={() => void save()} />
+          <Button label="Trocar senha" fullWidth loading={busy} disabled={!ready} onPress={() => void save()} />
         </View>
         <View style={s.center}>
           <Button label="Esqueci a senha atual" variant="subtle" size="sm" onPress={() => setForgot(true)} />

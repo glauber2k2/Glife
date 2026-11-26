@@ -8,6 +8,8 @@ import { Platform, View, type TextInputInstance } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withSequence, withTiming } from 'react-native-reanimated';
 
 import {
+  Alert,
+  Mascot,
   Button,
   Icon,
   Reveal,
@@ -151,31 +153,28 @@ export function LockScreen() {
       }
     >
       <View style={s.brand}>
-        <Text variant="display" accessibilityRole="header" accessibilityLabel="Glife">
-          Glife
+        <Mascot size={t.size.moduleIconLarge} eyes={t.colors.bg} />
+        <Text variant="title2" align="center" accessibilityRole="header" style={s.brandTitle}>
+          {phase === 'travado' ? 'Glife travado neste aparelho' : waiting ? 'Espere um pouco' : phase === 'nova' ? 'Digital nova no celular' : 'Glife bloqueado'}
         </Text>
-        <View style={s.locked}>
-          <Icon icon={Lock} size={t.icon.small - t.space[0.5]} color="textTertiary" />
-          <Text variant="small" tone="tertiary">
-            Bloqueado
-          </Text>
-        </View>
+        {phase !== 'travado' && (
+          <View style={s.locked}>
+            <Icon icon={Lock} size={t.icon.small - t.space[0.5]} color="textTertiary" />
+            <Text variant="small" tone="tertiary" align="center">
+              {waiting ? 'Foram várias tentativas erradas seguidas.' : canBio ? 'Use a digital ou a senha do app.' : 'Use a senha do app.'}
+            </Text>
+          </View>
+        )}
       </View>
 
       {showForm && (
         <View style={s.form}>
           <Reveal>
             {phase === 'nova' && (
-              <View style={s.nova}>
-                <Icon icon={Fingerprint} size={t.icon.size} color="accentInk" />
-                <View style={s.novaText}>
-                  <Text variant="item">Digital nova no celular: confirme com a senha</Text>
-                  <Text variant="small" tone="secondary">
-                    Uma digital foi cadastrada neste celular desde o último desbloqueio. Depois da senha, a biometria
-                    volta a valer.
-                  </Text>
-                </View>
-              </View>
+              <Alert tone="info" icon={Fingerprint}>
+                Uma digital foi cadastrada neste celular desde o último desbloqueio. Confirme com a senha do app uma
+                vez para voltar a usar a digital.
+              </Alert>
             )}
             <Animated.View style={shakeStyle}>
               <PasswordInput
@@ -213,7 +212,7 @@ export function LockScreen() {
               />
               {canBio && (
                 <Button
-                  label="Usar biometria"
+                  label="Usar digital"
                   variant="ghost"
                   icon={Fingerprint}
                   fullWidth
@@ -229,19 +228,16 @@ export function LockScreen() {
         <View style={s.form}>
           <Reveal>
             <View style={s.lockedBlock}>
-              <Text variant="label" tone="tertiary">
-                Travado
-              </Text>
-              <Text variant="title2" style={s.lockedTitle}>
-                Entre com a conta para liberar
-              </Text>
-              <Text tone="secondary" style={s.lockedText}>
+              <Text variant="small" tone="tertiary" align="center">
                 {broken
                   ? 'Não foi possível ler a senha do app neste aparelho. Entre com o e-mail, a senha da conta e o código do autenticador; depois disso você cria uma senha nova.'
                   : 'A senha do app foi digitada errado 10 vezes. Entre com o e-mail, a senha da conta e o código do autenticador; depois disso você cria uma senha nova.'}
               </Text>
               <View style={s.lockedAction}>
                 <Button label="Entrar com a conta" fullWidth loading={leaving} onPress={() => void leave()} />
+                <Text variant="micro" tone="tertiary" align="center">
+                  Pede e-mail, senha e o código do autenticador.
+                </Text>
               </View>
             </View>
           </Reveal>
@@ -254,16 +250,13 @@ export function LockScreen() {
 }
 
 const useStyles = makeStyles((t) => ({
-  brand: { paddingTop: t.layout.authTop },
-  locked: { flexDirection: 'row', alignItems: 'center', gap: t.space[1.5], marginTop: t.space[3] },
-  form: { marginTop: t.space[12] + t.space[4], gap: t.space[4] },
-  nova: { flexDirection: 'row', gap: t.space[3], alignItems: 'flex-start', paddingBottom: t.space[2] },
-  novaText: { flex: 1, gap: t.space[1] },
+  brand: { paddingTop: t.space[12] + t.space[3], alignItems: 'center', gap: t.space[2] },
+  brandTitle: { marginTop: t.space[1.5] },
+  locked: { flexDirection: 'row', alignItems: 'center', gap: t.space[1.5], maxWidth: t.layout.emptyTextMax + t.space[2.5] },
+  form: { marginTop: t.space[6], gap: t.space[3] },
   clock: { fontFamily: t.type.button.font },
-  actions: { marginTop: t.space[4], gap: t.space[2] },
+  actions: { marginTop: t.space[1.5], gap: t.space[2] },
   footer: { alignItems: 'center', paddingBottom: t.space[4] },
-  lockedBlock: { borderTopWidth: t.hairline, borderTopColor: t.colors.hairline, paddingTop: t.space[6] },
-  lockedTitle: { marginTop: t.space[4] },
-  lockedText: { marginTop: t.space[4] },
-  lockedAction: { marginTop: t.space[8] },
+  lockedBlock: { gap: t.space[6] },
+  lockedAction: { gap: t.space[2.5] },
 }));
