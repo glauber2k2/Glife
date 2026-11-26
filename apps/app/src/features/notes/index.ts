@@ -1,6 +1,9 @@
 export { notesTables } from './data/schema';
 export { notesSearchIndex } from './data/notesSearch';
 export { NotesProvider, useNotesSearchSources } from './hooks/NotesData';
+export { useNotesTaggedSource } from './hooks/useNotesTaggedSource';
+export { TagScreen } from './screens/TagScreen';
+export { TagsScreen } from './screens/TagsScreen';
 export { TodayNotesBlock } from './components/TodayNotesBlock';
 export { useTodayNotes } from './hooks/useTodayNotes';
 export { FolderScreen } from './screens/FolderScreen';

@@ -72,6 +72,61 @@ export function notesRepositoryContract(name: string, make: () => Promise<NotesC
       await expectCode(notes.restore(MISSING), 'not_found');
     });
 
+    it('atualiza várias de uma vez (fixar, mover) e desfaz com os valores antigos', async () => {
+      const { notes, folders } = await make();
+      const f = await folders.create({ name: 'Casa' });
+      const a = await notes.create({ title: 'a', pinned: true });
+      const b = await notes.create({ title: 'b' });
+      const out = await notes.updateMany([
+        { id: a.id, patch: { pinned: true, folder_id: f.id } },
+        { id: b.id, patch: { pinned: true, folder_id: f.id } },
+      ]);
+      expect(out.map((n) => [n.id, n.pinned, n.folder_id])).toEqual([
+        [a.id, true, f.id],
+        [b.id, true, f.id],
+      ]);
+      await notes.updateMany([
+        { id: a.id, patch: { pinned: true, folder_id: null } },
+        { id: b.id, patch: { pinned: false, folder_id: null } },
+      ]);
+      expect(await notes.get(b.id)).toMatchObject({ pinned: false, folder_id: null });
+    });
+
+    it('atualizar em lote é tudo ou nada', async () => {
+      const { notes } = await make();
+      const a = await notes.create({ title: 'a' });
+      await expectCode(
+        notes.updateMany([
+          { id: a.id, patch: { pinned: true } },
+          { id: MISSING, patch: { pinned: true } },
+        ]),
+        'not_found',
+      );
+      await expectCode(
+        notes.updateMany([
+          { id: a.id, patch: { pinned: true } },
+          { id: a.id, patch: { folder_id: MISSING } },
+        ]),
+        'not_found',
+      );
+      expect((await notes.get(a.id))!.pinned).toBe(false);
+    });
+
+    it('manda várias para a lixeira e traz de volta, tudo ou nada', async () => {
+      const { notes } = await make();
+      const a = await notes.create({ title: 'a' });
+      const b = await notes.create({ title: 'b' });
+      await notes.removeMany([a.id, b.id]);
+      expect(await notes.countTrash()).toBe(2);
+      await notes.restoreMany([a.id, b.id]);
+      expect(await notes.countTrash()).toBe(0);
+      await expectCode(notes.removeMany([a.id, MISSING]), 'not_found');
+      expect(await notes.get(a.id)).not.toBeNull();
+      await notes.removeMany([a.id]);
+      await expectCode(notes.restoreMany([a.id, MISSING]), 'not_found');
+      expect(await notes.get(a.id)).toBeNull();
+    });
+
     it('conta e esvazia a lixeira sem tocar nas notas ativas', async () => {
       const { notes } = await make();
       const keep = await notes.create({ title: 'fica' });

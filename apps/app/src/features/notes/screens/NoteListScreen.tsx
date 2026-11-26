@@ -1,19 +1,22 @@
 import type { NoteListQuery } from '@glife/domain/notes';
-import { router, useLocalSearchParams } from 'expo-router';
-import { Folder, Folders, SquarePen, Trash2 } from 'lucide-react-native';
-import { useEffect, useState } from 'react';
-import { ScrollView, View } from 'react-native';
+import { router, useLocalSearchParams, useNavigation } from 'expo-router';
+import { Folder, Folders, Hash, ListChecks, SquarePen, Trash2 } from 'lucide-react-native';
+import { useEffect, useLayoutEffect, useState } from 'react';
+import { BackHandler, ScrollView, View } from 'react-native';
 
 import { useLinksData } from '@/features/links';
-import { Alert, Button, Chip, EmptyState, IconButton, Screen, SearchField, Section, makeStyles } from '@/shared/ui';
+import { Alert, Button, Chip, EmptyState, IconButton, Screen, SearchField, Section, Text, makeStyles } from '@/shared/ui';
 
+import { BulkTagsSheet, MoveNotesSheet } from '../components/BulkSheets';
 import { NoteRows } from '../components/NoteRows';
 import { PinnedNoteCard } from '../components/PinnedNoteCard';
-import { useNoteQuickActions } from '../components/NoteQuickActions';
+import { SelectionBar, type BulkAction } from '../components/SelectionBar';
 import { useNotesData } from '../hooks/NotesData';
+import { selectionLabel } from '../hooks/selection';
 import { useFocusData } from '../hooks/useFocusData';
 import { useNoteList } from '../hooks/useNoteList';
 import { openNote, useCreateNote } from '../hooks/useNoteActions';
+import { useBulkNoteActions, useNoteSelection } from '../hooks/useNoteSelection';
 
 type KindFilter = 'all' | 'pinned' | 'journal' | 'devotional';
 
@@ -25,11 +28,19 @@ const KIND_FILTERS: { value: KindFilter; label: string; query: NoteListQuery }[]
 ];
 
 const LIST_LIMIT = 200;
+const HIDDEN_TAB_BAR = { display: 'none' } as const;
 
-/** Notas do aparelho (funciona sem internet), com acesso a Pastas e à Lixeira. */
+/**
+ * Notas do aparelho (funciona sem internet), com acesso a Pastas, Tags e Lixeira.
+ * Seleção múltipla: toque longo numa nota ou "Selecionar"; as abas somem e a barra de ações flutua no lugar.
+ */
 export function NoteListScreen() {
   const s = useStyles();
-  const quick = useNoteQuickActions();
+  const navigation = useNavigation();
+  const selection = useNoteSelection();
+  const bulk = useBulkNoteActions();
+  const [sheet, setSheet] = useState<'move' | 'tags' | null>(null);
+  const [busy, setBusy] = useState(false);
   const { notes, folders } = useNotesData();
   const { tags } = useLinksData();
   const [kind, setKind] = useState<KindFilter>('all');
@@ -48,7 +59,7 @@ export function NoteListScreen() {
   const { items, failed } = useNoteList({ ...query, search: search.trim(), limit: LIST_LIMIT });
   const create = useCreateNote();
 
-  const { data: side } = useFocusData(
+  const { data: side, reload } = useFocusData(
     async () => {
       const [allFolders, allTags, trash] = await Promise.all([folders.list(), tags.list(), notes.countTrash()]);
       return { folders: allFolders, tags: allTags, trash };
@@ -64,11 +75,91 @@ export function NoteListScreen() {
     };
   }, [tags, tagId, items]);
 
+  // Seleção: as abas somem; o voltar do Android sai da seleção em vez de sair da tela.
+  useLayoutEffect(() => {
+    navigation.setOptions({ tabBarStyle: selection.active ? HIDDEN_TAB_BAR : undefined });
+  }, [navigation, selection.active]);
+  const { active: selecting, cancel } = selection;
+  useEffect(() => {
+    if (!selecting) return;
+    const sub = BackHandler.addEventListener('hardwareBackPress', () => {
+      cancel();
+      return true;
+    });
+    return () => sub.remove();
+  }, [selecting, cancel]);
+
   const visible = items && tagId && tagged ? items.filter((n) => tagged.has(n.id)) : items;
   const filtered = kind !== 'all' || !!tagId || search.trim() !== '';
   const total = items?.length ?? 0;
   const pinned = !filtered && visible ? visible.filter((n) => n.pinned) : [];
   const rest = !filtered && visible ? visible.filter((n) => !n.pinned) : visible;
+  // Na seleção, uma lista só (fixadas primeiro), como no protótipo.
+  const ordered = visible ? [...pinned, ...(rest ?? [])] : [];
+  const chosen = ordered.filter((n) => selection.ids.has(n.id));
+
+  const finish = async (work: () => Promise<boolean>) => {
+    setBusy(true);
+    try {
+      if (await work()) {
+        setSheet(null);
+        selection.cancel();
+        reload();
+      }
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const onBulk = (action: BulkAction) => {
+    if (!chosen.length || busy) return;
+    if (action === 'move' || action === 'tags') setSheet(action);
+    else if (action === 'pin') void finish(() => bulk.pin(chosen));
+    else if (action === 'export') void finish(() => bulk.exportMd(chosen));
+    else void finish(() => bulk.trash(chosen));
+  };
+
+  if (selection.active) {
+    return (
+      <View style={s.fill}>
+        <Screen
+          header={
+            <View style={s.selectTop}>
+              <Button label="Cancelar" variant="ghost" size="sm" selfAlign="center" onPress={selection.cancel} />
+              <Text variant="emphasis" numeric accessibilityLiveRegion="polite">
+                {selectionLabel(selection.ids.size)}
+              </Text>
+              <Button
+                label="Todas"
+                variant="ghost"
+                size="sm"
+                selfAlign="center"
+                onPress={() => selection.selectAll(ordered.map((n) => n.id))}
+              />
+            </View>
+          }
+          tabBar
+        >
+          {ordered.length > 0 && (
+            <NoteRows notes={ordered} onOpen={(n) => selection.toggle(n.id)} selection={selection.ids} />
+          )}
+        </Screen>
+        <SelectionBar disabled={!chosen.length || busy} onAction={onBulk} />
+        <MoveNotesSheet
+          visible={sheet === 'move'}
+          folders={side?.folders ?? []}
+          onClose={() => setSheet(null)}
+          onPick={(f) => void finish(() => bulk.move(chosen, f && { id: f.id, name: f.name }))}
+        />
+        <BulkTagsSheet
+          visible={sheet === 'tags'}
+          notes={chosen}
+          onClose={() => setSheet(null)}
+          onDone={(change) => void finish(() => bulk.applyTags(chosen, change))}
+        />
+      </View>
+    );
+  }
 
   return (
     <Screen
@@ -143,12 +234,16 @@ export function NoteListScreen() {
           )}
           {rest && rest.length > 0 && (
             <Section title={filtered ? 'Notas' : 'Recentes'}>
-              <NoteRows notes={rest} onOpen={(n) => openNote(n.id)} onLongPress={quick.open} />
+              <NoteRows notes={rest} onOpen={(n) => openNote(n.id)} onLongPress={(n) => selection.start(n.id)} />
             </Section>
           )}
         </>
       )}
       <View style={s.footer}>
+        <Button label="Tags" icon={Hash} variant="subtle" size="sm" onPress={() => router.push('/tags')} />
+        {!!visible?.length && (
+          <Button label="Selecionar" icon={ListChecks} variant="subtle" size="sm" onPress={() => selection.start()} />
+        )}
         <Button
           label={side ? `Lixeira · ${side.trash}` : 'Lixeira'}
           icon={Trash2}
@@ -157,16 +252,17 @@ export function NoteListScreen() {
           onPress={() => router.push('/lixeira')}
         />
       </View>
-      {quick.element}
     </Screen>
   );
 }
 
 const useStyles = makeStyles((t) => ({
+  fill: { flex: 1 },
   controls: { gap: t.space[3] },
   actions: { flexDirection: 'row', gap: t.space[2] },
   bleed: { marginHorizontal: -t.layout.gutter },
   chips: { gap: t.space[2], paddingHorizontal: t.layout.gutter },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: t.space[3] },
-  footer: { alignItems: 'center' },
+  footer: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: t.space[1] },
+  selectTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: t.size.iconButton, gap: t.space[2] },
 }));

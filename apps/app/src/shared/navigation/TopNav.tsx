@@ -7,6 +7,8 @@ import { Platform, Pressable, View, useWindowDimensions } from 'react-native';
 
 import { Icon, Mascot, Text, makeStyles, useTheme } from '@/shared/ui';
 
+import { isTabBarHidden } from './navigationMotion';
+
 /** Web com janela da largura da coluna ou maior: as abas vão para o topo. No Android e em telas estreitas, embaixo. */
 export function useTopNavigation(): boolean {
   const t = useTheme();
@@ -17,6 +19,8 @@ export function useTopNavigation(): boolean {
 export function TopNav({ state, descriptors, navigateToTab }: BottomTabBarProps) {
   const s = useStyles();
   const t = useTheme();
+  // A tela pode esconder as abas (ex.: seleção múltipla nas Notas) com `tabBarStyle: { display: 'none' }`.
+  if (isTabBarHidden(descriptors[state.routes[state.index]?.key ?? '']?.options)) return null;
   return (
     <View style={s.bar}>
       <View style={s.brand}>

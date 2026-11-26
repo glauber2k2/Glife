@@ -14,9 +14,9 @@ import { AppLockGate, AppLockProvider, createDeviceAppLock, deviceBiometrics, us
 import { AuthProvider, createSupabaseAuthService, useAuth } from '@/features/auth';
 import { AgendaProvider, agendaTables } from '@/features/agenda';
 import { DietProvider, dietTables } from '@/features/diet';
-import { FinanceProvider, createEdgeQuoteClient, financeTables } from '@/features/finance';
-import { LinksProvider, linksTables, useLinksSearchSources } from '@/features/links';
-import { NotesProvider, notesSearchIndex, notesTables, useNotesSearchSources } from '@/features/notes';
+import { FinanceProvider, createEdgeQuoteClient, financeTables, useFinanceTaggedSource } from '@/features/finance';
+import { LinksProvider, TaggedItemsProvider, linksTables, useLinksSearchSources } from '@/features/links';
+import { NotesProvider, notesSearchIndex, notesTables, useNotesSearchSources, useNotesTaggedSource } from '@/features/notes';
 import { SearchProvider, useSearchShortcut } from '@/features/search';
 import { NoticesSync } from '@/features/today';
 import { installIdGenerator } from '@/shared/lib/ids';
@@ -57,6 +57,14 @@ function SearchComposition({ enabled, children }: { enabled: boolean; children: 
   );
 }
 
+/** Tela de uma tag: cada feature diz como mostrar os seus itens com tag (registro aberto da feature links). */
+function TaggedComposition({ children }: { children: ReactNode }) {
+  const notes = useNotesTaggedSource();
+  const finance = useFinanceTaggedSource();
+  const sources = useMemo(() => [notes, finance].filter((s) => s !== null), [notes, finance]);
+  return <TaggedItemsProvider sources={sources}>{children}</TaggedItemsProvider>;
+}
+
 function RootStack() {
   const t = useTheme();
   const reduceMotion = useReduceMotion();
@@ -86,6 +94,7 @@ function RootStack() {
           <DietProvider db={localSync.db} userId={userId}>
           <NoticesSync scheduler={noticeScheduler} />
           <SearchComposition enabled={stage === 'ready'}>
+          <TaggedComposition>
           <ToastProvider>
             <NavigationThemeProvider value={navigationTheme}>
               <StatusBar style={t.scheme === 'dark' ? 'light' : 'dark'} />
@@ -120,6 +129,8 @@ function RootStack() {
                   <Stack.Screen name="pastas" options={{ animation: animation.detail }} />
                   <Stack.Screen name="pasta/[id]" options={{ animation: animation.detail }} />
                   <Stack.Screen name="lixeira" options={{ animation: animation.detail }} />
+                  <Stack.Screen name="tags" options={{ animation: animation.detail }} />
+                  <Stack.Screen name="tags/[id]" options={{ animation: animation.detail }} />
                   <Stack.Screen name="financas/fatura/[id]" options={{ animation: animation.detail }} />
                   <Stack.Screen name="financas/conta/[id]" options={{ animation: animation.detail }} />
                   <Stack.Screen name="financas/nova-conta" options={{ animation: animation.detail }} />
@@ -155,6 +166,7 @@ function RootStack() {
               </AppLockGate>
             </NavigationThemeProvider>
           </ToastProvider>
+          </TaggedComposition>
           </SearchComposition>
           </DietProvider>
           </AgendaProvider>

@@ -201,6 +201,35 @@ export function createLocalNotesRepository(db: LocalDb, userId: string): NotesRe
       });
     },
 
+    async updateMany(changes) {
+      return db.writeTransaction(async (tx) => {
+        const staged = new Map<string, Note>();
+        for (const { id, patch } of changes) {
+          const n = applyNotePatch(staged.get(id) ?? (await aliveNote(tx, id)), patch);
+          if (n.folder_id) await aliveFolder(tx, n.folder_id);
+          staged.set(id, n);
+        }
+        for (const n of staged.values()) await writeNote(tx, n, false);
+        return changes.map(({ id }) => staged.get(id)!);
+      });
+    },
+
+    async removeMany(ids) {
+      await db.writeTransaction(async (tx) => {
+        for (const id of ids) await writeNote(tx, softDelete(await aliveNote(tx, id)), false);
+      });
+    },
+
+    async restoreMany(ids) {
+      await db.writeTransaction(async (tx) => {
+        for (const id of ids) {
+          const row = await tx.getOptional<NoteRow>(`SELECT ${NOTE_COLUMNS} FROM notes WHERE id = ?`, [id]);
+          if (!row) throw new RepositoryError('not_found');
+          await writeNote(tx, restoreEntity(toNote(row)), false);
+        }
+      });
+    },
+
     async listTrash(page) {
       const k = keyset('deleted_at', page);
       const rows = await db.getAll<NoteRow>(

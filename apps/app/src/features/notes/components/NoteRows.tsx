@@ -15,11 +15,14 @@ export function NoteRows({
   notes,
   onOpen,
   onLongPress,
+  selection,
 }: {
   notes: Note[];
   onOpen: (note: Note) => void;
-  /** toque longo: ações da nota (ex.: mover para a lixeira) */
+  /** toque longo: ações da nota ou entrar na seleção */
   onLongPress?: (note: Note) => void;
+  /** seleção múltipla: ids marcados (o toque marca em vez de abrir) */
+  selection?: ReadonlySet<string>;
 }) {
   const t = useTheme();
   const reduceMotion = useReduceMotion();
@@ -39,7 +42,13 @@ export function NoteRows({
           entering={reduceMotion ? undefined : riseIn(t.motion.enterOffset, t.motion.standard, Math.min(i, t.motion.staggerMax) * t.motion.stagger)}
           exiting={reduceMotion ? undefined : FadeOut.duration(t.motion.tap)}
         >
-          <NoteRow note={n} onPress={() => onOpen(n)} onLongPress={onLongPress ? () => onLongPress(n) : undefined} />
+          <NoteRow
+            note={n}
+            onPress={() => onOpen(n)}
+            onLongPress={onLongPress ? () => onLongPress(n) : undefined}
+            selecting={!!selection}
+            selected={selection?.has(n.id)}
+          />
         </Animated.View>
       ))}
     </ListGroup>

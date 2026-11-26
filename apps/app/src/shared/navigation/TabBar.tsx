@@ -8,7 +8,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Icon, Text, makeStyles, usePress, useReduceMotion, useTheme } from '@/shared/ui';
 
-import { getTabIndicatorX } from './navigationMotion';
+import { getTabIndicatorX, isTabBarHidden } from './navigationMotion';
 
 /**
  * Ícone de aba no padrão do design system. Cada rota declara o seu:
@@ -31,6 +31,8 @@ export function TabBar({ state, descriptors, navigateToTab }: BottomTabBarProps)
   const t = useTheme();
   const insets = useSafeAreaInsets();
   const [barWidth, setBarWidth] = useState<number>(0);
+  // A tela pode esconder as abas (ex.: seleção múltipla nas Notas) com `tabBarStyle: { display: 'none' }`.
+  if (isTabBarHidden(descriptors[state.routes[state.index]?.key ?? '']?.options)) return null;
 
   const tabs = state.routes.map((route, index) => {
     const focused = state.index === index;

@@ -150,6 +150,33 @@ export function createInMemoryNotes(userId: string): { notes: NotesRepository; f
       if (!n) throw new RepositoryError('not_found');
       return save(notes, id, restoreEntity(n));
     },
+    async updateMany(changes) {
+      // Calcula tudo numa cópia; só grava se todas passarem (atomicidade).
+      const staged = new Map<string, Note>();
+      for (const { id, patch } of changes) {
+        const base = staged.get(id) ?? aliveNote(id);
+        const n = applyNotePatch(base, patch);
+        if (n.folder_id) aliveFolder(n.folder_id);
+        staged.set(id, n);
+      }
+      for (const [id, n] of staged) notes.set(id, n);
+      subs.notify();
+      return changes.map(({ id }) => ({ ...staged.get(id)! }));
+    },
+    async removeMany(ids) {
+      const rows = ids.map((id) => softDelete(aliveNote(id)));
+      for (const n of rows) notes.set(n.id, n);
+      subs.notify();
+    },
+    async restoreMany(ids) {
+      const rows = ids.map((id) => {
+        const n = notes.get(id);
+        if (!n) throw new RepositoryError('not_found');
+        return restoreEntity(n);
+      });
+      for (const n of rows) notes.set(n.id, n);
+      subs.notify();
+    },
     async listTrash(page) {
       return paginate([...notes.values()].filter((n) => n.deleted_at !== null), (n) => n.deleted_at ?? '', page);
     },

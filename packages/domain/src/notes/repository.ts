@@ -33,6 +33,12 @@ export interface NotesRepository {
   /** Exclusão lógica (vai para a lixeira). */
   remove(id: string): Promise<void>;
   restore(id: string): Promise<Note>;
+  /** Várias atualizações numa transação, tudo ou nada (seleção múltipla e o "Desfazer" dela). */
+  updateMany(changes: readonly { id: string; patch: NotePatch }[]): Promise<Note[]>;
+  /** Várias para a lixeira, tudo ou nada. */
+  removeMany(ids: readonly string[]): Promise<void>;
+  /** Tira várias da lixeira, tudo ou nada. */
+  restoreMany(ids: readonly string[]): Promise<void>;
   /** Excluídas, da exclusão mais recente para a mais antiga. */
   listTrash(page?: PageRequest): Promise<Page<Note>>;
   /** Quantas notas estão na lixeira. */

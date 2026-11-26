@@ -1,31 +1,53 @@
 import type { Note } from '@glife/domain/notes';
 import { Pin } from 'lucide-react-native';
 import { Pressable, View } from 'react-native';
-import Animated from 'react-native-reanimated';
+import Animated, { FadeIn } from 'react-native-reanimated';
 
 import { shortStamp } from '@/shared/lib/dates';
-import { Icon, Tag, Text, makeStyles, usePress, useTheme } from '@/shared/ui';
+import { Checkbox, Icon, Tag, Text, makeStyles, usePress, useReduceMotion, useTheme } from '@/shared/ui';
 
 import { noteExcerpt } from './excerpt';
 import { KIND_LABEL } from './kinds';
 
-/** Linha da lista (Cobalto, dentro de um ListGroup): título, trecho de uma linha, data e o tipo quando não é nota. */
-export function NoteRow({ note, onPress, onLongPress }: { note: Note; onPress: () => void; onLongPress?: () => void }) {
+/**
+ * Linha da lista (Cobalto, dentro de um ListGroup): título, trecho de uma linha, data e o tipo quando não é nota.
+ * Na seleção múltipla (`selecting`) ganha o check à esquerda; marcar só muda o check, nunca o tamanho da linha.
+ */
+export function NoteRow({
+  note,
+  onPress,
+  onLongPress,
+  selecting,
+  selected,
+}: {
+  note: Note;
+  onPress: () => void;
+  onLongPress?: () => void;
+  selecting?: boolean;
+  selected?: boolean;
+}) {
   const s = useStyles();
   const t = useTheme();
+  const reduceMotion = useReduceMotion();
   const press = usePress();
   const excerpt = noteExcerpt(note.body_md);
   return (
     <Pressable
-      accessibilityRole="button"
+      accessibilityRole={selecting ? 'checkbox' : 'button'}
+      accessibilityState={selecting ? { checked: !!selected } : undefined}
       accessibilityLabel={note.title || 'Sem título'}
       onPress={onPress}
       onLongPress={onLongPress}
       onPressIn={press.onPressIn}
       onPressOut={press.onPressOut}
-      accessibilityHint={onLongPress ? 'Toque longo para mais ações' : undefined}
+      accessibilityHint={!selecting && onLongPress ? 'Toque longo para selecionar' : undefined}
     >
       <Animated.View style={[s.row, press.style]}>
+        {selecting && (
+          <Animated.View entering={reduceMotion ? undefined : FadeIn.duration(t.motion.tap)}>
+            <Checkbox checked={!!selected} square />
+          </Animated.View>
+        )}
         <View style={s.texts}>
           <Text variant="item" numberOfLines={1} tone={note.title ? 'primary' : 'tertiary'}>
             {note.title || 'Sem título'}

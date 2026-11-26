@@ -65,3 +65,9 @@ export function getTabIndicatorX(index: number, tabCount: number, barWidth: numb
   const slotWidth = barWidth / slots;
   return getTabSlot(index, tabCount) * slotWidth + (slotWidth - indicatorWidth) / 2;
 }
+
+/** A tela ativa pediu para esconder as abas (`tabBarStyle: { display: 'none' }`, padrão do React Navigation). */
+export function isTabBarHidden(options: { tabBarStyle?: unknown } | undefined): boolean {
+  const style = options?.tabBarStyle;
+  return !!style && typeof style === 'object' && (style as { display?: unknown }).display === 'none';
+}

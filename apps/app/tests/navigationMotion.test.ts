@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   createTabFocusTracker,
+  isTabBarHidden,
   getTabDirection,
   getTabIndicatorX,
   getTabLineInsets,
@@ -97,5 +98,14 @@ describe('linha da aba ativa', () => {
   it('estica: a borda da frente vai na mola de toque e a de trás segue na de ênfase', () => {
     expect(getTabLineMotion(1)).toEqual({ left: 'trail', right: 'lead' });
     expect(getTabLineMotion(-1)).toEqual({ left: 'lead', right: 'trail' });
+  });
+});
+
+describe('isTabBarHidden', () => {
+  it('só esconde com tabBarStyle display none', () => {
+    expect(isTabBarHidden(undefined)).toBe(false);
+    expect(isTabBarHidden({})).toBe(false);
+    expect(isTabBarHidden({ tabBarStyle: { display: 'flex' } })).toBe(false);
+    expect(isTabBarHidden({ tabBarStyle: { display: 'none' } })).toBe(true);
   });
 });

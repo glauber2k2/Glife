@@ -20,3 +20,4 @@ export { AssetFormScreen } from './screens/AssetFormScreen';
 export { ChartsScreen } from './screens/ChartsScreen';
 export { ChartCategoryScreen } from './screens/ChartCategoryScreen';
 export { TodayFinanceBlock } from './components/charts/SummaryBlocks';
+export { useFinanceTaggedSource } from './hooks/useFinanceTaggedSource';
