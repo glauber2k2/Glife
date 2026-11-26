@@ -5,6 +5,8 @@ import type { NotificationSource } from '@glife/domain/notifications';
 import { localNow } from '@glife/domain/time';
 import { useMemo } from 'react';
 
+import { UserFacingError } from '@/shared/lib/errorText';
+
 import { useAgendaMaybe } from './AgendaData';
 
 const REMINDER_ID = /^reminder:([0-9a-f-]{36}):(\d{4}-\d{2}-\d{2})$/;
@@ -21,7 +23,7 @@ export function useAgendaNotifications(now: Date): NotificationSource | null {
       items: agendaNotifications(reminders, { date, time }),
       resolve: async (id) => {
         const m = REMINDER_ID.exec(id);
-        if (!m) throw new Error('Lembrete não encontrado');
+        if (!m) throw new UserFacingError('Lembrete não encontrado.');
         await repo.completeReminder(m[1]!, m[2]!);
       },
     };

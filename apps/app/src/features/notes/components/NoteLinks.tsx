@@ -4,7 +4,7 @@ import { BookOpen, FileText, NotebookPen } from 'lucide-react-native';
 import { useEffect, useState } from 'react';
 import { View } from 'react-native';
 
-import { useLinksData, useOpenTarget } from '@/features/links';
+import { useHasTargetSource, useLinksData, useOpenTarget } from '@/features/links';
 import { ListGroup, NavRow, Section, makeStyles } from '@/shared/ui';
 
 import { useNotesData } from '../hooks/NotesData';
@@ -29,6 +29,7 @@ export function NoteLinks({ noteId, version }: { noteId: string; version: number
   const { notes } = useNotesData();
   const { links } = useLinksData();
   const openTarget = useOpenTarget();
+  const canOpen = useHasTargetSource();
   const [outgoing, setOutgoing] = useState<Row[]>([]);
   const [backlinks, setBacklinks] = useState<Link[]>([]);
   const [backRows, setBackRows] = useState<Row[]>([]);
@@ -47,7 +48,10 @@ export function NoteLinks({ noteId, version }: { noteId: string; version: number
               : { key: l.id, label: 'Nota indisponível', meta: 'Vínculo quebrado', kind: 'note', target: { type: 'note', id: l.target_ref } };
           }
           if (l.target_type === 'bible') return { key: l.id, label: l.target_ref, meta: 'Bíblia', kind: 'bible' };
-          return { key: l.id, label: 'Item vinculado', meta: 'Abrir', kind: 'other', target: { type: l.target_type, id: l.target_ref } };
+          // Tipo sem tela registrada: a linha só informa (sem ação que não levaria a lugar nenhum).
+          return canOpen(l.target_type)
+            ? { key: l.id, label: 'Item vinculado', meta: 'Abrir', kind: 'other', target: { type: l.target_type, id: l.target_ref } }
+            : { key: l.id, label: 'Item vinculado', meta: 'Ainda não abre por aqui', kind: 'other' };
         }),
       );
       if (active) setOutgoing(rows.filter((r): r is Row => r !== null));
@@ -55,7 +59,7 @@ export function NoteLinks({ noteId, version }: { noteId: string; version: number
     return () => {
       active = false;
     };
-  }, [links, notes, noteId, version]);
+  }, [links, notes, noteId, version, canOpen]);
 
   // Entrada: observada (outra nota pode passar a citar esta a qualquer momento, inclusive pela sincronização).
   useEffect(() => links.watchBacklinks({ type: 'note', ref: noteId }, setBacklinks), [links, noteId]);

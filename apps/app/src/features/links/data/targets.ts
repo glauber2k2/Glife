@@ -1,7 +1,9 @@
 // "Item não encontrado": para onde aponta um vínculo ou aviso, e se o alvo está vivo, na lixeira ou ausente.
 // Registro aberto: cada módulo entrega a fonte dos seus tipos (composta na raiz); links não conhece os módulos.
-import type { EntityType, LocalQueries } from '@glife/domain/core';
+import { isRepositoryError, type EntityType, type LocalQueries } from '@glife/domain/core';
 import { isEntityType } from '@glife/domain/links';
+
+import { errorText } from '@/shared/lib/errorText';
 
 export type TargetStatus = 'alive' | 'trash' | 'missing';
 
@@ -56,6 +58,14 @@ export function notFoundView(status: TargetStatus, sync: { hasSynced: boolean | 
   if (status === 'alive') return 'semtela';
   if (status === 'trash') return 'lixeira';
   return sync.hasSynced !== true || sync.downloading ? 'naosync' : 'apagado';
+}
+
+/**
+ * Restaurar recusado de vez (`conflict`: ex.: a conta do lançamento foi excluída): o motivo para a tela mostrar no lugar
+ * do botão. Falha passageira (banco ocupado…) devolve null: o Restaurar continua disponível para tentar de novo.
+ */
+export function restoreRefusal(e: unknown): string | null {
+  return isRepositoryError(e, 'conflict') ? errorText(e) : null;
 }
 
 export interface TargetRef {

@@ -1,6 +1,7 @@
 // Item não encontrado (protótipo "nao-encontrado"): quando um vínculo ou aviso aponta para algo indisponível, a tela diz
 // o motivo e o que fazer, sem erro técnico — na lixeira (Restaurar), ainda não chegou (Sincronizar agora) ou excluído
-// para sempre (Voltar). Restaurar troca a tela pelo item.
+// para sempre (Voltar). Restaurar troca a tela pelo item; recusado de vez (ex.: a conta do lançamento foi excluída), a tela
+// mostra o motivo e não oferece Restaurar de novo.
 import { router, useLocalSearchParams, type Href } from 'expo-router';
 import { RotateCcw } from 'lucide-react-native';
 import { useEffect, useState } from 'react';
@@ -11,25 +12,25 @@ import { errorText } from '@/shared/lib/errorText';
 import { syncResultText, useSyncNow, useSyncState } from '@/shared/lib/powersync';
 import { BackHeader, Button, Mascot, Screen, Text, makeStyles, useReduceMotion, useTheme, useToast } from '@/shared/ui';
 
-import { notFoundView, parseNotFoundParams, type NotFoundView, type TargetStatus } from '../data/targets';
+import { notFoundView, parseNotFoundParams, restoreRefusal, type NotFoundView, type TargetStatus } from '../data/targets';
 import { useResolveTarget, useTargetSources } from '../hooks/Targets';
 
 const COPY: Record<NotFoundView, { title: (noun: string) => string; message: string }> = {
   lixeira: {
     title: (noun) => `${noun} está na lixeira`,
-    message: 'Foi excluído há pouco. Se restaurar, volta para o lugar dele com os vínculos.',
+    message: 'Está na lixeira deste aparelho. Se restaurar, volta para o lugar de antes, com os vínculos.',
   },
   naosync: {
     title: () => 'Ainda não chegou neste aparelho',
-    message: 'Foi criado em outro aparelho há pouco e chega na próxima sincronização.',
+    message: 'Ainda não está neste aparelho. Se existir na nuvem, chega na próxima sincronização.',
   },
   apagado: {
     title: () => 'Não encontrei este item',
-    message: 'Ele foi excluído para sempre. O vínculo continua nas notas, marcado como quebrado.',
+    message: 'Este item não existe mais, nem aqui nem na nuvem. O vínculo continua nas notas, marcado como quebrado.',
   },
   semtela: {
-    title: () => 'Este item está salvo',
-    message: 'Ele existe neste aparelho, mas ainda não tem uma tela disponível para abrir por aqui.',
+    title: () => 'Não consigo abrir este item aqui',
+    message: 'Este item está salvo neste aparelho, mas ainda não há uma tela para abri-lo por aqui.',
   },
 };
 
@@ -48,6 +49,8 @@ export function NotFoundScreen() {
   const syncNow = useSyncNow();
   const [status, setStatus] = useState<TargetStatus | null>(target && source ? null : 'missing');
   const [busy, setBusy] = useState(false);
+  /** Motivo de o Restaurar ter sido recusado de vez (o botão some e a tela diz por quê). */
+  const [refused, setRefused] = useState<string | null>(null);
 
   // Pedido de conferir de novo (depois de restaurar ou sincronizar).
   const [round, setRound] = useState(0);
@@ -75,6 +78,7 @@ export function NotFoundScreen() {
 
   const view: NotFoundView = status ? notFoundView(status, sync) : 'apagado';
   const copy = COPY[view];
+  const canRestore = view === 'lixeira' && !!source?.restore && refused === null;
 
   const restore = async () => {
     if (!target || !source?.restore) return;
@@ -84,7 +88,9 @@ export function NotFoundScreen() {
       toast({ message: 'Restaurado', icon: RotateCcw });
       setRound((n) => n + 1);
     } catch (e) {
-      toast({ message: errorText(e) });
+      const reason = restoreRefusal(e);
+      if (reason) setRefused(reason);
+      toast({ message: reason ?? errorText(e) });
     } finally {
       setBusy(false);
     }
@@ -110,16 +116,16 @@ export function NotFoundScreen() {
             {copy.title(source?.noun ?? 'Este item')}
           </Text>
           <Text tone="tertiary" align="center" style={s.message}>
-            {copy.message}
+            {view === 'lixeira' && refused ? refused : copy.message}
           </Text>
           <View style={s.actions}>
-            {view === 'lixeira' && source?.restore && <Button label="Restaurar" fullWidth haptic loading={busy} onPress={restore} />}
+            {canRestore && <Button label="Restaurar" fullWidth haptic loading={busy} onPress={restore} />}
             {view === 'lixeira' && source?.trashHref && (
               <Button label="Abrir a lixeira" variant="secondary" fullWidth onPress={() => router.push(source.trashHref as Href)} />
             )}
             {view === 'naosync' && <Button label="Sincronizar agora" fullWidth loading={busy} onPress={syncAgain} />}
-            {(view !== 'lixeira' || !source?.restore) && (
-              <Button label="Voltar" variant={view === 'apagado' ? 'primary' : 'secondary'} fullWidth onPress={goBack} />
+            {!canRestore && (
+              <Button label="Voltar" variant={view === 'apagado' || refused ? 'primary' : 'secondary'} fullWidth onPress={goBack} />
             )}
           </View>
         </Animated.View>

@@ -1,3 +1,4 @@
+import { RepositoryError } from '@glife/domain/core';
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -5,6 +6,7 @@ import {
   createTargetResolver,
   notFoundView,
   parseNotFoundParams,
+  restoreRefusal,
   targetOfRoute,
   type TargetSource,
 } from '../src/features/links/data/targets';
@@ -95,5 +97,18 @@ describe('tela de item não encontrado', () => {
     expect(targetOfRoute('/agenda', [note, reminder])).toBeNull();
     expect(targetOfRoute(`/agenda/lembrete/${ALIVE}/x`, [note, reminder])).toBeNull();
     expect(targetOfRoute('/dieta/registro/novo?plano=1', [note, reminder])).toBeNull();
+  });
+});
+
+describe('Restaurar recusado na tela de item não encontrado', () => {
+  it('conflict é recusa definitiva: devolve o motivo do domain para mostrar no lugar do Restaurar', () => {
+    const e = new RepositoryError('conflict', { cause: new RangeError('A conta deste lançamento foi excluída.') });
+    expect(restoreRefusal(e)).toBe('A conta deste lançamento foi excluída.');
+    expect(restoreRefusal(new RepositoryError('conflict'))).toBe('Não deu: o item mudou enquanto isso. Confira e tente de novo.');
+  });
+
+  it('falha passageira não é recusa (o Restaurar continua para tentar de novo)', () => {
+    expect(restoreRefusal(new RepositoryError('unavailable', { cause: new Error('SQLITE_BUSY') }))).toBeNull();
+    expect(restoreRefusal(new Error('x'))).toBeNull();
   });
 });

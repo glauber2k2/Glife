@@ -9,6 +9,7 @@ import { AppState } from 'react-native';
 
 import type { SeenStore } from '@/shared/lib/seenStore';
 import type { NoticeScheduler } from '@/shared/lib/notices';
+import { UserFacingError } from '@/shared/lib/errorText';
 
 import { noticeForSnooze } from './snooze';
 
@@ -77,7 +78,7 @@ export function NotificationsProvider({ store, scheduler, children }: { store: S
   const resolve = useCallback(
     async (n: AppNotification) => {
       const source = sources[n.module];
-      if (!source) throw new Error('Os dados ainda não carregaram');
+      if (!source) throw new UserFacingError('Os dados ainda não carregaram.');
       await source.resolve(n.id);
     },
     [sources],
@@ -87,7 +88,7 @@ export function NotificationsProvider({ store, scheduler, children }: { store: S
   const snooze = useCallback(async (n: AppNotification, at: Date) => {
     const current = sources[n.module]?.items.find((item) => item.id === n.id);
     const notice = current && noticeForSnooze(current);
-    if (!notice) throw new Error('Este aviso não está mais pendente.');
+    if (!notice) throw new UserFacingError('Este aviso não está mais pendente.');
     return scheduler.snooze(notice, at);
   }, [sources, scheduler]);
   const value = useMemo(

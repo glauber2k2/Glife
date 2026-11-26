@@ -19,6 +19,12 @@ export function useTargetSources(): readonly TargetSource[] {
   return useContext(TargetsContext);
 }
 
+/** Se o tipo tem fonte registrada (dá para abrir ou explicar por que não abre). */
+export function useHasTargetSource(): (type: EntityType) => boolean {
+  const sources = useTargetSources();
+  return useCallback((type) => sources.some((s) => s.type === type), [sources]);
+}
+
 /** `resolveTarget(tipo, id)`: vivo, na lixeira ou ausente neste aparelho. */
 export function useResolveTarget(): ResolveTarget {
   const sources = useTargetSources();

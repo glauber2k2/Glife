@@ -79,7 +79,11 @@ function AdjustForm({
         message: 'Saldo ajustado',
         icon: Scale,
         actionLabel: 'Desfazer',
-        onAction: () => void undo().catch((e) => console.warn('Falha ao desfazer o ajuste', e)),
+        onAction: () =>
+          void undo().catch((e: unknown) => {
+            console.warn('Falha ao desfazer o ajuste', e);
+            toast({ message: `Não foi possível desfazer o ajuste: ${failureReason(e)}` });
+          }),
       });
     } catch (e) {
       console.warn('Falha ao ajustar o saldo', e);

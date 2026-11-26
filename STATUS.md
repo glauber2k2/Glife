@@ -1,7 +1,7 @@
 # Status: 2026-11-26
-- Tarefa atual: usabilidade 0.6.0 implementada; APK/ZIP gerados, integração local em curso
-- Branch: usabilidade-notas-financas
-- Feito: olhinho na Home, total/valor da parcela, subpastas, pickers nativos e correções de seleção/estrutura Markdown; 1.154 testes, lint, tipos, web e Android aprovados; `../Glife-0.6.0.apk` e ZIP, pacote e assinatura iguais à 0.5.0, permissões sem mudanças
-- Falta: integrar o commit paralelo do checkout original; confirmar o cenário de crash Markdown em aparelho Android; publicação manual dos Sync Streams da R2
-- Atenção (riscos/decisões): sem aparelho conectado; revisão independente parcial por limite de créditos, achados corrigidos; alterações paralelas preservadas e fora deste APK; sem novas migrações
-- Último commit: a35ca6b (correções antes da release)
+- Tarefa atual: usabilidade 0.6.0 integrada às correções da 0.5.1; preparar APK final com código Android 7
+- Branch: integracao-usabilidade-20261126
+- Feito: olhinho na Home, total/valor da parcela, subpastas, pickers nativos e correções de seleção/estrutura Markdown; integração de f60dc79; lint, tipos, web e 1.168 testes aprovados; build nativo anterior e assinatura conferidos
+- Falta: avançar checkout original e regenerar APK/ZIP com código 7; confirmar crash Markdown em aparelho Android; publicação manual dos Sync Streams da R2
+- Atenção (riscos/decisões): sem aparelho conectado; revisão independente parcial por limite de créditos, achados corrigidos; 0.5.1 paralela ocupou código 6, por isso a 0.6.0 usa 7; sem novas migrações
+- Último commit: 64cb172 (release própria antes da integração paralela)

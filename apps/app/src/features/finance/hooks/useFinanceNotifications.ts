@@ -5,6 +5,8 @@ import type { NotificationSource } from '@glife/domain/notifications';
 import { localNow } from '@glife/domain/time';
 import { useMemo } from 'react';
 
+import { UserFacingError } from '@/shared/lib/errorText';
+
 import { useFinanceMaybe } from './FinanceData';
 import { useMoneyFormat } from './useMoneyFormat';
 import { settlePlanned } from './settlePlanned';
@@ -22,7 +24,7 @@ export function useFinanceNotifications(now: Date): NotificationSource | null {
       items: financeNotifications(data, { date: today }, money),
       resolve: async (id) => {
         const item = overduePlanned(data, collectOccurrences(data, today), today).find((i) => `planned:${i.key}` === id);
-        if (!item) throw new Error('Este previsto já foi resolvido');
+        if (!item) throw new UserFacingError('Este previsto já foi resolvido.');
         await settlePlanned(repos, data, item, 'confirmed');
       },
     };
