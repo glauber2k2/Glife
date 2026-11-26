@@ -1,6 +1,7 @@
 // Seleção múltipla da lista de notas: estado da seleção e as ações em lote (cada uma numa transação, com "Desfazer"
 // em fixar, mover, tags e lixeira).
 import type { Note } from '@glife/domain/notes';
+import { localNow } from '@glife/domain/time';
 import { FileDown, Folder, Pin, PinOff, Tag as TagIcon, Trash2 } from 'lucide-react-native';
 import { useCallback, useState } from 'react';
 
@@ -43,7 +44,8 @@ export function useNoteSelection(): NoteSelection {
 }
 
 const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
-const today = () => new Date().toISOString().slice(0, 10);
+/** Data do aparelho (não UTC: à noite no Brasil o UTC já é o dia seguinte). */
+const today = () => localNow().date;
 
 /**
  * Ações em lote sobre as notas selecionadas. Cada uma devolve true se gravou (a tela então sai da seleção).
