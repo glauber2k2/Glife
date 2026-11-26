@@ -5,6 +5,7 @@ import { localNow, type NoticeRef, type ScheduledNotice } from '@glife/domain/ti
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 
+import { UserFacingError } from '../errorText';
 import { SAFE_NOTICE_ROUTES, parseNoticeRef, staleNotices, type NoticeAction, type NoticeActionEvent, type NoticeScheduler } from './types';
 
 const CHANNEL = 'lembretes';
@@ -18,16 +19,20 @@ Notifications.setNotificationHandler({
 });
 
 let categoriesReady: Promise<void> | null = null;
-/** Botões dos avisos. "Feito" e "Adiar" resolvem sem trazer o app para a frente (onde o sistema permite). */
+/**
+ * Botões dos avisos. Todos abrem o app: com `opensAppToForeground: false` e o app fechado, o Android não chama o JS e
+ * "Feito"/"Adiar" não fariam nada. Aberto pelo botão, a leitura de abertura (`getLastNotificationResponseAsync`) faz a
+ * ação e o app fica na tela em que abriu (só o toque no corpo do aviso navega).
+ */
 function ensureCategories(): Promise<void> {
   categoriesReady ??= Promise.all([
     Notifications.setNotificationCategoryAsync(CATEGORY.reminder, [
-      { identifier: 'done', buttonTitle: 'Feito', options: { opensAppToForeground: false } },
-      { identifier: 'snooze', buttonTitle: 'Adiar', options: { opensAppToForeground: false } },
+      { identifier: 'done', buttonTitle: 'Feito', options: { opensAppToForeground: true } },
+      { identifier: 'snooze', buttonTitle: 'Adiar', options: { opensAppToForeground: true } },
     ]),
     Notifications.setNotificationCategoryAsync(CATEGORY.meal, [
       { identifier: 'log', buttonTitle: 'Registrar', options: { opensAppToForeground: true } },
-      { identifier: 'snooze', buttonTitle: 'Adiar', options: { opensAppToForeground: false } },
+      { identifier: 'snooze', buttonTitle: 'Adiar', options: { opensAppToForeground: true } },
     ]),
   ]).then(
     () => undefined,
@@ -135,8 +140,8 @@ export function createNoticeScheduler(): NoticeScheduler {
   return {
     snooze: (notice, at) => {
       const task = running.then(async () => {
-        if (!Number.isFinite(at.getTime()) || at.getTime() <= Date.now()) throw new Error('Escolha um horário futuro.');
-        if (!notice.ref || !parseNoticeRef(notice.ref) || !SAFE_NOTICE_ROUTES.test(notice.url)) throw new Error('Aviso indisponível.');
+        if (!Number.isFinite(at.getTime()) || at.getTime() <= Date.now()) throw new UserFacingError('Escolha um horário futuro.');
+        if (!notice.ref || !parseNoticeRef(notice.ref) || !SAFE_NOTICE_ROUTES.test(notice.url)) throw new UserFacingError('Aviso indisponível.');
         if (!(await ready())) return false;
         const content = contentOf(notice);
         // O identificador é o mesmo do adiamento pelo Android; repetir substitui em vez de duplicar.
