@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.6.1 — 2026-11-26
+
+- Notas: duas linhas em branco depois de uma lista não criam mais espaço no topo nem fecham o app ao tocar; o cursor não atrasa ao formatar; subir de pasta volta em vez de empilhar a mesma tela; mover pasta para dentro dela mesma explica o motivo.
+- Finanças: campo de data volta a dizer Hoje, Ontem ou Amanhã; total menor que o número de parcelas não deixa salvar e explica o mínimo.
+- Sincronização: Sync Streams v8 publicados (metas da dieta sincronizam).
+
 ## 0.6.0 — 2026-11-26
 
 - Início: olhinho no resumo financeiro, com a mesma preferência de visibilidade salva no Financeiro.

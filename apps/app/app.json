@@ -2,7 +2,7 @@
   "expo": {
     "name": "Glife",
     "slug": "glife",
-    "version": "0.6.0",
+    "version": "0.6.1",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "glife",
@@ -13,7 +13,7 @@
     },
     "android": {
       "package": "app.glife.pessoal",
-      "versionCode": 7,
+      "versionCode": 8,
       "adaptiveIcon": {
         "backgroundColor": "#2D5BFF",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
