@@ -45,10 +45,12 @@ export interface SectionHeaderProps {
   /** link à direita ("Ver tudo") */
   actionLabel?: string;
   onAction?: () => void;
+  /** texto discreto à direita quando não há ação (ex.: total do dia) */
+  meta?: string;
 }
 
-/** Título 20 de seção com uma ação em link cobalto. */
-export function SectionHeader({ title, actionLabel, onAction }: SectionHeaderProps) {
+/** Título 20 de seção com uma ação em link cobalto (ou um texto discreto à direita). */
+export function SectionHeader({ title, actionLabel, onAction, meta }: SectionHeaderProps) {
   const s = useStyles();
   const t = useTheme();
   return (
@@ -63,6 +65,11 @@ export function SectionHeader({ title, actionLabel, onAction }: SectionHeaderPro
           </Text>
         </Pressable>
       )}
+      {!(actionLabel && onAction) && meta ? (
+        <Text variant="small" tone="tertiary" numeric>
+          {meta}
+        </Text>
+      ) : null}
     </View>
   );
 }

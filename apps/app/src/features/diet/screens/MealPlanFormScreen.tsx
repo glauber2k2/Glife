@@ -1,4 +1,4 @@
-// Refeição do plano: nome, horário, o que comer, dias da semana e aviso no horário (versão básica).
+// Refeição do plano: nome, horário, kcal e macros estimados (opcionais), o que comer, dias da semana e aviso no horário.
 import { useLocalSearchParams } from 'expo-router';
 import { View } from 'react-native';
 
@@ -6,6 +6,7 @@ import { useEntityForm } from '@/shared/hooks/useEntityForm';
 import { BackHeader, Button, EmptyState, Input, Screen, Switch, Text, TimeInput, WeekdayPicker, makeStyles } from '@/shared/ui';
 
 import { emptyPlanForm, planToForm, readPlanForm } from '../components/forms';
+import { FieldPair, NutritionFields, NutritionInput } from '../components/NutritionFields';
 import { useDiet } from '../hooks/DietData';
 
 export function MealPlanFormScreen() {
@@ -40,8 +41,14 @@ export function MealPlanFormScreen() {
     <Screen>
       <BackHeader title={f.isNew ? 'Nova refeição' : 'Refeição do plano'} backLabel="Dieta" fallback="/dieta" />
       <Input label="Nome (ex.: Almoço)" value={form.name} onChangeText={(name) => setForm({ name })} maxLength={80} />
-      <TimeInput label="Horário" value={form.time} onChange={(time) => setForm({ time })} />
+      <FieldPair>
+        {[
+          <TimeInput key="time" label="Horário" value={form.time} onChange={(time) => setForm({ time })} />,
+          <NutritionInput key="kcal" field="kcal" label="kcal estimada" value={form.kcal} onChange={(kcal) => setForm({ kcal })} />,
+        ]}
+      </FieldPair>
       <Input label="O que comer" value={form.description} onChangeText={(description) => setForm({ description })} multiline maxLength={500} />
+      <NutritionFields form={form} onChange={setForm} withKcal={false} />
       <View style={s.block}>
         <Text variant="label" tone="tertiary">
           Dias em que vale

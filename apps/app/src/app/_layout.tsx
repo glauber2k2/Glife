@@ -161,6 +161,7 @@ function RootStack() {
                   <Stack.Screen name="agenda/lembrete/novo" options={{ animation: animation.detail }} />
                   <Stack.Screen name="agenda/lembrete/[id]" options={{ animation: animation.detail }} />
                   <Stack.Screen name="dieta" options={{ animation: animation.detail }} />
+                  <Stack.Screen name="dieta/historico" options={{ animation: animation.detail }} />
                   <Stack.Screen name="dieta/refeicao/novo" options={{ animation: animation.detail }} />
                   <Stack.Screen name="dieta/refeicao/[id]" options={{ animation: animation.detail }} />
                   <Stack.Screen name="dieta/registro/novo" options={{ animation: animation.detail }} />

@@ -5,7 +5,9 @@ import { ALL_WEEKDAYS, type IsoDate, type LocalTime } from '@glife/domain/time';
 import type { FormResult } from '@/shared/hooks/useEntityForm';
 import { formatDateInput, parseDateInput, parseTimeInput } from '@/shared/lib/calendarInput';
 
-export interface PlanForm {
+import { emptyNutrition, nutritionToForm, readNutrition, type NutritionForm } from './nutrition';
+
+export interface PlanForm extends NutritionForm {
   name: string;
   time: string;
   description: string;
@@ -13,29 +15,57 @@ export interface PlanForm {
   remind: boolean;
 }
 
-export const emptyPlanForm = (): PlanForm => ({ name: '', time: '', description: '', weekdays: ALL_WEEKDAYS, remind: true });
-export const planToForm = (p: MealPlanItem): PlanForm => ({ name: p.name, time: p.time, description: p.description, weekdays: p.weekdays, remind: p.remind });
+export const emptyPlanForm = (): PlanForm => ({ name: '', time: '', description: '', weekdays: ALL_WEEKDAYS, remind: true, ...emptyNutrition() });
+export const planToForm = (p: MealPlanItem): PlanForm => ({
+  name: p.name,
+  time: p.time,
+  description: p.description,
+  weekdays: p.weekdays,
+  remind: p.remind,
+  ...nutritionToForm(p),
+});
 
 export function readPlanForm(f: PlanForm): FormResult<MealPlanDraft> {
   const time = parseTimeInput(f.time);
   if (!time) return { ok: false, error: 'Hora inválida (hh:mm)' };
-  return { ok: true, value: { name: f.name, time, description: f.description, weekdays: f.weekdays, remind: f.remind } };
+  const n = readNutrition(f, 'kcal estimada');
+  if (!n.ok) return n;
+  return { ok: true, value: { name: f.name, time, description: f.description, weekdays: f.weekdays, remind: f.remind, ...n.value } };
 }
 
-export interface LogForm {
+export interface LogForm extends NutritionForm {
   date: string;
   time: string;
   description: string;
   planId: string | null;
 }
 
-export const emptyLogForm = (date: IsoDate, time: LocalTime, planId: string | null): LogForm => ({ date: formatDateInput(date), time, description: '', planId });
-export const logToForm = (l: MealLog): LogForm => ({ date: formatDateInput(l.date), time: l.time, description: l.description, planId: l.plan_id });
+export const emptyLogForm = (date: IsoDate, time: LocalTime, planId: string | null): LogForm => ({
+  date: formatDateInput(date),
+  time,
+  description: '',
+  planId,
+  ...emptyNutrition(),
+});
+export const logToForm = (l: MealLog): LogForm => ({ date: formatDateInput(l.date), time: l.time, description: l.description, planId: l.plan_id, ...nutritionToForm(l) });
+
+/** Ao ligar o registro a uma refeição do plano, os campos vazios recebem a estimativa dela. */
+export function fillFromPlan(f: LogForm, plan: MealPlanItem): Partial<LogForm> {
+  const fromPlan = nutritionToForm(plan);
+  return {
+    kcal: f.kcal || fromPlan.kcal,
+    protein: f.protein || fromPlan.protein,
+    carbs: f.carbs || fromPlan.carbs,
+    fat: f.fat || fromPlan.fat,
+  };
+}
 
 export function readLogForm(f: LogForm): FormResult<MealLogDraft> {
   const date = parseDateInput(f.date);
   if (!date) return { ok: false, error: 'Data inválida' };
   const time = parseTimeInput(f.time);
   if (!time) return { ok: false, error: 'Hora inválida (hh:mm)' };
-  return { ok: true, value: { date, time, description: f.description, plan_id: f.planId } };
+  const n = readNutrition(f);
+  if (!n.ok) return n;
+  return { ok: true, value: { date, time, description: f.description, plan_id: f.planId, ...n.value } };
 }

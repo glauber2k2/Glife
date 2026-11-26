@@ -1,4 +1,4 @@
-// Registro de refeição: data, hora, o que comeu e (opcional) a refeição do plano a que corresponde (versão básica).
+// Registro de refeição: data, hora, o que comeu, kcal e macros (opcionais) e a refeição do plano a que corresponde.
 import { planFor } from '@glife/domain/diet';
 import { localNow } from '@glife/domain/time';
 import { useLocalSearchParams } from 'expo-router';
@@ -8,7 +8,8 @@ import { useEntityForm } from '@/shared/hooks/useEntityForm';
 import { parseDateInput } from '@/shared/lib/calendarInput';
 import { BackHeader, Button, EmptyState, Chip, DateInput, Input, Screen, Text, TimeInput, makeStyles } from '@/shared/ui';
 
-import { emptyLogForm, logToForm, readLogForm } from '../components/forms';
+import { emptyLogForm, fillFromPlan, logToForm, readLogForm } from '../components/forms';
+import { NutritionFields } from '../components/NutritionFields';
 import { useDiet } from '../hooks/DietData';
 
 const isoOk = (v: unknown): v is string => typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v);
@@ -65,12 +66,13 @@ export function MealLogFormScreen() {
           <View style={s.chips}>
             <Chip size="sm" label="Fora do plano" selected={form.planId === null} onPress={() => setForm({ planId: null })} />
             {options.map((p) => (
-              <Chip key={p.id} size="sm" label={`${p.time} ${p.name}`} selected={form.planId === p.id} onPress={() => setForm({ planId: p.id })} />
+              <Chip key={p.id} size="sm" label={`${p.time} ${p.name}`} selected={form.planId === p.id} onPress={() => setForm({ planId: p.id, ...fillFromPlan(form, p) })} />
             ))}
           </View>
         </View>
       )}
       <Input label="O que comeu" value={form.description} onChangeText={(description) => setForm({ description })} multiline maxLength={500} />
+      <NutritionFields form={form} onChange={setForm} withKcal />
       <Button label="Salvar" onPress={() => void f.save()} loading={f.saving} haptic fullWidth />
       {!f.isNew && <Button label="Excluir registro" variant="danger" onPress={() => void f.remove()} fullWidth />}
     </Screen>
