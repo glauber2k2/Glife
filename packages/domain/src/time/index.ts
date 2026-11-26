@@ -179,6 +179,15 @@ export interface ScheduledNotice {
   time: LocalTime;
   /** rota do app aberta ao tocar no aviso */
   url: string;
+  /** de quem é o aviso (ações "Feito", "Registrar" e "Adiar" no aparelho); sem ele, o aviso só abre `url` */
+  ref?: NoticeRef;
+}
+
+/** Lembrete ou refeição do plano por trás de um aviso, e a data da ocorrência. */
+export interface NoticeRef {
+  kind: 'reminder' | 'meal';
+  id: string;
+  date: IsoDate;
 }
 
 /** Os mais próximos primeiro, só os que ainda não passaram, no máximo `max` (o Android limita alarmes). */

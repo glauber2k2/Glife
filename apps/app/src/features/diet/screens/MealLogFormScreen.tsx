@@ -13,17 +13,23 @@ import { NutritionFields } from '../components/NutritionFields';
 import { useDiet } from '../hooks/DietData';
 
 const isoOk = (v: unknown): v is string => typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v);
+const uuidOk = (v: unknown): v is string => typeof v === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(v);
 
 export function MealLogFormScreen() {
   const s = useStyles();
-  const params = useLocalSearchParams<{ id?: string; data?: string }>();
+  const params = useLocalSearchParams<{ id?: string; data?: string; plano?: string }>();
   const { repo, data } = useDiet();
   const now = localNow();
   const f = useEntityForm({
     id: params.id,
     load: (id) => repo.getLog(id),
     toForm: logToForm,
-    empty: () => emptyLogForm(isoOk(params.data) ? params.data : now.date, now.time, null),
+    // `plano` (botão "Registrar" do aviso ou da central): o registro já vem ligado à refeição, com a estimativa dela.
+    empty: () => {
+      const plan = uuidOk(params.plano) ? (data?.plan.find((p) => p.id === params.plano) ?? null) : null;
+      const base = emptyLogForm(isoOk(params.data) ? params.data : now.date, now.time, uuidOk(params.plano) ? params.plano : null);
+      return plan ? { ...base, ...fillFromPlan(base, plan) } : base;
+    },
     read: readLogForm,
     create: (d) => repo.createLog(d),
     update: (id, d) => repo.updateLog(id, d),

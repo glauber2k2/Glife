@@ -28,6 +28,7 @@ import {
 import { useMemo } from 'react';
 
 import { useFinance } from './FinanceData';
+import { settlePlanned, type Undo } from './settlePlanned';
 
 export interface EntryForm {
   type: TxType;
@@ -63,8 +64,6 @@ export interface CardForm {
   } | null;
 }
 
-type Undo = () => Promise<void>;
-
 export interface CategoryInput {
   name: string;
   kind: CategoryKind;
@@ -82,11 +81,6 @@ export function useFinanceActions() {
       const a = data?.accounts.find((x) => x.id === id);
       if (!a) throw new Error('Conta não encontrada');
       return a;
-    };
-    const ruleOf = (id: string): Recurrence => {
-      const r = data?.rules.find((x) => x.id === id);
-      if (!r) throw new Error('Recorrência não encontrada');
-      return r;
     };
 
     /**
@@ -126,23 +120,7 @@ export function useFinanceActions() {
       status: 'confirmed' | 'skipped',
       changes: { amount_cents?: number; date?: IsoDate },
     ): Promise<Undo> {
-      if (item.transactionId) {
-        const id = item.transactionId;
-        if (status === 'confirmed') await repos.transactions.confirm(id, changes);
-        else await repos.transactions.skip(id);
-        return async () => {
-          await repos.transactions.update(id, {
-            status: 'planned',
-            amount_cents: item.amount_cents,
-            date: item.date,
-          });
-        };
-      }
-      const rule = ruleOf(item.recurrenceId!);
-      const row = materializeOccurrence(rule, item.occurrenceDate!, { status, ...changes }, accountOf(rule.account_id));
-      await repos.transactions.upsertOccurrence(row);
-      // A linha excluída faz a ocorrência voltar a ser calculada (prevista).
-      return async () => repos.transactions.remove(row.id);
+      return settlePlanned(repos, data, item, status, changes);
     }
 
     function invoiceToPay(cardId: string, date: IsoDate): Month {

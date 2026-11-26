@@ -1,5 +1,5 @@
 import { router, useFocusEffect } from 'expo-router';
-import { CalendarCheck, Plus, Salad, Search, Settings, ShoppingBasket, StickyNote, TrendingUp, Wallet } from 'lucide-react-native';
+import { Bell, CalendarCheck, Plus, Salad, Search, Settings, ShoppingBasket, StickyNote, TrendingUp, Wallet } from 'lucide-react-native';
 import { useCallback, useRef, useState } from 'react';
 import { Pressable, View } from 'react-native';
 import Animated from 'react-native-reanimated';
@@ -26,6 +26,7 @@ import {
 } from '@/shared/ui';
 
 import { shouldReplayEntrance } from '../entrance';
+import { useNotifications } from '../notifications/NotificationsData';
 import { greeting } from './greeting';
 
 /**
@@ -63,9 +64,16 @@ export function TodayScreen() {
 
 function HeaderActions() {
   const s = useStyles();
+  const { hasUnread } = useNotifications();
   return (
     <View style={s.actions}>
       <IconButton icon={Search} label="Buscar" onPress={openSearch} />
+      <IconButton
+        icon={Bell}
+        label={hasUnread ? 'Notificações, há novidades' : 'Notificações'}
+        badge={hasUnread}
+        onPress={() => router.push('/notificacoes')}
+      />
       <IconButton icon={Settings} label="Ajustes" onPress={() => router.push('/ajustes')} />
     </View>
   );

@@ -18,10 +18,11 @@ import { FinanceProvider, createEdgeQuoteClient, financeTables, useFinanceTagged
 import { LinksProvider, TaggedItemsProvider, linksTables, useLinksSearchSources } from '@/features/links';
 import { NotesProvider, notesSearchIndex, notesTables, useNotesSearchSources, useNotesTaggedSource } from '@/features/notes';
 import { SearchProvider, useSearchShortcut } from '@/features/search';
-import { NoticesSync } from '@/features/today';
+import { NoticesSync, NotificationsProvider } from '@/features/today';
 import { installIdGenerator } from '@/shared/lib/ids';
 import { MoneyVisibilityProvider } from '@/shared/lib/MoneyVisibility';
 import { createMoneyVisibilityStore } from '@/shared/lib/moneyVisibilityStore';
+import { createSeenStore } from '@/shared/lib/seenStore';
 import { SyncStatusProvider, createLocalSync } from '@/shared/lib/powersync';
 import { createNoticeScheduler } from '@/shared/lib/notices';
 import { getSupabase } from '@/shared/lib/supabase';
@@ -45,6 +46,8 @@ const signOut = () => authService.signOut();
 const localSync = createLocalSync({ ...notesTables, ...linksTables, ...financeTables, ...agendaTables, ...dietTables }, [notesSearchIndex]);
 /** Avisos locais do aparelho (agenda e dieta); no web não faz nada. */
 const noticeScheduler = createNoticeScheduler();
+/** "Visto até" da central de notificações (preferência do aparelho). */
+const seenStore = createSeenStore(AsyncStorage);
 void SplashScreen.preventAutoHideAsync();
 
 /** Busca universal: cada feature entrega as suas fontes; Ctrl+K só com acesso completo e app desbloqueado. */
@@ -104,6 +107,7 @@ function RootStack() {
           <AgendaProvider db={localSync.db} userId={userId}>
           <DietProvider db={localSync.db} userId={userId}>
           <NoticesSync scheduler={noticeScheduler} />
+          <NotificationsProvider store={seenStore}>
           <DayMarksComposition>
           <SearchComposition enabled={stage === 'ready'}>
           <TaggedComposition>
@@ -130,6 +134,7 @@ function RootStack() {
                   />
                   <Stack.Screen name="ajustes" options={{ animation: animation.detail }} />
                   <Stack.Screen name="busca" options={{ presentation: 'modal', animation: animation.modal }} />
+                  <Stack.Screen name="notificacoes" options={{ animation: animation.detail }} />
                   <Stack.Screen name="nota/nova" options={{ animation: 'none' }} />
                   {/* Aberta pela linha que se expande (Hoje): sem animação própria, o contêiner faz a transição. */}
                   <Stack.Screen
@@ -183,6 +188,7 @@ function RootStack() {
           </TaggedComposition>
           </SearchComposition>
           </DayMarksComposition>
+          </NotificationsProvider>
           </DietProvider>
           </AgendaProvider>
           </FinanceProvider>

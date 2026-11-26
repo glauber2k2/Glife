@@ -62,7 +62,7 @@ export function dietNotices(items: readonly MealPlanItem[], today: IsoDate, days
   for (let i = 0; i <= days; i++) {
     const date = addDays(today, i);
     for (const item of planFor(items, date).filter((x) => x.remind)) {
-      out.push({ key: `meal:${item.id}:${date}`, title: item.name, body: item.description.split('\n')[0] ?? '', date, time: item.time, url: '/dieta' });
+      out.push({ key: `meal:${item.id}:${date}`, title: item.name, body: item.description.split('\n')[0] ?? '', date, time: item.time, url: '/dieta', ref: { kind: 'meal', id: item.id, date } });
     }
   }
   return out;

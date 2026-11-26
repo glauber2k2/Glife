@@ -19,5 +19,6 @@ export {
   type MealPlanPatch,
 } from './model.ts';
 export { dietDay, dietNotices, nextMeal, planFor, type DietDayEntry, type NextMeal } from './schedule.ts';
+export { dietNotifications } from './notifications.ts';
 export { DIET_TABLES, createDietRepository, type DietRepository, type DietRows, type DietSnapshot } from './repository.ts';
 export { dayTotals, history, historyBounds, type DietHistory, type HistoryDay, type HistoryRange, type NutritionTotals } from './history.ts';

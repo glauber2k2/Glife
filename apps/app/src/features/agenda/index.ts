@@ -7,3 +7,4 @@ export { TodayAgendaBlock } from './components/TodayAgendaBlock';
 export { useAgendaNotices } from './hooks/useAgendaNotices';
 export { AgendaMonthScreen } from './screens/AgendaMonthScreen';
 export { DayMarksProvider, type DayMarkSource } from './hooks/DayMarks';
+export { useAgendaNotifications, useCompleteReminder } from './hooks/useAgendaNotifications';

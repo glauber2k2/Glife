@@ -116,7 +116,7 @@ export function agendaNotices(events: readonly CalendarEvent[], reminders: reado
   }
   for (const r of reminders.filter((x) => alive(x) && x.done_at === null)) {
     for (const date of occurrenceDates(r, today, to)) {
-      out.push({ key: `reminder:${r.id}:${date}`, title: r.title, body: r.notes.split('\n')[0] ?? '', date, time: r.time, url: `/agenda/lembrete/${r.id}` });
+      out.push({ key: `reminder:${r.id}:${date}`, title: r.title, body: r.notes.split('\n')[0] ?? '', date, time: r.time, url: `/agenda/lembrete/${r.id}`, ref: { kind: 'reminder', id: r.id, date } });
     }
   }
   return out;

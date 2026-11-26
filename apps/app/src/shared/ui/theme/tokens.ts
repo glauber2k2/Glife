@@ -516,6 +516,8 @@ export const motion = {
   /** listas: +70 ms por item, no máximo 6 */
   stagger: 70,
   staggerMax: 6,
+  /** pontos de não lido somem em cascata (+50 ms cada) */
+  dotStagger: 50,
   /** a borda de trás do indicador da aba parte depois da da frente */
   tabLineDelay: 50,
   enterOffset: 18,
