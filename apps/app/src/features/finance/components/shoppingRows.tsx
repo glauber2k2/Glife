@@ -7,7 +7,9 @@ import Animated, { useAnimatedStyle, useSharedValue, withSpring, withTiming } fr
 
 import { Icon, ModuleIcon, Text, makeStyles, resolveSpring, useInListGroup, useReduceMotion, useTheme } from '@/shared/ui';
 
-import { money } from './format';
+
+import type { MoneyFormat } from './format';
+import { useMoneyFormat } from '../hooks/useMoneyFormat';
 
 /** Caixa de 22 px: o fundo vira destaque e o check cresce com a mola de toque. */
 export function Checkbox({ checked, label, onPress }: { checked: boolean; label: string; onPress: () => void }) {
@@ -55,7 +57,7 @@ function Struck({ on, children }: { on: boolean; children: ReactNode }) {
 }
 
 /** "2 × R$ 27,90", "1 un.", "3 un. · sem preço" ou o convite para preencher. */
-export function itemMeta(item: Pick<ShoppingItem, 'quantity' | 'unit_price_cents'>): { text: string; invite: boolean } {
+export function itemMeta(item: Pick<ShoppingItem, 'quantity' | 'unit_price_cents'>, money: MoneyFormat['money']): { text: string; invite: boolean } {
   if (item.unit_price_cents !== null) {
     return { text: item.quantity > 1 ? `${item.quantity} × ${money(item.unit_price_cents)}` : '1 un.', invite: false };
   }
@@ -76,11 +78,12 @@ export function ItemRow({
   onEdit: () => void;
   onMenu: () => void;
 }) {
+  const { money } = useMoneyFormat();
   const s = useStyles();
   const inGroup = useInListGroup();
   const t = useTheme();
   const total = itemTotal(item);
-  const meta = itemMeta(item);
+  const meta = itemMeta(item, money);
   return (
     <Pressable
       onPress={onEdit}

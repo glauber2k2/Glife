@@ -30,7 +30,8 @@ import { Button, Chip, Icon, SegmentedControl, Sheet, Text, makeStyles, useTheme
 import { useFinance } from '../hooks/FinanceData';
 import { useOccurrences } from '../hooks/useFlows';
 import { categoryIcon } from './categories';
-import { MONTH_NAMES, balance, dayLabel, dm, money } from './format';
+import { MONTH_NAMES, dayLabel, dm } from './format';
+import { useMoneyFormat } from '../hooks/useMoneyFormat';
 import { NoFundsNote } from './sheets';
 import { DateRow, MoneyField, NoCategoriesNote, RadioRow } from './ui';
 
@@ -65,6 +66,7 @@ export function PurchaseSheet(props: Props) {
 }
 
 function PurchaseForm({ list, items, today, onDone, onClose }: Props & { list: ShoppingList }) {
+  const { money, balance } = useMoneyFormat();
   const s = useStyles();
   const t = useTheme();
   const { height } = useWindowDimensions();

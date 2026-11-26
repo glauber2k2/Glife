@@ -7,7 +7,8 @@ import { Pressable, View } from 'react-native';
 
 import { Card, Icon, ProgressBar, SectionHeader, Tag, Text, makeStyles, useTheme } from '@/shared/ui';
 
-import { money, signed } from '../format';
+
+import { useMoneyFormat } from '../../hooks/useMoneyFormat';
 import { Block } from '../ui';
 import { useFinanceMaybe } from '../../hooks/FinanceData';
 import { useChartsSource } from '../../hooks/useCharts';
@@ -35,6 +36,8 @@ function Header({ title }: { title: string }) {
 
 /** Finanças: miniatura de 6 meses (56 px) e o saldo do mês; o bloco inteiro abre Gráficos em 6 meses. */
 export function ChartsSummaryBlock() {
+  const fmt = useMoneyFormat();
+  const { signed } = fmt;
   const s = useStyles();
   const t = useTheme();
   const src = useChartsSource();
@@ -46,13 +49,13 @@ export function ChartsSummaryBlock() {
     <Block>
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel={`${flowAria('Últimos 6 meses de entradas e saídas', 'Últimos 6 meses', buckets, true)} Saldo de ${monthLower(src.thisMonth)} ${signed(net)}. Abrir gráficos.`}
+        accessibilityLabel={`${flowAria('Últimos 6 meses de entradas e saídas', 'Últimos 6 meses', buckets, true, fmt)} Saldo de ${monthLower(src.thisMonth)} ${signed(net)}. Abrir gráficos.`}
         onPress={() => router.push({ pathname: '/financas/graficos', params: { modo: '6m', de: 'Finanças' } })}
         style={({ pressed }) => [s.press, pressed && s.pressed]}
       >
         <Header title="Últimos 6 meses" />
         <View style={s.mini} pointerEvents="none">
-          <BarChart slots={flowSlots(buckets, src.today)} barWidth={t.size.barThin} plotHeight={t.size.chartBarsMini} accessibilityLabel="" mini resetKey="mini" />
+          <BarChart slots={flowSlots(buckets, src.today, fmt)} barWidth={t.size.barThin} plotHeight={t.size.chartBarsMini} accessibilityLabel="" mini resetKey="mini" />
         </View>
         <View style={s.line}>
           <Text variant="chip" tone="secondary" style={s.regular}>{`Saldo de ${monthLower(src.thisMonth)}`}</Text>
@@ -72,6 +75,7 @@ const daysLeft = (today: IsoDate) => {
 
 /** Início: "Mês até agora". Sem contas ainda, não aparece; tocar abre Finanças, o link abre Gráficos do mês. */
 export function MonthSoFarBlock() {
+  const { money } = useMoneyFormat();
   const s = useStyles();
   const t = useTheme();
   const src = useChartsSource();

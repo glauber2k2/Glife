@@ -20,7 +20,8 @@ import { Pressable, View } from 'react-native';
 
 import { BackHeader, Button, Chip, Icon, Input, Screen, Spinner, Switch, Text, makeStyles, useTheme, useToast } from '@/shared/ui';
 
-import { dm, money, signed, todayIso } from '../components/format';
+import { dm, todayIso } from '../components/format';
+import { useMoneyFormat } from '../hooks/useMoneyFormat';
 import { parseQuantity, pctSigned } from '../components/investmentFormat';
 import { MoneyField, SwitchRow } from '../components/ui';
 import { useFinance } from '../hooks/FinanceData';
@@ -38,6 +39,7 @@ export function AssetFormScreen() {
 }
 
 function AssetForm({ asset, hasMovements }: { asset: InvestmentAsset | null; hasMovements: boolean }) {
+  const { money, signed } = useMoneyFormat();
   const s = useStyles();
   const t = useTheme();
   const toast = useToast();

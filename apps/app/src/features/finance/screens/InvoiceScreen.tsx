@@ -9,7 +9,8 @@ import { View } from 'react-native';
 import { BackHeader, Button, Card, EmptyState, ProgressBar, Reveal, Screen, Tag, Text, makeStyles, useTheme } from '@/shared/ui';
 
 import { categoryHue, categoryIcon } from '../components/categories';
-import { MONTH_NAMES, dm, money, signed, todayIso } from '../components/format';
+import { MONTH_NAMES, dm, todayIso } from '../components/format';
+import { useMoneyFormat } from '../hooks/useMoneyFormat';
 import { Block, BlockHeader, Disc, MoneyRow, MonthSlide, MonthStepper } from '../components/ui';
 import { useFinance } from '../hooks/FinanceData';
 import { invoiceTitle, useOccurrences, usePayInvoice } from '../hooks/useFlows';
@@ -20,6 +21,7 @@ const monthOk = (m: unknown): m is Month => typeof m === 'string' && /^\d{4}-(0[
 const MAX_RANGE = 24;
 
 export function InvoiceScreen() {
+  const { money, signed } = useMoneyFormat();
   const s = useStyles();
   const t = useTheme();
   const today = todayIso();

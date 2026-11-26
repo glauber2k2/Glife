@@ -2,7 +2,7 @@
 // Sem Intl, para dar o mesmo resultado no Android e no web.
 import { addMonths, type ChartMode, type ChartPeriod, type IsoDate, type Month } from '@glife/domain/finance';
 
-import { MONTH_NAMES, money } from '../format';
+import { MONTH_NAMES, type MoneyFormat } from '../format';
 
 const MINUS = '−';
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
@@ -65,7 +65,7 @@ export function signedPct(ratio: number): string {
 }
 
 /** "− R$ 19,90" sempre com sinal de saída (estorno, que é negativo, vira "+"). */
-export const outflow = (cents: number) => (cents < 0 ? `+ ${money(cents)}` : `${MINUS} ${money(cents)}`);
+export const outflow = (cents: number, fmt: MoneyFormat) => (cents < 0 ? `+ ${fmt.money(cents)}` : `${MINUS} ${fmt.money(cents)}`);
 
 /** Rótulos do eixo: todos até 3 grupos; acima disso, primeiro, meio e último. */
 export function axisIndices(n: number): Set<number> {

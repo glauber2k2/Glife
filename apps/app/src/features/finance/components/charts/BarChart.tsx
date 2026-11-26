@@ -8,6 +8,8 @@ import Animated, { useAnimatedStyle, useSharedValue, withDelay, withSpring, with
 
 import { Text, makeStyles, resolveSpring, useReduceMotion, useTheme } from '@/shared/ui';
 
+import { useMoneyFormat } from '../../hooks/useMoneyFormat';
+import { MONEY_MASK } from '../format';
 import { axisIndices, compactMoney } from './chartFormat';
 import { ScrubLayer, ScrubLine, ScrubTag, useScrub } from './scrub';
 
@@ -41,6 +43,7 @@ export function BarChart({ slots, barWidth, plotHeight, accessibilityLabel, mini
   const s = useStyles();
   const t = useTheme();
   const reduceMotion = useReduceMotion();
+  const { hidden } = useMoneyFormat();
   const [width, setWidth] = useState(0);
   const max = niceCeiling(Math.max(0, ...slots.flatMap((sl) => sl.bars.map((b) => total(b.value)))));
   const n = slots.length;
@@ -64,7 +67,7 @@ export function BarChart({ slots, barWidth, plotHeight, accessibilityLabel, mini
         {!mini && (
           <Fade visible={index === null} style={s.reference}>
             <Text variant="tab" tone="tertiary" numeric style={s.referenceText}>
-              {compactMoney(max)}
+              {hidden ? MONEY_MASK : compactMoney(max)}
             </Text>
             <View style={s.referenceLine} />
           </Fade>

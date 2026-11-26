@@ -21,7 +21,8 @@ import { FlowBlock, LineBlock, WhereBlock } from '../components/charts/ChartBloc
 import type { CategoryRow } from '../components/charts/CategoryRows';
 import { MODE_OPTIONS, dayMonth, monthBounds, monthTitle, periodLabel, signedPct } from '../components/charts/chartFormat';
 import { flowBuckets, categoryNames, namesSummary, sliceName } from '../components/charts/slots';
-import { balance, signed } from '../components/format';
+
+import { useMoneyFormat } from '../hooks/useMoneyFormat';
 import { Block, MonthStepper } from '../components/ui';
 import { useChartsSource } from '../hooks/useCharts';
 import { useInvestments } from '../hooks/useInvestments';
@@ -32,6 +33,7 @@ const monthOk = (m: unknown): m is Month => typeof m === 'string' && /^\d{4}-(0[
 const joinNames = (names: string[]) => (names.length <= 1 ? (names[0] ?? '') : `${names.slice(0, -1).join(', ')} e ${names[names.length - 1]}`);
 
 export function ChartsScreen() {
+  const { signed, balance } = useMoneyFormat();
   const s = useStyles();
   const t = useTheme();
   const params = useLocalSearchParams<{ modo?: string; mes?: string; de?: string }>();

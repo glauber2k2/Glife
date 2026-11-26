@@ -34,11 +34,8 @@ import {
 
 import { MovementSheet, type MovementDraft } from "../components/MovementSheet";
 import {
-  balance,
   dm,
   dmy,
-  money,
-  signed,
   todayIso,
   MONTH_NAMES,
 } from "../components/format";
@@ -56,6 +53,7 @@ import {
 } from "../components/investmentRows";
 import { ActionRow } from "../components/shoppingSheets";
 import { useCountUp } from "../components/ui";
+import { useMoneyFormat } from "../hooks/useMoneyFormat";
 import { useFinance } from "../hooks/FinanceData";
 import { useInvestments, useRefreshQuotes } from "../hooks/useInvestments";
 
@@ -77,6 +75,7 @@ const capital = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 const warn = (what: string) => (e: unknown) => console.warn(what, e);
 
 export function InvestmentAssetScreen() {
+  const { money, signed, balance } = useMoneyFormat();
   const s = useStyles();
   const t = useTheme();
   const toast = useToast();

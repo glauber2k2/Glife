@@ -11,7 +11,8 @@ import { BarChart } from '../components/charts/BarChart';
 import { BigAmount, Empty, SpendTrack } from '../components/charts/ChartBlocks';
 import { MODE_SHORT, dayMonth, monthLower, monthLong, outflow, periodLabel, previousLabel, signedPct } from '../components/charts/chartFormat';
 import { categoryNames, expenseSlots, flowAria, sliceName } from '../components/charts/slots';
-import { money, signed } from '../components/format';
+
+import { useMoneyFormat } from '../hooks/useMoneyFormat';
 import { Block, BlockHeader } from '../components/ui';
 import { useChartsSource } from '../hooks/useCharts';
 
@@ -19,6 +20,8 @@ const MODE_PARAM: Record<string, ChartMode> = { mes: 'month', '6m': '6m', '12m':
 const monthOk = (m: unknown): m is Month => typeof m === 'string' && /^\d{4}-(0[1-9]|1[0-2])$/.test(m);
 
 export function ChartCategoryScreen() {
+  const fmt = useMoneyFormat();
+  const { money, signed } = fmt;
   const s = useStyles();
   const t = useTheme();
   const params = useLocalSearchParams<{ categoria: string; modo?: string; mes?: string }>();
@@ -103,10 +106,10 @@ export function ChartCategoryScreen() {
           <BlockHeader title="Por mês" />
           <View style={s.chart}>
             <BarChart
-              slots={expenseSlots(detail.byMonth, chartCurrent)}
+              slots={expenseSlots(detail.byMonth, chartCurrent, fmt)}
               barWidth={mode === '12m' ? t.size.barCategoryThin : t.size.barCategory}
               plotHeight={t.size.chartBarsCategory}
-              accessibilityLabel={flowAria(`${name} por mês`, periodText, detail.byMonth, false)}
+              accessibilityLabel={flowAria(`${name} por mês`, periodText, detail.byMonth, false, fmt)}
               resetKey={resetKey}
             />
           </View>
@@ -124,6 +127,7 @@ function EntryList(p: {
   categories: ReadonlyMap<string, { name: string }>;
   accounts: ReadonlyMap<string, string>;
 }) {
+  const fmt = useMoneyFormat();
   const s = useStyles();
   if (p.entries.length === 0) {
     return (
@@ -161,7 +165,7 @@ function EntryList(p: {
                 </Text>
               </View>
               <Text tone={e.planned ? 'tertiary' : 'primary'} numeric style={s.medium}>
-                {outflow(e.amount)}
+                {outflow(e.amount, fmt)}
               </Text>
             </View>
           ))}

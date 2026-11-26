@@ -11,6 +11,7 @@ import {
   sharePct,
   signedPct,
 } from '../src/features/finance/components/charts/chartFormat';
+import { createMoneyFormat } from '../src/features/finance/components/format';
 
 describe('textos dos gráficos', () => {
   it('período e período anterior', () => {
@@ -34,8 +35,8 @@ describe('textos dos gráficos', () => {
     expect(sharePct(0.001)).toBe('<1%');
     expect(signedPct(0.1234)).toBe('+12,3%');
     expect(signedPct(-0.04)).toBe('−4,0%');
-    expect(outflow(1990)).toBe('− R$ 19,90');
-    expect(outflow(-1000)).toBe('+ R$ 10,00');
+    expect(outflow(1990, createMoneyFormat(false))).toBe('− R$ 19,90');
+    expect(outflow(-1000, createMoneyFormat(false))).toBe('+ R$ 10,00');
   });
 
   it('eixo e limites do mês', () => {

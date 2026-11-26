@@ -8,7 +8,9 @@ import { ScrollView, View } from 'react-native';
 import { BackHeader, Button, Chip, EmptyState, Reveal, Screen, SearchField, Tag, Text, makeStyles, useTheme } from '@/shared/ui';
 
 import { ACCOUNT_KIND_LABEL, ADJUSTMENT_ICON, TRANSFER_ICON, categoryHue, categoryIcon } from '../components/categories';
-import { balance, dm, signed, todayIso, weekday } from '../components/format';
+import { dm, todayIso, weekday } from '../components/format';
+import { MoneyEyeButton } from '../components/MoneyEyeButton';
+import { useMoneyFormat } from '../hooks/useMoneyFormat';
 import { Block, Disc, MoneyRow } from '../components/ui';
 import { DeleteAccountSheet, usePlannedSheet, useTransactionSheet } from '../components/deleteSheets';
 import { useFinance } from '../hooks/FinanceData';
@@ -17,6 +19,7 @@ import { useOccurrences } from '../hooks/useFlows';
 const TRANSFERS = '__transfer__';
 
 export function StatementScreen() {
+  const { signed, balance } = useMoneyFormat();
   const s = useStyles();
   const t = useTheme();
   const today = todayIso();
@@ -69,7 +72,7 @@ export function StatementScreen() {
 
   return (
     <Screen>
-      <BackHeader title={account.name} subtitle={ACCOUNT_KIND_LABEL[account.kind]} fallback="/financas" />
+      <BackHeader title={account.name} subtitle={ACCOUNT_KIND_LABEL[account.kind]} fallback="/financas" right={<MoneyEyeButton />} />
       <Reveal>
         <View style={s.hero}>
           <Text variant="small" tone="tertiary">

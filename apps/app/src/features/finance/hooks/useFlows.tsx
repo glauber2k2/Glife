@@ -13,7 +13,8 @@ import { useCallback, useMemo, useState, type ReactNode } from 'react';
 
 import { useToast } from '@/shared/ui';
 
-import { MONTH_NAMES, money } from '../components/format';
+import { MONTH_NAMES } from '../components/format';
+import { useMoneyFormat } from './useMoneyFormat';
 import { PaySheet } from '../components/sheets';
 import { useFinance } from './FinanceData';
 import { useFinanceActions } from './useFinanceActions';
@@ -95,6 +96,7 @@ export function usePayInvoice(
   open: (cardId: string, month: Month) => void;
   element: ReactNode;
 } {
+  const { money } = useMoneyFormat();
   const { data } = useFinance();
   const toast = useToast();
   const { payInvoice } = useFinanceActions();

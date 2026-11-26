@@ -26,7 +26,8 @@ import {
 } from '@/shared/ui';
 
 import { PurchaseSheet, type PurchaseDone } from '../components/PurchaseSheet';
-import { dm, money, todayIso } from '../components/format';
+import { dm, todayIso } from '../components/format';
+import { useMoneyFormat } from '../hooks/useMoneyFormat';
 import { ItemRow } from '../components/shoppingRows';
 import { ItemEditSheet, ItemMenuSheet, ListSettingsSheet, type ItemChanges } from '../components/shoppingSheets';
 import { useFinance } from '../hooks/FinanceData';
@@ -35,6 +36,7 @@ import { useShopping } from '../hooks/useShopping';
 const warn = (what: string) => (e: unknown) => console.warn(what, e);
 
 export function ShoppingListScreen() {
+  const { money } = useMoneyFormat();
   const s = useStyles();
   const t = useTheme();
   const toast = useToast();

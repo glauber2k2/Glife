@@ -8,12 +8,14 @@ import { View } from 'react-native';
 
 import { BackHeader, Button, EmptyState, Icon, IconButton, Input, ListGroup, Reveal, Screen, makeStyles, useTheme, useToast } from '@/shared/ui';
 
-import { dm, money, todayIso } from '../components/format';
+import { dm, todayIso } from '../components/format';
+import { useMoneyFormat } from '../hooks/useMoneyFormat';
 import { ListRow } from '../components/shoppingRows';
 import { useFinance } from '../hooks/FinanceData';
 import { suggestCategory, useShopping } from '../hooks/useShopping';
 
 export function ShoppingListsScreen() {
+  const { money } = useMoneyFormat();
   const s = useStyles();
   const t = useTheme();
   const toast = useToast();
@@ -47,7 +49,7 @@ export function ShoppingListsScreen() {
               : `Última compra ${dm(l.last_purchase_date)}`,
         };
       }),
-    [snap, today],
+    [snap, today, money],
   );
 
   const create = async () => {

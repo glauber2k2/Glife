@@ -9,7 +9,8 @@ import { View } from 'react-native';
 
 import { BackHeader, Card, EmptyState, IconButton, ListGroup, Reveal, Screen, Text, makeStyles } from '@/shared/ui';
 
-import { balance, dm, dmy, money, signed, todayIso } from '../components/format';
+import { dm, dmy, todayIso } from '../components/format';
+import { useMoneyFormat } from '../hooks/useMoneyFormat';
 import { pctSigned, shareText } from '../components/investmentFormat';
 import { AssetRow, ClosedToggle, DistributionBar, GroupHeader, resultTone } from '../components/investmentRows';
 import { useCountUp } from '../components/ui';
@@ -27,6 +28,7 @@ function subOf({ asset, position }: PositionedAsset, closed: boolean, notFound: 
 }
 
 export function InvestmentsScreen() {
+  const { money, signed, balance } = useMoneyFormat();
   const s = useStyles();
   const today = todayIso();
   const snap = useInvestments();

@@ -27,8 +27,9 @@ import {
 import { categoryHue, categoryIcon } from '../components/categories';
 import { categoryMeta } from '../components/categoryForm';
 import { failureReason } from '../components/errors';
-import { money, todayIso } from '../components/format';
+import { todayIso } from '../components/format';
 import { OrderArrows } from '../components/ui';
+import { useMoneyFormat } from '../hooks/useMoneyFormat';
 import { useFinance } from '../hooks/FinanceData';
 import { useFinanceActions } from '../hooks/useFinanceActions';
 import { useOrdering } from '../hooks/useOrdering';
@@ -39,6 +40,7 @@ const TABS = [
 ] as const;
 
 export function CategoriesScreen() {
+  const { money } = useMoneyFormat();
   const s = useStyles();
   const t = useTheme();
   const toast = useToast();

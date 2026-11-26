@@ -15,7 +15,8 @@ import { View } from 'react-native';
 
 import { Button, Chip, Input, SegmentedControl, Sheet, Text, makeStyles, type TextTone } from '@/shared/ui';
 
-import { balance, dayLabel, dm, money, signed } from './format';
+import { dayLabel, dm } from './format';
+import { useMoneyFormat } from '../hooks/useMoneyFormat';
 import { parseQuantity, pctSigned, quantityText } from './investmentFormat';
 import { MOVEMENT_LABELS, resultTone } from './investmentRows';
 import { DateRow, MoneyField } from './ui';
@@ -59,6 +60,7 @@ const VALUE_LABELS: Record<MovementKind, string> = {
 };
 
 function MovementForm({ asset, movements, accounts, editing, initialKind, today, onSave, onDelete }: MovementSheetProps) {
+  const { money, signed, balance } = useMoneyFormat();
   const s = useStyles();
   const auto = isAutoQuoted(asset.kind);
   const [kind, setKind] = useState<MovementKind>(editing?.kind ?? initialKind);

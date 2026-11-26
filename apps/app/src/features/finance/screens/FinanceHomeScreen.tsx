@@ -39,7 +39,9 @@ import Animated, { Easing, FadeOut, LinearTransition, useAnimatedStyle, useShare
 import { Button, EmptyState, Icon, IconButton, Reveal, Screen, Tag, Text, makeStyles, moduleHue, useReduceMotion, useTheme } from '@/shared/ui';
 
 import { ACCOUNT_KIND_LABEL, accountIcon, categoryIcon, TRANSFER_ICON } from '../components/categories';
-import { balance, dm, lateText, longDay, money, monthName, monthShort, signed, todayIso } from '../components/format';
+import { dm, lateText, longDay, monthName, monthShort, todayIso } from '../components/format';
+import { MoneyEyeButton } from '../components/MoneyEyeButton';
+import { useMoneyFormat } from '../hooks/useMoneyFormat';
 import { NewEntrySheet } from '../components/NewEntrySheet';
 import { useTransactionSheet } from '../components/deleteSheets';
 import { INVOICE_STATUS } from '../components/status';
@@ -61,6 +63,7 @@ const FREQ_LABEL = {
 type Leaving = { item: PlannedItem; kind: 'confirmed' | 'skipped' };
 
 export function FinanceHomeScreen() {
+  const { money, signed, balance } = useMoneyFormat();
   const s = useStyles();
   const t = useTheme();
   const reduceMotion = useReduceMotion();
@@ -167,13 +170,16 @@ export function FinanceHomeScreen() {
       tabBar
       action={
         hasAccounts ? (
-          <MonthStepper
-            label={name}
-            onPrev={() => goMonth(-1)}
-            onNext={() => goMonth(1)}
-            canPrev={offset > 0}
-            canNext={offset < MAX_AHEAD}
-          />
+          <View style={s.topActions}>
+            <MonthStepper
+              label={name}
+              onPrev={() => goMonth(-1)}
+              onNext={() => goMonth(1)}
+              canPrev={offset > 0}
+              canNext={offset < MAX_AHEAD}
+            />
+            <MoneyEyeButton />
+          </View>
         ) : undefined
       }
     >
@@ -570,6 +576,7 @@ function DateCol({ date }: { date: string }) {
 }
 
 function CardRow({ c, divider, onPay }: { c: CardOverview; divider: boolean; onPay: () => void }) {
+  const { money } = useMoneyFormat();
   const s = useStyles();
   const t = useTheme();
   const st = INVOICE_STATUS[c.summary.status];
@@ -669,6 +676,7 @@ const useStyles = makeStyles((t) => ({
   flex: { flex: 1, minWidth: 0, gap: t.space[0.5] },
   medium: { fontFamily: t.type.chip.font },
   semibold: { fontFamily: t.type.label.font },
+  topActions: { flexDirection: 'row', alignItems: 'center', gap: t.space[2] },
   hero: { gap: t.space[1.5] },
   heroAction: { marginTop: t.space[3], flexDirection: 'row' },
   divider: { borderTopWidth: t.hairline, borderTopColor: t.colors.hairline },

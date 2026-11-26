@@ -335,6 +335,7 @@ export function MoneyField({
   autoFocus?: boolean;
 }) {
   const s = useStyles();
+  // Campo de digitação: nunca mascarado.
   const text = cents === null ? '' : `${negative ? '− ' : ''}${money(cents)}`;
   return (
     <Input

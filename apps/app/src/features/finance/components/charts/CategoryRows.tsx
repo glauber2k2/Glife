@@ -6,7 +6,8 @@ import Animated, { useAnimatedStyle, useSharedValue, withDelay, withSpring } fro
 
 import { Text, makeStyles, resolveSpring, useReduceMotion, useTheme } from '@/shared/ui';
 
-import { money } from '../format';
+
+import { useMoneyFormat } from '../../hooks/useMoneyFormat';
 import { sharePct } from './chartFormat';
 
 export interface CategoryRow {
@@ -20,6 +21,7 @@ export interface CategoryRow {
 }
 
 export function CategoryRows({ rows, onOpen }: { rows: readonly CategoryRow[]; onOpen: (key: string) => void }) {
+  const { money } = useMoneyFormat();
   const s = useStyles();
   const max = Math.max(0, ...rows.map((r) => r.total));
   return (

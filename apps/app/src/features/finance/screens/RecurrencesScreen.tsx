@@ -20,7 +20,8 @@ import { View } from 'react-native';
 import { BackHeader, Button, EmptyState, IconButton, Input, Reveal, Screen, SegmentedControl, Text, makeStyles, useTheme, useToast } from '@/shared/ui';
 
 import { TRANSFER_ICON, categoryHue, categoryIcon } from '../components/categories';
-import { dm, dmy, money, signed, todayIso, weekday } from '../components/format';
+import { dm, dmy, todayIso, weekday } from '../components/format';
+import { useMoneyFormat } from '../hooks/useMoneyFormat';
 import { NewEntrySheet } from '../components/NewEntrySheet';
 import { ChoiceSheet } from '../components/sheets';
 import { Block, BlockHeader, DateRow, Disc, MoneyField, MoneyRow, Stepper } from '../components/ui';
@@ -40,6 +41,7 @@ export function frequencyLabel(r: Pick<Recurrence, 'frequency' | 'interval_count
 const valueOf = (r: Pick<Recurrence, 'type' | 'amount_cents'>) => (r.type === 'income' ? r.amount_cents : -r.amount_cents);
 
 export function RecurrencesScreen() {
+  const { signed } = useMoneyFormat();
   const today = todayIso();
   const { data } = useFinance();
   const occurrences = useOccurrences(addDays(today, 800));
@@ -144,6 +146,7 @@ export function RecurrenceScreen() {
 }
 
 function RuleEditor({ rule }: { rule: Recurrence }) {
+  const { money, signed } = useMoneyFormat();
   const s = useStyles();
   const t = useTheme();
   const toast = useToast();

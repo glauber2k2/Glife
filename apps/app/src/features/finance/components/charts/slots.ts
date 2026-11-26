@@ -14,7 +14,7 @@ import {
   type IsoDate,
 } from '@glife/domain/finance';
 
-import { money, signed } from '../format';
+import type { MoneyFormat } from '../format';
 import { monthAbbr, monthLong, monthLower, outflow } from './chartFormat';
 import type { BarSlot } from './BarChart';
 
@@ -32,12 +32,12 @@ export function flowBuckets(entries: readonly ChartEntry[], period: ChartPeriod)
   return period.mode === 'month' ? weekBuckets(entries, period.anchor) : monthBuckets(entries, period.months);
 }
 
-export function flowSlots(buckets: readonly FlowBucket[], today: IsoDate): BarSlot[] {
+export function flowSlots(buckets: readonly FlowBucket[], today: IsoDate, fmt: MoneyFormat): BarSlot[] {
   return buckets.map((b) => ({
     key: b.key,
     axis: b.days ? `${b.days.from}–${b.days.to}` : monthAbbr(b.month),
     title: title(b),
-    value: isEmpty(b) ? 'Sem lançamentos' : `${signed(b.income.confirmed)}  ·  ${outflow(b.expense.confirmed)}`,
+    value: isEmpty(b) ? 'Sem lançamentos' : `${fmt.signed(b.income.confirmed)}  ·  ${outflow(b.expense.confirmed, fmt)}`,
     current: isCurrent(b, today),
     bars: [
       { kind: 'outline', value: b.income },
@@ -47,7 +47,7 @@ export function flowSlots(buckets: readonly FlowBucket[], today: IsoDate): BarSl
 }
 
 /** Barras de gasto da categoria por mês (uma barra preenchida). */
-export function expenseSlots(buckets: readonly FlowBucket[], current: string): BarSlot[] {
+export function expenseSlots(buckets: readonly FlowBucket[], current: string, fmt: MoneyFormat): BarSlot[] {
   return buckets.map((b) => ({
     key: b.key,
     axis: monthAbbr(b.month),
@@ -55,14 +55,15 @@ export function expenseSlots(buckets: readonly FlowBucket[], current: string): B
     value:
       b.expense.confirmed + b.expense.planned === 0
         ? 'Sem lançamentos'
-        : `${money(b.expense.confirmed)}${b.expense.planned > 0 ? ` + ${money(b.expense.planned)} previsto` : ''}`,
+        : `${fmt.money(b.expense.confirmed)}${b.expense.planned > 0 ? ` + ${fmt.money(b.expense.planned)} previsto` : ''}`,
     current: b.month === current,
     bars: [{ kind: 'fill', value: b.expense }],
   }));
 }
 
 /** "Entradas e saídas, junho a novembro de 2026. Novembro de 2026: entradas …, saídas …; previsto: …." */
-export function flowAria(chart: string, period: string, buckets: readonly FlowBucket[], pair: boolean): string {
+export function flowAria(chart: string, period: string, buckets: readonly FlowBucket[], pair: boolean, fmt: MoneyFormat): string {
+  const { money } = fmt;
   const say = (b: FlowBucket) => {
     const name = title(b).charAt(0).toUpperCase() + title(b).slice(1);
     if (isEmpty(b)) return `${name}: sem lançamentos`;

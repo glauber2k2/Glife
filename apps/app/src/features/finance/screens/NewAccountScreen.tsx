@@ -10,7 +10,8 @@ import { Pressable, View } from 'react-native';
 import { BackHeader, Button, Chip, EmptyState, Icon, IconButton, Input, Reveal, Screen, Text, makeStyles, useTheme, useToast } from '@/shared/ui';
 
 import { failureReason as reasonOf } from '../components/errors';
-import { money, dm, MONTH_NAMES, todayIso } from '../components/format';
+import { dm, MONTH_NAMES, todayIso } from '../components/format';
+import { useMoneyFormat } from '../hooks/useMoneyFormat';
 import { Block, BlockHeader, DayField, MoneyField, RadioRow } from '../components/ui';
 import { useFinance } from '../hooks/FinanceData';
 import { useFinanceActions } from '../hooks/useFinanceActions';
@@ -49,6 +50,7 @@ export function NewAccountScreen() {
 }
 
 function AccountForm({ account }: { account: Account | null }) {
+  const { money } = useMoneyFormat();
   const s = useStyles();
   const t = useTheme();
   const toast = useToast();

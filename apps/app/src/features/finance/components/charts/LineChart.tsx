@@ -9,7 +9,8 @@ import Svg, { Circle, Path } from 'react-native-svg';
 
 import { Text, makeStyles, useReduceMotion, useTheme } from '@/shared/ui';
 
-import { balance } from '../format';
+
+import { useMoneyFormat } from '../../hooks/useMoneyFormat';
 import { dayMonth } from './chartFormat';
 import { ScrubLayer, ScrubLine, ScrubTag, useScrub } from './scrub';
 
@@ -24,6 +25,7 @@ const MIN_LABEL_GAP = 0.22;
 const dayNumber = (d: string) => Date.parse(`${d}T00:00:00Z`) / 86_400_000;
 
 export function LineChart({ points, accessibilityLabel, resetKey }: LineChartProps) {
+  const { balance } = useMoneyFormat();
   const s = useStyles();
   const t = useTheme();
   const reduceMotion = useReduceMotion();

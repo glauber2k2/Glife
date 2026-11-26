@@ -7,13 +7,15 @@ import { View } from 'react-native';
 import { Button, Chip, Icon, Input, Sheet, Text, makeStyles, useTheme } from '@/shared/ui';
 
 import { accountIcon } from './categories';
-import { balance, dayLabel, dm, lateText, money, signed } from './format';
+import { dayLabel, dm, lateText } from './format';
+import { useMoneyFormat } from '../hooks/useMoneyFormat';
 import { DateRow, MoneyField, RadioRow } from './ui';
 
 // ---------- Saldo insuficiente ----------
 
 /** Aviso de que a saída deixa a conta negativa; o botão ao lado vira "… mesmo assim". */
 export function NoFundsNote({ accountName, available, cents }: { accountName: string; available: number; cents: number }) {
+  const { balance } = useMoneyFormat();
   const s = useStyles();
   const t = useTheme();
   return (
@@ -116,6 +118,7 @@ function ConfirmForm({
   onPaidByOther?: (changes: { amount_cents: number; date: IsoDate }, who: string | null) => void;
   startPaidByOther: boolean;
 }) {
+  const { money, signed } = useMoneyFormat();
   const s = useStyles();
   const t = useTheme();
   const [other, setOther] = useState(startPaidByOther && !!onPaidByOther);
@@ -195,6 +198,7 @@ export function PaySheet({
   onClose: () => void;
   onPay: (p: { cents: number; fromId: string; date: IsoDate; paidBy?: { who: string | null } }) => void;
 }) {
+  const { money, balance } = useMoneyFormat();
   const s = useStyles();
   const t = useTheme();
   const [cents, setCents] = useState<number | null>(remaining || null);

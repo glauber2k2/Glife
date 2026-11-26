@@ -11,7 +11,8 @@ import { Button, Sheet, Text, makeStyles, useTheme, useToast } from '@/shared/ui
 import { useFinance } from '../hooks/FinanceData';
 import { useFinanceActions } from '../hooks/useFinanceActions';
 import { useAvailableFor, usePlannedActions } from '../hooks/useFlows';
-import { dmy, money } from './format';
+import { dmy } from './format';
+import { useMoneyFormat } from '../hooks/useMoneyFormat';
 import { NoFundsNote } from './sheets';
 import { RadioRow } from './ui';
 
@@ -32,6 +33,7 @@ export function useTransactionSheet(opts: { aboveTabBar?: boolean } = {}): { ope
 }
 
 function TransactionDetail({ tx, onDone, aboveTabBar }: { tx: Transaction; onDone: () => void; aboveTabBar?: boolean }) {
+  const { money } = useMoneyFormat();
   const s = useStyles();
   const t = useTheme();
   const toast = useToast();
@@ -131,6 +133,7 @@ export function usePlannedSheet(today: IsoDate): { open: (item: PlannedItem) => 
 }
 
 function PlannedDetail({ item, today, onDone }: { item: PlannedItem; today: IsoDate; onDone: () => void }) {
+  const { money } = useMoneyFormat();
   const s = useStyles();
   const t = useTheme();
   const { data } = useFinance();

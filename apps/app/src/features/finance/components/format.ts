@@ -31,6 +31,21 @@ export function signed(cents: number): string {
 /** Saldo que pode ser negativo: "R$ 10,00" · "− R$ 10,00". */
 export const balance = (cents: number) => (cents < 0 ? `${MINUS} ${money(cents)}` : money(cents));
 
+/** Máscara de valor oculto: largura fixa, para a linha não pular ao alternar. */
+export const MONEY_MASK = 'R$ ••••';
+
+/** Os mesmos formatadores, mas com a máscara quando os valores estão ocultos (o sinal continua aparecendo). */
+export function createMoneyFormat(hidden: boolean) {
+  if (!hidden) return { money, signed, balance };
+  const masked = () => MONEY_MASK;
+  return {
+    money: masked,
+    signed: (cents: number) => (cents === 0 ? MONEY_MASK : `${cents < 0 ? MINUS : '+'} ${MONEY_MASK}`),
+    balance: (cents: number) => (cents < 0 ? `${MINUS} ${MONEY_MASK}` : MONEY_MASK),
+  };
+}
+export type MoneyFormat = ReturnType<typeof createMoneyFormat>;
+
 /** Só os dígitos do que foi digitado, lidos como centavos ("23990" → 23990). */
 export function digitsToCents(text: string): number {
   const digits = text.replace(/\D/g, '').replace(/^0+/, '').slice(0, 11);

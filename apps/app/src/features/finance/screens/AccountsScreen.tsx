@@ -13,7 +13,9 @@ import { AccountActionsSheet } from '../components/AccountActionsSheet';
 import { BalanceAdjustSheet } from '../components/BalanceAdjustSheet';
 import { ACCOUNT_KIND_LABEL, accountIcon } from '../components/categories';
 import { failureReason } from '../components/errors';
-import { balance, dm, money, todayIso } from '../components/format';
+import { dm, todayIso } from '../components/format';
+import { MoneyEyeButton } from '../components/MoneyEyeButton';
+import { useMoneyFormat } from '../hooks/useMoneyFormat';
 import { INVOICE_STATUS } from '../components/status';
 import { Disc, FlashRow, MoneyRow, OrderArrows, useCountUp } from '../components/ui';
 import { useFinance } from '../hooks/FinanceData';
@@ -22,6 +24,7 @@ import { invoiceTitle, useOccurrences } from '../hooks/useFlows';
 import { useOrdering } from '../hooks/useOrdering';
 
 export function AccountsScreen() {
+  const { money } = useMoneyFormat();
   const s = useStyles();
   const t = useTheme();
   const toast = useToast();
@@ -113,7 +116,12 @@ export function AccountsScreen() {
       <BackHeader
         title="Contas e cartões"
         fallback="/financas"
-        right={<IconButton icon={Plus} label="Nova conta" onPress={() => router.push('/financas/nova-conta')} />}
+        right={
+          <>
+            <MoneyEyeButton />
+            <IconButton icon={Plus} label="Nova conta" onPress={() => router.push('/financas/nova-conta')} />
+          </>
+        }
       />
       <Reveal>
         {live.length === 0 ? (
@@ -233,6 +241,7 @@ export function AccountsScreen() {
 
 /** Total que conta até o valor novo. */
 function Total({ cents }: { cents: number }) {
+  const { balance } = useMoneyFormat();
   const shown = useCountUp(cents);
   return (
     <Text variant="big" numeric accessibilityLabel={`Total nas contas ${balance(cents)}`}>
@@ -243,6 +252,7 @@ function Total({ cents }: { cents: number }) {
 
 /** Conta com o saldo que conta até o valor novo (ajuste de saldo). */
 function AccountLine({ account, cents, trailing, onPress }: { account: Account; cents: number; trailing: ReactNode; onPress?: () => void }) {
+  const { balance } = useMoneyFormat();
   const shown = useCountUp(cents);
   return (
     <MoneyRow

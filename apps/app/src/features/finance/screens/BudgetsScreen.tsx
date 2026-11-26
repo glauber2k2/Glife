@@ -9,7 +9,8 @@ import { TextInput, View } from 'react-native';
 import { Alert, BackHeader, Button, EmptyState, ModuleIcon, ProgressBar, Reveal, Screen, Tag, Text, makeStyles, noFocusRing, useTheme, useToast } from '@/shared/ui';
 
 import { categoryHue, categoryIcon } from '../components/categories';
-import { balance, digitsToCents, money, monthName, todayIso } from '../components/format';
+import { MONEY_MASK, digitsToCents, money as rawMoney, monthName, todayIso } from '../components/format';
+import { useMoneyFormat } from '../hooks/useMoneyFormat';
 import { Block, BlockHeader, BudgetBar, Disc, MonthSlide, MonthStepper } from '../components/ui';
 import { useFinance } from '../hooks/FinanceData';
 import { useFinanceActions } from '../hooks/useFinanceActions';
@@ -18,6 +19,7 @@ import { useOccurrences } from '../hooks/useFlows';
 const monthOk = (m: unknown): m is Month => typeof m === 'string' && /^\d{4}-(0[1-9]|1[0-2])$/.test(m);
 
 export function BudgetsScreen() {
+  const { money, balance } = useMoneyFormat();
   const s = useStyles();
   const today = todayIso();
   const params = useLocalSearchParams<{ mes?: string }>();
@@ -107,11 +109,12 @@ export function BudgetsScreen() {
 }
 
 function BudgetLine({ b, month, index, divider }: { b: BudgetRow; month: Month; index: number; divider: boolean }) {
+  const { money, balance, hidden } = useMoneyFormat();
   const s = useStyles();
   const t = useTheme();
   const toast = useToast();
   const { setBudget } = useFinanceActions();
-  const [text, setText] = useState(b.budget !== null ? money(b.budget) : '');
+  const [text, setText] = useState(b.budget !== null ? rawMoney(b.budget) : '');
   const [focused, setFocused] = useState(false);
   const typed = digitsToCents(text);
   const budget = focused ? typed || b.budget : b.budget;
@@ -120,12 +123,12 @@ function BudgetLine({ b, month, index, divider }: { b: BudgetRow; month: Month; 
   const commit = async () => {
     setFocused(false);
     if (!typed || typed === b.budget) {
-      setText(b.budget !== null ? money(b.budget) : '');
+      setText(b.budget !== null ? rawMoney(b.budget) : '');
       return;
     }
     try {
       await setBudget(b.category.id, month, typed);
-      setText(money(typed));
+      setText(rawMoney(typed));
     } catch (e) {
       console.warn('Falha ao salvar o orçamento', e);
       toast({ message: 'Não foi possível salvar o orçamento.' });
@@ -140,13 +143,13 @@ function BudgetLine({ b, month, index, divider }: { b: BudgetRow; month: Month; 
         </Text>
         <TextInput
           accessibilityLabel={`Orçamento mensal de ${b.category.name}`}
-          value={text}
+          value={hidden && !focused && text ? MONEY_MASK : text}
           placeholder="R$ 0,00"
           placeholderTextColor={t.colors.textQuaternary}
           keyboardType="number-pad"
           inputMode="numeric"
           onFocus={() => setFocused(true)}
-          onChangeText={(v) => setText(digitsToCents(v) ? money(digitsToCents(v)) : '')}
+          onChangeText={(v) => setText(digitsToCents(v) ? rawMoney(digitsToCents(v)) : '')}
           onBlur={() => void commit()}
           onSubmitEditing={() => void commit()}
           style={[s.input, focused && s.inputFocused, noFocusRing]}

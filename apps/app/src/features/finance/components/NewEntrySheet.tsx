@@ -22,7 +22,8 @@ import { Button, Chip, Icon, IconButton, Input, SegmentedControl, Sheet, Switch,
 import { useFinance } from '../hooks/FinanceData';
 import { useFinanceActions } from '../hooks/useFinanceActions';
 import { accountIcon, categoryIcon } from './categories';
-import { MONTH_NAMES, dayLabel, dm, dmy, money, weekday } from './format';
+import { MONTH_NAMES, dayLabel, dm, dmy, weekday } from './format';
+import { useMoneyFormat } from '../hooks/useMoneyFormat';
 import { DateRow, DayField, MoneyField, NoCategoriesNote, Stepper, SwitchRow } from './ui';
 
 type Freq = 'weekly' | 'monthly' | 'yearly' | 'every';
@@ -67,6 +68,7 @@ export function NewEntrySheet(props: Props) {
 }
 
 function EntryForm({ onClose, today, preset, aboveTabBar }: Props) {
+  const { money } = useMoneyFormat();
   const s = useStyles();
   const t = useTheme();
   const toast = useToast();

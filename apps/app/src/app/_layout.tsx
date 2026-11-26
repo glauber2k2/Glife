@@ -20,6 +20,8 @@ import { NotesProvider, notesSearchIndex, notesTables, useNotesSearchSources, us
 import { SearchProvider, useSearchShortcut } from '@/features/search';
 import { NoticesSync } from '@/features/today';
 import { installIdGenerator } from '@/shared/lib/ids';
+import { MoneyVisibilityProvider } from '@/shared/lib/MoneyVisibility';
+import { createMoneyVisibilityStore } from '@/shared/lib/moneyVisibilityStore';
 import { SyncStatusProvider, createLocalSync } from '@/shared/lib/powersync';
 import { createNoticeScheduler } from '@/shared/lib/notices';
 import { getSupabase } from '@/shared/lib/supabase';
@@ -31,6 +33,8 @@ import { ExpandProvider, ThemeProvider, ToastProvider, createThemePreferenceStor
 installIdGenerator();
 // Raiz de composição: aqui as interfaces recebem as implementações concretas.
 const themePreferenceStore = createThemePreferenceStore(AsyncStorage);
+// "Ocultar valores" (olhinho de Finanças): preferência do aparelho, lembrada ao fechar e abrir o app.
+const moneyVisibilityStore = createMoneyVisibilityStore(AsyncStorage);
 const authService = createSupabaseAuthService(getSupabase());
 // Cotações de ações, FIIs e cripto pela Edge Function `quotes` (chaves das APIs só no servidor).
 const quoteClient = createEdgeQuoteClient(getSupabase());
@@ -197,9 +201,11 @@ export default function RootLayout() {
       {/* Teclado: telas e folhas sobem para o campo focado não ficar escondido (Android edge-to-edge incluso). */}
       <KeyboardProvider>
         <ThemeProvider store={themePreferenceStore}>
-          <AuthProvider service={authService}>
-            <RootStack />
-          </AuthProvider>
+          <MoneyVisibilityProvider store={moneyVisibilityStore}>
+            <AuthProvider service={authService}>
+              <RootStack />
+            </AuthProvider>
+          </MoneyVisibilityProvider>
         </ThemeProvider>
       </KeyboardProvider>
     </SafeAreaProvider>

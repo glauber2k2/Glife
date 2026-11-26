@@ -4,7 +4,8 @@ import { useMemo } from 'react';
 
 import type { TaggedItemUiSource } from '@/features/links';
 
-import { dm, signed } from '../components/format';
+import { dm } from '../components/format';
+import { useMoneyFormat } from './useMoneyFormat';
 import { useFinanceMaybe } from './FinanceData';
 
 /** Lançamentos vivos (fora da lixeira) entre os ids. */
@@ -14,6 +15,7 @@ async function liveTransactions(repos: FinanceRepositories, ids: readonly string
 
 /** Como os lançamentos aparecem na tela de uma tag (abrem o extrato da conta); null sem sessão. */
 export function useFinanceTaggedSource(): TaggedItemUiSource | null {
+  const { signed } = useMoneyFormat();
   const repos = useFinanceMaybe()?.repos ?? null;
   return useMemo(() => {
     if (!repos) return null;
@@ -45,5 +47,5 @@ export function useFinanceTaggedSource(): TaggedItemUiSource | null {
           });
       },
     };
-  }, [repos]);
+  }, [repos, signed]);
 }

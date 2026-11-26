@@ -9,7 +9,8 @@ import { Alert, Button, Sheet, Text, makeStyles, useTheme, useToast } from '@/sh
 
 import { useFinanceActions } from '../hooks/useFinanceActions';
 import { failureReason } from './errors';
-import { balance, signed, todayIso } from './format';
+import { todayIso } from './format';
+import { useMoneyFormat } from '../hooks/useMoneyFormat';
 import { MoneyField } from './ui';
 
 export function BalanceAdjustSheet({
@@ -46,6 +47,7 @@ function AdjustForm({
   onClose: () => void;
   onAdjusted: (accountId: string) => void;
 }) {
+  const { signed, balance } = useMoneyFormat();
   const s = useStyles();
   const t = useTheme();
   const toast = useToast();

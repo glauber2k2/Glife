@@ -1,12 +1,14 @@
 // Blocos da tela Gráficos (Entradas e saídas, Para onde foi, linhas no tempo) e peças comuns: valor grande que
 // conta, legenda e a barra de orçamento de 3 px (realizado + previsto; estourou → enche, sem mudar de cor).
-import { formatBRL, flowTotals, type FlowBucket, type SeriesPoint } from '@glife/domain/finance';
+import { flowTotals, type FlowBucket, type SeriesPoint } from '@glife/domain/finance';
 import type { ReactNode } from 'react';
 import { View } from 'react-native';
 
 import { Text, makeStyles, useTheme, type TextTone } from '@/shared/ui';
 
-import { balance, money, signed } from '../format';
+
+import { useMoneyFormat } from '../../hooks/useMoneyFormat';
+import type { MoneyFormat } from '../format';
 import { Block, BlockHeader, useCountUp } from '../ui';
 import { BarChart } from './BarChart';
 import { CategoryRows, type CategoryRow } from './CategoryRows';
@@ -19,11 +21,12 @@ import { flowAria, flowSlots } from './slots';
 /** "R$ 1.450,00" grande, contando até o novo valor; `size` escolhe a escala (28 nos blocos, 40/44 no topo). */
 export function BigAmount({ value, size = 'title2', after }: { value: number; size?: 'title2' | 'display' | 'big'; after?: string }) {
   const s = useStyles();
+  const { balance } = useMoneyFormat();
   const shown = useCountUp(value);
   return (
     <View style={s.amount}>
       <Text variant={size} numeric>
-        {`${value < 0 ? '− ' : ''}R$ ${formatBRL(Math.abs(shown), { symbol: false })}`}
+        {balance(shown)}
       </Text>
       {after ? (
         <Text variant="small" tone="tertiary">
@@ -76,6 +79,8 @@ export const Empty = ({ children }: { children: string }) => {
 // ---------- Entradas e saídas ----------
 
 export function FlowBlock(p: { buckets: FlowBucket[]; barWidth: number; today: string; periodText: string; plannedUntil: string | null; resetKey: string }) {
+  const fmt = useMoneyFormat();
+  const { money, signed } = fmt;
   const s = useStyles();
   const t = useTheme();
   const totals = flowTotals(p.buckets);
@@ -89,23 +94,23 @@ export function FlowBlock(p: { buckets: FlowBucket[]; barWidth: number; today: s
         <>
           <View style={s.chart}>
             <BarChart
-              slots={flowSlots(p.buckets, p.today)}
+              slots={flowSlots(p.buckets, p.today, fmt)}
               barWidth={p.barWidth}
               plotHeight={t.size.chartBars}
-              accessibilityLabel={flowAria('Entradas e saídas', p.periodText, p.buckets, true)}
+              accessibilityLabel={flowAria('Entradas e saídas', p.periodText, p.buckets, true, fmt)}
               resetKey={p.resetKey}
             />
           </View>
           <View style={s.legend}>
             <LegendRow swatch="outline" label="Entradas" value={money(totals.income.confirmed)} />
-            <LegendRow swatch="fill" label="Saídas" value={outflow(totals.expense.confirmed)} />
+            <LegendRow swatch="fill" label="Saídas" value={outflow(totals.expense.confirmed, fmt)} />
             <LegendRow label="Saldo do período" value={signed(net)} tone={net < 0 ? 'danger' : 'success'} strong />
             {planned && p.plannedUntil && (
               <LegendRow
                 swatch="planned"
                 muted
                 label={`Previsto até ${p.plannedUntil}`}
-                value={`${signed(totals.income.planned)}  ·  ${outflow(totals.expense.planned)}`}
+                value={`${signed(totals.income.planned)}  ·  ${outflow(totals.expense.planned, fmt)}`}
               />
             )}
           </View>
@@ -120,6 +125,7 @@ export function FlowBlock(p: { buckets: FlowBucket[]; barWidth: number; today: s
 // ---------- Para onde foi ----------
 
 export function WhereBlock({ rows, onOpen }: { rows: CategoryRow[]; onOpen: (key: string) => void }) {
+  const { money } = useMoneyFormat();
   const total = rows.reduce((a, r) => a + r.total, 0);
   return (
     <Block>
@@ -132,7 +138,7 @@ export function WhereBlock({ rows, onOpen }: { rows: CategoryRow[]; onOpen: (key
 // ---------- Linhas no tempo ----------
 
 /** Descrição da linha para o leitor de tela: de, até hoje, esperado, mínimo e máximo. */
-export function lineAria(chart: string, periodText: string, pts: readonly SeriesPoint[]): string {
+export function lineAria(chart: string, periodText: string, pts: readonly SeriesPoint[], balance: MoneyFormat['balance']): string {
   const when = (p: SeriesPoint) => (p.today ? 'hoje' : `em ${dayMonth(p.date)}`);
   const real = pts.filter((p) => !p.future);
   const lastReal = real[real.length - 1] ?? pts[0]!;
@@ -157,6 +163,7 @@ export function LineBlock(p: {
   resetKey: string;
   children?: ReactNode;
 }) {
+  const { balance } = useMoneyFormat();
   const s = useStyles();
   const real = p.points.filter((x) => !x.future);
   const now = real.find((x) => x.today) ?? real[real.length - 1];
@@ -173,7 +180,7 @@ export function LineBlock(p: {
               </Text>
             ) : null}
           </View>
-          <LineChart points={p.points} accessibilityLabel={lineAria(p.title, p.periodText, p.points)} resetKey={p.resetKey} />
+          <LineChart points={p.points} accessibilityLabel={lineAria(p.title, p.periodText, p.points, balance)} resetKey={p.resetKey} />
         </>
       ) : (
         <Empty>{p.emptyText}</Empty>
