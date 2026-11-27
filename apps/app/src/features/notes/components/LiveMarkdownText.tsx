@@ -1,11 +1,13 @@
 // Filhos estilizados do campo de escrever (markdown ao vivo): cada trecho de `liveSpans` vira um <Text> aninhado.
 // As marcações ficam em cinza claro; o conteúdo já aparece em título, negrito, marca-texto etc.
 // Uma raiz de texto estável e métricas explícitas também para espaços e quebras de linha.
+// No Android não há entrelinha fixa (ver `editorLineHeight`).
 import { useMemo } from 'react';
 import { Text, type TextStyle } from 'react-native';
 
 import { makeStyles } from '@/shared/ui';
 
+import { editorLineHeight } from './editorLineHeight';
 import { liveSpans, type LiveStyle } from './liveMarkdown';
 
 export function LiveMarkdown({ markdown }: { markdown: string }) {
@@ -24,8 +26,8 @@ export function LiveMarkdown({ markdown }: { markdown: string }) {
 
 const useStyles = makeStyles((t) => {
   const styles: Record<LiveStyle | 'body', TextStyle> = {
-    body: { fontFamily: t.type.body.font, fontSize: t.type.body.fontSize, lineHeight: t.type.body.lineHeight, color: t.colors.text },
-    h1: { fontFamily: t.type.heading.font, fontSize: t.type.heading.fontSize, lineHeight: t.type.heading.lineHeight + t.space[2] },
+    body: { fontFamily: t.type.body.font, fontSize: t.type.body.fontSize, ...editorLineHeight(t.type.body.lineHeight), color: t.colors.text },
+    h1: { fontFamily: t.type.heading.font, fontSize: t.type.heading.fontSize, ...editorLineHeight(t.type.heading.lineHeight + t.space[2]) },
     h2: { fontFamily: t.type.item.font, fontSize: t.type.item.fontSize, color: t.colors.textSecondary },
     quote: { color: t.colors.textSecondary },
     bullet: { color: t.colors.textTertiary },

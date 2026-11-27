@@ -66,6 +66,7 @@ import { FolderNameSheet } from '../components/FolderNameSheet';
 import { FolderPicker } from '../components/FolderPicker';
 import { KIND_LABEL, KIND_OPTIONS } from '../components/kinds';
 import { INLINE_MARKS } from '../components/markdown';
+import { editorLineHeight } from '../components/editorLineHeight';
 import { LiveMarkdown } from '../components/LiveMarkdownText';
 import { MarkdownView } from '../components/MarkdownView';
 import { NoteLinks } from '../components/NoteLinks';
@@ -692,7 +693,7 @@ const useStyles = makeStyles((t) => {
       minHeight: t.size.captureFieldMinHeight * 2,
       fontFamily: t.type.body.font,
       fontSize: t.type.body.fontSize,
-      lineHeight: t.type.body.lineHeight,
+      ...editorLineHeight(t.type.body.lineHeight),
       color: t.colors.text,
       padding: t.space[0],
     },
