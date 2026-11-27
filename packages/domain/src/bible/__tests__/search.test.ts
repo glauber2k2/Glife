@@ -36,3 +36,18 @@ describe('busca no texto bíblico', () => {
     expect(searchVerses(idx, 'me', 'all', 1)).toHaveLength(1);
   });
 });
+
+import { hitSegments } from '../index.ts';
+
+describe('trechos destacados no resultado', () => {
+  it('marca as palavras achadas, mesmo com acento diferente, preservando o texto original', () => {
+    expect(hitSegments('Ele me leva a águas quietas.', 'aguas')).toEqual([
+      { text: 'Ele me leva a ', hit: false },
+      { text: 'águas', hit: true },
+      { text: ' quietas.', hit: false },
+    ]);
+  });
+  it('sem palavras válidas, o texto inteiro sem destaque', () => {
+    expect(hitSegments('O SENHOR', 'o')).toEqual([{ text: 'O SENHOR', hit: false }]);
+  });
+});

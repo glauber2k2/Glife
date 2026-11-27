@@ -12,6 +12,8 @@ import { BPM } from '../data/bundled/bpm';
 import { createBundledText } from '../data/bundledText';
 import { createImportedText, type ImportedTextSource } from '../data/importedText';
 import { createLocalHighlights } from '../data/localHighlights';
+import { createRecentSearches, type RecentSearches } from '../data/recentSearches';
+import { createTextIndex, type TextIndex } from '../data/textIndex';
 import { DEFAULT_TRANSLATION, READING_DEFAULTS, createReadingPrefsStore, mergeLoadedPrefs, type ReadingAdjust, type ReadingPrefs } from '../data/readingPrefs';
 
 const highlights = createSnapshotProvider<BibleHighlightsRepository, BibleHighlight[]>('as marcações da Bíblia', createLocalHighlights);
@@ -39,6 +41,9 @@ interface BibleText {
   imported: ImportedTextSource;
   /** siglas das traduções que vêm no app (não podem repetir na importação) */
   bundledAbbrs: readonly string[];
+  /** texto da tradução em memória para a busca (carrega na primeira busca) */
+  textIndex: TextIndex;
+  recentSearches: RecentSearches;
 }
 
 const TextContext = createContext<BibleText | null>(null);
@@ -58,6 +63,8 @@ export function BibleProvider({
   const prefsStore = useMemo(() => createReadingPrefsStore(storage), [storage]);
   const imported = useMemo(() => createImportedText(db), [db]);
   const text = useMemo(() => combineSources(bundled, imported), [imported]);
+  const textIndex = useMemo(() => createTextIndex(text), [text]);
+  const recentSearches = useMemo(() => createRecentSearches(storage), [storage]);
   const [prefs, setPrefs] = useState<ReadingPrefs>({ translationId: DEFAULT_TRANSLATION, last: null, ...READING_DEFAULTS });
   // campos mudados antes de a leitura do arranque terminar: ela não pode desfazê-los
   const touched = useRef(new Set<keyof ReadingPrefs>());
@@ -101,8 +108,10 @@ export function BibleProvider({
       refreshTranslations: () => setVersion((v) => v + 1),
       imported,
       bundledAbbrs: BUNDLED_ABBRS,
+      textIndex,
+      recentSearches,
     }),
-    [text, translations, prefs, update, imported],
+    [text, translations, prefs, update, imported, textIndex, recentSearches],
   );
 
   return (
