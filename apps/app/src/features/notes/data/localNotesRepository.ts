@@ -29,7 +29,7 @@ import { keyset, paginateRows, toPage } from '@/shared/lib/localPaging';
 
 type NoteRow = Omit<Note, 'pinned'> & { pinned: number | null };
 
-const NOTE_COLUMNS = 'id, user_id, title, body_md, folder_id, pinned, kind, created_at, updated_at, deleted_at';
+const NOTE_COLUMNS = 'id, user_id, title, body_md, folder_id, pinned, created_at, updated_at, deleted_at';
 const FOLDER_COLUMNS = 'id, user_id, name, parent_id, created_at, updated_at, deleted_at';
 
 const toNote = (r: NoteRow): Note => ({ ...r, pinned: r.pinned === 1 });
@@ -39,7 +39,6 @@ const noteValues = (n: Note): SqlValue[] => [
   n.body_md,
   n.folder_id,
   n.pinned ? 1 : 0,
-  n.kind,
   n.created_at,
   n.updated_at,
   n.deleted_at,
@@ -53,10 +52,6 @@ function filters(q: NoteListQuery): { where: string[]; params: SqlValue[] } {
   else if (q.folderId !== undefined) {
     where.push('folder_id = ?');
     params.push(q.folderId);
-  }
-  if (q.kind !== undefined) {
-    where.push('kind = ?');
-    params.push(q.kind);
   }
   if (q.pinned !== undefined) where.push(q.pinned ? 'pinned = 1' : '(pinned = 0 OR pinned IS NULL)');
   return { where, params };
@@ -85,13 +80,13 @@ async function aliveFolder(db: LocalQueries, id: string): Promise<NoteFolder> {
 async function writeNote(db: LocalQueries, n: Note, insert: boolean) {
   if (insert) {
     await db.execute(
-      `INSERT INTO notes (id, user_id, title, body_md, folder_id, pinned, kind, created_at, updated_at, deleted_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO notes (id, user_id, title, body_md, folder_id, pinned, created_at, updated_at, deleted_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [n.id, ...noteValues(n)],
     );
   } else {
     await db.execute(
-      `UPDATE notes SET user_id = ?, title = ?, body_md = ?, folder_id = ?, pinned = ?, kind = ?,
+      `UPDATE notes SET user_id = ?, title = ?, body_md = ?, folder_id = ?, pinned = ?,
        created_at = ?, updated_at = ?, deleted_at = ? WHERE id = ?`,
       [...noteValues(n), n.id],
     );

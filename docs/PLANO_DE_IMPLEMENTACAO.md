@@ -121,8 +121,8 @@ marcações recentes), troca de tradução e **importar tradução só no aparel
 sync). Atalho Bíblia em "Seus espaços". Falta: aplicar migração e sync-streams, conferência visual (Chrome/APK) e o
 resto da fase abaixo (planos, busca no texto, editar versículo, ajustes Aa).
 
-**Devocional não é módulo nem tipo de nota** (decisão do usuário, 27/11/2026): é uma nota comum com a tag
-`devocional`, feita no bloco de notas com a estrutura que já existe (tags, `[[Sl 23]]` e "notas que citam" no
+**Devocional não é módulo nem tipo de nota** (decisão do usuário, 27/11/2026): nota é só nota (os tipos devocional e
+diário saíram do app e do banco); o devocional é uma nota comum com a tag `devocional`, feita no bloco de notas com a estrutura que já existe (tags, `[[Sl 23]]` e "notas que citam" no
 versículo). Não há tela, modelo SOAP, linha do tempo nem opção isolada para ele; as telas "Devocional (SOAP)" e
 "Linha do tempo devocional" do protótipo ficam fora do plano.
 

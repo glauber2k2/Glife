@@ -3,7 +3,7 @@ import { join } from 'node:path';
 
 import { PGlite, type Transaction } from '@electric-sql/pglite';
 
-const MIGRATIONS_DIR = join(import.meta.dirname, '..', 'migrations');
+export const MIGRATIONS_DIR = join(import.meta.dirname, '..', 'migrations');
 
 /** Stub mínimo do que o Supabase provê: papéis, auth.users, auth.uid(), auth.jwt() e grants padrão. */
 const SUPABASE_STUB = `
@@ -28,10 +28,13 @@ const SUPABASE_STUB = `
 export const USER_A = '00000000-0000-4000-8000-00000000000a';
 export const USER_B = '00000000-0000-4000-8000-00000000000b';
 
-export async function createDatabase(): Promise<PGlite> {
+/** `before`: aplica só as migrações anteriores a esse arquivo (para testar a migração de dados já existentes). */
+export async function createDatabase(opts: { before?: string } = {}): Promise<PGlite> {
   const db = await PGlite.create();
   await db.exec(SUPABASE_STUB);
-  const files = readdirSync(MIGRATIONS_DIR).filter((f) => f.endsWith('.sql')).sort();
+  const files = readdirSync(MIGRATIONS_DIR)
+    .filter((f) => f.endsWith('.sql') && (!opts.before || f < opts.before))
+    .sort();
   for (const file of files) {
     await db.exec(readFileSync(join(MIGRATIONS_DIR, file), 'utf8'));
   }

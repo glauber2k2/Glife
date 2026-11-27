@@ -118,7 +118,8 @@ O Claude é o agente principal; o Codex só assume quando os créditos do Claude
 - Monorepo pnpm: `apps/app`, `packages/domain`, `supabase/`. Testes vitest em todos os pacotes; banco em Postgres real via PGlite.
 - Bloqueio do app: o app **não** se esconde na lista de recentes e prints ficam liberados (usuário, 24/11/2026).
   Pendência futura opcional: esconder o conteúdo nos recentes (protótipo "Glife Bloqueio", seção 05).
-- Devocional é uma nota comum com a tag `devocional` (usuário, 27/11/2026): sem módulo, tela, modelo SOAP ou opção própria.
+- **Nota é só nota** (usuário, 27/11/2026): sem tipos (devocional, diário); quem quiser põe uma tag à mão (`#devocional`).
+  Nada de módulo, tela, modelo SOAP ou opção própria para devocional. A coluna `notes.kind` saiu na migração `20261130000001`.
 - Hashes de commit citados antes de 23/11/2026 em `docs/arquivo/` são do histórico antigo (reescrito antes da publicação).
 
 ## Armadilhas conhecidas

@@ -1,10 +1,9 @@
 import { parseBibleRef, toOsis } from '@glife/domain/bible';
-import { NOTE_TITLE_MAX, folderPath, type Note, type NoteFolder, type NoteKind, type NotePatch } from '@glife/domain/notes';
+import { NOTE_TITLE_MAX, folderPath, type Note, type NoteFolder, type NotePatch } from '@glife/domain/notes';
 import type { Tag as TagModel } from '@glife/domain/tags';
 import { useLocalSearchParams } from 'expo-router';
 import {
   Bold,
-  ChevronDown,
   ChevronLeft,
   CloudOff,
   Ellipsis,
@@ -53,7 +52,6 @@ import {
   ListGroup,
   NavRow,
   Pill,
-  Radio,
   SegmentedControl,
   Sheet,
   Text,
@@ -65,7 +63,6 @@ import {
 
 import { FolderNameSheet } from '../components/FolderNameSheet';
 import { FolderPicker } from '../components/FolderPicker';
-import { KIND_LABEL, KIND_OPTIONS } from '../components/kinds';
 import { INLINE_MARKS } from '../components/markdown';
 import { editorLineHeight } from '../components/editorLineHeight';
 import { LiveMarkdown } from '../components/LiveMarkdownText';
@@ -88,7 +85,7 @@ import { goBack, openNote, useTrashActions } from '../hooks/useNoteActions';
 
 const SAVE_DELAY_MS = 600;
 const BAR_TITLE_AFTER = 70;
-type SheetKind = 'tipo' | 'mais' | 'pasta' | 'tags' | null;
+type SheetKind = 'mais' | 'pasta' | 'tags' | null;
 type Mode = 'read' | 'write';
 const MODES = [
   { value: 'read' as const, label: 'Ler' },
@@ -357,12 +354,6 @@ export function NoteEditorScreen() {
                   if (m !== mode) toggleMode();
                 }}
               />
-              <Pill
-                label={KIND_LABEL[note.kind]}
-                trailingIcon={ChevronDown}
-                onPress={() => openSheet('tipo')}
-                accessibilityLabel={`Tipo: ${KIND_LABEL[note.kind]}. Trocar`}
-              />
             </View>
             <TextInput
               value={title}
@@ -458,9 +449,6 @@ export function NoteEditorScreen() {
                   <Text variant="body" numberOfLines={1} style={s.suggestTitle}>
                     {n.title}
                   </Text>
-                  <Text variant="caption" tone="tertiary">
-                    {KIND_LABEL[n.kind]}
-                  </Text>
                 </Pressable>
               ))}
               {canCreate && (
@@ -508,23 +496,6 @@ export function NoteEditorScreen() {
       </KeyboardAvoidingView>
 
       {/* Folhas */}
-      <Sheet visible={sheet === 'tipo'} onClose={() => setSheet(null)} title="Tipo da nota">
-        <ListGroup>
-          {KIND_OPTIONS.map((o) => (
-            <OptionRow
-              key={o.kind}
-              label={o.label}
-              description={o.description}
-              selected={note.kind === o.kind}
-              onPress={() => {
-                setSheet(null);
-                void saveNow({ kind: o.kind as NoteKind });
-              }}
-            />
-          ))}
-        </ListGroup>
-      </Sheet>
-
       <Sheet visible={sheet === 'mais'} onClose={() => setSheet(null)}>
         <ListGroup>
           <NavRow icon={FolderInput} label="Mover para pasta" meta={folderName} onPress={() => setSheet('pasta')} />
@@ -622,44 +593,6 @@ function formatActions(body: string, selection: Selection): { label: string; ico
   ];
 }
 
-function OptionRow({
-  label,
-  description,
-  icon,
-  selected,
-  onPress,
-}: {
-  label: string;
-  description?: string;
-  icon?: LucideIcon;
-  selected: boolean;
-  onPress: () => void;
-}) {
-  const s = useStyles();
-  const t = useTheme();
-  return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityState={{ selected }}
-      onPress={onPress}
-      style={({ pressed }) => [s.option, pressed && s.soft]}
-    >
-      {icon && <Icon icon={icon} size={t.icon.small + t.space[0.5]} color="textSecondary" />}
-      <View style={s.optionTexts}>
-        <Text variant="body" style={s.optionLabel}>
-          {label}
-        </Text>
-        {description && (
-          <Text variant="caption" tone="tertiary">
-            {description}
-          </Text>
-        )}
-      </View>
-            <Radio selected={selected} />
-    </Pressable>
-  );
-}
-
 const useStyles = makeStyles((t) => {
   return {
     root: { flex: 1, backgroundColor: t.colors.bg },
@@ -744,16 +677,6 @@ const useStyles = makeStyles((t) => {
       backgroundColor: t.colors.bg,
     },
     linkButtonActive: { backgroundColor: t.colors.tonal },
-    option: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: t.space[3],
-      minHeight: t.size.navRow,
-      paddingVertical: t.space[3],
-    },
-    optionTexts: { flex: 1, gap: t.space[0.5] },
-    optionLabel: { fontFamily: t.type.item.font },
-    optionCheck: { width: t.icon.size, alignItems: 'center' },
     hidden: { opacity: t.opacity.hidden },
     tagForm: { flexDirection: 'row', alignItems: 'center', gap: t.space[2] },
     tagRow: {

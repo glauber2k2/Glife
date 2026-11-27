@@ -6,12 +6,11 @@
 // - Leituras ignoram excluídos (exceto `listTrash`); registro de outro dono = inexistente.
 // - Erros são sempre RepositoryError (ver core/repository.ts).
 import type { ErrorListener, Listener, Page, PageRequest, Unsubscribe } from '../core/index.ts';
-import type { Note, NoteDraft, NoteFolder, NoteFolderDraft, NoteKind, NotePatch } from './model.ts';
+import type { Note, NoteDraft, NoteFolder, NoteFolderDraft, NotePatch } from './model.ts';
 
 export interface NoteListQuery {
   /** undefined = todas; null = só as da raiz; uuid = só as dessa pasta. */
   folderId?: string | null;
-  kind?: NoteKind;
   pinned?: boolean;
   /** Trecho do título ou do corpo, sem diferenciar maiúsculas. Tratado como texto literal. */
   search?: string;

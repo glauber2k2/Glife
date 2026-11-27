@@ -41,6 +41,10 @@ function migrationColumns(): Map<string, string[]> {
       tables.set(m[1]!, columns);
     }
     for (const m of sql.matchAll(/alter table public\.(\w+)\s+add column (\w+)/g)) tables.get(m[1]!)?.push(m[2]!);
+    for (const m of sql.matchAll(/alter table public\.(\w+)\s+drop column (\w+)/g)) {
+      const cols = tables.get(m[1]!);
+      if (cols) tables.set(m[1]!, cols.filter((c) => c !== m[2]));
+    }
   }
   return tables;
 }

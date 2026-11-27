@@ -2,6 +2,13 @@
 
 O que só o dono do projeto pode fazer (contas, chaves, testes no aparelho, decisões). Ao concluir um item, apague-o.
 
+## Notas sem tipo (27/11/2026)
+
+- [ ] Instalar o APK novo (e abrir o web atualizado) **antes** de aplicar a migração: `pnpm sb db push --remote`
+  (`20261130000001_notas_sem_tipo`). O app antigo ainda envia o tipo da nota e o envio seria recusado. Notas que eram
+  devocional ou diário ganham as tags `devocional` e `diário`.
+- [ ] Conferir: o editor não tem mais o seletor de tipo e a lista de notas só tem os filtros Todas e Fixadas (mais as tags).
+
 ## Bíblia v2: planos de leitura (27/11/2026)
 
 - [ ] Gerar APK novo e conferir no Chrome e no Android (claro/escuro, 360 dp): leitor em Outfit, Aa (tamanho, entrelinhas, letras), grifo e sublinhado com respiro, seleção em sobretom, busca ("aguas", "Jo 3:16"), início com AT/NT e últimos registros, criar plano, ler pelo plano e marcar como lido, pausar/retomar, lembrete às 06:30.

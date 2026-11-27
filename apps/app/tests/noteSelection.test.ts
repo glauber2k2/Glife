@@ -11,7 +11,6 @@ const note = (over: Partial<Note>): Note => ({
   body_md: 'arroz',
   folder_id: null,
   pinned: false,
-  kind: 'note',
   created_at: '2026-11-20T10:00:00.000Z',
   updated_at: '2026-11-20T10:00:00.000Z',
   deleted_at: null,

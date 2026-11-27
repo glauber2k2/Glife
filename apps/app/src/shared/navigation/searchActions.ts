@@ -20,7 +20,7 @@ export const SEARCH_ACTIONS: SearchAction[] = [
   go('today', 'Ir para Hoje', '/', ['inicio', 'dia']),
   go('notes', 'Ir para Notas', '/notas'),
   go('finance', 'Ir para Finanças', '/financas', ['dinheiro', 'gastos', 'contas']),
-  go('bible', 'Ir para Bíblia', '/biblia', ['devocional', 'leitura']),
+  go('bible', 'Ir para Bíblia', '/biblia', ['leitura']),
   go('folders', 'Abrir Pastas', '/pastas'),
   go('trash', 'Abrir Lixeira', '/lixeira', ['excluidas', 'apagadas']),
   go('settings', 'Abrir Ajustes', '/ajustes', ['configuracoes', 'tema', 'aparencia', 'escuro']),

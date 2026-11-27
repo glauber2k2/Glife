@@ -18,13 +18,11 @@ import { useNoteList } from '../hooks/useNoteList';
 import { openNote, useCreateNote } from '../hooks/useNoteActions';
 import { useBulkNoteActions, useNoteSelection } from '../hooks/useNoteSelection';
 
-type KindFilter = 'all' | 'pinned' | 'journal' | 'devotional';
+type ListFilter = 'all' | 'pinned';
 
-const KIND_FILTERS: { value: KindFilter; label: string; query: NoteListQuery }[] = [
+const LIST_FILTERS: { value: ListFilter; label: string; query: NoteListQuery }[] = [
   { value: 'all', label: 'Todas', query: {} },
   { value: 'pinned', label: 'Fixadas', query: { pinned: true } },
-  { value: 'journal', label: 'Diário', query: { kind: 'journal' } },
-  { value: 'devotional', label: 'Devocional', query: { kind: 'devotional' } },
 ];
 
 const LIST_LIMIT = 200;
@@ -42,7 +40,7 @@ export function NoteListScreen() {
   const [busy, setBusy] = useState(false);
   const { notes, folders } = useNotesData();
   const { tags } = useLinksData();
-  const [kind, setKind] = useState<KindFilter>('all');
+  const [filter, setFilter] = useState<ListFilter>('all');
   const [tagId, setTagId] = useState<string | null>(null);
   // `/notas?tag=<id>` (ex.: tag escolhida na busca universal) aplica o filtro.
   // Ajuste durante a renderização (padrão do React para reagir a uma prop nova), sem efeito em cascata.
@@ -50,11 +48,11 @@ export function NoteListScreen() {
   const [appliedTag, setAppliedTag] = useState<string | undefined>(undefined);
   if (typeof tag === 'string' && tag && tag !== appliedTag) {
     setAppliedTag(tag);
-    setKind('all');
+    setFilter('all');
     setTagId(tag);
   }
   const [search, setSearch] = useState('');
-  const query = KIND_FILTERS.find((f) => f.value === kind)!.query;
+  const query = LIST_FILTERS.find((f) => f.value === filter)!.query;
   const { items, failed } = useNoteList({ ...query, search: search.trim(), limit: LIST_LIMIT });
   const create = useCreateNote();
 
@@ -90,7 +88,7 @@ export function NoteListScreen() {
   }, [selecting, cancel]);
 
   const visible = useMemo(() => (items && tagId && tagged ? items.filter((n) => tagged.has(n.id)) : items), [items, tagId, tagged]);
-  const filtered = kind !== 'all' || !!tagId || search.trim() !== '';
+  const filtered = filter !== 'all' || !!tagId || search.trim() !== '';
   const total = items?.length ?? 0;
   const pinned = !filtered && visible ? visible.filter((n) => n.pinned) : [];
   const rest = !filtered && visible ? visible.filter((n) => !n.pinned) : visible;
@@ -183,14 +181,14 @@ export function NoteListScreen() {
       <View style={s.controls}>
         <SearchField value={search} onChangeText={setSearch} placeholder="Buscar notas" />
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={s.bleed} contentContainerStyle={s.chips}>
-          {KIND_FILTERS.map((f) => (
+          {LIST_FILTERS.map((f) => (
             <Chip
               key={f.value}
               size="sm"
               label={f.label}
-              selected={kind === f.value && !tagId}
+              selected={filter === f.value && !tagId}
               onPress={() => {
-                setKind(f.value);
+                setFilter(f.value);
                 setTagId(null);
               }}
             />
