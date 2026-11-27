@@ -6,12 +6,14 @@ const ID = '8c2c0000-0000-4000-8000-000000000001';
 
 describe('rotas abertas por aviso', () => {
   it('aceita as telas da agenda e da dieta e o registro já na refeição do plano', () => {
-    for (const ok of ['/agenda', '/dieta', `/agenda/lembrete/${ID}`, `/dieta/registro/novo?plano=${ID}`]) expect(SAFE_NOTICE_ROUTES.test(ok)).toBe(true);
+    for (const ok of ['/agenda', '/dieta', `/agenda/lembrete/${ID}`, `/dieta/registro/novo?plano=${ID}`, `/biblia/planos/${ID}`]) expect(SAFE_NOTICE_ROUTES.test(ok)).toBe(true);
   });
 
   it('recusa o resto (outra tela, outro parâmetro, endereço de fora)', () => {
     for (const bad of [
       '/financas',
+      '/biblia/planos/../../x',
+      `/biblia/planos/${ID}/editar`,
       'https://exemplo.com',
       `/dieta/registro/novo?plano=${ID}&x=1`,
       `/dieta/registro/novo?data=2026-11-26`,

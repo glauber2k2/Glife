@@ -1,7 +1,7 @@
 // Planos de leitura: o plano guarda só a regra (grupos de livros, duração em dias de leitura, dias da semana, início,
 // pausas). Daqui sai o cronograma de cada dia e a situação (dia atual, perdidos, sequência, progresso), sempre pelo
 // calendário: dia não lido fica perdido até ser lido; ler adiantado vale; pausa empurra os dias seguintes.
-import { addDays, weekdayOf, type IsoDate } from '../time/index.ts';
+import { addDays, weekdayOf, type IsoDate, type ScheduledNotice } from '../time/index.ts';
 import { getBook } from './books.ts';
 
 export const PLAN_GROUP_CODES = ['pent', 'hist', 'poet', 'prof', 'evan', 'atos', 'paulo', 'gerais', 'apoc'] as const;
@@ -152,4 +152,29 @@ export function planStatus(rule: PlanRule, reads: readonly PlanRead[], today: Is
     completed: days.length > 0 && days.every(done),
     paused: !!last && last.to === null,
   };
+}
+
+/**
+ * Lembretes dos planos para os próximos `days` dias a partir de `from`: um por dia de leitura ainda não concluído, no
+ * horário do plano. Plano sem lembrete, pausado, concluído ou excluído não avisa. Sem botões: tocar abre o plano.
+ */
+export function planNotices(
+  plans: readonly {
+    plan: PlanRule & { id: string; reminder_time: string | null; completed_at: string | null; deleted_at: string | null };
+    reads: readonly PlanRead[];
+  }[],
+  from: IsoDate,
+  days: number,
+): ScheduledNotice[] {
+  const until = addDays(from, days);
+  const out: ScheduledNotice[] = [];
+  for (const { plan, reads } of plans) {
+    if (!plan.reminder_time || plan.completed_at || plan.deleted_at || plan.pauses.some((p) => p.to === null)) continue;
+    const read = new Set(reads.map((r) => r.ref));
+    for (const d of schedule(plan, from)) {
+      if (d.date < from || d.date >= until || d.refs.every((r) => read.has(r))) continue;
+      out.push({ key: `bible-plan:${plan.id}:${d.date}`, title: 'Leitura de hoje', body: d.label, date: d.date, time: plan.reminder_time, url: `/biblia/planos/${plan.id}` });
+    }
+  }
+  return out;
 }

@@ -31,7 +31,7 @@ const UUID = '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}';
  * Só rotas do próprio app abertas por aviso (nada vindo de fora vira navegação): telas da agenda e da dieta, com id
  * opcional, e o registro de refeição já ligado a uma refeição do plano.
  */
-export const SAFE_NOTICE_ROUTES = new RegExp(`^/(agenda|dieta)(/[a-z]+(/[0-9a-f-]{36})?)?$|^/dieta/registro/novo\\?plano=${UUID}$`);
+export const SAFE_NOTICE_ROUTES = new RegExp(`^/(agenda|dieta)(/[a-z]+(/[0-9a-f-]{36})?)?$|^/dieta/registro/novo\\?plano=${UUID}$|^/biblia/planos/${UUID}$`);
 
 /** Registro de refeição já na refeição do plano (aberto pelo botão "Registrar"). */
 export const mealLogRoute = (planId: string): string | null => {

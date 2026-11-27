@@ -9,3 +9,4 @@ export { TranslationsScreen } from './screens/TranslationsScreen';
 export { BibleProvider } from './hooks/BibleData';
 export { ReaderScreen } from './screens/ReaderScreen';
 export { bibleHref } from './components/navigation';
+export { usePlanNotices } from './hooks/usePlanNotices';

@@ -27,6 +27,7 @@ export {
   chapterCount,
   dayLabel,
   planChapters,
+  planNotices,
   planStatus,
   schedule,
   type PlanDay,

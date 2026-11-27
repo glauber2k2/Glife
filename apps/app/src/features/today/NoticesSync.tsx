@@ -3,6 +3,7 @@
 // botões do aviso: "Feito" conclui o lembrete, "Registrar" abre o registro já na refeição ("Adiar" o agendador faz).
 // Sem sessão (saiu da conta), todos os avisos do Glife somem, adiados inclusive, e nenhuma ação pendente é feita.
 import { useAgendaNotices, useCompleteReminder, usePendingReminder } from '@/features/agenda';
+import { usePlanNotices } from '@/features/bible';
 import { useDietNotices, usePendingMeal } from '@/features/diet';
 import { useOpenRoute } from '@/features/links';
 import { localNow, upcomingNotices, type NoticeRef } from '@glife/domain/time';
@@ -25,6 +26,7 @@ export function NoticesSync({ scheduler, signedOut }: { scheduler: NoticeSchedul
   const [, setTick] = useState(0);
   const agenda = useAgendaNotices(DAYS);
   const diet = useDietNotices(DAYS);
+  const plans = usePlanNotices(DAYS);
   const reminderPending = usePendingReminder();
   const mealPending = usePendingMeal();
   const completeReminder = useCompleteReminder();
@@ -47,11 +49,11 @@ export function NoticesSync({ scheduler, signedOut }: { scheduler: NoticeSchedul
       return;
     }
     // Sem os dados ainda (lendo ou esperando o MFA): não mexe no que está agendado.
-    if (agenda === null || diet === null || !reminderPending || !mealPending) return;
+    if (agenda === null || diet === null || plans === null || !reminderPending || !mealPending) return;
     const keepSnoozed = (ref: NoticeRef) => (ref.kind === 'reminder' ? reminderPending(ref.id, ref.date) : mealPending(ref.id, ref.date));
-    const t = setTimeout(() => void scheduler.replaceAll(upcomingNotices([...agenda, ...diet], localNow(), MAX), keepSnoozed), DEBOUNCE_MS);
+    const t = setTimeout(() => void scheduler.replaceAll(upcomingNotices([...agenda, ...diet, ...plans], localNow(), MAX), keepSnoozed), DEBOUNCE_MS);
     return () => clearTimeout(t);
-  }, [signedOut, agenda, diet, reminderPending, mealPending, scheduler]);
+  }, [signedOut, agenda, diet, plans, reminderPending, mealPending, scheduler]);
 
   // Aviso tocado: abre a tela; se o item do aviso foi excluído ou ainda não chegou, mostra "Item não encontrado".
   const openRoute = useOpenRoute();

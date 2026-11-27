@@ -104,3 +104,49 @@ describe('situação do plano', () => {
     expect(s.progress).toBe(1);
   });
 });
+
+import { planNotices, type BiblePlan } from '../index.ts';
+
+describe('lembretes dos planos', () => {
+  const ID = '00000000-0000-4000-8000-0000000000a1';
+  const plan = (over: Partial<BiblePlan> = {}): BiblePlan =>
+    ({
+      id: ID,
+      user_id: 'u',
+      name: 'Salmos',
+      groups: ['poet'],
+      days: 30,
+      weekdays: [0, 1, 2, 3, 4, 5, 6],
+      start_date: '2026-11-27',
+      reminder_time: '06:30',
+      color_hue: 350,
+      pauses: [],
+      completed_at: null,
+      created_at: '',
+      updated_at: '',
+      deleted_at: null,
+      ...over,
+    }) as BiblePlan;
+
+  it('um aviso por dia de leitura nos próximos dias, com o trecho do dia e a tela do plano', () => {
+    const n = planNotices([{ plan: plan(), reads: [] }], '2026-11-27', 7);
+    expect(n).toHaveLength(7);
+    expect(n[0]).toEqual({
+      key: `bible-plan:${ID}:2026-11-27`,
+      title: 'Leitura de hoje',
+      body: 'Jó 1–9',
+      date: '2026-11-27',
+      time: '06:30',
+      url: `/biblia/planos/${ID}`,
+    });
+  });
+
+  it('nada para dia já lido, plano sem lembrete, pausado ou concluído; só dias de leitura', () => {
+    const day1 = schedule(plan(), '2026-11-27')[0]!.refs.map((ref) => ({ ref, read_on: '2026-11-27' }));
+    expect(planNotices([{ plan: plan(), reads: day1 }], '2026-11-27', 1)).toEqual([]);
+    expect(planNotices([{ plan: plan({ reminder_time: null }), reads: [] }], '2026-11-27', 7)).toEqual([]);
+    expect(planNotices([{ plan: plan({ pauses: [{ from: '2026-11-26', to: null }] }), reads: [] }], '2026-11-27', 7)).toEqual([]);
+    expect(planNotices([{ plan: plan({ completed_at: '2026-11-27T10:00:00Z' }), reads: [] }], '2026-11-27', 7)).toEqual([]);
+    expect(planNotices([{ plan: plan({ weekdays: [1] }), reads: [] }], '2026-11-27', 7).map((x) => x.date)).toEqual(['2026-11-30']);
+  });
+});
