@@ -1,5 +1,6 @@
 export { BibleHomeScreen } from './screens/BibleHomeScreen';
 export { BibleSearchScreen } from './screens/BibleSearchScreen';
+export { BibleRecordsScreen } from './screens/BibleRecordsScreen';
 export { bibleLocalTables, bibleTableLabels, bibleTables } from './data/schema';
 export { TranslationsScreen } from './screens/TranslationsScreen';
 export { BibleProvider } from './hooks/BibleData';

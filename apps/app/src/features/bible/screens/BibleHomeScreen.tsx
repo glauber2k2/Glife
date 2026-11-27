@@ -1,143 +1,139 @@
-// Início da Bíblia (protótipo `biblia`, sem a parte de planos e devocional, que vêm depois): tradução no topo,
-// continuar de onde parou, livros, "ir para" uma referência, marcações recentes e o crédito da tradução.
-import { formatRef, getBook, parseBibleRef, parseOsis, recentHighlights, toOsis } from '@glife/domain/bible';
+// Início da Bíblia (protótipo Bíblia v2): busca no topo, Antigo/Novo Testamento logo abaixo (visíveis ao abrir),
+// continuar de onde parou, últimos registros com filtro e o crédito da tradução. A leitura de hoje (planos) entra
+// pela feature de planos.
+import { getBook } from '@glife/domain/bible';
 import { router, type Href } from 'expo-router';
-import { BookOpen, Library } from 'lucide-react-native';
-import { useEffect, useMemo, useState } from 'react';
+import { Bookmark, BookOpen, Library, ScrollText, Search } from 'lucide-react-native';
+import { useEffect, useState } from 'react';
 import { Pressable, View } from 'react-native';
 
-import { BackHeader, Button, Card, EmptyState, Input, ListGroup, ListItem, ModuleIcon, Pill, Reveal, Screen, SectionHeader, Text, makeStyles, useTheme } from '@/shared/ui';
+import { BackHeader, Card, EmptyState, Icon, IconButton, ListGroup, ModuleIcon, NavRow, Pill, Screen, Section, SectionHeader, Text, makeStyles, moduleHue } from '@/shared/ui';
 
 import { BooksSheet } from '../components/BooksSheet';
-import { bibleHref, chapterHref } from '../components/navigation';
+import { chapterHref } from '../components/navigation';
+import { RecordFilter } from '../components/RecordFilter';
+import { RecordRow } from '../components/RecordRow';
+import { openRecord } from '../components/openRecord';
 import { TranslationSheet } from '../components/TranslationSheet';
-import { useBibleText, useHighlightsMaybe } from '../hooks/BibleData';
+import { useBibleText } from '../hooks/BibleData';
+import { useBibleRecords, type RecordFilter as Filter } from '../hooks/useBibleRecords';
 
-const RECENT = 6;
+const RECENT = 4;
+const TODAY_LABEL = () => {
+  const s = new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' });
+  return s.charAt(0).toUpperCase() + s.slice(1);
+};
 
 export function BibleHomeScreen() {
   const s = useStyles();
-  const { translation, last } = useBibleText();
-  const highlights = useHighlightsMaybe();
-  const [query, setQuery] = useState('');
-  const [sheet, setSheet] = useState<'books' | 'translation' | null>(null);
-  const ref = query.trim() ? parseBibleRef(query) : null;
-  const recent = useMemo(() => recentHighlights(highlights?.data ?? [], RECENT), [highlights?.data]);
-  const go = () => {
-    const href = ref && bibleHref(toOsis(ref));
-    if (href) router.push(href as Href);
-  };
-  const resume = last ?? { book: 'GEN', chapter: 1 };
+  const { translation, last, text } = useBibleText();
+  const [sheet, setSheet] = useState<'books-AT' | 'books-NT' | 'translation' | null>(null);
+  const [filter, setFilter] = useState<Filter>('all');
+  const { records, counts, loading } = useBibleRecords(filter, RECENT);
+  const resume = last ?? { book: 'GEN', chapter: 1, verse: 1 };
   const resumeBook = getBook(resume.book)!;
+  const [excerpt, setExcerpt] = useState('');
 
+  useEffect(() => {
+    let active = true;
+    void text.chapter(translation.id, resume.book, resume.chapter).then((vs) => active && setExcerpt(vs?.[(resume.verse ?? 1) - 1] ?? ''), () => undefined);
+    return () => {
+      active = false;
+    };
+  }, [text, translation.id, resume.book, resume.chapter, resume.verse]);
+
+  const testament = sheet === 'books-NT' ? 'NT' : 'AT';
   return (
     <Screen
+      eyebrow={TODAY_LABEL()}
+      title="Bíblia"
       header={
         <BackHeader
-          title="Bíblia"
           fallback="/"
-          right={<Pill label={translation.abbr} onPress={() => setSheet('translation')} />}
+          right={
+            <View style={s.right}>
+              <Pill label={translation.abbr} onPress={() => setSheet('translation')} />
+              <IconButton icon={Library} label="Livros" onPress={() => setSheet('books-AT')} />
+            </View>
+          }
         />
       }
     >
-      <Reveal>
-        <Pressable onPress={() => router.push(chapterHref(resume.book, resume.chapter) as Href)} accessibilityRole="button">
+      <Pressable style={s.search} onPress={() => router.push('/biblia/busca' as Href)} accessibilityRole="search" accessibilityLabel="Buscar na Bíblia">
+        <Icon icon={Search} color="textTertiary" />
+        <Text variant="body" tone="tertiary" numberOfLines={1} style={s.grow}>
+          Buscar versículo ou palavra
+        </Text>
+      </Pressable>
+
+      <ListGroup>
+        <NavRow icon={ScrollText} hue={moduleHue.bible} iconSize="sm" label="Antigo Testamento" meta="39 livros · Gênesis a Malaquias" onPress={() => setSheet('books-AT')} />
+        <NavRow icon={BookOpen} hue={moduleHue.neutral} iconSize="sm" label="Novo Testamento" meta="27 livros · Mateus a Apocalipse" onPress={() => setSheet('books-NT')} />
+      </ListGroup>
+
+      <Section title={last ? 'Continuar lendo' : 'Começar a leitura'}>
+        <Pressable
+          onPress={() => router.push(`${chapterHref(resume.book, resume.chapter)}${resume.verse ? `?v=${resume.verse}` : ''}` as Href)}
+          accessibilityRole="button"
+          accessibilityLabel={`Abrir ${resumeBook.name} ${resume.chapter}`}
+        >
           <Card>
             <View style={s.resume}>
-              <View style={s.texts}>
+              <ModuleIcon icon={Bookmark} module="bible" />
+              <View style={s.grow}>
                 <Text variant="caption" tone="tertiary">
-                  {last ? 'Continuar' : 'Começar a leitura'}
-                </Text>
-                <Text variant="readingTitle">
                   {resumeBook.name} {resume.chapter}
+                  {resume.verse ? ` · versículo ${resume.verse}` : ''}
                 </Text>
+                {!!excerpt && (
+                  <Text variant="reading" numberOfLines={2}>
+                    {excerpt}
+                  </Text>
+                )}
               </View>
-              <ModuleIcon icon={BookOpen} module="bible" />
             </View>
           </Card>
         </Pressable>
+      </Section>
 
-        <View style={s.block}>
-        <View style={s.row}>
-          <Input
-            placeholder="Ir para… (ex.: Jo 3:16, Sl 23)"
-            value={query}
-            onChangeText={setQuery}
-            autoCapitalize="none"
-            autoCorrect={false}
-            returnKeyType="go"
-            onSubmitEditing={go}
-            style={s.grow}
-          />
-        </View>
-        {query.trim() !== '' &&
-          (ref ? (
-            <Button label={`Abrir ${formatRef(ref, 'name')}`} variant="secondary" onPress={go} />
-          ) : (
-            <EmptyState compact message="Referência não reconhecida." />
-          ))}
-        <Button label="Livros" icon={Library} variant="secondary" onPress={() => setSheet('books')} />
-        </View>
-
-        <View style={s.block}>
-        <SectionHeader title="Marcações recentes" />
-        {recent.length ? (
+      <View style={s.block}>
+        <SectionHeader title="Últimos registros" actionLabel="Ver todos" onAction={() => router.push('/biblia/registros' as Href)} />
+        <RecordFilter value={filter} onChange={setFilter} counts={counts} />
+        {records.length ? (
           <ListGroup>
-            {recent.map((h) => (
-              <RecentRow key={h.id} osis={h.ref} color={h.color} underline={h.style === 'underline'} translationId={translation.id} />
+            {records.map((r) => (
+              <RecordRow key={`${r.kind}.${r.id}`} record={r} onPress={() => openRecord(r)} />
             ))}
           </ListGroup>
         ) : (
-          <EmptyState compact message="Toque num versículo no leitor para grifar ou anotar." />
+          !loading && <EmptyState compact message={filter === 'all' ? 'Nada aqui ainda. No leitor, toque num versículo para grifar, sublinhar ou anotar.' : 'Nenhum registro deste tipo.'} />
         )}
-        </View>
-      </Reveal>
+      </View>
 
       {translation.credit && (
-        <Text variant="caption" tone="tertiary">
+        <Text variant="caption" tone="quaternary">
           {translation.credit}
         </Text>
       )}
 
-      <BooksSheet visible={sheet === 'books'} onClose={() => setSheet(null)} current={last} />
+      <BooksSheet key={testament} testament={testament} visible={sheet === 'books-AT' || sheet === 'books-NT'} onClose={() => setSheet(null)} current={last} />
       <TranslationSheet visible={sheet === 'translation'} onClose={() => setSheet(null)} />
     </Screen>
   );
 }
 
-function RecentRow({ osis, color, underline, translationId }: { osis: string; color: 'yellow' | 'green' | 'blue' | 'pink'; underline: boolean; translationId: string }) {
-  const s = useStyles();
-  const t = useTheme();
-  const { text } = useBibleText();
-  const ref = parseOsis(osis);
-  const [preview, setPreview] = useState('');
-  useEffect(() => {
-    let active = true;
-    if (ref?.verse)
-      void text.chapter(translationId, ref.book, ref.chapter).then((vs) => active && setPreview(vs?.[ref.verse! - 1] ?? ''), () => undefined);
-    return () => {
-      active = false;
-    };
-  }, [text, translationId, osis]); // eslint-disable-line react-hooks/exhaustive-deps -- `ref` deriva de `osis`
-  if (!ref) return null;
-  return (
-    <ListItem
-      title={formatRef(ref, 'name')}
-      subtitle={preview || (underline ? 'Sublinhado' : 'Marca-texto')}
-      leading={<View style={[s.swatch, underline ? { borderBottomWidth: t.size.underline, borderColor: t.colors.highlightLine[color] } : { backgroundColor: t.colors.highlight[color] }]} />}
-      onPress={() => {
-        const href = bibleHref(osis);
-        if (href) router.push(href as Href);
-      }}
-    />
-  );
-}
-
 const useStyles = makeStyles((t) => ({
-  resume: { flexDirection: 'row', alignItems: 'center', gap: t.space[3] },
-  texts: { flex: 1, gap: t.space[1] },
-  row: { flexDirection: 'row', gap: t.space[3] },
-  grow: { flex: 1 },
+  right: { flexDirection: 'row', alignItems: 'center', gap: t.space[2] },
+  search: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: t.space[2.5],
+    height: t.size.field,
+    paddingHorizontal: t.space[4],
+    borderRadius: t.radius.full,
+    backgroundColor: t.colors.card,
+  },
+  grow: { flex: 1, minWidth: t.space[0], gap: t.space[1] },
+  resume: { flexDirection: 'row', alignItems: 'flex-start', gap: t.space[3] },
   block: { gap: t.space[3] },
-  swatch: { width: t.size.colorDot, height: t.size.colorDot, borderRadius: t.radius.iconSmall },
 }));

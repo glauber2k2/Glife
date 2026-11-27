@@ -13,10 +13,21 @@ import { chapterHref } from './navigation';
 
 const fold = (s: string) => s.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase().replace(/\s+/g, '');
 
-export function BooksSheet({ visible, onClose, current }: { visible: boolean; onClose(): void; current?: { book: string; chapter: number } | null }) {
+export function BooksSheet({
+  visible,
+  onClose,
+  current,
+  testament: initial = 'AT',
+}: {
+  visible: boolean;
+  onClose(): void;
+  current?: { book: string; chapter: number } | null;
+  /** testamento aberto ao mostrar a folha (o pai troca a `key` para reabrir em outro) */
+  testament?: 'AT' | 'NT';
+}) {
   const s = useStyles();
   const t = useTheme();
-  const [testament, setTestament] = useState<'AT' | 'NT'>('AT');
+  const [testament, setTestament] = useState<'AT' | 'NT'>(initial);
   const [query, setQuery] = useState('');
   const [book, setBook] = useState<BibleBook | null>(null);
 
