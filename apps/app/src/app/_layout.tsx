@@ -14,6 +14,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AppLockGate, AppLockProvider, createDeviceAppLock, deviceBiometrics, useAppLock } from '@/features/app-lock';
 import { AuthProvider, createSupabaseAuthService, useAuth } from '@/features/auth';
 import { AgendaProvider, DayMarksProvider, agendaTableLabels, agendaTables, useAgendaTargetSources } from '@/features/agenda';
+import { bibleTableLabels, bibleTables } from '@/features/bible';
 import { DietProvider, dietTableLabels, dietTables, useDietDayMarks, useDietTargetSource } from '@/features/diet';
 import {
   FinanceProvider,
@@ -60,9 +61,9 @@ const quoteClient = createEdgeQuoteClient(getSupabase());
 const appLock = createDeviceAppLock();
 const signOut = () => authService.signOut();
 // Banco local com as tabelas das features; sincroniza com o Supabase via PowerSync.
-const localSync = createLocalSync({ ...notesTables, ...linksTables, ...financeTables, ...agendaTables, ...dietTables }, [notesSearchIndex]);
+const localSync = createLocalSync({ ...notesTables, ...linksTables, ...financeTables, ...agendaTables, ...dietTables, ...bibleTables }, [notesSearchIndex]);
 /** Nome de cada tabela (fila de envio e contagens de Ajustes › Sincronização), entregue por cada módulo. */
-const syncLabels = { ...notesTableLabels, ...linksTableLabels, ...financeTableLabels, ...agendaTableLabels, ...dietTableLabels };
+const syncLabels = { ...notesTableLabels, ...linksTableLabels, ...financeTableLabels, ...agendaTableLabels, ...dietTableLabels, ...bibleTableLabels };
 /** Avisos locais do aparelho (agenda e dieta); no web não faz nada. */
 const noticeScheduler = createNoticeScheduler();
 /** "Visto até" da central de notificações (preferência do aparelho). */

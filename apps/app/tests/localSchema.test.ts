@@ -3,6 +3,7 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 import { agendaTables } from '../src/features/agenda/data/schema';
+import { bibleTables } from '../src/features/bible/data/schema';
 import { dietTables } from '../src/features/diet/data/schema';
 import { financeTables } from '../src/features/finance/data/schema';
 import { linksTables } from '../src/features/links/data/schema';
@@ -44,13 +45,14 @@ function migrationColumns(): Map<string, string[]> {
   return tables;
 }
 
-const local = { ...notesTables, ...linksTables, ...financeTables, ...agendaTables, ...dietTables };
+const local = { ...notesTables, ...linksTables, ...financeTables, ...agendaTables, ...dietTables, ...bibleTables };
 const remote = migrationColumns();
 
 describe('schema local (PowerSync) espelha as migrações', () => {
   it('cobre as tabelas sincronizadas', () => {
     expect(Object.keys(local).sort()).toEqual([
       'accounts',
+      'bible_highlights',
       'budgets',
       'categories',
       'diet_goals',

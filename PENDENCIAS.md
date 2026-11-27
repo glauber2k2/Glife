@@ -2,6 +2,11 @@
 
 O que só o dono do projeto pode fazer (contas, chaves, testes no aparelho, decisões). Ao concluir um item, apague-o.
 
+## Bíblia (26/11/2026)
+
+- [ ] Aplicar a migração das marcações no Supabase (projeto GLIFE), na raiz `glife/`: `pnpm sb db push --remote`.
+- [ ] Republicar `supabase/powersync/sync-streams.yaml` no painel do PowerSync (Validate → Deploy; cole o arquivo inteiro).
+
 ## Fechamento da Fase R2 (26/11/2026)
 
 - [ ] Instalar o APK 0.5.0 e conferir no Android e no Chrome: dois temas, largura de 360 dp e textos longos.
