@@ -109,7 +109,7 @@ Funções novas do protótipo implementadas nos módulos existentes. Migrações
   Registrar); tela de Sincronização e offline (fila pendente, sessão expirada); Abertura e primeira sincronização
   de um aparelho novo; Item não encontrado (na lixeira, ainda não sincronizado, excluído).
 
-## Fase 4 — Bíblia e devocionais (≈ 3 semanas) — 1ª etapa (leitor) com código pronto em 26/11/2026
+## Fase 4 — Bíblia (≈ 3 semanas) — 1ª etapa (leitor) com código pronto em 26/11/2026
 
 **1ª etapa (branch `fase-4-biblia`, spec e plano em `docs/superpowers/`):** texto embutido da Bíblia Livre (CC BY 4.0)
 e da Bíblia Portuguesa Mundial (domínio público) como assets por livro, fora do bundle JS e offline; leitor (Literata
@@ -119,16 +119,21 @@ sublinhado, remover, anotar e copiar (registro de ações aberto para a IA); **A
 leitor; marcações em `bible_highlights` (migração `20261128000001`, sync); início da Bíblia (continuar, ir para, livros,
 marcações recentes), troca de tradução e **importar tradução só no aparelho** (USFM ou JSON; tabelas locais fora do
 sync). Atalho Bíblia em "Seus espaços". Falta: aplicar migração e sync-streams, conferência visual (Chrome/APK) e o
-resto da fase abaixo (devocional, planos, busca no texto, editar versículo, ajustes Aa).
+resto da fase abaixo (planos, busca no texto, editar versículo, ajustes Aa).
 
-Telas do protótipo: Bíblia, Leitor (seleção, marca-texto, anotar, editar, ver original), Devocional (SOAP), Linha do
-tempo devocional, Busca na Bíblia, Planos de leitura; ajustes de leitura (Aa).
+**Devocional não é módulo nem tipo de nota** (decisão do usuário, 27/11/2026): é uma nota comum com a tag
+`devocional`, feita no bloco de notas com a estrutura que já existe (tags, `[[Sl 23]]` e "notas que citam" no
+versículo). Não há tela, modelo SOAP, linha do tempo nem opção isolada para ele; as telas "Devocional (SOAP)" e
+"Linha do tempo devocional" do protótipo ficam fora do plano.
+
+Telas do protótipo: Bíblia, Leitor (seleção, marca-texto, anotar, editar, ver original), Busca na Bíblia, Planos de
+leitura; ajustes de leitura (Aa).
 
 - `tools/bible-import`: USFM da Bíblia Livre → `blivre.sqlite` com FTS5 (31 mil versículos).
 - Leitor em modo leitura (serifa 19/32), camadas: marcações, anotações, edições (restaurar/ver original), favoritos e progresso.
 - Referências OSIS (`[[Jo 3:16]]` → `glife://bible/JHN.3.16`).
-- Devocional (modelo SOAP), linha do tempo, planos de leitura (pôr em dia, recomeçar), lembrete diário; crédito CC BY 4.0 visível.
-- Liga os blocos de Bíblia e devocional no Início e o atalho em "Seus espaços".
+- Planos de leitura (pôr em dia, recomeçar), lembrete diário; crédito CC BY 4.0 visível.
+- Liga o bloco da Bíblia no Início e o atalho em "Seus espaços".
 
 ## Fase 5 — Galeria e mídia (≈ 2 semanas)
 

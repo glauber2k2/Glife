@@ -2,7 +2,7 @@
 
 Organizador de vida pessoal: app único (Expo SDK 58 + Expo Router + TypeScript) para Android, web e futuramente iOS.
 Local-first: tudo é lido/gravado no SQLite do aparelho e sincronizado com o Supabase via PowerSync.
-Módulos: notas, finanças, investimentos, compras, agenda, dieta, Bíblia/devocionais, galeria, caixa de entrada com IA.
+Módulos: notas, finanças, investimentos, compras, agenda, dieta, Bíblia, galeria, caixa de entrada com IA.
 O coração é o **grafo de links**: toda entidade tem UUID e endereço `glife://<tipo>/<ref>`; qualquer uma aponta para qualquer outra.
 Planejamento: `../Glife — Planejamento do Projeto.md` · Design: `docs/design-system-cobalto/` (o antigo
 `docs/design-system/` é histórico) · Fases: `docs/PLANO_DE_IMPLEMENTACAO.md`
@@ -118,6 +118,7 @@ O Claude é o agente principal; o Codex só assume quando os créditos do Claude
 - Monorepo pnpm: `apps/app`, `packages/domain`, `supabase/`. Testes vitest em todos os pacotes; banco em Postgres real via PGlite.
 - Bloqueio do app: o app **não** se esconde na lista de recentes e prints ficam liberados (usuário, 24/11/2026).
   Pendência futura opcional: esconder o conteúdo nos recentes (protótipo "Glife Bloqueio", seção 05).
+- Devocional é uma nota comum com a tag `devocional` (usuário, 27/11/2026): sem módulo, tela, modelo SOAP ou opção própria.
 - Hashes de commit citados antes de 23/11/2026 em `docs/arquivo/` são do histórico antigo (reescrito antes da publicação).
 
 ## Armadilhas conhecidas
