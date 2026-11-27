@@ -14,7 +14,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AppLockGate, AppLockProvider, createDeviceAppLock, deviceBiometrics, useAppLock } from '@/features/app-lock';
 import { AuthProvider, createSupabaseAuthService, useAuth } from '@/features/auth';
 import { AgendaProvider, DayMarksProvider, agendaTableLabels, agendaTables, useAgendaTargetSources } from '@/features/agenda';
-import { bibleTableLabels, bibleTables } from '@/features/bible';
+import { BibleProvider, bibleTableLabels, bibleTables } from '@/features/bible';
 import { DietProvider, dietTableLabels, dietTables, useDietDayMarks, useDietTargetSource } from '@/features/diet';
 import {
   FinanceProvider,
@@ -142,6 +142,7 @@ function RootStack() {
           <FinanceProvider db={localSync.db} userId={userId} quotes={quoteClient}>
           <AgendaProvider db={localSync.db} userId={userId}>
           <DietProvider db={localSync.db} userId={userId}>
+          <BibleProvider db={localSync.db} userId={userId} storage={AsyncStorage}>
           <NotificationsProvider store={seenStore} scheduler={noticeScheduler}>
           <DayMarksComposition>
           <SearchComposition enabled={stage === 'ready'}>
@@ -233,6 +234,7 @@ function RootStack() {
           </SearchComposition>
           </DayMarksComposition>
           </NotificationsProvider>
+          </BibleProvider>
           </DietProvider>
           </AgendaProvider>
           </FinanceProvider>

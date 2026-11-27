@@ -15,4 +15,5 @@ export {
   type HighlightMark,
   type HighlightStyle,
 } from './highlights.ts';
+export { combineSources, type BibleTextSource, type Translation } from './text.ts';
 export { BIBLE_TABLES, createBibleHighlightsRepository, type BibleHighlightsRepository, type BibleRows } from './repository.ts';

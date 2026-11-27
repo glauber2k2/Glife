@@ -41,7 +41,8 @@
       ],
       "expo-secure-store",
       "react-native-quick-crypto",
-      "@react-native-community/datetimepicker"
+      "@react-native-community/datetimepicker",
+      "expo-asset"
     ],
     "experiments": {
       "typedRoutes": true,
