@@ -18,3 +18,4 @@ export {
 export { combineSources, type BibleTextSource, type Translation } from './text.ts';
 export { parseTranslationFiles, type ImportedFile, type TranslationImport } from './importFile.ts';
 export { BIBLE_TABLES, createBibleHighlightsRepository, type BibleHighlightsRepository, type BibleRows } from './repository.ts';
+export { SEARCH_LIMIT, indexVerses, normalizeText, searchVerses, type IndexedVerse, type SearchScope } from './search.ts';
