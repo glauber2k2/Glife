@@ -19,6 +19,7 @@ export {
   newEvent,
   newReminder,
   skipEventDate,
+  uncompleteReminder,
   type CalendarEvent,
   type EventDraft,
   type EventPatch,
@@ -27,7 +28,7 @@ export {
   type ReminderPatch,
   type ReminderTimeMode,
 } from './model.ts';
-export { agendaBetween, agendaNotices, byWhen, nextEvent, overdueReminders, type AgendaItem, type NextEvent } from './schedule.ts';
+export { agendaBetween, agendaNotices, byWhen, lateReminders, nextEvent, overdueReminders, type AgendaItem, type NextEvent } from './schedule.ts';
 export { agendaNotifications, isReminderPending } from './notifications.ts';
 export {
   AGENDA_TABLES,

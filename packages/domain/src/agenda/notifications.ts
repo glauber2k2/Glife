@@ -1,8 +1,8 @@
 // O que a agenda leva à central de notificações: lembretes de hoje e os atrasados (únicos, não concluídos).
 import { dayMonth, localInstant, type AppNotification } from '../notifications/index.ts';
 import type { IsoDate, LocalTime } from '../time/index.ts';
-import { isMultiTime, type Reminder } from './model.ts';
-import { overdueReminders, reminderNoticeKey, reminderSlots } from './schedule.ts';
+import type { Reminder } from './model.ts';
+import { isReminderDone, overdueReminders, reminderNoticeKey, reminderSlots } from './schedule.ts';
 
 const notification = (r: Reminder, date: IsoDate, message: string, time: LocalTime = r.time): AppNotification => ({
   id: reminderNoticeKey(r, date, time),
@@ -34,6 +34,5 @@ export function agendaNotifications(reminders: readonly Reminder[], now: { date:
  */
 export function isReminderPending(reminders: readonly Reminder[], id: string, date: IsoDate, time?: LocalTime): boolean {
   const r = reminders.find((x) => x.id === id);
-  if (!r || r.deleted_at !== null || r.done_at !== null || r.skipped_dates.includes(date)) return false;
-  return !isMultiTime(r) || !r.done_slots.includes(`${date}T${time ?? r.time}`);
+  return !!r && r.deleted_at === null && !isReminderDone(r, date, time ?? r.time);
 }
