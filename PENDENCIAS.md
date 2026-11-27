@@ -36,11 +36,8 @@ O que só o dono do projeto pode fazer (contas, chaves, testes no aparelho, deci
 
 ## Investimentos (25/11/2026)
 
-- [ ] Criar conta grátis na brapi (https://brapi.dev) e gerar o token.
-- [ ] Criar conta grátis na CoinGecko e gerar a chave **Demo**.
-- [ ] Guardar as chaves no Supabase (projeto GLIFE), na raiz `glife/`:
-      `pnpm sb secrets set BRAPI_TOKEN=sua_chave COINGECKO_DEMO_KEY=sua_chave`
-      (sem elas, a brapi só cota PETR4, VALE3, MGLU3 e ITUB4, e a CoinGecko fica bem limitada).
+- [ ] Opcional: gerar chaves novas na brapi e na CoinGecko (as atuais foram coladas num chat) e regravar com
+      `pnpm sb secrets set --env-file supabase/functions/.env.secrets.local --yes` (arquivo local, ignorado pelo git).
 - [ ] Testar Investimentos no Chrome e no APK: claro/escuro, 360 dp, nomes longos, ação (ITSA4), FII (HGLG11),
       cripto (bitcoin), "Já tenho", aporte com conta (saldo e extrato), encerrar, excluir e desfazer.
 
@@ -52,4 +49,4 @@ O que só o dono do projeto pode fazer (contas, chaves, testes no aparelho, deci
 ## Já publicado (não precisa fazer)
 
 Migrações até `20261127000002` (R2 publicada em 26/11/2026 após backup em `../backups/glife-r2-20261126/`); verificação de RLS hospedado sem problemas. A Edge Function `quotes` e os Sync Streams v7 já estavam publicados; Sync Streams v8 (com `diet_goals`) publicados em 26/11/2026; v10 (com `bible_plans` e `bible_plan_reads`) publicados em 27/11/2026. Migrações `20261130000001` (notas sem tipo) e
-`20261201000001` (lembretes com vários horários) aplicadas em 27/11/2026; `rls_check.sql` = 0 linhas.
+`20261201000001` (lembretes com vários horários) aplicadas em 27/11/2026; `rls_check.sql` = 0 linhas. Secrets `BRAPI_TOKEN` e `COINGECKO_DEMO_KEY` gravados em 27/11/2026.
