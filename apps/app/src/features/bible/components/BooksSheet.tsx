@@ -111,7 +111,7 @@ const useStyles = makeStyles((t) => ({
   back: { flexDirection: 'row', alignItems: 'center', gap: t.space[3] },
   scroll: { maxHeight: t.layout.pickerListMaxHeight, flexShrink: 1 },
   grid: { flexDirection: 'row', flexWrap: 'wrap', marginHorizontal: -t.space[1] },
-  cell: { width: '16.666%', padding: t.space[1] },
+  cell: { width: `${100 / t.layout.chapterGridColumns}%`, padding: t.space[1] },
   chapter: { height: t.size.chipHeight, borderRadius: t.radius.segment, alignItems: 'center', justifyContent: 'center', backgroundColor: t.colors.soft },
   chapterOn: { backgroundColor: t.colors.accent },
   num: { fontVariant: ['tabular-nums'] },

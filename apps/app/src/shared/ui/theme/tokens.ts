@@ -330,6 +330,8 @@ export const layout = {
   emptyTextMax: 280,
   /** coluna de botões do estado vazio e das telas de sistema (item não encontrado, abertura) */
   emptyActionsMax: 300,
+  /** colunas da grade de capítulos da folha de livros da Bíblia */
+  chapterGridColumns: 6,
   /** deslocamento das folhas no web largo (7% do topo) */
   sheetTopWeb: 56,
 } as const;

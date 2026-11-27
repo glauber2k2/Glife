@@ -31,9 +31,10 @@ export function ReaderScreen() {
   const { livro, cap, v } = useLocalSearchParams<{ livro: string; cap: string; v?: string }>();
   const book = getBook(String(livro ?? '').toUpperCase());
   const chapter = Number(cap);
+  const s = useStyles();
   if (!book || !Number.isInteger(chapter) || chapter < 1 || chapter > book.chapters) {
     return (
-      <SafeAreaView style={{ flex: 1 }}>
+      <SafeAreaView style={s.root}>
         <BackHeader title="Bíblia" fallback="/biblia" />
         <EmptyState title="Capítulo não encontrado" message="Esse livro ou capítulo não existe." mood="pensando" />
       </SafeAreaView>

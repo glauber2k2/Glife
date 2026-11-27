@@ -42,15 +42,30 @@ export function parseTranslationFiles(files: readonly ImportedFile[], meta: { ab
   if (!name || name.length > 60) throw refuse('Nome da tradução com até 60 caracteres.');
 
   const books = new Map<string, BookText>();
+  const unknown: string[] = [];
   for (const f of files) {
-    for (const b of booksOf(f)) {
-      const info = getBook(b.book);
-      if (!info) continue;
+    const found = booksOf(f).filter((b) => getBook(b.book));
+    if (!found.length) unknown.push(f.name);
+    for (const b of found) {
+      const info = getBook(b.book)!;
       if (books.has(info.code)) throw refuse(`${info.name} aparece mais de uma vez nos arquivos.`);
       if (b.chapters.length > info.chapters) throw refuse(`${info.name} veio com ${b.chapters.length} capítulos; o livro tem ${info.chapters}.`);
       books.set(info.code, { book: info.code, chapters: b.chapters });
     }
   }
   if (!books.size) throw refuse('Nenhum livro reconhecido nos arquivos. Use USFM (um livro por arquivo) ou o JSON do importador.');
+  // Tudo ou nada: um arquivo que não é um livro faria a importação sair pela metade sem ninguém perceber.
+  if (unknown.length) {
+    const names = unknown.slice(0, 3).join(', ') + (unknown.length > 3 ? ` e mais ${unknown.length - 3}` : '');
+    throw refuse(`Formato não reconhecido: ${names}. Tire esses arquivos ou corrija-os e importe de novo.`);
+  }
+  // Livro truncado ou com capítulo vazio mostraria "não tem esse capítulo" no meio da leitura.
+  for (const b of books.values()) {
+    const info = getBook(b.book)!;
+    const filled = b.chapters.filter((c) => c.some((v) => v.trim())).length;
+    if (b.chapters.length < info.chapters || filled < b.chapters.length) {
+      throw refuse(`${info.name} veio incompleto: ${filled} de ${info.chapters} capítulos com texto.`);
+    }
+  }
   return { abbr, name, books: [...books.values()] };
 }
