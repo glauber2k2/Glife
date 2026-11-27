@@ -12,9 +12,7 @@ plano `docs/superpowers/plans/2026-11-27-biblia-v2.md`.
   não subiu; só acrescentam tabelas; `rls_check.sql` = 0 linhas; listas como texto JSON; tabelas na publicação powersync).
 
 ## Próximos passos (em ordem)
-1. **Republicar `supabase/powersync/sync-streams.yaml` no painel do PowerSync** (Glife → Production → Sync Streams →
-   colar → Validate → Deploy). Tentativa pelo navegador falhou: a extensão Claude no Brave não aparece conectada a esta
-   conta (lista de navegadores vazia). Sem isso, planos não sincronizam entre aparelhos.
+1. ~~Republicar sync-streams~~ feito: v10 ativa no PowerSync (27/11), com `bible_plans` e `bible_plan_reads`.
 2. Instalar o APK 0.8.0 e conferir no Android e no Chrome (claro/escuro, 360 dp) — roteiro em `PENDENCIAS.md`.
 3. Juntar o PR #1 depois da conferência (traz também Fases R/R2 e a 1ª etapa da Fase 4, nunca juntadas).
 4. Menores adiados da revisão final (ver abaixo).

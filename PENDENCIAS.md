@@ -4,7 +4,6 @@ O que só o dono do projeto pode fazer (contas, chaves, testes no aparelho, deci
 
 ## Bíblia v2: planos de leitura (27/11/2026)
 
-- [ ] Republicar o `supabase/powersync/sync-streams.yaml` no painel do PowerSync (Validate → Deploy; colar, não digitar).
 - [ ] Gerar APK novo e conferir no Chrome e no Android (claro/escuro, 360 dp): leitor em Outfit, Aa (tamanho, entrelinhas, letras), grifo e sublinhado com respiro, seleção em sobretom, busca ("aguas", "Jo 3:16"), início com AT/NT e últimos registros, criar plano, ler pelo plano e marcar como lido, pausar/retomar, lembrete às 06:30.
 
 ## Bíblia (26/11/2026)
@@ -40,4 +39,4 @@ O que só o dono do projeto pode fazer (contas, chaves, testes no aparelho, deci
 
 ## Já publicado (não precisa fazer)
 
-Migrações até `20261127000002` (R2 publicada em 26/11/2026 após backup em `../backups/glife-r2-20261126/`); verificação de RLS hospedado sem problemas. A Edge Function `quotes` e os Sync Streams v7 já estavam publicados; Sync Streams v8 (com `diet_goals`) publicados em 26/11/2026.
+Migrações até `20261127000002` (R2 publicada em 26/11/2026 após backup em `../backups/glife-r2-20261126/`); verificação de RLS hospedado sem problemas. A Edge Function `quotes` e os Sync Streams v7 já estavam publicados; Sync Streams v8 (com `diet_goals`) publicados em 26/11/2026; v10 (com `bible_plans` e `bible_plan_reads`) publicados em 27/11/2026.
