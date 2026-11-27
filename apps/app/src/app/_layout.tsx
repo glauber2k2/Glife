@@ -12,9 +12,9 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { AppLockGate, AppLockProvider, createDeviceAppLock, deviceBiometrics, useAppLock } from '@/features/app-lock';
 import { AuthProvider, createSupabaseAuthService, useAuth } from '@/features/auth';
-import { AgendaProvider, DayMarksProvider, agendaTableLabels, agendaTables, useAgendaTargetSources } from '@/features/agenda';
+import { AgendaProvider, agendaTableLabels, agendaTables, useAgendaTargetSources } from '@/features/agenda';
 import { BibleProvider, bibleHref, bibleLocalTables, bibleTableLabels, bibleTables } from '@/features/bible';
-import { DietProvider, dietTableLabels, dietTables, useDietDayMarks, useDietTargetSources } from '@/features/diet';
+import { DietProvider, dietTableLabels, dietTables, useDietTargetSources } from '@/features/diet';
 import {
   FinanceProvider,
   createEdgeQuoteClient,
@@ -86,13 +86,6 @@ function SearchComposition({ enabled, children }: { enabled: boolean; children: 
   );
 }
 
-/** Calendário da agenda: as refeições do plano (dieta) viram pontos no mês, sem a agenda conhecer a dieta. */
-function DayMarksComposition({ children }: { children: ReactNode }) {
-  const diet = useDietDayMarks();
-  const sources = useMemo(() => [diet], [diet]);
-  return <DayMarksProvider sources={sources}>{children}</DayMarksProvider>;
-}
-
 /** Tela de uma tag: cada feature diz como mostrar os seus itens com tag (registro aberto da feature links). */
 function TaggedComposition({ children }: { children: ReactNode }) {
   const notes = useNotesTaggedSource();
@@ -152,7 +145,6 @@ function RootStack() {
           <DietProvider db={localSync.db} userId={userId}>
           <BibleProvider db={localSync.db} userId={userId} storage={AsyncStorage}>
           <NotificationsProvider store={seenStore} scheduler={noticeScheduler}>
-          <DayMarksComposition>
           <SearchComposition enabled={stage === 'ready'}>
           <TaggedComposition>
           <TargetsComposition>
@@ -244,7 +236,6 @@ function RootStack() {
           </TargetsComposition>
           </TaggedComposition>
           </SearchComposition>
-          </DayMarksComposition>
           </NotificationsProvider>
           </BibleProvider>
           </DietProvider>

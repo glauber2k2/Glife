@@ -1,6 +1,6 @@
 // Agenda (protótipo do redesign Cobalto): a semana numa faixa de dias, os lembretes do dia com check e os eventos
 // numa linha do tempo com a marca de agora. "+" abre a escolha entre evento e lembrete.
-import { agendaBetween, overdueReminders, type AgendaItem } from '@glife/domain/agenda';
+import { agendaBetween, lateReminders, type AgendaItem } from '@glife/domain/agenda';
 import { addDays, localNow, type IsoDate } from '@glife/domain/time';
 import { router } from 'expo-router';
 import { AlarmClock, CalendarDays, CalendarPlus, ChevronLeft, ChevronRight, MapPin, Plus, Repeat } from 'lucide-react-native';
@@ -30,7 +30,8 @@ import {
   useToast,
 } from '@/shared/ui';
 
-import { TaskRow, type Row } from '../components/TaskRow';
+import { sortRows, type Row } from '../components/rows';
+import { TaskRow } from '../components/TaskRow';
 import { weekStart } from '../components/week';
 import { useAgenda } from '../hooks/AgendaData';
 
@@ -57,25 +58,28 @@ export function AgendaScreen() {
   const isToday = day === now.date;
   const late: Row[] =
     data && isToday
-      ? overdueReminders(data.reminders, now)
-          .filter((r) => r.start_date !== now.date)
-          .map((r) => ({
+      ? lateReminders(data.reminders, now)
+          .filter(({ r }) => r.start_date !== now.date)
+          .map(({ r, done }) => ({
             key: `late:${r.id}`,
             late: true,
-            item: { kind: 'reminder', id: r.id, date: r.start_date, time: r.time, end_time: null, title: r.title, location: null },
+            item: { kind: 'reminder', id: r.id, date: r.start_date, time: r.time, end_time: null, title: r.title, location: null, done },
           }))
       : [];
-  const reminders: Row[] = [...late, ...items.filter((i) => i.kind === 'reminder').map((i) => ({ key: `${i.kind}:${i.id}:${i.date}:${i.time ?? ''}`, item: i }))];
+  const reminders: Row[] = sortRows([...late, ...items.filter((i) => i.kind === 'reminder').map((i) => ({ key: `${i.kind}:${i.id}:${i.date}:${i.time ?? ''}`, item: i }))]);
   const events = items.filter((i) => i.kind === 'event');
   const allDay = events.filter((e) => !e.time);
   const timed = events.filter((e) => e.time);
   const nowIndex = isToday ? timed.findIndex((e) => (e.time ?? '') > now.time) : -1;
 
-  const complete = async (id: string, date: string, time?: string) => {
+  /** Marca ou desmarca o lembrete nesta data/horário; diz se gravou. */
+  const toggle = async (id: string, date: string, time: string | undefined, done: boolean) => {
     try {
-      await repo.completeReminder(id, date, time);
+      await (done ? repo.completeReminder(id, date, time) : repo.uncompleteReminder(id, date, time));
+      return true;
     } catch (e) {
       toast({ message: errorText(e) });
+      return false;
     }
   };
   const open = (i: Pick<AgendaItem, 'kind' | 'id' | 'date'>) =>
@@ -124,7 +128,7 @@ export function AgendaScreen() {
               <SectionHeader title="Lembretes" actionLabel="Novo" onAction={newReminder} />
               <ListGroup>
                 {reminders.map((r) => (
-                  <TaskRow key={r.key} row={r} onOpen={() => open(r.item)} onDone={() => void complete(r.item.id, r.item.date, r.item.time ?? undefined)} />
+                  <TaskRow key={r.key} row={r} onOpen={() => open(r.item)} onToggle={(done) => toggle(r.item.id, r.item.date, r.item.time ?? undefined, done)} />
                 ))}
               </ListGroup>
             </View>

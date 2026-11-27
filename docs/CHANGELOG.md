@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.9.2 — 2026-11-27
+
+- Agenda: lembrete feito fica mais apagado e desce para o fim da lista; os pendentes ficam em cima, do mais próximo ao
+  mais longe (atrasados primeiro). Vale na Agenda, no "Para hoje" do Início e no dia do calendário do mês.
+
+## 0.9.1 — 2026-11-27
+
+- Agenda: lembrete marcado como feito não some mais. Ele fica na lista com o círculo cheio e o texto riscado; outro
+  toque desmarca (para quando marcou sem querer). Vale na Agenda, no "Para hoje" do Início e no calendário do mês
+  ("· Feito"). Atrasado marcado hoje fica riscado na lista de hoje até o dia acabar.
+- Calendário: dia livre fica sem ponto. As refeições do plano da dieta não marcam mais o dia (o ponto verde aparecia
+  em todos os dias); os pontos mostram só eventos e lembretes.
+
 ## 0.9.0 — 2026-11-27
 
 - Agenda: lembrete mais de uma vez no dia. Em "Quantas vezes no dia", escolha **Horários** (uma lista, ex.: 08:00,

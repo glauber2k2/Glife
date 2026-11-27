@@ -1,6 +1,6 @@
 // O que acontece quando: ocorrências de eventos e lembretes num período, o próximo compromisso (bloco de Hoje) e os
 // avisos a agendar no aparelho. Funções puras sobre as linhas.
-import { addDays, daysBetween, occurrenceDates, shiftMinutes, type IsoDate, type LocalTime, type ScheduledNotice } from '../time/index.ts';
+import { addDays, daysBetween, localNow, occurrenceDates, shiftMinutes, type IsoDate, type LocalTime, type ScheduledNotice } from '../time/index.ts';
 import { ALL_DAY_NOTICE_TIME, isMultiTime, reminderTimes, type CalendarEvent, type Reminder } from './model.ts';
 
 export interface AgendaItem {
@@ -16,6 +16,8 @@ export interface AgendaItem {
   title: string;
   location: string | null;
   repeats: boolean;
+  /** lembrete já feito nesta data/horário (continua na lista, riscado); evento é sempre false */
+  done: boolean;
 }
 
 const alive = <T extends { deleted_at: string | null }>(r: T) => r.deleted_at === null;
@@ -35,7 +37,7 @@ export const byWhen = (a: AgendaItem, b: AgendaItem) =>
 
 /**
  * Tudo entre `from` e `to` (inclusive). Evento de vários dias aparece no dia em que começa (com `end_date`) e,
- * se começou antes do período, no primeiro dia dele. Lembrete único concluído some.
+ * se começou antes do período, no primeiro dia dele. Lembrete concluído continua, com `done`.
  */
 export function agendaBetween(events: readonly CalendarEvent[], reminders: readonly Reminder[], from: IsoDate, to: IsoDate): AgendaItem[] {
   const out: AgendaItem[] = [];
@@ -55,26 +57,44 @@ export function agendaBetween(events: readonly CalendarEvent[], reminders: reado
         title: e.title,
         location: e.location,
         repeats: e.frequency !== 'none',
+        done: false,
       });
     }
   }
-  for (const { r, date, time } of reminderSlots(reminders, from, to)) {
-    out.push({ kind: 'reminder', id: r.id, date, time, end_time: null, end_date: date, title: r.title, location: null, repeats: r.frequency !== 'none' || isMultiTime(r) });
+  for (const { r, date, time, done } of reminderOccurrences(reminders, from, to)) {
+    out.push({ kind: 'reminder', id: r.id, date, time, end_time: null, end_date: date, title: r.title, location: null, repeats: r.frequency !== 'none' || isMultiTime(r), done });
   }
   return out.sort(byWhen);
 }
 
-/** Cada horário de cada lembrete vivo e pendente entre `from` e `to`, sem os horários já concluídos. */
-export function reminderSlots(reminders: readonly Reminder[], from: IsoDate, to: IsoDate): { r: Reminder; date: IsoDate; time: LocalTime }[] {
-  const out: { r: Reminder; date: IsoDate; time: LocalTime }[] = [];
-  for (const r of reminders.filter((x) => alive(x) && x.done_at === null)) {
+/**
+ * O horário já foi feito? Único: `done_at`. Várias vezes no dia: `done_slots`. Repetido de um horário: a data em
+ * `skipped_dates` (no lembrete, só o "feito" grava ali).
+ */
+export function isReminderDone(r: Reminder, date: IsoDate, time: LocalTime): boolean {
+  if (isMultiTime(r)) return r.done_slots.includes(`${date}T${time}`);
+  if (r.frequency === 'none') return r.done_at !== null;
+  return r.skipped_dates.includes(date);
+}
+
+/** Cada horário de cada lembrete vivo entre `from` e `to`, feito ou não. */
+export function reminderOccurrences(reminders: readonly Reminder[], from: IsoDate, to: IsoDate): { r: Reminder; date: IsoDate; time: LocalTime; done: boolean }[] {
+  const out: { r: Reminder; date: IsoDate; time: LocalTime; done: boolean }[] = [];
+  for (const r of reminders.filter(alive)) {
     const times = reminderTimes(r);
-    const done = new Set(r.done_slots);
-    for (const date of occurrenceDates(r, from, to)) {
-      for (const time of times) if (!done.has(`${date}T${time}`)) out.push({ r, date, time });
+    // As datas feitas do repetido ficam em `skipped_dates`; aqui elas entram (marcadas como feitas).
+    for (const date of occurrenceDates({ ...r, skipped_dates: [] }, from, to)) {
+      for (const time of times) out.push({ r, date, time, done: isReminderDone(r, date, time) });
     }
   }
   return out;
+}
+
+/** Cada horário de cada lembrete vivo e pendente entre `from` e `to`, sem os já feitos. */
+export function reminderSlots(reminders: readonly Reminder[], from: IsoDate, to: IsoDate): { r: Reminder; date: IsoDate; time: LocalTime }[] {
+  return reminderOccurrences(reminders, from, to)
+    .filter((o) => !o.done)
+    .map(({ r, date, time }) => ({ r, date, time }));
 }
 
 /** Chave do aviso: o horário entra só quando o lembrete tem várias vezes no dia (os de antes seguem iguais). */
@@ -86,6 +106,18 @@ export function overdueReminders(reminders: readonly Reminder[], now: { date: Is
   return reminders
     .filter((r) => alive(r) && r.frequency === 'none' && !isMultiTime(r) && r.done_at === null && `${r.start_date}T${r.time}` < `${now.date}T${now.time}`)
     .sort((a, b) => (`${a.start_date}T${a.time}` < `${b.start_date}T${b.time}` ? -1 : 1));
+}
+
+/**
+ * Atrasados para a lista de hoje: os pendentes e os que foram feitos hoje (ficam riscados até o dia acabar, para dar
+ * para desmarcar o que foi marcado sem querer).
+ */
+export function lateReminders(reminders: readonly Reminder[], now: { date: IsoDate; time: LocalTime }): { r: Reminder; done: boolean }[] {
+  const pending = overdueReminders(reminders, now).map((r) => ({ r, done: false }));
+  const doneToday = reminders
+    .filter((r) => alive(r) && r.frequency === 'none' && !isMultiTime(r) && r.done_at !== null && r.start_date < now.date && localNow(new Date(r.done_at)).date === now.date)
+    .map((r) => ({ r, done: true }));
+  return [...pending, ...doneToday].sort((a, b) => (`${a.r.start_date}T${a.r.time}` < `${b.r.start_date}T${b.r.time}` ? -1 : 1));
 }
 
 export interface NextEvent {

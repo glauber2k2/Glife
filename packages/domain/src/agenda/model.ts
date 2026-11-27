@@ -239,3 +239,15 @@ export function completeReminder(reminder: Reminder, date: IsoDate, clock?: () =
   if (reminder.skipped_dates.includes(date)) return reminder;
   return applyReminderPatch(reminder, { skipped_dates: [...reminder.skipped_dates, date].sort() }, clock);
 }
+
+/** Desfazer o feito (marcado sem querer): o inverso de `completeReminder` na mesma data/horário. */
+export function uncompleteReminder(reminder: Reminder, date: IsoDate, clock?: () => Date, time?: string): Reminder {
+  if (isMultiTime(reminder)) {
+    const slot = `${date}T${time ?? reminder.time}`;
+    if (!reminder.done_slots.includes(slot)) return reminder;
+    return applyReminderPatch(reminder, { done_slots: reminder.done_slots.filter((s) => s !== slot) }, clock);
+  }
+  if (reminder.frequency === 'none') return reminder.done_at === null ? reminder : applyReminderPatch(reminder, { done_at: null }, clock);
+  if (!reminder.skipped_dates.includes(date)) return reminder;
+  return applyReminderPatch(reminder, { skipped_dates: reminder.skipped_dates.filter((d) => d !== date) }, clock);
+}

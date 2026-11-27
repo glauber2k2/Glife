@@ -1,6 +1,7 @@
 // Bloco "Para hoje" do Início (Cobalto): compromissos e lembretes do dia, com o horário em pílula. Concluir um
-// lembrete enche o círculo, risca o texto e a linha recolhe. Lembretes atrasados vêm primeiro, em vermelho.
-import { agendaBetween, overdueReminders } from '@glife/domain/agenda';
+// lembrete enche o círculo, risca e esmaece o texto e leva a linha para o fim (dá para desmarcar). Atrasados vêm
+// primeiro, em vermelho.
+import { agendaBetween, lateReminders } from '@glife/domain/agenda';
 import { localNow } from '@glife/domain/time';
 import { router } from 'expo-router';
 import { View } from 'react-native';
@@ -9,7 +10,8 @@ import { errorText } from '@/shared/lib/errorText';
 import { Button, ListGroup, SectionHeader, Text, makeStyles, useToast } from '@/shared/ui';
 
 import { useAgendaMaybe } from '../hooks/AgendaData';
-import { TaskRow, type Row } from './TaskRow';
+import { sortRows, type Row } from './rows';
+import { TaskRow } from './TaskRow';
 
 export function TodayAgendaBlock() {
   const s = useStyles();
@@ -17,24 +19,27 @@ export function TodayAgendaBlock() {
   const agenda = useAgendaMaybe();
   if (!agenda?.data) return null;
   const now = localNow();
-  const late: Row[] = overdueReminders(agenda.data.reminders, now)
-    .filter((r) => r.start_date !== now.date)
-    .map((r) => ({
+  const late: Row[] = lateReminders(agenda.data.reminders, now)
+    .filter(({ r }) => r.start_date !== now.date)
+    .map(({ r, done }) => ({
       key: `late:${r.id}`,
       late: true,
-      item: { kind: 'reminder', id: r.id, date: r.start_date, time: r.time, end_time: null, title: r.title, location: null },
+      item: { kind: 'reminder', id: r.id, date: r.start_date, time: r.time, end_time: null, title: r.title, location: null, done },
     }));
   const today: Row[] = agendaBetween(agenda.data.events, agenda.data.reminders, now.date, now.date).map((i) => ({
     key: `${i.kind}:${i.id}:${i.date}:${i.time ?? ''}`,
     item: i,
   }));
-  const rows = [...late, ...today];
+  const rows = sortRows([...late, ...today]);
 
-  const complete = async (id: string, date: string, time?: string) => {
+  /** Marca ou desmarca o lembrete nesta data/horário; diz se gravou. */
+  const toggle = async (id: string, date: string, time: string | undefined, done: boolean) => {
     try {
-      await agenda.repo.completeReminder(id, date, time);
+      await (done ? agenda.repo.completeReminder(id, date, time) : agenda.repo.uncompleteReminder(id, date, time));
+      return true;
     } catch (e) {
       toast({ message: errorText(e) });
+      return false;
     }
   };
   const open = (i: Row['item']) =>
@@ -58,7 +63,7 @@ export function TodayAgendaBlock() {
             />
           </View>
         ) : (
-          rows.map((r) => <TaskRow key={r.key} row={r} onOpen={() => open(r.item)} onDone={() => void complete(r.item.id, r.item.date, r.item.time ?? undefined)} />)
+          rows.map((r) => <TaskRow key={r.key} row={r} onOpen={() => open(r.item)} onToggle={(done) => toggle(r.item.id, r.item.date, r.item.time ?? undefined, done)} />)
         )}
       </ListGroup>
     </View>

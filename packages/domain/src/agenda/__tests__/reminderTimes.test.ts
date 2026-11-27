@@ -46,13 +46,13 @@ describe('lembrete com vários horários no dia', () => {
     expect(reminderTimes(r)).toEqual(['09:00']);
   });
 
-  it('a agenda mostra cada horário e o feito de um horário só some com ele', () => {
+  it('a agenda mostra cada horário e o feito de um horário só fica marcado nele', () => {
     const r = list();
     expect(agendaBetween([], [r], '2026-11-25', '2026-11-25').map((i) => i.time)).toEqual(['08:00', '14:00', '20:00']);
     const done = completeReminder(r, '2026-11-25', clock, '14:00');
     expect(done.done_at).toBeNull();
     expect(done.skipped_dates).toEqual([]);
-    expect(agendaBetween([], [done], '2026-11-25', '2026-11-26').map((i) => `${i.date} ${i.time}`)).toEqual([
+    expect(agendaBetween([], [done], '2026-11-25', '2026-11-26').filter((i) => !i.done).map((i) => `${i.date} ${i.time}`)).toEqual([
       '2026-11-25 08:00',
       '2026-11-25 20:00',
       '2026-11-26 08:00',
@@ -67,7 +67,7 @@ describe('lembrete com vários horários no dia', () => {
     const r = list({ frequency: 'none' });
     const done = completeReminder(r, '2026-11-25', clock, '08:00');
     expect(done.done_at).toBeNull();
-    expect(agendaBetween([], [done], '2026-11-25', '2026-11-25').map((i) => i.time)).toEqual(['14:00', '20:00']);
+    expect(agendaBetween([], [done], '2026-11-25', '2026-11-25').filter((i) => !i.done).map((i) => i.time)).toEqual(['14:00', '20:00']);
     // Não vira "atrasado": só o lembrete de horário único fica pendente depois que passa.
     expect(overdueReminders([done], { date: '2026-11-26', time: '10:00' })).toEqual([]);
   });

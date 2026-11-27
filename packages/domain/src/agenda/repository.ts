@@ -6,6 +6,7 @@ import {
   applyEventPatch,
   applyReminderPatch,
   completeReminder,
+  uncompleteReminder,
   newEvent,
   newReminder,
   skipEventDate,
@@ -43,6 +44,8 @@ export interface AgendaRepository {
   updateReminder(id: string, patch: ReminderPatch): Promise<Reminder>;
   /** Único: marca como feito. Repetido: pula esta data. Várias vezes no dia: conclui só o horário `time`. */
   completeReminder(id: string, date: IsoDate, time?: string): Promise<Reminder>;
+  /** Desfaz o feito desta data (ou do horário `time`). */
+  uncompleteReminder(id: string, date: IsoDate, time?: string): Promise<Reminder>;
   removeReminder(id: string): Promise<void>;
   restoreReminder(id: string): Promise<void>;
 }
@@ -91,6 +94,7 @@ export function createAgendaRepository(store: RowStore<AgendaRows>, userId: stri
     createReminder: (draft) => guardRules(() => create('reminders', newReminder(draft, userId, clock))),
     updateReminder: (id, patch) => change('reminders', id, (r) => applyReminderPatch(r, patch, clock)),
     completeReminder: (id, date, time) => change('reminders', id, (r) => completeReminder(r, date, clock, time)),
+    uncompleteReminder: (id, date, time) => change('reminders', id, (r) => uncompleteReminder(r, date, clock, time)),
     removeReminder: (id) => remove('reminders', id),
     restoreReminder: (id) => undelete('reminders', id),
   };
