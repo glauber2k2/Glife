@@ -98,6 +98,15 @@ export function createLocalLinksRepository(db: LocalDb, userId: string): LinksRe
       );
     },
 
+    watchBibleAll(listener, onError) {
+      return db.watch<Link>(
+        `SELECT ${COLUMNS} FROM links WHERE deleted_at IS NULL AND target_type = 'bible' ORDER BY created_at DESC, id DESC`,
+        [],
+        listener,
+        (e) => onError?.(new RepositoryError('unavailable', { cause: e })),
+      );
+    },
+
     async add(source, link) {
       const v = validateNewLink(source, link);
       return db.writeTransaction((tx) => insert(tx, v.source, v.link, 'manual'));

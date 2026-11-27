@@ -313,6 +313,10 @@ export function createInMemoryLinks(userId: string): LinksRepository {
     watchBibleBook(book, listener) {
       return subs.add(() => listener(alive().filter((l) => l.target_type === 'bible' && l.target_ref.startsWith(`${book}.`))));
     },
+    watchBibleAll(listener) {
+      const newest = (a: Link, b: Link) => (a.created_at < b.created_at ? 1 : a.created_at > b.created_at ? -1 : a.id < b.id ? 1 : -1);
+      return subs.add(() => listener(alive().filter((l) => l.target_type === 'bible').sort(newest)));
+    },
     async add(source, link) {
       const v = validateNewLink(source, link);
       const row = insert(v.source, v.link, 'manual');

@@ -142,5 +142,22 @@ export function linksRepositoryContract(name: string, make: () => Promise<LinksC
       expect(seen).toEqual(['JHN.3', 'JHN.3.16', 'JHN.3.16-4.2']);
       stop();
     });
+
+    it('observa todos os vínculos bíblicos, do mais recente ao mais antigo, e só eles', async () => {
+      const { links } = await make();
+      let seen: string[] = [];
+      const stop = links.watchBibleAll((v) => (seen = v.map((l) => l.target_ref)));
+      await links.add(SRC, { target_type: 'bible', target_ref: 'PSA.23.4', relation: 'ref' });
+      await new Promise((r) => setTimeout(r, 5));
+      await links.add(SRC, { target_type: 'bible', target_ref: 'JHN.3', relation: 'ref' });
+      await links.add(SRC, { target_type: 'tx', target_ref: TX, relation: 'ref' });
+      await new Promise((r) => setTimeout(r, 20));
+      expect(seen).toEqual(['JHN.3', 'PSA.23.4']);
+      const gone = await links.add(SRC, { target_type: 'bible', target_ref: 'ROM.8.28', relation: 'ref' });
+      await links.remove(gone.id);
+      await new Promise((r) => setTimeout(r, 20));
+      expect(seen).toEqual(['JHN.3', 'PSA.23.4']);
+      stop();
+    });
   });
 }
