@@ -24,3 +24,14 @@ export function highlightBands(
     .filter((l) => l.width > 0)
     .map((l) => ({ x: l.x - overhang, y: l.y + (l.height - height) / 2, width: l.width + overhang * 2, height }));
 }
+
+/**
+ * Traços do sublinhado, um por linha (Android: o sublinhado nativo tem 1 px e não aceita espessura).
+ * Ficam logo abaixo da linha de base do Outfit, que no Android fica centrada na altura da linha.
+ */
+export function underlineStrokes(lines: readonly Rect[], fontSize: number, thickness: number): Rect[] {
+  const drop = (reading.baselineBelowMidEm + reading.underlineDropEm) * fontSize;
+  return lines
+    .filter((l) => l.width > 0)
+    .map((l) => ({ x: l.x, y: l.y + l.height / 2 + drop - thickness / 2, width: l.width, height: thickness }));
+}

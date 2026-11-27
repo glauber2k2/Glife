@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { highlightBands } from '../src/features/bible/components/highlightBands';
+import { highlightBands, underlineStrokes } from '../src/features/bible/components/highlightBands';
 
 const near = (v: number, want: number) => expect(v).toBeCloseTo(want, 2);
 
@@ -38,5 +38,22 @@ describe('faixas do marca-texto por linha (respiro entre linhas)', () => {
       36.1,
     );
     near(b!.y - (a!.y + a!.height), 7.98);
+  });
+});
+
+describe('traço do sublinhado por linha (Android)', () => {
+  it('fica abaixo da linha de base, com a espessura pedida, e ignora linhas vazias', () => {
+    const strokes = underlineStrokes(
+      [
+        { x: 4, y: 0, width: 200, height: 36 },
+        { x: 0, y: 36, width: 0, height: 36 },
+      ],
+      20,
+      2.75,
+    );
+    expect(strokes).toHaveLength(1);
+    near(strokes[0]!.y, 18 + 0.53 * 20 - 1.375);
+    expect(strokes[0]!.height).toBe(2.75);
+    expect(strokes[0]!.x).toBe(4);
   });
 });

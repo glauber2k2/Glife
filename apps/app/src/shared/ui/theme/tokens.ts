@@ -397,8 +397,8 @@ export const size = {
   swatch: 32,
   /** bolinha de cor do marca-texto na barra de seleção do leitor */
   colorDot: 30,
-  /** traço do sublinhado no leitor */
-  underline: 2,
+  /** traço do sublinhado no leitor (firme, mas fino o bastante para não pesar no texto) */
+  underline: 2.75,
   grabberWidth: 38,
   grabberHeight: 5,
   captureFieldMinHeight: 160,
@@ -569,6 +569,10 @@ export const motion = {
   /** a borda de trás do indicador da aba parte depois da da frente */
   tabLineDelay: 50,
   enterOffset: 18,
+  /** troca de aba: a tela nova entra deslizando 8% da largura, do lado da aba escolhida */
+  tabSlideFraction: 0.08,
+  /** troca de aba: desliza e esmaece em 320 ms */
+  tabSwitch: 320,
   collapseDelay: 650,
   toast: 2600,
   /** toast com ação ("Desfazer") fica mais tempo */
@@ -627,4 +631,8 @@ export const reading = {
   contentBoxEm: 1.26,
   /** distância do sublinhado até a linha de base, em em (web) */
   underlineOffsetEm: 0.3,
+  /** linha de base do Outfit abaixo do meio da linha, em em (traço do sublinhado no Android) */
+  baselineBelowMidEm: 0.37,
+  /** respiro entre a linha de base e o traço do sublinhado, em em (Android) */
+  underlineDropEm: 0.16,
 } as const;
