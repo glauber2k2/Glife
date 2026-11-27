@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.9.2 — 2026-11-27
+
+- Agenda: lembrete feito fica mais apagado e desce para o fim da lista; os pendentes ficam em cima, do mais próximo ao
+  mais longe (atrasados primeiro). Vale na Agenda, no "Para hoje" do Início e no dia do calendário do mês.
+
 ## 0.9.1 — 2026-11-27
 
 - Agenda: lembrete marcado como feito não some mais. Ele fica na lista com o círculo cheio e o texto riscado; outro
