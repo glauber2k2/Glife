@@ -1,7 +1,8 @@
-// Barra flutuante dos versículos selecionados (protótipo `leitor`, estado "Versículos selecionados"): contagem, as
-// 4 cores do marca-texto e fechar; embaixo, sublinhar, remover a marcação e as ações registradas (anotar, copiar…).
-import { HIGHLIGHT_COLORS, type HighlightColor, type HighlightMark } from '@glife/domain/bible';
-import { Check, Eraser, Underline, X, type LucideIcon } from 'lucide-react-native';
+// Barra flutuante dos versículos selecionados (protótipo Bíblia v2), em três linhas que cabem em 360 dp:
+// 1) referência dos versículos e fechar · 2) modo (marca-texto ou sublinhado) e as 4 cores · 3) Apagar (só com
+// marcação) e as ações registradas (Anotar, Copiar…), cada uma com ícone e rótulo numa linha.
+import { HIGHLIGHT_COLORS, type HighlightColor, type HighlightMark, type HighlightStyle } from '@glife/domain/bible';
+import { Check, Eraser, Highlighter, Underline, X, type LucideIcon } from 'lucide-react-native';
 import { Pressable, View } from 'react-native';
 import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -13,7 +14,10 @@ import type { PassageAction } from './actions';
 const COLOR_NAMES: Record<HighlightColor, string> = { yellow: 'amarelo', green: 'verde', blue: 'azul', pink: 'rosa' };
 
 export interface PassageBarProps {
-  count: number;
+  /** "Salmos 23:2–4" */
+  refLabel: string;
+  mode: HighlightStyle;
+  onModeChange(mode: HighlightStyle): void;
   /** marcação comum a todos os selecionados (null = nenhuma ou misturadas) */
   current: HighlightMark | null;
   anyMarked: boolean;
@@ -25,13 +29,11 @@ export interface PassageBarProps {
   onClose(): void;
 }
 
-export function PassageBar({ count, current, anyMarked, busy, actions, onMark, onClear, onAction, onClose }: PassageBarProps) {
+export function PassageBar({ refLabel, mode, onModeChange, current, anyMarked, busy, actions, onMark, onClear, onAction, onClose }: PassageBarProps) {
   const s = useStyles();
   const t = useTheme();
   const insets = useSafeAreaInsets();
   const reduceMotion = useReduceMotion();
-  const style = current?.style ?? 'highlight';
-  const color = current?.color ?? 'yellow';
   return (
     <Animated.View
       pointerEvents="box-none"
@@ -40,52 +42,64 @@ export function PassageBar({ count, current, anyMarked, busy, actions, onMark, o
       style={[s.host, { bottom: t.layout.tabBarBottom + insets.bottom }]}
     >
       <View style={s.bar} accessibilityRole="toolbar" accessibilityLabel="Ações nos versículos">
-        <View style={s.top}>
-          <Text variant="emphasis" style={s.count} numberOfLines={1}>
-            {count} {count === 1 ? 'versículo' : 'versículos'}
+        <View style={s.row}>
+          <Text variant="emphasis" tone="inverse" style={s.ref} numberOfLines={1}>
+            {refLabel}
           </Text>
+          <IconButton icon={X} label="Limpar seleção" variant="onInverse" size={t.size.iconButtonSmall} onPress={onClose} />
+        </View>
+        <View style={[s.row, s.between]}>
+          <View style={s.mode} accessibilityRole="radiogroup" accessibilityLabel="Tipo de marcação">
+            <ModeButton icon={Highlighter} label="Marca-texto" on={mode === 'highlight'} onPress={() => onModeChange('highlight')} />
+            <ModeButton icon={Underline} label="Sublinhado" on={mode === 'underline'} onPress={() => onModeChange('underline')} />
+          </View>
           <View style={s.dots}>
             {HIGHLIGHT_COLORS.map((c) => {
-              const on = current?.color === c;
+              const on = current?.color === c && current.style === mode;
               return (
                 <Pressable
                   key={c}
                   disabled={busy}
-                  onPress={() => onMark({ color: c, style })}
+                  onPress={() => onMark({ color: c, style: mode })}
                   accessibilityRole="button"
-                  accessibilityLabel={`${style === 'underline' ? 'Sublinhar' : 'Marca-texto'} ${COLOR_NAMES[c]}`}
-                  accessibilityState={{ selected: on }}
-                  style={[s.dot, { backgroundColor: style === 'underline' ? t.colors.highlightLine[c] : t.colors.highlight[c] }]}
+                  accessibilityLabel={`${mode === 'underline' ? 'Sublinhar' : 'Grifar'} em ${COLOR_NAMES[c]}`}
+                  accessibilityState={{ selected: on, disabled: busy }}
+                  style={[s.dot, mode === 'underline' ? s.dotLine : { backgroundColor: t.colors.highlight[c] }]}
                 >
+                  {mode === 'underline' && <View style={[s.dotStroke, { backgroundColor: t.colors.highlightLine[c] }]} />}
                   {/* check sempre reservado: marcar não muda o tamanho da bolinha */}
-                  <View style={{ opacity: on ? t.opacity.full : t.opacity.hidden }}>
-                    <Icon icon={Check} size={t.icon.small} color="text" />
+                  <View style={[s.check, { opacity: on ? t.opacity.full : t.opacity.hidden }]}>
+                    <Icon icon={Check} size={t.icon.small} color={mode === 'underline' ? 'inverseInk' : 'text'} />
                   </View>
                 </Pressable>
               );
             })}
           </View>
-          <IconButton icon={X} label="Limpar seleção" variant="soft" size={t.size.iconButtonSmall} onPress={onClose} />
         </View>
-        <View style={s.actions}>
-          <BarButton
-            label={style === 'underline' ? 'Marca-texto' : 'Sublinhar'}
-            icon={Underline}
-            disabled={busy}
-            onPress={() => onMark({ color, style: style === 'underline' ? 'highlight' : 'underline' })}
-          />
-          <BarButton label="Remover" icon={Eraser} disabled={busy || !anyMarked} onPress={onClear} />
+        <View style={s.row}>
           {actions.map((a) => (
             <BarButton key={a.id} label={a.label} icon={a.icon} disabled={busy} onPress={() => onAction(a)} />
           ))}
+          {anyMarked && <BarButton label="Apagar" icon={Eraser} disabled={busy} onPress={onClear} />}
         </View>
       </View>
     </Animated.View>
   );
 }
 
+function ModeButton({ icon, label, on, onPress }: { icon: LucideIcon; label: string; on: boolean; onPress(): void }) {
+  const s = useStyles();
+  const t = useTheme();
+  return (
+    <Pressable onPress={onPress} accessibilityRole="radio" accessibilityLabel={label} accessibilityState={{ checked: on }} style={[s.modeButton, on && s.modeOn]}>
+      <Icon icon={icon} size={t.icon.blockSmall} color={on ? 'text' : 'inverseInk'} />
+    </Pressable>
+  );
+}
+
 function BarButton({ label, icon, disabled, onPress }: { label: string; icon: LucideIcon; disabled: boolean; onPress: () => void }) {
   const s = useStyles();
+  const t = useTheme();
   const press = usePress(disabled);
   return (
     <Pressable
@@ -99,8 +113,8 @@ function BarButton({ label, icon, disabled, onPress }: { label: string; icon: Lu
       style={s.slot}
     >
       <Animated.View style={[s.button, disabled && s.disabled, press.style]}>
-        <Icon icon={icon} color="textSecondary" />
-        <Text variant="tab" tone="secondary" numberOfLines={1}>
+        <Icon icon={icon} size={t.icon.blockSmall} color="inverseInk" />
+        <Text variant="chip" tone="inverse" numberOfLines={1}>
           {label}
         </Text>
       </Animated.View>
@@ -109,24 +123,37 @@ function BarButton({ label, icon, disabled, onPress }: { label: string; icon: Lu
 }
 
 const useStyles = makeStyles((t) => ({
-  host: { position: 'absolute', left: t.layout.tabBarInset, right: t.layout.tabBarInset, alignItems: 'center' },
+  host: { position: 'absolute', left: t.space[3], right: t.space[3], alignItems: 'center' },
   bar: {
     width: '100%',
     maxWidth: t.layout.sheetMaxWidth,
-    paddingHorizontal: t.space[3],
-    paddingTop: t.space[3],
-    paddingBottom: t.space[1],
-    gap: t.space[1],
-    borderRadius: t.radius.dialog,
-    backgroundColor: t.colors.card,
-    boxShadow: t.colors.shadow.nav,
+    padding: t.space[2.5],
+    gap: t.space[1.5],
+    borderRadius: t.radius.card,
+    backgroundColor: t.colors.inverse,
+    boxShadow: t.colors.shadow.level2,
   },
-  top: { flexDirection: 'row', alignItems: 'center', gap: t.space[2] },
-  count: { flex: 1, paddingLeft: t.space[1] },
-  dots: { flexDirection: 'row', gap: t.space[2] },
+  row: { flexDirection: 'row', alignItems: 'center', gap: t.space[1.5] },
+  between: { justifyContent: 'space-between', paddingHorizontal: t.space[0.5] },
+  ref: { flex: 1, paddingLeft: t.space[1.5] },
+  mode: { flexDirection: 'row', padding: t.space[0.5] + t.hairline, borderRadius: t.radius.full, backgroundColor: t.colors.onInverseSoft },
+  modeButton: { width: t.size.iconButtonSmall, height: t.size.pillSmall + t.space[1], borderRadius: t.radius.full, alignItems: 'center', justifyContent: 'center' },
+  modeOn: { backgroundColor: t.colors.inverseInk },
+  dots: { flexDirection: 'row', gap: t.space[2.5] },
   dot: { width: t.size.colorDot, height: t.size.colorDot, borderRadius: t.radius.full, alignItems: 'center', justifyContent: 'center' },
-  actions: { flexDirection: 'row', alignItems: 'center' },
-  slot: { flex: 1, height: t.size.tabBar, alignItems: 'center', justifyContent: 'center' },
-  button: { alignItems: 'center', gap: t.space[0.5] + t.hairline },
+  dotLine: { borderWidth: t.size.radioBorder, borderColor: t.colors.onInverseSoft },
+  dotStroke: { position: 'absolute', left: t.space[2], right: t.space[2], bottom: t.space[2], height: t.size.underline + t.hairline, borderRadius: t.radius.full },
+  check: { alignItems: 'center', justifyContent: 'center' },
+  slot: { flex: 1, minWidth: t.space[0] },
+  button: {
+    height: t.size.buttonMedium - t.space[0.5],
+    borderRadius: t.radius.fieldLarge,
+    backgroundColor: t.colors.onInverseSoft,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: t.space[1.5],
+    paddingHorizontal: t.space[2],
+  },
   disabled: { opacity: t.opacity.disabled },
 }));

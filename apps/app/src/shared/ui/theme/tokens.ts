@@ -78,6 +78,8 @@ export interface Palette {
   paper: string;
   ink: string;
   scrim: string;
+  /** véu quase transparente (folha com prévia ao vivo atrás) */
+  scrimLight: string;
   /** véu claro sobre cartão inverso (botão circular) */
   onInverseSoft: string;
   /** valor previsto nas barras: listrado com esta cor */
@@ -128,6 +130,7 @@ const light: Palette = {
   paper: '#FFFFFF',
   ink: '#171B22',
   scrim: 'rgba(14,17,22,0.36)',
+  scrimLight: 'rgba(14,17,22,0.08)',
   onInverseSoft: 'rgba(255,255,255,0.12)',
   planned: '#C9CED8',
   qrPaper: '#FFFFFF',
@@ -182,6 +185,7 @@ const dark: Palette = {
   paper: '#0F1219',
   ink: '#E6E9F0',
   scrim: 'rgba(0,0,0,0.58)',
+  scrimLight: 'rgba(0,0,0,0.2)',
   onInverseSoft: 'rgba(255,255,255,0.12)',
   planned: '#3A4252',
   qrPaper: '#FFFFFF',
@@ -237,6 +241,8 @@ export type SpaceKey = keyof typeof space;
 /** check 7 · segmento 10 · bloco de ícone 13 · campo 16 · campo grande 18 · atalho 20 · cartão 24 · diálogo 26 · folha 28. */
 export const radius = {
   checkbox: 7,
+  /** cantos da faixa do marca-texto no leitor */
+  bandWeb: 5,
   segment: 10,
   iconSmall: 10,
   icon: 13,
@@ -613,4 +619,12 @@ export const reading = {
   highlightGapMin: 4,
   /** sobra lateral da faixa, em em */
   bandOverhangEm: 0.14,
+  /** respiro entre um versículo e o seguinte, em linhas */
+  verseGapLines: 0.3,
+  /** coluna do número do versículo, em em */
+  numberColumnEm: 1.5,
+  /** caixa do texto do Outfit (ascendente + descendente), em em: base do grifo no web */
+  contentBoxEm: 1.26,
+  /** distância do sublinhado até a linha de base, em em (web) */
+  underlineOffsetEm: 0.3,
 } as const;

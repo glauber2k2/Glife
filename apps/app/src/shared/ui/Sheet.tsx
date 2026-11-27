@@ -18,11 +18,13 @@ export interface SheetProps {
   onClose: () => void;
   title?: string;
   subtitle?: string;
+  /** véu claro: o que está atrás continua visível (ajustes com prévia ao vivo, como a leitura da Bíblia) */
+  veil?: 'default' | 'light';
   children: ReactNode;
 }
 
 /** Folha inferior branca (r28 em cima, sombra nível 3): sobe em 400 ms e desce em 240 ms; véu sem desfoque. */
-export function Sheet({ visible, onClose, title, subtitle, children }: SheetProps) {
+export function Sheet({ visible, onClose, title, subtitle, veil = 'default', children }: SheetProps) {
   const s = useStyles();
   const t = useTheme();
   const insets = useSafeAreaInsets();
@@ -81,7 +83,7 @@ export function Sheet({ visible, onClose, title, subtitle, children }: SheetProp
   return (
     <Modal visible={visible || presented} transparent animationType="none" onRequestClose={onClose} statusBarTranslucent>
       <KeyboardAvoidingView style={[s.flex, wide && s.flexWide]} behavior="padding">
-        <AnimatedPressable style={[s.scrim, scrimStyle]} onPress={onClose} accessibilityLabel="Fechar" />
+        <AnimatedPressable style={[s.scrim, veil === 'light' && s.scrimLight, scrimStyle]} onPress={onClose} accessibilityLabel="Fechar" />
         <Animated.View
           accessibilityViewIsModal
           onLayout={(event) => sheetHeight.set(event.nativeEvent.layout.height)}
@@ -113,6 +115,7 @@ const useStyles = makeStyles((t) => ({
     top: t.space[0], left: t.space[0], right: t.space[0], bottom: t.space[0],
     backgroundColor: t.colors.scrim,
   },
+  scrimLight: { backgroundColor: t.colors.scrimLight },
   sheet: {
     backgroundColor: t.colors.card,
     boxShadow: t.colors.shadow.level3,

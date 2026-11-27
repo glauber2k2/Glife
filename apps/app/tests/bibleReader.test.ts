@@ -59,3 +59,38 @@ describe('ações do trecho', () => {
     expect(passageActions('chapter').filter((x) => x.id.startsWith('teste')).map((x) => x.id)).toEqual(['teste-b']);
   });
 });
+
+import { chromeVisibility, letterSpacingPx, readMinutes } from '../src/features/bible/components/readerChrome';
+
+describe('leitor: barras que somem ao rolar', () => {
+  it('descer mais de 4 px depois de 80 px esconde; subir ou voltar ao topo mostra', () => {
+    expect(chromeVisibility({ prevY: 100, y: 110, visible: true })).toBe(false);
+    expect(chromeVisibility({ prevY: 50, y: 70, visible: true })).toBe(true);
+    expect(chromeVisibility({ prevY: 300, y: 290, visible: false })).toBe(true);
+    expect(chromeVisibility({ prevY: 300, y: 298, visible: false })).toBe(false);
+    expect(chromeVisibility({ prevY: 60, y: 30, visible: false })).toBe(true);
+  });
+});
+
+describe('leitor: medidas do texto', () => {
+  it('espaço entre letras em % do tamanho vira px', () => {
+    expect(letterSpacingPx(19, 6)).toBeCloseTo(1.14, 5);
+    expect(letterSpacingPx(20, -2)).toBeCloseTo(-0.4, 5);
+    expect(letterSpacingPx(19, 0)).toBe(0);
+  });
+
+  it('minutos de leitura a 190 palavras por minuto, no mínimo 1', () => {
+    expect(readMinutes(['palavra '.repeat(380)])).toBe(2);
+    expect(readMinutes(['curto'])).toBe(1);
+  });
+});
+
+import { rangeLabel } from '../src/features/bible/components/passageLabel';
+
+describe('barra de seleção: referência dos versículos escolhidos', () => {
+  it('junta versículos seguidos com traço e separa os soltos com vírgula', () => {
+    expect(rangeLabel('PSA', 23, [2, 3, 4, 6])).toBe('Salmos 23:2–4, 6');
+    expect(rangeLabel('PSA', 23, [5])).toBe('Salmos 23:5');
+    expect(rangeLabel('JHN', 3, [17, 16])).toBe('João 3:16–17');
+  });
+});
