@@ -112,14 +112,13 @@ function Reader({ book, chapter, target, planId }: { book: string; chapter: numb
     return m;
   }, [highlightsRepo?.data, book, chapter]);
 
+  // setLast fora do atualizador do estado (atualizador roda durante o render e não pode mexer em outro componente)
   const toggle = useCallback(
-    (verse: number) =>
-      setSelected((cur) => {
-        if (cur.includes(verse)) return cur.filter((x) => x !== verse);
-        setLast(book, chapter, verse);
-        return [...cur, verse].sort((a, b) => a - b);
-      }),
-    [book, chapter, setLast],
+    (verse: number) => {
+      if (!selected.includes(verse)) setLast(book, chapter, verse);
+      setSelected((cur) => (cur.includes(verse) ? cur.filter((x) => x !== verse) : [...cur, verse].sort((a, b) => a - b)));
+    },
+    [book, chapter, setLast, selected],
   );
   const openLinked = useCallback((verse: number) => setSheet({ verse }), []);
   const onLayoutY = useCallback(

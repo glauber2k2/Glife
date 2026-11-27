@@ -15,12 +15,12 @@ import {
   type RowStore,
   type Unsubscribe,
 } from '../core/index.ts';
-import { isoDateSchema, localTimeSchema, type IsoDate } from '../time/index.ts';
-import { PLAN_GROUP_CODES, type PlanGroup, type PlanPause, type PlanRule } from './plans.ts';
+import { addDays, isoDateSchema, localTimeSchema, type IsoDate } from '../time/index.ts';
+import { PLAN_GROUP_CODES, chapterCount, type PlanGroup, type PlanPause, type PlanRule } from './plans.ts';
 
 const unique = <T,>(xs: readonly T[]) => new Set(xs).size === xs.length;
 
-const planFields = z.object({
+const planShape = z.object({
   name: z.string().trim().min(1).max(60),
   groups: z.array(z.enum(PLAN_GROUP_CODES)).min(1).max(PLAN_GROUP_CODES.length).refine(unique),
   days: z.number().int().min(1).max(730),
@@ -31,13 +31,15 @@ const planFields = z.object({
   pauses: z.array(z.object({ from: isoDateSchema, to: isoDateSchema.nullable() })),
   completed_at: z.string().nullable(),
 });
+// mais dias do que capítulos deixaria dias vazios (contariam como lidos sem leitura)
+const planFields = planShape.refine((p) => p.days <= chapterCount(p.groups), { message: 'Mais dias do que capítulos', path: ['days'] });
 const readFields = z.object({
   plan_id: z.string().uuid(),
   ref: z.string().regex(/^[1-3]?[A-Z]{2,3}\.[0-9]{1,3}$/),
   read_on: isoDateSchema,
 });
 
-export type BiblePlan = BaseEntity & z.infer<typeof planFields> & PlanRule & { groups: PlanGroup[]; pauses: PlanPause[] };
+export type BiblePlan = BaseEntity & z.infer<typeof planShape> & PlanRule & { groups: PlanGroup[]; pauses: PlanPause[] };
 export type BiblePlanRead = BaseEntity & z.infer<typeof readFields>;
 export type PlanRows = { bible_plans: BiblePlan; bible_plan_reads: BiblePlanRead };
 export const PLAN_TABLES = ['bible_plans', 'bible_plan_reads'] as const;
@@ -121,7 +123,11 @@ export function createBiblePlansRepository(store: RowStore<PlanRows>, userId: st
         });
       }),
     pause: (id, on) => save(id, (p) => (p.pauses.some((x) => x.to === null) ? {} : { pauses: [...p.pauses, { from: on, to: null }] })),
-    resume: (id, on) => save(id, (p) => ({ pauses: p.pauses.map((x) => (x.to === null ? { from: x.from, to: on < x.from ? x.from : on } : x)) })),
+    // a pausa vale até a véspera da retomada (hoje já conta); retomar no próprio dia da pausa desfaz a pausa
+    resume: (id, on) =>
+      save(id, (p) => ({
+        pauses: p.pauses.flatMap((x) => (x.to !== null ? [x] : on <= x.from ? [] : [{ from: x.from, to: addDays(on, -1) }])),
+      })),
     complete: (id) => save(id, () => ({ completed_at: (clock?.() ?? new Date()).toISOString() })),
     remove: (id) =>
       guardRules(async () => {

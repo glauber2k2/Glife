@@ -6,13 +6,14 @@ import { USER_A, USER_B, asUser, createDatabase } from './harness';
 let db: PGlite;
 let planB: string;
 
-const PLAN = `insert into public.bible_plans (name, groups, days, weekdays, start_date) values ('Salmos', '{poet}', 30, '{0,1,2,3,4,5,6}', '2026-11-27') returning id`;
+// listas no formato que o app envia (texto JSON, como skipped_dates da agenda)
+const PLAN = `insert into public.bible_plans (name, groups, days, weekdays, start_date) values ('Salmos', '["poet"]', 30, '[0,1,2,3,4,5,6]', '2026-11-27') returning id`;
 
 beforeAll(async () => {
   db = await createDatabase();
   // dados de B gravados direto (asUser desfaz tudo ao terminar)
   const r = await db.query<{ id: string }>(
-    `insert into public.bible_plans (user_id, name, groups, days, weekdays, start_date) values ($1, 'Salmos', '{poet}', 30, '{0,1,2,3,4,5,6}', '2026-11-27') returning id`,
+    `insert into public.bible_plans (user_id, name, groups, days, weekdays, start_date) values ($1, 'Salmos', '["poet"]', 30, '[0,1,2,3,4,5,6]', '2026-11-27') returning id`,
     [USER_B],
   );
   planB = r.rows[0]!.id;
@@ -44,22 +45,34 @@ describe('planos de leitura: isolamento e regras do banco', () => {
   });
 
   it.each([
-    ['dia da semana repetido', `'{1,1}'`, `'{poet}'`, `null`, 30],
-    ['dia da semana fora de 0–6', `'{7}'`, `'{poet}'`, `null`, 30],
-    ['sem dias da semana', `'{}'`, `'{poet}'`, `null`, 30],
-    ['sem grupos', `'{1}'`, `'{}'`, `null`, 30],
-    ['grupo desconhecido', `'{1}'`, `'{salmos}'`, `null`, 30],
-    ['lembrete 25:00', `'{1}'`, `'{poet}'`, `'25:00'`, 30],
-    ['duração 0', `'{1}'`, `'{poet}'`, `null`, 0],
-    ['duração 731', `'{1}'`, `'{poet}'`, `null`, 731],
+    ['dia da semana repetido', `'[1,1]'`, `'["poet"]'`, `null`, 30],
+    ['dia da semana fora de 0–6', `'[7]'`, `'["poet"]'`, `null`, 30],
+    ['sem dias da semana', `'[]'`, `'["poet"]'`, `null`, 30],
+    ['dias da semana que não são lista', `'{"a":1}'`, `'["poet"]'`, `null`, 30],
+    ['sem grupos', `'[1]'`, `'[]'`, `null`, 30],
+    ['grupo desconhecido', `'[1]'`, `'["salmos"]'`, `null`, 30],
+    ['grupo repetido', `'[1]'`, `'["poet","poet"]'`, `null`, 30],
+    ['texto que não é JSON', `'[1]'`, `'poet'`, `null`, 30],
+    ['lembrete 25:00', `'[1]'`, `'["poet"]'`, `'25:00'`, 30],
+    ['duração 0', `'[1]'`, `'["poet"]'`, `null`, 0],
+    ['duração 731', `'[1]'`, `'["poet"]'`, `null`, 731],
   ])('recusa plano com %s', async (_, weekdays, groups, reminder, days) => {
     await expect(
       asA(`insert into public.bible_plans (name, groups, days, weekdays, start_date, reminder_time) values ('P', ${groups}, ${days}, ${weekdays}, '2026-11-27', ${reminder})`),
     ).rejects.toThrow();
   });
 
+  it('aceita o envio do app com parâmetros de texto (listas e pausas em JSON)', async () => {
+    const r = await asA<{ groups: string; weekdays: string; pauses: string }>(
+      `insert into public.bible_plans (name, groups, days, weekdays, start_date, pauses) values ($1, $2, $3, $4, $5, $6) returning groups, weekdays, pauses`,
+      ['Paulo', '["paulo","evan"]', 30, '[1,2,3,4,5]', '2026-11-27', '[{"from":"2026-11-29","to":null}]'],
+    );
+    expect(JSON.parse(r.rows[0]!.groups)).toEqual(['paulo', 'evan']);
+    expect(JSON.parse(r.rows[0]!.pauses)).toEqual([{ from: '2026-11-29', to: null }]);
+  });
+
   it('recusa pausas que não são lista e leitura com ref de versículo (só capítulo)', async () => {
-    await expect(asA(`insert into public.bible_plans (name, groups, days, weekdays, start_date, pauses) values ('P', '{poet}', 30, '{1}', '2026-11-27', '{"a":1}')`)).rejects.toThrow();
+    await expect(asA(`insert into public.bible_plans (name, groups, days, weekdays, start_date, pauses) values ('P', '["poet"]', 30, '[1]', '2026-11-27', '{"a":1}')`)).rejects.toThrow();
     const p = await asA<{ id: string }>(PLAN);
     await expect(asA(`insert into public.bible_plan_reads (plan_id, ref, read_on) values ($1, 'PSA.23.1', '2026-11-27')`, [p.rows[0]!.id])).rejects.toThrow();
   });

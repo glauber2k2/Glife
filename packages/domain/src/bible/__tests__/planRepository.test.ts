@@ -32,6 +32,22 @@ describe('repositório dos planos de leitura', () => {
     await expect(repo().create({ ...input, reminder_time: '25:00' })).rejects.toMatchObject({ code: 'validation' });
   });
 
+  it('não aceita mais dias de leitura do que capítulos (dias vazios contariam como lidos)', async () => {
+    await expect(repo().create({ ...input, groups: ['apoc'], days: 23 })).rejects.toMatchObject({ code: 'validation' });
+    const p = await repo().create({ ...input, groups: ['apoc'], days: 22 });
+    await expect(repo().update(p.id, { days: 30 })).rejects.toMatchObject({ code: 'validation' });
+  });
+
+  it('retomar fecha a pausa na véspera; pausar e retomar no mesmo dia não deixa pausa', async () => {
+    const p = await repo().create(input);
+    await repo().pause(p.id, '2026-11-29');
+    await repo().resume(p.id, '2026-12-02');
+    await repo().pause(p.id, '2026-12-05');
+    await repo().resume(p.id, '2026-12-05');
+    const [w] = await snapshot();
+    expect(w!.plan.pauses).toEqual([{ from: '2026-11-29', to: '2026-12-01' }]);
+  });
+
   it('marcar duas vezes não duplica; desmarcar apaga as cópias de aparelhos diferentes', async () => {
     const p = await repo().create(input);
     await repo().markRead(p.id, ['ROM.1', 'ROM.2'], '2026-11-27');
@@ -50,7 +66,7 @@ describe('repositório dos planos de leitura', () => {
     await repo().resume(p.id, '2026-12-01');
     await repo().update(p.id, { name: 'Paulo', days: 45, weekdays: [1, 2, 3, 4, 5], reminder_time: null });
     const [w] = await snapshot();
-    expect(w!.plan).toMatchObject({ name: 'Paulo', days: 45, weekdays: [1, 2, 3, 4, 5], reminder_time: null, pauses: [{ from: '2026-11-29', to: '2026-12-01' }] });
+    expect(w!.plan).toMatchObject({ name: 'Paulo', days: 45, weekdays: [1, 2, 3, 4, 5], reminder_time: null, pauses: [{ from: '2026-11-29', to: '2026-11-30' }] });
   });
 
   it('refazer cria outro plano com a mesma regra começando no dia dado; o antigo continua', async () => {

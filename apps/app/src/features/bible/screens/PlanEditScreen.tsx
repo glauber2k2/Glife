@@ -43,17 +43,20 @@ function PlanForm({ editing, template, views, today }: { editing: PlanView | und
   const [tpl, setTpl] = useState<TemplateId>(start?.id ?? 'custom');
   const [name, setName] = useState(editing?.plan.name ?? start?.name ?? 'Cartas de Paulo');
   const [groups, setGroups] = useState<PlanGroup[]>(editing?.plan.groups ?? start?.groups ?? ['paulo']);
-  const [days, setDays] = useState(editing?.plan.days ?? start?.days ?? 30);
+  const [rawDays, setDays] = useState(editing?.plan.days ?? start?.days ?? 30);
   const [mask, setMask] = useState(editing ? weekdaysToMask(editing.plan.weekdays) : ALL_DAYS);
   const [when, setWhen] = useState<StartOption>('today');
   const [reminder, setReminder] = useState<string | null>(editing ? editing.plan.reminder_time : DEFAULT_TIME);
   const [busy, setBusy] = useState(false);
 
+  const chapters = chapterCount(groups);
+  // nunca mais dias do que capítulos (dias vazios contariam como lidos)
+  const maxDays = Math.max(DAYS.min, Math.min(DAYS.max, chapters));
+  const days = Math.min(rawDays, maxDays);
   const rule: PlanRule = useMemo(
     () => ({ groups, days, weekdays: maskToWeekdays(mask), start_date: editing?.plan.start_date ?? startDate(when, today), pauses: editing?.plan.pauses ?? [] }),
     [groups, days, mask, when, today, editing],
   );
-  const chapters = chapterCount(groups);
   const valid = name.trim().length > 0 && groups.length > 0 && mask !== 0;
   const end = valid ? schedule(rule, today).at(-1)?.date : undefined;
   const newlyMissed = editing && valid ? planStatus(rule, editing.reads, today).missedDays.length - editing.status.missedDays.length : 0;
@@ -151,13 +154,13 @@ function PlanForm({ editing, template, views, today }: { editing: PlanView | und
             {days} dias de leitura
           </Text>
         </View>
-        <Slider label="Duração em dias de leitura" valueText={`${days} dias`} value={days} min={DAYS.min} max={DAYS.max} step={DAYS.step} onChange={setDays} />
+        <Slider label="Duração em dias de leitura" valueText={`${days} dias`} value={days} min={DAYS.min} max={maxDays} step={DAYS.step} onChange={setDays} />
         <View style={s.between}>
           <Text variant="micro" tone="quaternary">
             1 semana
           </Text>
           <Text variant="micro" tone="quaternary">
-            1 ano
+            {maxDays === DAYS.max ? '1 ano' : `${maxDays} dias`}
           </Text>
         </View>
       </View>

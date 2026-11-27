@@ -57,9 +57,10 @@ export const VerseRow = memo(function VerseRow({ verse, text, highlight, selecte
   const webBand = (color: string): TextStyle =>
     ({ backgroundColor: color, paddingTop: webPad, paddingBottom: webPad, borderRadius: t.radius.bandWeb, boxDecorationBreak: 'clone', WebkitBoxDecorationBreak: 'clone' }) as TextStyle;
 
+  // web: o fundo vai em spans aninhados (o Text externo é bloco dentro da View e cresceria com o padding)
   const body = WEB ? (
-    <Text variant="scripture" style={[textStyle, fill ? webBand(fill) : null, underline]}>
-      {tone ? <Text style={webBand(tone)}>{text}</Text> : text}
+    <Text variant="scripture" style={[textStyle, underline]}>
+      <Text style={fill ? webBand(fill) : null}>{tone ? <Text style={webBand(tone)}>{text}</Text> : text}</Text>
     </Text>
   ) : (
     <Text variant="scripture" style={[textStyle, underline]} onTextLayout={onTextLayout}>
