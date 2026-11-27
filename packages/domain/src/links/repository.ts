@@ -55,6 +55,8 @@ export interface LinksRepository {
   backlinks(target: EntityAddress, page?: PageRequest): Promise<Page<Link>>;
   /** Emite os backlinks (primeira página) agora e a cada mudança, até cancelar. */
   watchBacklinks(target: EntityAddress, listener: Listener<Link[]>, onError?: ErrorListener): Unsubscribe;
+  /** Emite agora e a cada mudança os links ativos para qualquer ref bíblica do livro (`JHN.…`), sem paginar. */
+  watchBibleBook(book: string, listener: Listener<Link[]>, onError?: ErrorListener): Unsubscribe;
   /**
    * Link manual. Idempotente: se já existe link ativo igual (mesma origem, alvo, relação e origem),
    * devolve o existente — inclusive quando o banco responde 23505 por cópia criada em outro aparelho.

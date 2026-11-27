@@ -310,6 +310,9 @@ export function createInMemoryLinks(userId: string): LinksRepository {
     watchBacklinks(target, listener) {
       return subs.add(() => listener(backlinks(target.type, target.ref).items));
     },
+    watchBibleBook(book, listener) {
+      return subs.add(() => listener(alive().filter((l) => l.target_type === 'bible' && l.target_ref.startsWith(`${book}.`))));
+    },
     async add(source, link) {
       const v = validateNewLink(source, link);
       const row = insert(v.source, v.link, 'manual');

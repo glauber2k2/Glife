@@ -127,5 +127,20 @@ export function linksRepositoryContract(name: string, make: () => Promise<LinksC
       await new Promise((r) => setTimeout(r, 20));
       expect(seen.at(-1)).toBe(1);
     });
+
+    it('observa os vínculos que apontam para um livro da Bíblia (versículo, trecho e capítulo)', async () => {
+      const { links } = await make();
+      let seen: string[] = [];
+      const stop = links.watchBibleBook('JHN', (v) => (seen = v.map((l) => l.target_ref).sort()));
+      await links.add(SRC, { target_type: 'bible', target_ref: 'JHN.3.16', relation: 'ref' });
+      await links.add(SRC, { target_type: 'bible', target_ref: 'JHN.3', relation: 'ref' });
+      await links.add({ type: 'note', id: NOTE_B }, { target_type: 'bible', target_ref: 'JHN.3.16-4.2', relation: 'ref' });
+      await links.add(SRC, { target_type: 'bible', target_ref: 'ROM.8.28', relation: 'ref' });
+      const removed = await links.add(SRC, { target_type: 'bible', target_ref: 'JHN.1.1', relation: 'ref' });
+      await links.remove(removed.id);
+      await new Promise((r) => setTimeout(r, 20));
+      expect(seen).toEqual(['JHN.3', 'JHN.3.16', 'JHN.3.16-4.2']);
+      stop();
+    });
   });
 }

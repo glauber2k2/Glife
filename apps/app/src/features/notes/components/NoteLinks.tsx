@@ -1,10 +1,11 @@
+import { formatRef, parseOsis } from '@glife/domain/bible';
 import type { EntityType } from '@glife/domain/core';
 import type { Link } from '@glife/domain/links';
 import { BookOpen, FileText, NotebookPen } from 'lucide-react-native';
 import { useEffect, useState } from 'react';
 import { View } from 'react-native';
 
-import { useHasTargetSource, useLinksData, useOpenTarget } from '@/features/links';
+import { useAddressHref, useHasTargetSource, useLinksData, useOpenAddress, useOpenTarget } from '@/features/links';
 import { ListGroup, NavRow, Section, makeStyles } from '@/shared/ui';
 
 import { useNotesData } from '../hooks/NotesData';
@@ -17,6 +18,8 @@ interface Row {
   meta: string;
   kind: 'note' | 'journal' | 'bible' | 'other';
   noteId?: string;
+  /** endereço sem UUID (ex.: versículo) que um módulo abre */
+  address?: { type: EntityType; ref: string };
   /** alvo que não está vivo (lixeira, ainda não chegou, excluído): abre "Item não encontrado" */
   target?: { type: EntityType; id: string };
 }
@@ -30,6 +33,8 @@ export function NoteLinks({ noteId, version }: { noteId: string; version: number
   const { links } = useLinksData();
   const openTarget = useOpenTarget();
   const canOpen = useHasTargetSource();
+  const openAddress = useOpenAddress();
+  const addressHref = useAddressHref();
   const [outgoing, setOutgoing] = useState<Row[]>([]);
   const [backlinks, setBacklinks] = useState<Link[]>([]);
   const [backRows, setBackRows] = useState<Row[]>([]);
@@ -47,7 +52,11 @@ export function NoteLinks({ noteId, version }: { noteId: string; version: number
               ? { key: l.id, label: n.title || 'Sem título', meta: 'Nota', kind: n.kind === 'journal' ? 'journal' : 'note', noteId: n.id }
               : { key: l.id, label: 'Nota indisponível', meta: 'Vínculo quebrado', kind: 'note', target: { type: 'note', id: l.target_ref } };
           }
-          if (l.target_type === 'bible') return { key: l.id, label: l.target_ref, meta: 'Bíblia', kind: 'bible' };
+          if (l.target_type === 'bible') {
+            const ref = parseOsis(l.target_ref);
+            const address = addressHref('bible', l.target_ref) ? { type: 'bible' as const, ref: l.target_ref } : undefined;
+            return { key: l.id, label: ref ? formatRef(ref, 'name') : l.target_ref, meta: 'Bíblia', kind: 'bible', address };
+          }
           // Tipo sem tela registrada: a linha só informa (sem ação que não levaria a lugar nenhum).
           return canOpen(l.target_type)
             ? { key: l.id, label: 'Item vinculado', meta: 'Abrir', kind: 'other', target: { type: l.target_type, id: l.target_ref } }
@@ -59,7 +68,7 @@ export function NoteLinks({ noteId, version }: { noteId: string; version: number
     return () => {
       active = false;
     };
-  }, [links, notes, noteId, version, canOpen]);
+  }, [links, notes, noteId, version, canOpen, addressHref]);
 
   // Entrada: observada (outra nota pode passar a citar esta a qualquer momento, inclusive pela sincronização).
   useEffect(() => links.watchBacklinks({ type: 'note', ref: noteId }, setBacklinks), [links, noteId]);
@@ -97,7 +106,15 @@ export function NoteLinks({ noteId, version }: { noteId: string; version: number
               module={accent ? 'notes' : 'annotations'}
               label={r.label}
               meta={r.meta}
-              onPress={r.noteId ? () => openNote(r.noteId!) : r.target ? () => void openTarget(r.target!.type, r.target!.id) : undefined}
+              onPress={
+                r.noteId
+                  ? () => openNote(r.noteId!)
+                  : r.address
+                    ? () => openAddress(r.address!.type, r.address!.ref)
+                    : r.target
+                      ? () => void openTarget(r.target!.type, r.target!.id)
+                      : undefined
+              }
             />
           ))}
         </ListGroup>

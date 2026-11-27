@@ -5,14 +5,53 @@ import { createContext, useCallback, useContext, useMemo, type ReactNode } from 
 import { createTargetResolver, notFoundHref, targetOfRoute, type ResolveTarget, type TargetSource } from '../data/targets';
 import { useLinksDataMaybe } from './LinksData';
 
+/** Alvo sem UUID (ex.: a Bíblia, endereçada pela referência OSIS): o módulo dono diz a rota de cada endereço. */
+export interface AddressRoute {
+  type: EntityType;
+  /** rota da tela para o ref (null: ref que essa tela não abre) */
+  href(ref: string): string | null;
+}
+
 const TargetsContext = createContext<readonly TargetSource[]>([]);
+const AddressContext = createContext<readonly AddressRoute[]>([]);
+const NO_ADDRESSES: readonly AddressRoute[] = [];
 
 /**
  * Registro aberto dos alvos de vínculos e avisos: cada módulo diz a tabela, a tela e como restaurar os seus itens
  * (composto na raiz). Quem abre um alvo não conhece os módulos.
  */
-export function TargetsProvider({ sources, children }: { sources: readonly TargetSource[]; children: ReactNode }) {
-  return <TargetsContext.Provider value={sources}>{children}</TargetsContext.Provider>;
+export function TargetsProvider({
+  sources,
+  addresses = NO_ADDRESSES,
+  children,
+}: {
+  sources: readonly TargetSource[];
+  addresses?: readonly AddressRoute[];
+  children: ReactNode;
+}) {
+  return (
+    <TargetsContext.Provider value={sources}>
+      <AddressContext.Provider value={addresses}>{children}</AddressContext.Provider>
+    </TargetsContext.Provider>
+  );
+}
+
+/** Rota de um endereço sem UUID (ex.: `bible` + `JHN.3.16`); null se nenhum módulo abre esse endereço. */
+export function useAddressHref(): (type: EntityType, ref: string) => string | null {
+  const addresses = useContext(AddressContext);
+  return useCallback((type, ref) => addresses.find((a) => a.type === type)?.href(ref) ?? null, [addresses]);
+}
+
+/** Abre um endereço sem UUID; não faz nada se nenhum módulo o abre. */
+export function useOpenAddress(): (type: EntityType, ref: string) => void {
+  const hrefOf = useAddressHref();
+  return useCallback(
+    (type, ref) => {
+      const href = hrefOf(type, ref);
+      if (href) router.push(href as Href);
+    },
+    [hrefOf],
+  );
 }
 
 export function useTargetSources(): readonly TargetSource[] {

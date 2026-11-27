@@ -86,6 +86,18 @@ export function createLocalLinksRepository(db: LocalDb, userId: string): LinksRe
       return db.watch<Link>(sql, params, listener, (e) => onError?.(new RepositoryError('unavailable', { cause: e })));
     },
 
+    watchBibleBook(book, listener, onError) {
+      // Prefixo do livro com LIKE: o código vem do registro de livros (letras e dígitos), sem curingas.
+      const prefix = book.replace(/[^0-9A-Z]/g, '') + '.%';
+      return db.watch<Link>(
+        `SELECT ${COLUMNS} FROM links WHERE deleted_at IS NULL AND target_type = 'bible' AND target_ref LIKE ?
+         ORDER BY created_at DESC, id DESC`,
+        [prefix],
+        listener,
+        (e) => onError?.(new RepositoryError('unavailable', { cause: e })),
+      );
+    },
+
     async add(source, link) {
       const v = validateNewLink(source, link);
       return db.writeTransaction((tx) => insert(tx, v.source, v.link, 'manual'));

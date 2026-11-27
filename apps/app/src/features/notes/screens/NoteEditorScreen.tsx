@@ -1,3 +1,4 @@
+import { parseBibleRef, toOsis } from '@glife/domain/bible';
 import { NOTE_TITLE_MAX, folderPath, type Note, type NoteFolder, type NoteKind, type NotePatch } from '@glife/domain/notes';
 import type { Tag as TagModel } from '@glife/domain/tags';
 import { useLocalSearchParams } from 'expo-router';
@@ -41,7 +42,7 @@ import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { useLinksData } from '@/features/links';
+import { useLinksData, useOpenAddress } from '@/features/links';
 import { useSyncOnline } from '@/shared/lib/powersync';
 import {
   Button,
@@ -107,6 +108,7 @@ export function NoteEditorScreen() {
   const reduceMotion = useReduceMotion();
   const { id, nova } = useLocalSearchParams<{ id: string; nova?: string }>();
   const { notes, folders } = useNotesData();
+  const openAddress = useOpenAddress();
   const { links, tags } = useLinksData();
   const { moveToTrash } = useTrashActions();
   const online = useSyncOnline();
@@ -252,7 +254,10 @@ export function NoteEditorScreen() {
 
   const openWikilink = async (target: string) => {
     const found = await notes.findIdByTitle(target);
-    if (found) openNote(found);
+    if (found) return openNote(found);
+    // Sem nota com esse título: "[[Jo 3:16]]" abre o versículo no leitor.
+    const verse = parseBibleRef(target);
+    if (verse) openAddress('bible', toOsis(verse));
   };
 
   const toggleMode = () => {
