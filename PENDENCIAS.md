@@ -2,6 +2,18 @@
 
 O que só o dono do projeto pode fazer (contas, chaves, testes no aparelho, decisões). Ao concluir um item, apague-o.
 
+## Versão 0.9.0: lembretes com vários horários e notas vinculadas (27/11/2026)
+
+- [ ] Instalar o APK 0.9.0 e, **logo em seguida e antes de criar ou editar lembretes e notas**, rodar
+  `pnpm sb db push --remote`. Ele aplica as duas migrações pendentes (`20261130000001_notas_sem_tipo` e
+  `20261201000001_lembretes_varios_horarios`). Até lá, o servidor recusaria o envio dos lembretes novos.
+  Não precisa republicar o Sync Streams (as colunas novas vêm pelo `SELECT *`).
+- [ ] Conferir no Android e no Chrome (claro/escuro, 360 dp): lembrete com "Horários" (08:00, 14:00 e 20:00) e com
+  "Intervalo" (a cada 2 h das 08:00 às 18:00): cada horário aparece na agenda e no Início, tem aviso próprio, e
+  "Feito" e "Adiar" no aviso valem só para aquele horário.
+- [ ] Conferir as notas vinculadas em lembrete, evento, refeição, refeição do plano, gasto e investimento:
+  "Vincular nota" e "Nova nota", tocar para abrir, o X desfaz. Na nota, "Mencionada em" mostra o item.
+
 ## Notas sem tipo (27/11/2026)
 
 - [ ] Instalar o APK novo (e abrir o web atualizado) **antes** de aplicar a migração: `pnpm sb db push --remote`
