@@ -130,7 +130,7 @@ function DesignSystemDemo() {
         <Text variant="title">Título 32</Text>
         <Text variant="heading">Título de seção 20</Text>
         <Text>Corpo 16 em Outfit, para toda a interface.</Text>
-        <Text variant="scripture">Porque Deus amou o mundo de tal maneira… (Literata 19, só para ler)</Text>
+        <Text variant="scripture">Porque Deus amou o mundo de tal maneira… (Outfit 19, leitura bíblica)</Text>
         <View style={s.row}>
           {(['yellow', 'green', 'blue', 'pink'] as const).map((c) => (
             <View key={c} style={[s.swatch, { backgroundColor: t.colors.highlight[c] }]} />

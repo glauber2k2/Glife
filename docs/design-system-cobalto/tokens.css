@@ -20,7 +20,7 @@
   --frame:#0A0A0A;
   --font:'Outfit',system-ui,-apple-system,'Segoe UI',sans-serif;
   --mono:'DM Mono',ui-monospace,'Cascadia Mono',monospace;
-  --serif:'Literata',Georgia,'Times New Roman',serif;
+  /* leitura bíblica: Outfit (a Literata saiu em 27/11/2026) */
   --std:cubic-bezier(.2,0,0,1); --enter:cubic-bezier(.05,.7,.1,1); --exit:cubic-bezier(.3,0,.8,.15); --spring:cubic-bezier(.34,1.56,.64,1); --loop:cubic-bezier(.45,0,.55,1);
   --slow:1;
   --sb:50px;

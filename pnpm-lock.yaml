@@ -17,9 +17,6 @@ importers:
       '@expo-google-fonts/dm-mono':
         specifier: ^0.4.2
         version: 0.4.2
-      '@expo-google-fonts/literata':
-        specifier: ^0.4.3
-        version: 0.4.3
       '@expo-google-fonts/outfit':
         specifier: ^0.4.3
         version: 0.4.3
@@ -678,9 +675,6 @@ packages:
 
   '@expo-google-fonts/dm-mono@0.4.2':
     resolution: {integrity: sha512-loMaZOkQRs1r7yt4rN39zcr9e0J+smwnSx929yuODkuiPfsY4PaW18C9SEZ0BvXfcBKoRhatGoIBl8V2MOYVPQ==}
-
-  '@expo-google-fonts/literata@0.4.3':
-    resolution: {integrity: sha512-AuxE7NB6Ae1laRK8uTcap5xI2MYTZOXrAWul4SNGBiq4igP7r/q8IO3vdvO/P1MGiRczuyZ1zhTwSm/CaYeq9A==}
 
   '@expo-google-fonts/outfit@0.4.3':
     resolution: {integrity: sha512-2uQmDVJencWLllxds6SG92E+SjxyZfvg7eZKZ5XLHggmm5AuUyQK7lzMAFOUzT6kheq2kJ7BAiubMdjKT32fJg==}
@@ -5113,8 +5107,6 @@ snapshots:
       levn: 0.4.1
 
   '@expo-google-fonts/dm-mono@0.4.2': {}
-
-  '@expo-google-fonts/literata@0.4.3': {}
 
   '@expo-google-fonts/outfit@0.4.3': {}
 

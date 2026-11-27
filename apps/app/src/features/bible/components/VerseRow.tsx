@@ -1,4 +1,4 @@
-// Um versículo no leitor: número discreto, texto em serifa com a marcação do usuário (marca-texto ou sublinhado)
+// Um versículo no leitor: número discreto, texto em Outfit com a marcação do usuário (marca-texto ou sublinhado)
 // e, se houver notas ligadas, um marcador tocável no fim. Selecionado = fundo tonal leve. Tocar seleciona.
 import type { BibleHighlight } from '@glife/domain/bible';
 import { NotebookPen } from 'lucide-react-native';

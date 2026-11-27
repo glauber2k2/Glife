@@ -79,7 +79,7 @@ O Claude é o agente principal; o Codex só assume quando os créditos do Claude
 ## Interface e movimento
 
 - Direção **Glife Cobalto v1.0** (`docs/design-system-cobalto/`, desde 26/11/2026; o Glaciar foi aposentado na Fase R):
-  Outfit em tudo (DM Mono em rótulos técnicos, Literata só na leitura bíblica), fundo cinza `#F1F3F6`, cartões brancos
+  Outfit em tudo, inclusive no texto bíblico (DM Mono em rótulos técnicos), fundo cinza `#F1F3F6`, cartões brancos
   r24 sem borda nem sombra, cobalto `#2D5BFF` só em ações e itens ativos, tonal para ação secundária, cor por módulo só
   em blocos de ícone (`ModuleIcon`, `moduleColors`), sombra **só no que flutua** (barra de abas, folha, diálogo, aviso,
   CTA). Margem 20 (24 no web), 24 entre blocos. Tela nova segue a ficha da tela no protótipo `docs/prototipos/redesign-cobalto/`.

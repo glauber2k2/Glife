@@ -12,6 +12,7 @@ import {
   palettes,
   pressScale,
   radius,
+  reading,
   size,
   space,
   spring,
@@ -40,6 +41,7 @@ export interface Theme {
   opacity: typeof opacity;
   size: typeof size;
   field: typeof field;
+  reading: typeof reading;
   hairline: number;
 }
 
@@ -69,6 +71,7 @@ function buildTheme(scheme: ColorScheme): Theme {
     opacity,
     size,
     field,
+    reading,
     hairline: hairlineWidth,
   };
 }

@@ -52,8 +52,8 @@ contraste AA. Precisa de validação do usuário em aparelho real.
 - **Outfit** (400/500/600/700) em toda a interface; tracking negativo nos tamanhos grandes; **números tabulares** em
   valores, horas e datas.
 - **DM Mono** só para rótulos técnicos e contadores.
-- **Fonte de leitura serifada (Literata)** só no leitor da Bíblia, devocionais e trechos bíblicos, com opção de trocar
-  para Outfit em "Aa". (O original usa Outfit em tudo; a serifa vem do planejamento. Decisão a confirmar.)
+- **Leitura bíblica em Outfit** (decisão do usuário em 27/11/2026: mesma fonte do app). Ajustes em "Aa": tamanho 15–26,
+  entrelinhas 1,6–2,4 e espaço entre letras; grifos com respiro de max(0,42 em, 4 px) entre as linhas.
 
 | Estilo | Tamanho/entrelinha | Peso | Tracking |
 |---|---|---|---|
@@ -65,7 +65,7 @@ contraste AA. Precisa de validação do usuário em aparelho real.
 | Corpo | 16/24 | 400 | 0 |
 | Apoio | 14/20 | 400–500 | 0 |
 | Legenda | 12/16 | 400–600 | 0 (rótulos em caixa alta: +0,5) |
-| Leitura | 19/32 serifada | 400 | 0 |
+| Leitura | 19/36 Outfit (ajustável) | 400 | 0 |
 
 ## Espaço e forma
 

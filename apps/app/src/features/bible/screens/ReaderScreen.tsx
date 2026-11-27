@@ -1,4 +1,4 @@
-// Leitor da Bíblia em modo leitura (protótipo `leitor`): só o texto em serifa; tocar em versículos seleciona e abre a
+// Leitor da Bíblia em modo leitura (protótipo `leitor`): só o texto; tocar em versículos seleciona e abre a
 // barra de ações (marca-texto, sublinhar, anotar, copiar…). Versículos com notas mostram um marcador; as notas do
 // capítulo ficam no fim. Embaixo, capítulo anterior/próximo. `?v=` rola até o versículo e o destaca.
 import { formatRef, getBook, parseOsis, type BibleHighlight, type HighlightMark } from '@glife/domain/bible';

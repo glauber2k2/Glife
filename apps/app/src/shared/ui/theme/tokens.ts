@@ -72,6 +72,11 @@ export interface Palette {
   highlight: { yellow: string; green: string; blue: string; pink: string };
   /** traço do sublinhado do leitor (mais forte que o marca-texto, para aparecer sobre o papel) */
   highlightLine: { yellow: string; green: string; blue: string; pink: string };
+  /** sobretom do versículo selecionado (camada translúcida por cima do texto e do grifo) */
+  selectionTone: string;
+  /** fundo do leitor da Bíblia e tinta do texto bíblico */
+  paper: string;
+  ink: string;
   scrim: string;
   /** véu claro sobre cartão inverso (botão circular) */
   onInverseSoft: string;
@@ -119,6 +124,9 @@ const light: Palette = {
   dangerSoft: '#FBE3E1',
   highlight: { yellow: '#F3E5B0', green: '#C4F2CC', blue: '#C2E9FF', pink: '#FFD2EB' },
   highlightLine: { yellow: '#C9A21C', green: '#2E9E4A', blue: '#2F86C9', pink: '#D14E92' },
+  selectionTone: 'rgba(45,91,255,0.12)',
+  paper: '#FFFFFF',
+  ink: '#171B22',
   scrim: 'rgba(14,17,22,0.36)',
   onInverseSoft: 'rgba(255,255,255,0.12)',
   planned: '#C9CED8',
@@ -170,6 +178,9 @@ const dark: Palette = {
   dangerSoft: '#3B1917',
   highlight: { yellow: '#544714', green: '#295233', blue: '#284A6C', pink: '#64374D' },
   highlightLine: { yellow: '#E2C04E', green: '#5FC77A', blue: '#6AB3EE', pink: '#EE86BE' },
+  selectionTone: 'rgba(143,167,255,0.20)',
+  paper: '#0F1219',
+  ink: '#E6E9F0',
   scrim: 'rgba(0,0,0,0.58)',
   onInverseSoft: 'rgba(255,255,255,0.12)',
   planned: '#3A4252',
@@ -208,6 +219,9 @@ export const moduleHue = {
 } as const;
 export type ModuleKey = keyof typeof moduleHue;
 
+/** Matizes dos planos de leitura da Bíblia, em rodízio ao criar (mesma fórmula oklch dos módulos). */
+export const planHues = [350, 25, 130, 205, 260, 305] as const;
+
 /** Matiz dos blocos de ícone de estado do sistema (sincronização): em dia (verde) e atenção (âmbar). */
 export const statusHue = { ok: 150, attention: 45 } as const;
 
@@ -238,12 +252,13 @@ export const radius = {
 
 export const fonts = {
   sans: {
+    /** só o número grande do capítulo no leitor */
+    extraLight: 'Outfit_200ExtraLight',
     regular: 'Outfit_400Regular',
     medium: 'Outfit_500Medium',
     semibold: 'Outfit_600SemiBold',
     bold: 'Outfit_700Bold',
   },
-  serif: { regular: 'Literata_400Regular', medium: 'Literata_500Medium', italic: 'Literata_400Regular_Italic' },
   mono: { regular: 'DMMono_400Regular' },
 } as const;
 
@@ -255,7 +270,7 @@ export interface TypeStyle {
   textTransform?: 'uppercase';
 }
 
-/** Escala Cobalto: Outfit em tudo, tracking negativo nos tamanhos grandes; serifa só na leitura bíblica. */
+/** Escala Cobalto: Outfit em tudo, tracking negativo nos tamanhos grandes (também na leitura bíblica). */
 export const typeScale = {
   /** marca na tela de entrar */
   wordmark: { fontSize: 40, lineHeight: 44, font: fonts.sans.bold, letterSpacing: -1.6 },
@@ -289,8 +304,13 @@ export const typeScale = {
   tab: { fontSize: 11, lineHeight: 14, font: fonts.sans.medium, letterSpacing: 0 },
   /** valor em linha de lista */
   amount: { fontSize: 15, lineHeight: 20, font: fonts.sans.semibold, letterSpacing: 0 },
-  readingTitle: { fontSize: 24, lineHeight: 30, font: fonts.serif.medium, letterSpacing: 0 },
-  scripture: { fontSize: 19, lineHeight: 32, font: fonts.serif.regular, letterSpacing: 0 },
+  readingTitle: { fontSize: 24, lineHeight: 30, font: fonts.sans.medium, letterSpacing: -0.4 },
+  /** texto bíblico no padrão (o leitor aplica tamanho, entrelinhas e letras das preferências) */
+  scripture: { fontSize: 19, lineHeight: 36, font: fonts.sans.regular, letterSpacing: 0 },
+  /** número grande do capítulo no leitor */
+  chapterNumber: { fontSize: 76, lineHeight: 76, font: fonts.sans.extraLight, letterSpacing: -3 },
+  /** nome do livro acima do número do capítulo */
+  chapterBook: { fontSize: 12, lineHeight: 16, font: fonts.sans.medium, letterSpacing: 2.6, textTransform: 'uppercase' },
   /** citação e leitura longa em notas */
   reading: { fontSize: 17, lineHeight: 28, font: fonts.sans.regular, letterSpacing: 0 },
   /** valor digitado em destaque (MoneyField: novo lançamento, confirmar, pagar) */
@@ -576,3 +596,18 @@ export const spring = {
 export const pressScale = { rest: 1, pressed: 0.96, pressedSmall: 0.96, pop: 0.92 } as const;
 
 export const hairlineWidth = 1;
+
+/**
+ * Leitura bíblica: limites dos ajustes (Aa) e o respiro entre as faixas do marca-texto, que nunca encostam na linha
+ * vizinha: sobra max(0,42 em, 4 px) entre uma faixa e a seguinte.
+ */
+export const reading = {
+  fontSize: { min: 15, max: 26, step: 1, default: 19 },
+  lineHeight: { min: 1.6, max: 2.4, step: 0.05, default: 1.9 },
+  /** em % do tamanho da letra */
+  letterSpacing: { min: -2, max: 10, step: 1, default: 0 },
+  highlightGapEm: 0.42,
+  highlightGapMin: 4,
+  /** sobra lateral da faixa, em em */
+  bandOverhangEm: 0.14,
+} as const;

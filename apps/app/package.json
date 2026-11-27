@@ -4,7 +4,6 @@
   "main": "expo-router/entry",
   "dependencies": {
     "@expo-google-fonts/dm-mono": "^0.4.2",
-    "@expo-google-fonts/literata": "^0.4.3",
     "@expo-google-fonts/outfit": "^0.4.3",
     "@glife/domain": "workspace:*",
     "@noble/hashes": "^2.4.0",

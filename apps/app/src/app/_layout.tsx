@@ -1,6 +1,5 @@
 import { DMMono_400Regular } from '@expo-google-fonts/dm-mono';
-import { Literata_400Regular, Literata_400Regular_Italic, Literata_500Medium } from '@expo-google-fonts/literata';
-import { Outfit_400Regular, Outfit_500Medium, Outfit_600SemiBold, Outfit_700Bold } from '@expo-google-fonts/outfit';
+import { Outfit_200ExtraLight, Outfit_400Regular, Outfit_500Medium, Outfit_600SemiBold, Outfit_700Bold } from '@expo-google-fonts/outfit';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ThemeProvider as NavigationThemeProvider, Stack } from 'expo-router';
 import { useFonts } from 'expo-font';
@@ -256,13 +255,11 @@ function RootStack() {
 
 export default function RootLayout() {
   const [loaded, error] = useFonts({
+    Outfit_200ExtraLight,
     Outfit_400Regular,
     Outfit_500Medium,
     Outfit_600SemiBold,
     Outfit_700Bold,
-    Literata_400Regular,
-    Literata_400Regular_Italic,
-    Literata_500Medium,
     DMMono_400Regular,
   });
 

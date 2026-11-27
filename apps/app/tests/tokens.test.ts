@@ -19,12 +19,11 @@ describe('tokens do design system', () => {
     expect(Object.keys(palettes.light.highlight)).toEqual(['yellow', 'green', 'blue', 'pink']);
   });
 
-  it('usa Outfit na interface e Literata só na leitura bíblica', () => {
+  it('usa Outfit na interface e na leitura bíblica', () => {
     expect(typeScale.title.font).toBe(fonts.sans.semibold);
     expect(typeScale.body.font).toBe(fonts.sans.regular);
-    expect(typeScale.scripture.font).toBe(fonts.serif.regular);
+    expect(typeScale.scripture.font).toBe(fonts.sans.regular);
     expect(fonts.sans.regular).toMatch(/^Outfit_/);
-    expect(fonts.serif.regular).toMatch(/^Literata_/);
     expect(fonts.mono.regular).toMatch(/^DMMono_/);
   });
 
