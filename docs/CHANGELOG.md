@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.8.2 — 2026-11-27
+
+- Notas: o filtro não mostra mais chips de tag; para achar, busque `#nome` no campo de busca (acha as notas com a tag e as que têm o texto).
+- Bíblia: sublinhado mais firme (2,75) e desenhado por linha no Android; nota excluída some na hora do leitor e dos registros.
+- Movimento: abas deslizam do lado da aba escolhida; telas entram empurrando da direita com paralaxe e o voltar faz o caminho
+  inverso; capítulo anterior entra pela esquerda; telas que não tinham transição própria agora têm.
+
 ## 0.8.1 — 2026-11-27
 
 - Correção: o app fechava sozinho no Android sempre que mostrava uma caixinha de marcar (lembrete no Início, lista de compras, plano de leitura, seleção de notas). Um teste agora barra esse tipo de erro nas animações.
