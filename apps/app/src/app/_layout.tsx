@@ -14,7 +14,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AppLockGate, AppLockProvider, createDeviceAppLock, deviceBiometrics, useAppLock } from '@/features/app-lock';
 import { AuthProvider, createSupabaseAuthService, useAuth } from '@/features/auth';
 import { AgendaProvider, DayMarksProvider, agendaTableLabels, agendaTables, useAgendaTargetSources } from '@/features/agenda';
-import { BibleProvider, bibleTableLabels, bibleTables } from '@/features/bible';
+import { BibleProvider, bibleHref, bibleTableLabels, bibleTables } from '@/features/bible';
 import { DietProvider, dietTableLabels, dietTables, useDietDayMarks, useDietTargetSource } from '@/features/diet';
 import {
   FinanceProvider,
@@ -101,6 +101,9 @@ function TaggedComposition({ children }: { children: ReactNode }) {
   return <TaggedItemsProvider sources={sources}>{children}</TaggedItemsProvider>;
 }
 
+/** Endereços sem UUID que um módulo abre: a Bíblia pela referência OSIS. */
+const ADDRESSES = [{ type: 'bible' as const, href: bibleHref }];
+
 /** Alvos de vínculos e avisos: cada módulo diz a tabela, a tela e como restaurar ("item não encontrado"). */
 function TargetsComposition({ children }: { children: ReactNode }) {
   const notes = useNotesTargetSource();
@@ -108,7 +111,11 @@ function TargetsComposition({ children }: { children: ReactNode }) {
   const agenda = useAgendaTargetSources();
   const diet = useDietTargetSource();
   const sources = useMemo(() => [notes, finance, diet, ...agenda].filter((s) => s !== null), [notes, finance, agenda, diet]);
-  return <TargetsProvider sources={sources}>{children}</TargetsProvider>;
+  return (
+    <TargetsProvider sources={sources} addresses={ADDRESSES}>
+      {children}
+    </TargetsProvider>
+  );
 }
 
 function RootStack() {
@@ -203,6 +210,7 @@ function RootStack() {
                   <Stack.Screen name="financas/graficos" options={{ animation: animation.detail }} />
                   <Stack.Screen name="financas/grafico/[categoria]" options={{ animation: animation.detail }} />
                   <Stack.Screen name="biblia" options={{ animation: animation.detail }} />
+                  <Stack.Screen name="biblia/[livro]/[cap]" options={{ animation: animation.detail }} />
                   <Stack.Screen name="agenda/mes" options={{ animation: animation.detail }} />
                   <Stack.Screen name="agenda/evento/novo" options={{ animation: animation.detail }} />
                   <Stack.Screen name="agenda/evento/[id]" options={{ animation: animation.detail }} />

@@ -70,6 +70,8 @@ export interface Palette {
   dangerSoft: string;
   /** marca-textos, só na leitura */
   highlight: { yellow: string; green: string; blue: string; pink: string };
+  /** traço do sublinhado do leitor (mais forte que o marca-texto, para aparecer sobre o papel) */
+  highlightLine: { yellow: string; green: string; blue: string; pink: string };
   scrim: string;
   /** véu claro sobre cartão inverso (botão circular) */
   onInverseSoft: string;
@@ -116,6 +118,7 @@ const light: Palette = {
   dangerStrong: '#C2453D',
   dangerSoft: '#FBE3E1',
   highlight: { yellow: '#F3E5B0', green: '#C4F2CC', blue: '#C2E9FF', pink: '#FFD2EB' },
+  highlightLine: { yellow: '#C9A21C', green: '#2E9E4A', blue: '#2F86C9', pink: '#D14E92' },
   scrim: 'rgba(14,17,22,0.36)',
   onInverseSoft: 'rgba(255,255,255,0.12)',
   planned: '#C9CED8',
@@ -166,6 +169,7 @@ const dark: Palette = {
   dangerStrong: '#FF948A',
   dangerSoft: '#3B1917',
   highlight: { yellow: '#544714', green: '#295233', blue: '#284A6C', pink: '#64374D' },
+  highlightLine: { yellow: '#E2C04E', green: '#5FC77A', blue: '#6AB3EE', pink: '#EE86BE' },
   scrim: 'rgba(0,0,0,0.58)',
   onInverseSoft: 'rgba(255,255,255,0.12)',
   planned: '#3A4252',
@@ -363,6 +367,10 @@ export const size = {
   editorBar: 56,
   formatBar: 48,
   swatch: 32,
+  /** bolinha de cor do marca-texto na barra de seleção do leitor */
+  colorDot: 30,
+  /** traço do sublinhado no leitor */
+  underline: 2,
   grabberWidth: 38,
   grabberHeight: 5,
   captureFieldMinHeight: 160,
