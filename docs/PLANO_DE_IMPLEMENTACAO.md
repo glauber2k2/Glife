@@ -109,7 +109,17 @@ Funções novas do protótipo implementadas nos módulos existentes. Migrações
   Registrar); tela de Sincronização e offline (fila pendente, sessão expirada); Abertura e primeira sincronização
   de um aparelho novo; Item não encontrado (na lixeira, ainda não sincronizado, excluído).
 
-## Fase 4 — Bíblia e devocionais (≈ 3 semanas)
+## Fase 4 — Bíblia e devocionais (≈ 3 semanas) — 1ª etapa (leitor) com código pronto em 26/11/2026
+
+**1ª etapa (branch `fase-4-biblia`, spec e plano em `docs/superpowers/`):** texto embutido da Bíblia Livre (CC BY 4.0)
+e da Bíblia Portuguesa Mundial (domínio público) como assets por livro, fora do bundle JS e offline; leitor (Literata
+19/32, um versículo por bloco, `?v=` rola até o versículo); seleção com barra flutuante: marca-texto em 4 cores,
+sublinhado, remover, anotar e copiar (registro de ações aberto para a IA); **Anotar cria uma nota comum** com
+`[[Jo 3:16]]` e a citação; o versículo mostra as notas que o citam (versículo, trecho ou capítulo) e a nota abre o
+leitor; marcações em `bible_highlights` (migração `20261128000001`, sync); início da Bíblia (continuar, ir para, livros,
+marcações recentes), troca de tradução e **importar tradução só no aparelho** (USFM ou JSON; tabelas locais fora do
+sync). Atalho Bíblia em "Seus espaços". Falta: aplicar migração e sync-streams, conferência visual (Chrome/APK) e o
+resto da fase abaixo (devocional, planos, busca no texto, editar versículo, ajustes Aa).
 
 Telas do protótipo: Bíblia, Leitor (seleção, marca-texto, anotar, editar, ver original), Devocional (SOAP), Linha do
 tempo devocional, Busca na Bíblia, Planos de leitura; ajustes de leitura (Aa).
