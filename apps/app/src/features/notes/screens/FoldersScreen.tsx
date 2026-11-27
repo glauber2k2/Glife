@@ -1,48 +1,55 @@
+import { folderChildren } from '@glife/domain/notes';
 import { router } from 'expo-router';
 import { Folder, FolderPlus } from 'lucide-react-native';
 import { useState } from 'react';
-import { View } from 'react-native';
 
-import { Button, NavRow, Screen, Text, makeStyles } from '@/shared/ui';
+import { Button, EmptyState, ListGroup, NavRow, Reveal, Screen } from '@/shared/ui';
 
 import { FolderNameSheet } from '../components/FolderNameSheet';
 import { SubHeader } from '../components/SubHeader';
 import { useNotesData } from '../hooks/NotesData';
 import { useFocusData } from '../hooks/useFocusData';
 
-/** Um nível de pastas, com a contagem de notas de cada uma. */
+/** Raiz da árvore; as contagens são agregadas no banco, sem carregar as notas. */
 export function FoldersScreen() {
-  const s = useStyles();
-  const { folders, notes } = useNotesData();
+  const { folders } = useNotesData();
   const [creating, setCreating] = useState(false);
   const { data, reload } = useFocusData(
     async () => {
-      const [all, page] = await Promise.all([folders.list(), notes.list({}, { limit: 200 })]);
-      const count = new Map<string, number>();
-      for (const n of page.items) if (n.folder_id) count.set(n.folder_id, (count.get(n.folder_id) ?? 0) + 1);
-      return all.map((f) => ({ ...f, count: count.get(f.id) ?? 0 }));
+      const summaries = await folders.listSummaries();
+      const roots = new Set(folderChildren(summaries.map((s) => s.folder), null).map((f) => f.id));
+      return summaries.filter((s) => roots.has(s.folder.id));
     },
   );
 
   const goFolder = (id: string) => router.push({ pathname: '/pasta/[id]', params: { id } });
 
   return (
-    <Screen>
-      <SubHeader eyebrow="Notas" title="Pastas" plusLabel="Nova pasta" onPlus={() => setCreating(true)} />
+    <Screen header={<SubHeader title="Pastas" plusLabel="Nova pasta" onPlus={() => setCreating(true)} />}>
       {data === null ? null : data.length === 0 ? (
-        <View style={s.empty}>
-          <Text tone="secondary">
-            Nenhuma pasta ainda. Agrupe notas por assunto: cada nota fica em uma pasta, e as tags atravessam todas elas.
-          </Text>
-          <Button label="Criar pasta" icon={FolderPlus} onPress={() => setCreating(true)} />
-        </View>
+        <EmptyState
+          title="Nenhuma pasta ainda"
+          message="Pastas ajudam quando as notas passam de algumas dezenas. Cada nota fica em uma pasta; as tags atravessam todas."
+          actionLabel="Criar pasta"
+          onAction={() => setCreating(true)}
+        />
       ) : (
-        <View>
-          {data.map((f) => (
-            <NavRow key={f.id} tall icon={Folder} label={f.name} meta={String(f.count)} onPress={() => goFolder(f.id)} />
-          ))}
-          <NavRow tall accent icon={FolderPlus} label="Nova pasta" onPress={() => setCreating(true)} />
-        </View>
+        <Reveal>
+          <ListGroup>
+            {data.map(({ folder: f, notes: count, children }) => (
+              <NavRow
+                key={f.id}
+                icon={Folder}
+                iconSize="md"
+                module="notes"
+                label={f.name}
+                meta={`${count === 1 ? '1 nota' : `${count} notas`}${children ? ` · ${children} ${children === 1 ? 'subpasta' : 'subpastas'}` : ''}`}
+                onPress={() => goFolder(f.id)}
+              />
+            ))}
+          </ListGroup>
+          <Button label="Nova pasta" icon={FolderPlus} variant="secondary" onPress={() => setCreating(true)} />
+        </Reveal>
       )}
       <FolderNameSheet
         visible={creating}
@@ -55,13 +62,3 @@ export function FoldersScreen() {
     </Screen>
   );
 }
-
-const useStyles = makeStyles((t) => ({
-  empty: {
-    gap: t.space[5],
-    alignItems: 'flex-start',
-    paddingTop: t.layout.blockGap,
-    borderTopWidth: t.hairline,
-    borderTopColor: t.colors.hairline,
-  },
-}));

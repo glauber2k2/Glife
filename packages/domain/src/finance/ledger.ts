@@ -4,6 +4,7 @@
 import { compareDates, monthOf, type IsoDate, type Month } from './calendar.ts';
 import { invoiceDates, invoiceMonthFor, type CardCycle } from './invoice.ts';
 import type { Account, Budget, Transaction, TransactionDraft, TxStatus } from './model.ts';
+import type { AccountFlow } from './investments.ts';
 import type { Occurrence } from './recurrence.ts';
 
 const alive = (t: Transaction) => t.deleted_at === null;
@@ -14,9 +15,9 @@ function cycleOf(card: Account): CardCycle {
   return { closing_day: card.closing_day, due_day: card.due_day };
 }
 
-/** Mês do orçamento: o da fatura (cartão) ou o da data. Transferência e pulado não contam. */
-export function budgetMonth(tx: Pick<Transaction, 'type' | 'status' | 'invoice_month' | 'date'>): Month | null {
-  if (tx.type === 'transfer' || tx.status === 'skipped') return null;
+/** Mês do orçamento: o da fatura (cartão) ou o da data. Transferência, pulado e ajuste de saldo não contam. */
+export function budgetMonth(tx: Pick<Transaction, 'type' | 'status' | 'invoice_month' | 'date'> & Partial<Pick<Transaction, 'is_adjustment'>>): Month | null {
+  if (tx.type === 'transfer' || tx.status === 'skipped' || tx.is_adjustment) return null;
   return tx.invoice_month ?? monthOf(tx.date);
 }
 
@@ -31,12 +32,19 @@ function effectOn(accountId: string, m: Pick<Transaction, 'type' | 'account_id' 
   return m.type === 'income' ? m.amount_cents : -m.amount_cents;
 }
 
-/** Saldo real (só confirmados). Cartão devolve a dívida: compras − estornos − pagamentos. */
-export function accountBalance(account: Account, txs: readonly Transaction[]): number {
+/**
+ * Saldo real (só confirmados). Cartão devolve a dívida: compras − estornos − pagamentos.
+ * `flows`: aportes e resgates de investimento ligados à conta (não são transações nem entram no orçamento).
+ */
+export function accountBalance(account: Account, txs: readonly Transaction[], flows: readonly AccountFlow[] = []): number {
   const net = txs
     .filter((t) => alive(t) && t.status === 'confirmed')
-    .reduce((sum, t) => sum + effectOn(account.id, t), account.initial_balance_cents);
+    .reduce((sum, t) => sum + effectOn(account.id, t), account.initial_balance_cents + flowsOn(account.id, flows));
   return isCard(account) ? 0 - net : net; // 0 - net evita -0
+}
+
+function flowsOn(accountId: string, flows: readonly AccountFlow[]): number {
+  return flows.reduce((sum, f) => sum + (f.account_id === accountId ? f.amount_cents : 0), 0);
 }
 
 export function isOverdue(item: { status: TxStatus; date: IsoDate }, today: IsoDate): boolean {
@@ -181,12 +189,48 @@ export function monthSummary(
   return summary;
 }
 
-/** Orçamento da categoria no mês: o registro mais recente com `starts_month` até o mês. */
+/**
+ * Orçamento da categoria no mês: o registro mais recente com `starts_month` até o mês. Registro de valor 0 encerra
+ * o orçamento daquele mês em diante: devolve `null` ("Sem orçamento"), nunca um limite zero sempre estourado.
+ */
 export function budgetFor(categoryId: string, month: Month, budgets: readonly Budget[]): number | null {
   const valid = budgets
     .filter((b) => b.deleted_at === null && b.category_id === categoryId && b.starts_month <= month)
     .sort((a, b) => (a.starts_month < b.starts_month ? 1 : -1));
-  return valid[0]?.amount_cents ?? null;
+  const amount = valid[0]?.amount_cents ?? null;
+  return amount ? amount : null;
+}
+
+/** O que gravar para mudar o orçamento de `month` em diante: `set` (valor, 0 = encerrar) e os registros que saem. */
+export interface BudgetChange {
+  set: number | null;
+  remove: Budget[];
+}
+
+/**
+ * Orçamento a partir de `month`, sem mexer nos meses anteriores. Valor novo: grava em `month` (se mudou). Zero: se
+ * havia orçamento valendo, encerra — o registro do próprio mês vira 0 (ou sai, se nenhum anterior valeria sem ele);
+ * sem registro no mês, cria um 0 em `month`. Em ambos, registros que começariam depois de `month` saem (senão
+ * mandariam nos meses seguintes).
+ */
+export function planBudgetChange(categoryId: string, month: Month, cents: number, budgets: readonly Budget[]): BudgetChange {
+  if (!Number.isSafeInteger(cents) || cents < 0) throw new RangeError('Orçamento inválido');
+  const mine = budgets.filter((b) => b.deleted_at === null && b.category_id === categoryId);
+  const later = mine.filter((b) => b.starts_month > month);
+  const current = budgetFor(categoryId, month, mine);
+  if (cents > 0) return { set: current === cents ? null : cents, remove: later };
+  const atMonth = mine.find((b) => b.starts_month === month) ?? null;
+  const before = budgetFor(
+    categoryId,
+    month,
+    mine.filter((b) => b.starts_month < month),
+  );
+  if (atMonth) {
+    // Sem anterior valendo, apagar o registro do mês já deixa "sem orçamento"; com anterior, ele vira 0.
+    if (before === null) return { set: null, remove: [atMonth, ...later] };
+    return { set: atMonth.amount_cents === 0 ? null : 0, remove: later };
+  }
+  return { set: current === null ? null : 0, remove: later };
 }
 
 // ---------- Previsão ----------
@@ -198,12 +242,12 @@ export function budgetFor(categoryId: string, month: Month, budgets: readonly Bu
 export function projectBalance(
   account: Account,
   until: IsoDate,
-  data: { transactions: readonly Transaction[]; occurrences: readonly Occurrence[]; cards: readonly Account[] },
+  data: { transactions: readonly Transaction[]; occurrences: readonly Occurrence[]; cards: readonly Account[]; flows?: readonly AccountFlow[] },
 ): number {
   if (isCard(account)) throw new RangeError('Previsão é da conta que paga, não do cartão');
   const cardIds = new Set(data.cards.map((c) => c.id));
   const due = (date: IsoDate) => compareDates(date, until) <= 0;
-  let balance = accountBalance(account, data.transactions);
+  let balance = accountBalance(account, data.transactions, data.flows);
   for (const t of data.transactions) {
     if (alive(t) && t.status === 'planned' && due(t.date) && !cardIds.has(t.account_id)) balance += effectOn(account.id, t);
   }

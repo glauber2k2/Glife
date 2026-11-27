@@ -191,6 +191,35 @@ export function financeRepositoryContract(name: string, make: () => Promise<Fina
       expect((await finance.transactions.restore(t.id)).deleted_at).toBeNull();
     });
 
+    it('restaurar recusa (conflict) lançamento de conta excluída e nada volta', async () => {
+      const { finance, cc } = await setup(make);
+      const other = await finance.accounts.create({ name: 'Poupança', kind: 'savings', initial_balance_cents: 0 });
+      const spent = await finance.transactions.create({ type: 'expense', amount_cents: 500, date: '2026-12-01', account_id: other.id });
+      const moved = await finance.transactions.create({ type: 'transfer', amount_cents: 700, date: '2026-12-02', account_id: cc.id, to_account_id: other.id });
+      await finance.accounts.remove(other.id);
+      await expectCode(finance.transactions.restore(spent.id), 'conflict');
+      await expectCode(finance.transactions.restore(moved.id), 'conflict');
+      expect(await finance.transactions.listRange({ from: '2026-12-01', to: '2026-12-31' })).toEqual([]);
+      const refused: unknown = await finance.transactions.restore(moved.id).catch((e: unknown) => e);
+      expect((refused as { cause?: unknown }).cause).toBeInstanceOf(RangeError);
+    });
+
+    it('restaurar uma parcela sozinha é recusado quando outras da compra seguem excluídas', async () => {
+      const { finance, card } = await setup(make);
+      const rows = planInstallmentPurchase({ card, description: 'Sofá', category_id: null, totalCents: 30000, count: 3, date: '2026-11-20' });
+      await finance.transactions.createMany(rows);
+      const ids = rows.map((r) => r.id);
+      await finance.transactions.removeMany(ids);
+      await expectCode(finance.transactions.restore(ids[1]!), 'conflict');
+      await expectCode(finance.transactions.restore(ids[0]!), 'conflict');
+      expect(await finance.transactions.listRange({ from: '2026-11-01', to: '2027-12-31' })).toEqual([]);
+      // Só uma parcela excluída (as outras vivas): restaurar essa parcela vale.
+      await finance.transactions.restoreMany(ids);
+      await finance.transactions.remove(ids[2]!);
+      expect((await finance.transactions.restore(ids[2]!)).deleted_at).toBeNull();
+      expect((await finance.transactions.listRange({ from: '2026-11-01', to: '2027-12-31' })).length).toBe(3);
+    });
+
     it('watchRange emite agora e a cada mudança', async () => {
       const { finance, cc } = await setup(make);
       const seen: Transaction[][] = [];
@@ -235,6 +264,60 @@ export function financeRepositoryContract(name: string, make: () => Promise<Fina
     });
   });
 
+  describe(`Finanças — ordem, arquivar e ajuste (${name})`, () => {
+    it('contas ordenadas por sort_order e depois nome; reorder grava o índice', async () => {
+      const { finance, cc, card } = await setup(make);
+      expect((await finance.accounts.list()).map((a) => a.id)).toEqual([cc.id, card.id]); // Itaú, Nubank
+      await finance.accounts.reorder([card.id, cc.id]);
+      expect((await finance.accounts.list()).map((a) => [a.id, a.sort_order])).toEqual([[card.id, 0], [cc.id, 1]]);
+      const third = await finance.accounts.create({ name: 'Alfa', kind: 'savings' });
+      expect((await finance.accounts.list()).map((a) => a.id)).toEqual([third.id, card.id, cc.id]); // 0 por nome, depois 1
+    });
+
+    it('reorder recusa id inexistente e não grava nada', async () => {
+      const { finance, cc, card } = await setup(make);
+      await expectCode(finance.accounts.reorder([card.id, MISSING]), 'not_found');
+      expect((await finance.accounts.get(card.id))!.sort_order).toBe(0);
+      await expectCode(finance.accounts.reorder([cc.id, cc.id]), 'validation');
+    });
+
+    it('categorias: ordem e reorder', async () => {
+      const { finance, mercado } = await setup(make);
+      const lazer = await finance.categories.create({ name: 'Lazer', kind: 'expense', color: 'sage', icon: 'ticket' });
+      expect((await finance.categories.list({ kind: 'expense' })).map((c) => c.id)).toEqual([lazer.id, mercado.id]);
+      await finance.categories.reorder([mercado.id, lazer.id]);
+      expect((await finance.categories.list({ kind: 'expense' })).map((c) => c.id)).toEqual([mercado.id, lazer.id]);
+      await expectCode(finance.categories.reorder([MISSING]), 'not_found');
+    });
+
+    it('desarquivar devolve à lista', async () => {
+      const { finance, cc, mercado } = await setup(make);
+      await finance.accounts.archive(cc.id);
+      expect((await finance.accounts.list()).map((a) => a.id)).not.toContain(cc.id);
+      expect((await finance.accounts.unarchive(cc.id)).archived).toBe(false);
+      expect((await finance.accounts.list()).map((a) => a.id)).toContain(cc.id);
+      await finance.categories.archive(mercado.id);
+      expect((await finance.categories.unarchive(mercado.id)).archived).toBe(false);
+      expect((await finance.categories.list({ kind: 'expense' })).map((c) => c.id)).toEqual([mercado.id]);
+    });
+
+    it('adjustBalance cria o ajuste e leva o saldo ao valor do banco; zero devolve null', async () => {
+      const { finance, cc } = await setup(make);
+      expect(await finance.transactions.adjustBalance(cc.id, 210000, '2026-12-02')).toBeNull();
+      const down = (await finance.transactions.adjustBalance(cc.id, 209763, '2026-12-02'))!;
+      expect(down).toMatchObject({ type: 'expense', amount_cents: 237, is_adjustment: true, category_id: null, status: 'confirmed', description: 'Ajuste de saldo', account_id: cc.id });
+      const up = (await finance.transactions.adjustBalance(cc.id, 210000, '2026-12-03'))!;
+      expect(up).toMatchObject({ type: 'income', amount_cents: 237, is_adjustment: true });
+      expect(await finance.transactions.get(down.id)).toEqual(down);
+    });
+
+    it('adjustBalance recusa cartão e conta inexistente', async () => {
+      const { finance, card } = await setup(make);
+      await expectCode(finance.transactions.adjustBalance(card.id, 100, '2026-12-02'), 'validation');
+      await expectCode(finance.transactions.adjustBalance(MISSING, 100, '2026-12-02'), 'not_found');
+    });
+  });
+
   describe(`Finanças — orçamentos (${name})`, () => {
     it('um orçamento por categoria e mês; só categoria de despesa', async () => {
       const { finance, mercado, salario } = await setup(make);
@@ -243,6 +326,41 @@ export function financeRepositoryContract(name: string, make: () => Promise<Fina
       expect((await finance.budgets.list()).map((x) => [x.id, x.amount_cents])).toEqual([[b.id, 90000]]);
       await expectCode(finance.budgets.set(salario.id, '2026-12', 1), 'validation');
       await finance.budgets.remove(b.id);
+      expect(await finance.budgets.list()).toEqual([]);
+    });
+
+    it('orçamento 0 é aceito (encerra); negativo é recusado', async () => {
+      const { finance, mercado } = await setup(make);
+      const zero = await finance.budgets.set(mercado.id, '2027-01', 0);
+      expect(zero.amount_cents).toBe(0);
+      await expectCode(finance.budgets.set(mercado.id, '2027-02', -1), 'validation');
+    });
+
+    it('createWithBudget grava categoria e orçamento juntos', async () => {
+      const { finance } = await setup(make);
+      const c = await finance.categories.createWithBudget(
+        { name: 'Viagens', kind: 'expense', color: 'teal', icon: 'plane', sort_order: 9 },
+        { month: '2026-12', amount_cents: 50000 },
+      );
+      expect(await finance.categories.get(c.id)).toMatchObject({ name: 'Viagens', sort_order: 9 });
+      expect((await finance.budgets.list()).map((b) => [b.category_id, b.starts_month, b.amount_cents])).toEqual([[c.id, '2026-12', 50000]]);
+      const bare = await finance.categories.createWithBudget({ name: 'Bico', kind: 'income', color: 'sage', icon: 'gift' }, null);
+      expect(await finance.categories.get(bare.id)).not.toBeNull();
+      expect(await finance.budgets.list()).toHaveLength(1);
+    });
+
+    it('createWithBudget é tudo ou nada: orçamento recusado não deixa a categoria', async () => {
+      const { finance } = await setup(make);
+      const before = (await finance.categories.list({ includeArchived: true })).length;
+      await expectCode(
+        finance.categories.createWithBudget({ name: 'Extra', kind: 'income', color: 'sage', icon: 'gift' }, { month: '2026-12', amount_cents: 100 }),
+        'validation',
+      );
+      await expectCode(
+        finance.categories.createWithBudget({ name: 'Viagens', kind: 'expense', color: 'teal', icon: 'plane' }, { month: '2026-12', amount_cents: -5 }),
+        'validation',
+      );
+      expect(await finance.categories.list({ includeArchived: true })).toHaveLength(before);
       expect(await finance.budgets.list()).toEqual([]);
     });
   });

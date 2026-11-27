@@ -7,12 +7,15 @@ import { createContext, useContext, useMemo, type ReactNode } from 'react';
 import { createLocalLinksRepository } from '../data/localLinksRepository';
 import { createLocalTagsRepository } from '../data/localTagsRepository';
 import { createTagsSearchSource } from '../data/tagsSearch';
+import { createRowStatus, type RowStatus } from '../data/targets';
 
 interface LinksData {
   links: LinksRepository;
   tags: TagsRepository;
   /** fontes da busca universal (tags) */
   search: SearchSource[];
+  /** situação de uma linha do dono (viva, lixeira, ausente) — base do "item não encontrado" */
+  rowStatus: RowStatus;
 }
 
 const LinksDataContext = createContext<LinksData | null>(null);
@@ -23,7 +26,7 @@ export function LinksProvider({ db, userId, children }: { db: LocalDb; userId: s
   const value = useMemo(() => {
     if (!userId) return null;
     const tags = createLocalTagsRepository(db, userId);
-    return { links: createLocalLinksRepository(db, userId), tags, search: [createTagsSearchSource(tags)] };
+    return { links: createLocalLinksRepository(db, userId), tags, search: [createTagsSearchSource(tags)], rowStatus: createRowStatus(db, userId) };
   }, [db, userId]);
   return <LinksDataContext.Provider value={value}>{children}</LinksDataContext.Provider>;
 }
@@ -37,4 +40,9 @@ export function useLinksData(): LinksData {
 /** Fontes de busca de tags; vazio sem sessão. */
 export function useLinksSearchSources(): SearchSource[] {
   return useContext(LinksDataContext)?.search ?? NO_SOURCES;
+}
+
+/** Dados de vínculos quando há sessão; null sem ela. */
+export function useLinksDataMaybe(): LinksData | null {
+  return useContext(LinksDataContext);
 }

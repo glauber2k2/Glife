@@ -15,9 +15,9 @@ export function MarkdownView({ markdown, onWikilink }: { markdown: string; onWik
 
   const inline = (parts: Inline[]) =>
     parts.map((p, i) => {
-      if (p.type === 'bold') {
+      if (p.type === 'bold' || p.type === 'italic' || p.type === 'underline' || p.type === 'strike' || p.type === 'highlight') {
         return (
-          <Text key={i} style={s.bold}>
+          <Text key={i} style={s[p.type]}>
             {p.text}
           </Text>
         );
@@ -45,7 +45,14 @@ export function MarkdownView({ markdown, onWikilink }: { markdown: string; onWik
         switch (b.type) {
           case 'heading':
             return (
-              <Text key={i} variant="heading" accessibilityRole="header" style={i > 0 && s.headingGap}>
+              // # título (20/500) · ## subtítulo e abaixo (17/500, um tom mais baixo).
+              <Text
+                key={i}
+                variant={b.level === 1 ? 'heading' : 'item'}
+                tone={b.level === 1 ? 'primary' : 'secondary'}
+                accessibilityRole="header"
+                style={i > 0 && s.headingGap}
+              >
                 {inline(b.inline)}
               </Text>
             );
@@ -65,7 +72,7 @@ export function MarkdownView({ markdown, onWikilink }: { markdown: string; onWik
           case 'quote':
             return (
               <View key={i} style={s.quote}>
-                <Text variant="scripture" style={s.quoteText}>
+                <Text variant="body" tone="secondary" style={s.quoteText}>
                   {inline(b.inline)}
                 </Text>
                 {b.cite && (
@@ -94,7 +101,12 @@ const useStyles = makeStyles((t) => {
     root: { gap: t.space[3] },
     body: { lineHeight: bodyLine },
     bold: { fontFamily: t.type.button.font },
-    link: { textDecorationLine: 'underline', textDecorationColor: t.colors.hairline },
+    italic: { fontStyle: 'italic' },
+    underline: { textDecorationLine: 'underline' },
+    strike: { textDecorationLine: 'line-through', color: t.colors.textSecondary },
+    /** marca-texto só na leitura: o mel da paleta de marcação */
+    highlight: { backgroundColor: t.colors.highlight.yellow },
+    link: { color: t.colors.accentInk, fontFamily: t.type.chip.font, backgroundColor: t.colors.highlightSoft, borderRadius: t.space[1.5] },
     headingGap: { marginTop: t.space[1.5] },
     list: { gap: t.space[1] },
     item: { flexDirection: 'row', gap: t.space[2] + t.space[0.5] },
@@ -103,10 +115,10 @@ const useStyles = makeStyles((t) => {
       marginVertical: t.space[1.5],
       paddingVertical: t.space[1],
       paddingLeft: t.space[4],
-      borderLeftWidth: t.hairline,
-      borderLeftColor: t.colors.accent,
+      borderLeftWidth: t.space[0.5] + t.hairline,
+      borderLeftColor: t.colors.accentSoft,
       gap: t.space[1.5],
     },
-    quoteText: { fontSize: t.type.scripture.fontSize - 1, lineHeight: Math.round((t.type.scripture.fontSize - 1) * 1.5) },
+    quoteText: { lineHeight: bodyLine },
   };
 });

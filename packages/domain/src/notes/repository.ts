@@ -33,6 +33,12 @@ export interface NotesRepository {
   /** Exclusão lógica (vai para a lixeira). */
   remove(id: string): Promise<void>;
   restore(id: string): Promise<Note>;
+  /** Várias atualizações numa transação, tudo ou nada (seleção múltipla e o "Desfazer" dela). */
+  updateMany(changes: readonly { id: string; patch: NotePatch }[]): Promise<Note[]>;
+  /** Várias para a lixeira, tudo ou nada. */
+  removeMany(ids: readonly string[]): Promise<void>;
+  /** Tira várias da lixeira, tudo ou nada. */
+  restoreMany(ids: readonly string[]): Promise<void>;
   /** Excluídas, da exclusão mais recente para a mais antiga. */
   listTrash(page?: PageRequest): Promise<Page<Note>>;
   /** Quantas notas estão na lixeira. */
@@ -45,9 +51,17 @@ export interface NotesRepository {
   purgeTrash(deletedBefore: string): Promise<number>;
 }
 
+export interface NoteFolderSummary {
+  folder: NoteFolder;
+  /** Notas vivas diretamente nesta pasta, sem limite de paginação. */
+  notes: number;
+  children: number;
+}
+
 export interface NoteFoldersRepository {
   /** Pastas ativas, por nome (sem diferenciar maiúsculas). */
   list(): Promise<NoteFolder[]>;
+  listSummaries(): Promise<NoteFolderSummary[]>;
   create(draft: NoteFolderDraft): Promise<NoteFolder>;
   rename(id: string, name: string): Promise<NoteFolder>;
   /** Recusa ciclo (`validation`) e destino inexistente (`not_found`). */

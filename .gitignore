@@ -18,3 +18,6 @@ apps/app/public/@powersync/
 
 # Notas locais com identificadores de infraestrutura (nunca publicar)
 *.local.md
+.superpowers/
+# downloads do importador da Bíblia (USFM baixado do ebible.org)
+tools/bible-import/downloads/

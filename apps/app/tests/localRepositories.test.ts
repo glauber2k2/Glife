@@ -48,3 +48,10 @@ shoppingRepositoryContract('SQLite local', async () => {
   const db = await createSqliteLocalDb(financeTables);
   return { finance: createLocalFinance(db, USER), userId: USER };
 });
+
+import { investmentsRepositoryContract } from '@glife/domain/testing';
+
+investmentsRepositoryContract('SQLite local', async () => {
+  const db = await createSqliteLocalDb(financeTables);
+  return { finance: createLocalFinance(db, USER), userId: USER };
+});

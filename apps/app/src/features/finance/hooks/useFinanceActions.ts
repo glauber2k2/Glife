@@ -5,11 +5,16 @@ import {
   cycleOf,
   materializeOccurrence,
   paidByOther,
+  planBudgetChange,
   planInstallmentPurchase,
   planOngoingInstallments,
   planPreviousBalance,
   suggestInvoiceToPay,
   type Account,
+  type AccountPatch,
+  type Category,
+  type CategoryColor,
+  type CategoryKind,
   type Frequency,
   type IsoDate,
   type Month,
@@ -22,7 +27,10 @@ import {
 } from '@glife/domain/finance';
 import { useMemo } from 'react';
 
+import { UserFacingError } from '@/shared/lib/errorText';
+
 import { useFinance } from './FinanceData';
+import { settlePlanned, type Undo } from './settlePlanned';
 
 export interface EntryForm {
   type: TxType;
@@ -58,7 +66,14 @@ export interface CardForm {
   } | null;
 }
 
-type Undo = () => Promise<void>;
+export interface CategoryInput {
+  name: string;
+  kind: CategoryKind;
+  icon: string;
+  color: CategoryColor;
+  /** orçamento mensal (só despesa); 0 tira o orçamento */
+  budgetCents: number;
+}
 
 export function useFinanceActions() {
   const { repos, data, refresh } = useFinance();
@@ -66,13 +81,8 @@ export function useFinanceActions() {
   return useMemo(() => {
     const accountOf = (id: string): Account => {
       const a = data?.accounts.find((x) => x.id === id);
-      if (!a) throw new Error('Conta não encontrada');
+      if (!a) throw new UserFacingError('Conta não encontrada.');
       return a;
-    };
-    const ruleOf = (id: string): Recurrence => {
-      const r = data?.rules.find((x) => x.id === id);
-      if (!r) throw new Error('Recorrência não encontrada');
-      return r;
     };
 
     /**
@@ -112,23 +122,7 @@ export function useFinanceActions() {
       status: 'confirmed' | 'skipped',
       changes: { amount_cents?: number; date?: IsoDate },
     ): Promise<Undo> {
-      if (item.transactionId) {
-        const id = item.transactionId;
-        if (status === 'confirmed') await repos.transactions.confirm(id, changes);
-        else await repos.transactions.skip(id);
-        return async () => {
-          await repos.transactions.update(id, {
-            status: 'planned',
-            amount_cents: item.amount_cents,
-            date: item.date,
-          });
-        };
-      }
-      const rule = ruleOf(item.recurrenceId!);
-      const row = materializeOccurrence(rule, item.occurrenceDate!, { status, ...changes }, accountOf(rule.account_id));
-      await repos.transactions.upsertOccurrence(row);
-      // A linha excluída faz a ocorrência voltar a ser calculada (prevista).
-      return async () => repos.transactions.remove(row.id);
+      return settlePlanned(repos, data, item, status, changes);
     }
 
     function invoiceToPay(cardId: string, date: IsoDate): Month {
@@ -325,7 +319,147 @@ export function useFinanceActions() {
       await refresh();
     }
 
+    // ---------- Categorias ----------
+
+    /**
+     * Grava a categoria e o orçamento a partir de `month`, tudo ou nada. Nova: categoria e orçamento numa transação
+     * só (`createWithBudget`). Edição: se o orçamento falhar, a categoria volta como estava. Gasto que vira receita
+     * encerra o orçamento neste mês (antes de trocar o tipo, enquanto ainda é gasto); os meses passados ficam.
+     */
+    async function saveCategory(id: string | null, input: CategoryInput, month: Month): Promise<Category> {
+      const fields = { name: input.name, kind: input.kind, icon: input.icon, color: input.color };
+      if (!id) {
+        const sameKind = (data?.categories ?? []).filter((c) => c.kind === input.kind);
+        const last = sameKind.reduce((max, c) => Math.max(max, c.sort_order), -1);
+        const budget = input.kind === 'expense' && input.budgetCents > 0 ? { month, amount_cents: input.budgetCents } : null;
+        const created = await repos.categories.createWithBudget({ ...fields, sort_order: last + 1 }, budget);
+        await refresh();
+        return created;
+      }
+
+      const before = data?.categories.find((c) => c.id === id);
+      if (!before) throw new UserFacingError('Categoria não encontrada.');
+      const restore = { name: before.name, kind: before.kind, icon: before.icon, color: before.color };
+      const endsBudget = before.kind === 'expense' && input.kind !== 'expense';
+      let undoEnd: Undo | null = null;
+      try {
+        if (endsBudget) undoEnd = await applyBudget(id, month, 0);
+        const saved = await repos.categories.update(id, fields);
+        if (saved.kind === 'expense') {
+          try {
+            await applyBudget(id, month, input.budgetCents);
+          } catch (e) {
+            await repos.categories.update(id, restore).catch(() => undefined);
+            throw e;
+          }
+        }
+        await refresh();
+        return saved;
+      } catch (e) {
+        if (undoEnd) await undoEnd();
+        await refresh();
+        throw e;
+      }
+    }
+
+    /**
+     * Aplica `planBudgetChange` (orçamento de `month` em diante; meses passados intactos). Se uma parte falhar,
+     * desfaz o que já gravou. Devolve como desfazer tudo.
+     */
+    async function applyBudget(categoryId: string, month: Month, cents: number): Promise<Undo> {
+      const budgets = data?.budgets ?? [];
+      const plan = planBudgetChange(categoryId, month, cents, budgets);
+      const atMonth = budgets.find((b) => b.deleted_at === null && b.category_id === categoryId && b.starts_month === month) ?? null;
+      const done: Undo[] = [];
+      const undoAll = async () => {
+        for (const undo of [...done].reverse()) await undo().catch(() => undefined);
+      };
+      try {
+        for (const b of plan.remove) {
+          await repos.budgets.remove(b.id);
+          done.push(async () => {
+            await repos.budgets.set(b.category_id, b.starts_month, b.amount_cents);
+          });
+        }
+        if (plan.set !== null) {
+          const row = await repos.budgets.set(categoryId, month, plan.set);
+          done.push(async () => {
+            if (atMonth) await repos.budgets.set(categoryId, month, atMonth.amount_cents);
+            else await repos.budgets.remove(row.id);
+          });
+        }
+      } catch (e) {
+        await undoAll();
+        throw e;
+      }
+      return undoAll;
+    }
+
+    async function archiveCategory(id: string): Promise<Undo> {
+      await repos.categories.archive(id);
+      await refresh();
+      return async () => {
+        await repos.categories.unarchive(id);
+        await refresh();
+      };
+    }
+
+    async function unarchiveCategory(id: string) {
+      await repos.categories.unarchive(id);
+      await refresh();
+    }
+
+    async function reorderCategories(ids: readonly string[]) {
+      await repos.categories.reorder(ids);
+      await refresh();
+    }
+
+    // ---------- Contas ----------
+
+    async function updateAccount(id: string, patch: AccountPatch) {
+      const a = await repos.accounts.update(id, patch);
+      await refresh();
+      return a;
+    }
+
+    async function archiveAccount(id: string): Promise<Undo> {
+      await repos.accounts.archive(id);
+      await refresh();
+      return async () => {
+        await repos.accounts.unarchive(id);
+        await refresh();
+      };
+    }
+
+    async function unarchiveAccount(id: string) {
+      await repos.accounts.unarchive(id);
+      await refresh();
+    }
+
+    async function reorderAccounts(ids: readonly string[]) {
+      await repos.accounts.reorder(ids);
+      await refresh();
+    }
+
+    /** Leva o saldo ao do banco; `null` = nada a ajustar. O desfazer exclui o lançamento de ajuste. */
+    async function adjustBalance(accountId: string, bankCents: number, date: IsoDate): Promise<Undo | null> {
+      const tx = await repos.transactions.adjustBalance(accountId, bankCents, date);
+      if (!tx) return null;
+      return async () => {
+        await repos.transactions.remove(tx.id);
+      };
+    }
+
     return {
+      saveCategory,
+      archiveCategory,
+      unarchiveCategory,
+      reorderCategories,
+      updateAccount,
+      archiveAccount,
+      unarchiveAccount,
+      reorderAccounts,
+      adjustBalance,
       deleteTransactions,
       removalImpact,
       deleteAccount,

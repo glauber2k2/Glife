@@ -2,7 +2,9 @@ import { describe, expect, it } from 'vitest';
 
 import {
   createTabFocusTracker,
+  isTabBarHidden,
   getTabDirection,
+  getTabIndicatorX,
   getTabLineInsets,
   getTabLineMotion,
   resolveNavigationMotion,
@@ -48,17 +50,18 @@ describe('troca de aba', () => {
     expect(tracker.advance(1)).toBe(0);
   });
 
-  it('a tela entra pelo lado do movimento', () => {
-    expect(tabSceneEnterFrom(false, 1, 24)).toEqual({ opacity: 0, translateX: 24 });
-    expect(tabSceneEnterFrom(false, -1, 24)).toEqual({ opacity: 0, translateX: -24 });
+  it('a tela esmaece e cresce de 0,94, sem direção', () => {
+    expect(tabSceneEnterFrom(false)).toEqual({ opacity: 0, scale: 0.94 });
   });
 
-  it('sem direção, só esmaece', () => {
-    expect(tabSceneEnterFrom(false, 0, 24)).toEqual({ opacity: 0, translateX: 0 });
+  it('a pílula da aba ativa fica centrada na casa (o + ocupa o meio)', () => {
+    expect(getTabIndicatorX(0, 4, 500, 52)).toBe(24);
+    expect(getTabIndicatorX(2, 4, 500, 52)).toBe(324);
+    expect(getTabIndicatorX(0, 4, 0, 52)).toBeNull();
   });
 
-  it('com "reduzir movimento" aparece direto', () => {
-    expect(tabSceneEnterFrom(true, 1, 24)).toEqual({ opacity: 1, translateX: 0 });
+  it('com "reduzir movimento" só esmaece', () => {
+    expect(tabSceneEnterFrom(true)).toEqual({ opacity: 0, scale: 1 });
   });
 });
 
@@ -95,5 +98,14 @@ describe('linha da aba ativa', () => {
   it('estica: a borda da frente vai na mola de toque e a de trás segue na de ênfase', () => {
     expect(getTabLineMotion(1)).toEqual({ left: 'trail', right: 'lead' });
     expect(getTabLineMotion(-1)).toEqual({ left: 'lead', right: 'trail' });
+  });
+});
+
+describe('isTabBarHidden', () => {
+  it('só esconde com tabBarStyle display none', () => {
+    expect(isTabBarHidden(undefined)).toBe(false);
+    expect(isTabBarHidden({})).toBe(false);
+    expect(isTabBarHidden({ tabBarStyle: { display: 'flex' } })).toBe(false);
+    expect(isTabBarHidden({ tabBarStyle: { display: 'none' } })).toBe(true);
   });
 });

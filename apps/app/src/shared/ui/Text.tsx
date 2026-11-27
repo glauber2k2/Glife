@@ -2,7 +2,20 @@ import { Text as RNText, type TextProps as RNTextProps } from 'react-native';
 
 import { useTheme, type Palette, type TypeStyle, type TypeVariant } from './theme';
 
-export type TextTone = 'primary' | 'secondary' | 'tertiary' | 'accent' | 'onAccent' | 'success' | 'warning' | 'danger';
+export type TextTone =
+  | 'primary'
+  | 'secondary'
+  | 'tertiary'
+  | 'quaternary'
+  | 'accent'
+  | 'onAccent'
+  | 'tonal'
+  | 'inverse'
+  | 'inverseAccent'
+  | 'inverseMuted'
+  | 'success'
+  | 'warning'
+  | 'danger';
 
 export interface TextProps extends RNTextProps {
   variant?: TypeVariant;
@@ -12,13 +25,18 @@ export interface TextProps extends RNTextProps {
   numeric?: boolean;
 }
 
-const toneColor = (c: Palette, tone: TextTone) =>
+export const toneColor = (c: Palette, tone: TextTone) =>
   ({
     primary: c.text,
     secondary: c.textSecondary,
     tertiary: c.textTertiary,
+    quaternary: c.textQuaternary,
     accent: c.accentInk,
     onAccent: c.onAccent,
+    tonal: c.tonalInk,
+    inverse: c.inverseInk,
+    inverseAccent: c.inverseAccent,
+    inverseMuted: c.inverseMuted,
     success: c.success,
     warning: c.warning,
     danger: c.danger,

@@ -168,3 +168,19 @@ describe('checkCategoryFits', () => {
     expect(checkCategoryFits(type, accountKind, kind ? cat(kind) : null)).toBe(ok);
   });
 });
+
+describe('ajuste de saldo (modelo)', () => {
+  const base = { amount_cents: 237, date: '2026-11-24', account_id: CC, is_adjustment: true } as const;
+  it('aceita receita ou despesa sem categoria', () => {
+    expect(newTransaction({ ...base, type: 'expense' }, USER, clock).is_adjustment).toBe(true);
+    expect(newTransaction({ ...base, type: 'income' }, USER, clock).is_adjustment).toBe(true);
+  });
+  it('recusa transferência ou categoria', () => {
+    expect(rejects(() => newTransaction({ ...base, type: 'transfer', to_account_id: CC2 }, USER, clock))).toBe(true);
+    expect(rejects(() => newTransaction({ ...base, type: 'expense', category_id: CAT }, USER, clock))).toBe(true);
+  });
+  it('sort_order padrão é 0', () => {
+    expect(newAccount({ name: 'x', kind: 'checking' }, USER, clock).sort_order).toBe(0);
+    expect(newCategory({ name: 'x', kind: 'expense', color: 'sage', icon: 'a' }, USER, clock).sort_order).toBe(0);
+  });
+});

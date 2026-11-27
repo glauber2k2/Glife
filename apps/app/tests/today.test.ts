@@ -60,3 +60,15 @@ describe('shouldReplayEntrance', () => {
     expect(shouldReplayEntrance(null, 99 * min)).toBe(false);
   });
 });
+
+describe('greeting', () => {
+  it('bom dia de manhã, boa tarde à tarde e boa noite no resto', async () => {
+    const { greeting } = await import('../src/features/today/screens/greeting');
+    expect(greeting(5)).toBe('Bom dia');
+    expect(greeting(11)).toBe('Bom dia');
+    expect(greeting(12)).toBe('Boa tarde');
+    expect(greeting(17)).toBe('Boa tarde');
+    expect(greeting(18)).toBe('Boa noite');
+    expect(greeting(2)).toBe('Boa noite');
+  });
+});

@@ -9,6 +9,8 @@ import {
   money,
   monthName,
   parseDmy,
+  relativeDay,
+  tinyInstallmentsHint,
   signed,
 } from '../src/features/finance/components/format';
 
@@ -43,5 +45,26 @@ describe('formatação de Finanças', () => {
   it('nome do mês ganha o ano só quando está longe', () => {
     expect(monthName('2027-01', '2026-12-10')).toBe('janeiro');
     expect(monthName('2028-01', '2026-12-10')).toBe('janeiro de 2028');
+  });
+});
+
+describe('dica do campo de data', () => {
+  it('diz Hoje, Ontem ou Amanhã; nos outros dias a própria data basta', () => {
+    expect(relativeDay('2026-12-10', '2026-12-10')).toBe('Hoje');
+    expect(relativeDay('2026-12-09', '2026-12-10')).toBe('Ontem');
+    expect(relativeDay('2026-12-11', '2026-12-10')).toBe('Amanhã');
+    expect(relativeDay('2026-12-01', '2026-12-10')).toBeUndefined();
+  });
+});
+
+describe('total menor que o número de parcelas', () => {
+  it('explica que cada parcela precisa de pelo menos 1 centavo', () => {
+    expect(tinyInstallmentsHint([1, 1, 0, 0], 4)).toBe('Com 4 parcelas, o total precisa ser de pelo menos R$ 0,04.');
+  });
+
+  it('não reclama de parcelas válidas nem do campo ainda vazio', () => {
+    expect(tinyInstallmentsHint([1, 1, 1], 3)).toBeNull();
+    expect(tinyInstallmentsHint([0, 0, 0], 3)).toBeNull();
+    expect(tinyInstallmentsHint(undefined, 3)).toBeNull();
   });
 });

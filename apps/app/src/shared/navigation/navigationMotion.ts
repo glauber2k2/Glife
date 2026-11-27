@@ -27,12 +27,12 @@ export function createTabFocusTracker() {
 export type TabFocusTracker = ReturnType<typeof createTabFocusTracker>;
 
 /**
- * Estado inicial da aba que ganha foco: entra pelo lado do movimento enquanto esmaece.
- * Sem direção só esmaece; com "reduzir movimento" aparece direto.
+ * Estado inicial da aba que ganha foco (Cobalto): esmaece e cresce de 0,94, sem direção.
+ * Com "reduzir movimento" só esmaece (o esmaecer de 160 ms fica por conta de quem anima).
  */
-export function tabSceneEnterFrom(reduceMotion: boolean, direction: TabDirection, distance: number) {
-  if (reduceMotion) return { opacity: 1, translateX: 0 } as const;
-  return { opacity: 0, translateX: direction * distance } as const;
+export function tabSceneEnterFrom(reduceMotion: boolean) {
+  if (reduceMotion) return { opacity: 0, scale: 1 } as const;
+  return { opacity: 0, scale: 0.94 } as const;
 }
 
 /** A caixa de entrada ocupa um espaço no centro, mas nunca recebe a linha da aba ativa. */
@@ -56,4 +56,18 @@ export function getTabLineInsets(index: number, tabCount: number, barWidth: numb
  */
 export function getTabLineMotion(direction: TabDirection) {
   return direction < 0 ? ({ left: 'lead', right: 'trail' } as const) : ({ left: 'trail', right: 'lead' } as const);
+}
+
+/** Posição x (px) da pílula da aba ativa: centrada na casa da aba (o + ocupa a casa do meio). */
+export function getTabIndicatorX(index: number, tabCount: number, barWidth: number, indicatorWidth: number) {
+  if (barWidth <= 0 || tabCount <= 0 || index < 0 || index >= tabCount) return null;
+  const slots = tabCount + 1;
+  const slotWidth = barWidth / slots;
+  return getTabSlot(index, tabCount) * slotWidth + (slotWidth - indicatorWidth) / 2;
+}
+
+/** A tela ativa pediu para esconder as abas (`tabBarStyle: { display: 'none' }`, padrão do React Navigation). */
+export function isTabBarHidden(options: { tabBarStyle?: unknown } | undefined): boolean {
+  const style = options?.tabBarStyle;
+  return !!style && typeof style === 'object' && (style as { display?: unknown }).display === 'none';
 }

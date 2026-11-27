@@ -1,13 +1,15 @@
 // Linhas de Compras: lista (tela de listas) e item com caixa de marcar e risco animado (tela da lista).
 import { itemTotal, type ShoppingItem } from '@glife/domain/finance';
-import { Check, ChevronRight, Repeat } from 'lucide-react-native';
+import { Check, ChevronRight, Repeat, ShoppingBasket } from 'lucide-react-native';
 import { useEffect, type ReactNode } from 'react';
 import { Pressable, View } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring, withTiming } from 'react-native-reanimated';
 
-import { Icon, Text, makeStyles, resolveSpring, useReduceMotion, useTheme } from '@/shared/ui';
+import { Icon, ModuleIcon, Text, makeStyles, resolveSpring, useInListGroup, useReduceMotion, useTheme } from '@/shared/ui';
 
-import { money } from './format';
+
+import type { MoneyFormat } from './format';
+import { useMoneyFormat } from '../hooks/useMoneyFormat';
 
 /** Caixa de 22 px: o fundo vira destaque e o check cresce com a mola de toque. */
 export function Checkbox({ checked, label, onPress }: { checked: boolean; label: string; onPress: () => void }) {
@@ -55,7 +57,7 @@ function Struck({ on, children }: { on: boolean; children: ReactNode }) {
 }
 
 /** "2 × R$ 27,90", "1 un.", "3 un. · sem preço" ou o convite para preencher. */
-export function itemMeta(item: Pick<ShoppingItem, 'quantity' | 'unit_price_cents'>): { text: string; invite: boolean } {
+export function itemMeta(item: Pick<ShoppingItem, 'quantity' | 'unit_price_cents'>, money: MoneyFormat['money']): { text: string; invite: boolean } {
   if (item.unit_price_cents !== null) {
     return { text: item.quantity > 1 ? `${item.quantity} × ${money(item.unit_price_cents)}` : '1 un.', invite: false };
   }
@@ -76,16 +78,18 @@ export function ItemRow({
   onEdit: () => void;
   onMenu: () => void;
 }) {
+  const { money } = useMoneyFormat();
   const s = useStyles();
+  const inGroup = useInListGroup();
   const t = useTheme();
   const total = itemTotal(item);
-  const meta = itemMeta(item);
+  const meta = itemMeta(item, money);
   return (
     <Pressable
       onPress={onEdit}
       onLongPress={onMenu}
       accessibilityHint="Toque para editar; toque longo para mais ações"
-      style={({ pressed }) => [s.itemRow, pressed && s.pressed]}
+      style={({ pressed }) => [s.itemRow, !inGroup && s.rowDivider, pressed && s.pressed]}
     >
       <View style={s.boxSlot}>
         <Checkbox checked={checked} label={item.name} onPress={onToggle} />
@@ -139,15 +143,17 @@ export function ListRow({
   onPress: () => void;
 }) {
   const s = useStyles();
+  const inGroup = useInListGroup();
   const t = useTheme();
   return (
-    <Pressable accessibilityRole="button" onPress={onPress} style={({ pressed }) => [s.listRow, pressed && s.pressed]}>
+    <Pressable accessibilityRole="button" onPress={onPress} style={({ pressed }) => [s.listRow, !inGroup && s.rowDivider, pressed && s.pressed]}>
+      <ModuleIcon icon={ShoppingBasket} module="shopping" />
       <View style={s.listBody}>
         <View style={s.itemLine}>
           <Text variant="item" style={s.flex} numberOfLines={1}>
             {name}
           </Text>
-          <Text numeric style={s.medium}>
+          <Text variant="amount" numeric>
             {total}
           </Text>
         </View>
@@ -160,7 +166,7 @@ export function ListRow({
           </Text>
         </View>
       </View>
-      <Icon icon={ChevronRight} size={t.icon.small} color="textTertiary" />
+      <Icon icon={ChevronRight} size={t.icon.small + t.space[0.5]} color="textQuaternary" />
     </Pressable>
   );
 }
@@ -168,13 +174,14 @@ export function ListRow({
 const useStyles = makeStyles((t) => ({
   flex: { flex: 1, minWidth: 0 },
   medium: { fontFamily: t.type.chip.font },
-  pressed: { backgroundColor: t.colors.soft },
+  pressed: { opacity: t.opacity.pressed },
+  rowDivider: { borderTopWidth: t.hairline, borderTopColor: t.colors.hairline },
   box: {
     width: t.size.checkbox,
     height: t.size.checkbox,
     borderRadius: t.radius.checkbox,
     borderWidth: t.size.radioBorder,
-    borderColor: t.colors.textTertiary,
+    borderColor: t.colors.border,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -193,10 +200,8 @@ const useStyles = makeStyles((t) => ({
   itemRow: {
     flexDirection: 'row',
     gap: t.space[3] + t.space[0.5],
-    minHeight: t.size.navRowTall,
+    minHeight: t.size.navRow,
     paddingVertical: t.space[3],
-    borderTopWidth: t.hairline,
-    borderTopColor: t.colors.hairline,
   },
   itemBody: { flex: 1, minWidth: 0, gap: t.space[1] },
   itemLine: { flexDirection: 'row', alignItems: 'baseline', gap: t.space[3] },
@@ -207,10 +212,8 @@ const useStyles = makeStyles((t) => ({
     flexDirection: 'row',
     alignItems: 'center',
     gap: t.space[3] + t.space[0.5],
-    minHeight: t.size.navRowTall,
-    paddingVertical: t.space[4],
-    borderTopWidth: t.hairline,
-    borderTopColor: t.colors.hairline,
+    minHeight: t.size.navRow,
+    paddingVertical: t.space[3],
   },
   listBody: { flex: 1, minWidth: 0, gap: t.space[1] },
 }));

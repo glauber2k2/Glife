@@ -45,7 +45,7 @@ export function CodeField({ value, onChange, onComplete, invalid, disabled, auto
           <Animated.View
             entering={reduceMotion ? undefined : riseIn(t.space[1], t.motion.tap)}
           >
-            <Text variant="digit" numeric>
+            <Text variant="digit" tone={invalid ? 'danger' : 'primary'} numeric>
               {d}
             </Text>
           </Animated.View>
@@ -88,20 +88,19 @@ export function CodeField({ value, onChange, onComplete, invalid, disabled, auto
 }
 
 const useStyles = makeStyles((t) => ({
-  root: { flexDirection: 'row', gap: t.space[4], alignSelf: 'stretch' },
-  group: { flex: 1, flexDirection: 'row', gap: t.space[2] },
+  root: { flexDirection: 'row', gap: t.space[2.5], alignSelf: 'center' },
+  group: { flexDirection: 'row', gap: t.space[2] },
+  // Casas de 46 × 58, cartão r14; a atual com anel cobalto e halo; erro em anel vermelho.
   slot: {
-    flex: 1,
-    minWidth: 0,
-    height: t.size.field,
-    borderWidth: t.hairline,
-    borderColor: t.colors.hairline,
-    borderRadius: t.radius.field,
+    width: t.size.iconButton + t.space[1],
+    height: t.size.field + t.space[1.5],
+    backgroundColor: t.colors.card,
+    borderRadius: t.radius.segmentTrack,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  focused: { borderColor: t.colors.accent },
-  invalid: { borderColor: t.colors.danger },
+  focused: { boxShadow: `0px 0px 0px ${t.field.ring}px ${t.colors.accent}, 0px 0px 0px ${t.field.ring + t.field.halo}px ${t.colors.tonal}` },
+  invalid: { boxShadow: `0px 0px 0px ${t.field.ring}px ${t.colors.dangerStrong}` },
   caret: { width: t.size.caretWidth, height: t.size.caretHeight, backgroundColor: t.colors.accent },
   disabled: { opacity: t.opacity.disabled },
   input: {

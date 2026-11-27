@@ -102,6 +102,19 @@ describe('finanças: isolamento e regras do banco', () => {
     ).rejects.toThrow();
   });
 
+  it('orçamento zero encerra (aceito); negativo é recusado', async () => {
+    const n = await asUser(db, USER_A, async (tx) => {
+      await tx.query(`insert into public.budgets (category_id, starts_month, amount_cents) values ($1, '2027-03', 0)`, [CAT_A]);
+      return count(tx, `select count(*)::int as n from public.budgets where starts_month = '2027-03' and amount_cents = 0`);
+    });
+    expect(n).toBe(1);
+    await expect(
+      asUser(db, USER_A, (tx) =>
+        tx.query(`insert into public.budgets (category_id, starts_month, amount_cents) values ($1, '2027-04', -1)`, [CAT_A]),
+      ),
+    ).rejects.toThrow();
+  });
+
   it('A grava a própria transação normalmente', async () => {
     const n = await asUser(db, USER_A, async (tx) => {
       await insertTx('type, amount_cents, date, account_id', `'expense', 1, '2026-11-24', '${CC_A}'`)(tx);
@@ -140,6 +153,14 @@ describe('finanças: isolamento e regras do banco', () => {
       asUser(db, USER_A, async (tx) =>
         tx.query(`insert into public.shopping_items (list_id, name, unit_price_cents) values ($1, 'X', 0)`, [await newList(tx)]),
       ),
+    ).rejects.toThrow();
+  });
+  it('ajuste de saldo: só receita/despesa sem categoria', async () => {
+    const ok = `user_id, type, amount_cents, date, account_id, is_adjustment`;
+    await asUser(db, USER_A, insertTx(ok, `'${USER_A}', 'income', 500, '2026-11-27', '${CC_A}', true`));
+    await expect(asUser(db, USER_A, insertTx(ok, `'${USER_A}', 'expense', 500, '2026-11-27', '${CC_A}', true`))).resolves.toBeDefined();
+    await expect(
+      asUser(db, USER_A, insertTx(`${ok}, category_id`, `'${USER_A}', 'expense', 500, '2026-11-27', '${CC_A}', true, '${CAT_A}'`)),
     ).rejects.toThrow();
   });
 });

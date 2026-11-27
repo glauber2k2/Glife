@@ -2,19 +2,20 @@
   "expo": {
     "name": "Glife",
     "slug": "glife",
-    "version": "0.2.5",
+    "version": "0.7.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "glife",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "icon": "./assets/expo.icon",
+      "icon": "./assets/images/icon.png",
       "bundleIdentifier": "app.glife.pessoal"
     },
     "android": {
       "package": "app.glife.pessoal",
+      "versionCode": 9,
       "adaptiveIcon": {
-        "backgroundColor": "#FAFAF9",
+        "backgroundColor": "#2D5BFF",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
@@ -30,16 +31,18 @@
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#FAFAF9",
+          "backgroundColor": "#F1F3F6",
           "image": "./assets/images/splash-icon.png",
-          "imageWidth": 76,
+          "imageWidth": 96,
           "dark": {
-            "backgroundColor": "#0C0C0B"
+            "backgroundColor": "#0C0F15"
           }
         }
       ],
       "expo-secure-store",
-      "react-native-quick-crypto"
+      "react-native-quick-crypto",
+      "@react-native-community/datetimepicker",
+      "expo-asset"
     ],
     "experiments": {
       "typedRoutes": true,

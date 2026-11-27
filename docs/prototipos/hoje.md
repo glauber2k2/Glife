@@ -1,8 +1,9 @@
 # Hoje (Fase 1) — prototipada
 
 Protótipo no Claude Design: `Glife Hoje.dc.html` (telas em `HojeTela.dc.html`), implementado na T20 (24/11/2026)
-na variante 2a ("Recolhido"). Fora por ora: card que expande até a nota, navegação superior no web, blocos de
-agenda/refeição/gastos/devocional (chegam com os módulos) e itens da caixa de entrada (sem tabela ainda).
+na variante 2a ("Recolhido"). Em 25/11/2026 entraram a linha da nota que se expande até a tela da nota (e volta até a linha), a navegação no topo
+no web largo (64 px, coluna de 720 px) e o bloco de gastos ("Mês até agora", de `graficos.md`). Fora por ora:
+blocos de agenda/refeição/devocional (chegam com os módulos) e itens da caixa de entrada (sem tabela ainda).
 
 ## Histórico: pedido de prototipagem
 

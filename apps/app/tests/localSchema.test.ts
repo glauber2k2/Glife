@@ -2,6 +2,9 @@ import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
+import { agendaTables } from '../src/features/agenda/data/schema';
+import { bibleTables } from '../src/features/bible/data/schema';
+import { dietTables } from '../src/features/diet/data/schema';
 import { financeTables } from '../src/features/finance/data/schema';
 import { linksTables } from '../src/features/links/data/schema';
 import { notesTables } from '../src/features/notes/data/schema';
@@ -32,7 +35,7 @@ function migrationColumns(): Map<string, string[]> {
     const sql = readFileSync(join(migrationsDir, file), 'utf8');
     for (const m of sql.matchAll(/create table public\.(\w+) \(([\s\S]*?)\n\);/g)) {
       const columns = topLevelItems(m[2]!)
-        .filter((item) => /^[a-z_]+ [a-z]/.test(item) && !/^(foreign|primary|unique|check|constraint) /.test(item))
+        .filter((item) => /^[a-z_][a-z0-9_]* [a-z]/.test(item) && !/^(foreign|primary|unique|check|constraint) /.test(item))
         .map((item) => item.split(/\s/)[0]!)
         .filter((name) => name !== 'id');
       tables.set(m[1]!, columns);
@@ -42,20 +45,30 @@ function migrationColumns(): Map<string, string[]> {
   return tables;
 }
 
-const local = { ...notesTables, ...linksTables, ...financeTables };
+const local = { ...notesTables, ...linksTables, ...financeTables, ...agendaTables, ...dietTables, ...bibleTables };
 const remote = migrationColumns();
 
 describe('schema local (PowerSync) espelha as migrações', () => {
   it('cobre as tabelas sincronizadas', () => {
     expect(Object.keys(local).sort()).toEqual([
       'accounts',
+      'bible_highlights',
+      'bible_plan_reads',
+      'bible_plans',
       'budgets',
       'categories',
+      'diet_goals',
       'entity_tags',
+      'events',
+      'investment_assets',
+      'investment_movements',
       'links',
+      'meal_plans',
+      'meals',
       'note_folders',
       'notes',
       'recurrences',
+      'reminders',
       'shopping_items',
       'shopping_lists',
       'tags',

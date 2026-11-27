@@ -21,6 +21,8 @@ const emptyTables = (): Tables => ({
   budgets: new Map(),
   shopping_lists: new Map(),
   shopping_items: new Map(),
+  investment_assets: new Map(),
+  investment_movements: new Map(),
 });
 
 const copy = (t: Tables): Tables =>
@@ -91,6 +93,11 @@ export function createInMemoryFinanceStore(userId: string): FinanceStore {
       return () => watchers.delete(emit);
     },
     watchShopping(onChange): Unsubscribe {
+      watchers.add(onChange);
+      queueMicrotask(() => watchers.has(onChange) && onChange());
+      return () => watchers.delete(onChange);
+    },
+    watchInvestments(onChange): Unsubscribe {
       watchers.add(onChange);
       queueMicrotask(() => watchers.has(onChange) && onChange());
       return () => watchers.delete(onChange);

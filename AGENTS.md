@@ -4,8 +4,9 @@ Organizador de vida pessoal: app único (Expo SDK 58 + Expo Router + TypeScript)
 Local-first: tudo é lido/gravado no SQLite do aparelho e sincronizado com o Supabase via PowerSync.
 Módulos: notas, finanças, investimentos, compras, agenda, dieta, Bíblia/devocionais, galeria, caixa de entrada com IA.
 O coração é o **grafo de links**: toda entidade tem UUID e endereço `glife://<tipo>/<ref>`; qualquer uma aponta para qualquer outra.
-Planejamento: `../Glife — Planejamento do Projeto.md` · Design: `docs/design-system/` · Fases: `docs/PLANO_DE_IMPLEMENTACAO.md`
-· Protótipos (Claude Design): `docs/prototipos/` · Histórico antigo: `docs/arquivo/`.
+Planejamento: `../Glife — Planejamento do Projeto.md` · Design: `docs/design-system-cobalto/` (o antigo
+`docs/design-system/` é histórico) · Fases: `docs/PLANO_DE_IMPLEMENTACAO.md`
+· Protótipos: `docs/prototipos/` (todas as telas do redesign em `docs/prototipos/redesign-cobalto/`) · Histórico antigo: `docs/arquivo/`.
 
 ## Fluxo de trabalho entre IAs ("modo reserva")
 
@@ -77,17 +78,24 @@ O Claude é o agente principal; o Codex só assume quando os créditos do Claude
 
 ## Interface e movimento
 
-- Direção **Glaciar** (cor/forma) + **Sinóptico** (tipo): neutros azulados, um destaque azul-aço, Hanken Grotesk na
-  interface (títulos grandes e leves), Crimson Pro só para leitura, controles em pílula, campos raio 16, margem lateral 22.
-- Só tokens de `shared/ui/theme/tokens.ts` (`t.space`, `t.colors`, `t.size`, `t.layout`, `t.opacity`…): **nada de hex
-  ou número solto** — crie um token. Sem NativeWind, sombras ou gradientes; **sem caixas para agrupar**: blocos separados
-  por 18 px + linha de 1 px. Modo escuro de primeira classe. Sem emoji; Lucide só contorno 1,5. Textos em português do Brasil.
+- Direção **Glife Cobalto v1.0** (`docs/design-system-cobalto/`, desde 26/11/2026; o Glaciar foi aposentado na Fase R):
+  Outfit em tudo, inclusive no texto bíblico (DM Mono em rótulos técnicos), fundo cinza `#F1F3F6`, cartões brancos
+  r24 sem borda nem sombra, cobalto `#2D5BFF` só em ações e itens ativos, tonal para ação secundária, cor por módulo só
+  em blocos de ícone (`ModuleIcon`, `moduleColors`), sombra **só no que flutua** (barra de abas, folha, diálogo, aviso,
+  CTA). Margem 20 (24 no web), 24 entre blocos. Tela nova segue a ficha da tela no protótipo `docs/prototipos/redesign-cobalto/`.
+- Só tokens de `shared/ui/theme/tokens.ts` (`t.space`, `t.colors`, `t.size`, `t.layout`, `t.radius`, `t.easing`…): **nada
+  de hex ou número solto** — crie um token. Sem NativeWind nem gradientes. Listas vão num `ListGroup` (cartão com divisórias
+  recuadas); blocos num `Card`. Modo escuro de primeira classe. Sem emoji; Lucide só contorno 1,5. Textos em pt-BR.
 - Estilos via `makeStyles((t) => ({...}))`; textos via `<Text variant tone>`; ícones via `<Icon>`. Componentes de
-  `@/shared/ui`: `Screen`, `Section`, `Text`, `Button`, `IconButton`, `Input`, `ListItem`, `Sheet`, `Chip`, `Spinner`,
-  `Reveal`, `EmptyState`, `Switch`, `SegmentedControl`, `BackHeader`.
-- **Movimento como linguagem, com sobriedade** (Reanimated): toda mudança de estado anima; molas `tap` 200, `standard` 300,
-  `emphasis` 350, `gentle` 320 ms; toque afunda 0,96; listas em cascata de 40 ms (`Reveal`); sem quique; nada bloqueia o
-  toque; respeite "reduzir movimento"; haptics leve nas ações importantes.
+  `@/shared/ui`: `Screen` (`header`, `tabBar`, `footer`), `BackHeader`/`TopBar`, `Section`, `SectionHeader`, `Card`,
+  `ListGroup`, `ListItem`, `NavRow`, `ModuleIcon`, `ModuleTile`, `Button` (52/44/36), `IconButton` (42), `Input`, `Chip`,
+  `SegmentedControl`, `Switch`, `Checkbox`, `Radio`, `Tag`, `Alert`, `ProgressBar`, `ProgressRing`, `StatValue`,
+  `AIInsight`, `EmptyState` (com `Mascot`), `Sheet`, `Dialog`, `Reveal`. Campos e chips trocam o preenchimento sozinhos
+  dentro de cartões/folhas (`SurfaceProvider`).
+- **Movimento "curto e gentil"** (Reanimated): toda mudança de estado anima; toque afunda 0,96 em 90 ms e volta com mola
+  (`usePress`); durações 90–500 ms com as curvas de `t.easing`; listas em cascata de 70 ms até o 6º item (`Reveal`); folha
+  sobe em 400 e desce em 240 ms; troca de aba esmaece e cresce de 0,94; respeite "reduzir movimento" (vira esmaecer de
+  160 ms); haptics leve nas ações importantes.
 - Conferir toda tela nos dois temas (Ajustes → Aparência) e no Android e web.
 - **Teclado nunca cobre o campo:** tela com campos usa `Screen` (rola até o campo focado) ou `Sheet`; tela própria usa
   `KeyboardAvoidingView`/`KeyboardAwareScrollView` de `react-native-keyboard-controller`, **nunca** o `KeyboardAvoidingView`

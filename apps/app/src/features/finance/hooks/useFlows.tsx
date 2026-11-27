@@ -13,7 +13,8 @@ import { useCallback, useMemo, useState, type ReactNode } from 'react';
 
 import { useToast } from '@/shared/ui';
 
-import { MONTH_NAMES, money } from '../components/format';
+import { MONTH_NAMES } from '../components/format';
+import { useMoneyFormat } from './useMoneyFormat';
 import { PaySheet } from '../components/sheets';
 import { useFinance } from './FinanceData';
 import { useFinanceActions } from './useFinanceActions';
@@ -34,7 +35,7 @@ export function useAvailableFor(): (item: Pick<PlannedItem, 'type' | 'account_id
     (item) => {
       const account = data?.accounts.find((a) => a.id === item.account_id);
       if (!data || !account || account.kind === 'credit_card' || item.type === 'income') return null;
-      return accountBalance(account, data.transactions);
+      return accountBalance(account, data.transactions, data.flows);
     },
     [data],
   );
@@ -95,6 +96,7 @@ export function usePayInvoice(
   open: (cardId: string, month: Month) => void;
   element: ReactNode;
 } {
+  const { money } = useMoneyFormat();
   const { data } = useFinance();
   const toast = useToast();
   const { payInvoice } = useFinanceActions();
@@ -105,7 +107,7 @@ export function usePayInvoice(
   const card = target ? (data?.accounts.find((a) => a.id === target.cardId) ?? null) : null;
   const summary = card && target && data ? invoiceSummary(card, target.month, data.transactions, today, occurrences) : null;
   const banks = (data?.accounts ?? []).filter((a) => a.kind !== 'credit_card' && !a.archived);
-  const balances = Object.fromEntries(banks.map((a) => [a.id, accountBalance(a, data?.transactions ?? [])]));
+  const balances = Object.fromEntries(banks.map((a) => [a.id, accountBalance(a, data?.transactions ?? [], data?.flows)]));
 
   const element = (
     <PaySheet

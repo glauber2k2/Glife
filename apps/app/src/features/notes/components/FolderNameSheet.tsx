@@ -6,15 +6,17 @@ import { Button, Input, Sheet } from '@/shared/ui';
 
 import { useNotesData } from '../hooks/NotesData';
 
-/** Folha para criar pasta (um nível só, sem árvore). */
+/** Cria na raiz ou dentro da pasta escolhida. A validação do pai fica no repositório. */
 export function FolderNameSheet({
   visible,
   onClose,
   onCreated,
+  parentId = null,
 }: {
   visible: boolean;
   onClose: () => void;
   onCreated: (folder: NoteFolder) => void;
+  parentId?: string | null;
 }) {
   const { folders } = useNotesData();
   const [name, setName] = useState('');
@@ -29,7 +31,7 @@ export function FolderNameSheet({
   const create = async () => {
     setBusy(true);
     try {
-      const folder = await folders.create({ name });
+      const folder = await folders.create({ name, parent_id: parentId });
       setName('');
       setError(undefined);
       onCreated(folder);
@@ -41,7 +43,7 @@ export function FolderNameSheet({
   };
 
   return (
-    <Sheet visible={visible} onClose={close} title="Nova pasta">
+    <Sheet visible={visible} onClose={close} title={parentId ? 'Nova subpasta' : 'Nova pasta'}>
       <Input
         label="Nome da pasta"
         value={name}

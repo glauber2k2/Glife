@@ -1,19 +1,32 @@
 import { snippetParts, type SearchGroup, type SearchHit } from '@glife/domain/search';
 import { router, type Href } from 'expo-router';
-import { FileText, Folder, Hash, X, Zap, type LucideIcon } from 'lucide-react-native';
+import { FileText, Folder, Hash, Zap, type LucideIcon } from 'lucide-react-native';
 import { useState } from 'react';
 import { View } from 'react-native';
 
-import { IconButton, ListItem, Screen, SearchField, Section, Text, makeStyles } from '@/shared/ui';
+import {
+  Button,
+  ListGroup,
+  ListItem,
+  Mascot,
+  Reveal,
+  Screen,
+  SearchField,
+  Section,
+  Text,
+  makeStyles,
+  useTheme,
+  type ModuleKey,
+} from '@/shared/ui';
 
 import { useSearchResults } from '../hooks/useSearchResults';
 import { useEscape, useMarkSearchOpen } from '../hooks/useSearchShortcut';
 
-const GROUP: Record<SearchGroup, { title: string; icon: LucideIcon }> = {
+const GROUP: Record<SearchGroup, { title: string; icon: LucideIcon; module?: ModuleKey }> = {
   actions: { title: 'Ações', icon: Zap },
-  notes: { title: 'Notas', icon: FileText },
-  folders: { title: 'Pastas', icon: Folder },
-  tags: { title: 'Tags', icon: Hash },
+  notes: { title: 'Notas', icon: FileText, module: 'notes' },
+  folders: { title: 'Pastas', icon: Folder, module: 'notes' },
+  tags: { title: 'Tags', icon: Hash, module: 'annotations' },
 };
 
 function close() {
@@ -33,7 +46,7 @@ function Snippet({ text }: { text: string }) {
     <>
       {snippetParts(text).map((p, i) =>
         p.mark ? (
-          <Text key={i} variant="small" tone="accent" style={s.mark}>
+          <Text key={i} variant="caption" tone="tonal" style={s.mark}>
             {p.text}
           </Text>
         ) : (
@@ -44,9 +57,10 @@ function Snippet({ text }: { text: string }) {
   );
 }
 
-/** Busca universal: ações, notas, pastas e tags. Enter abre o primeiro resultado; Esc fecha (web). */
+/** Busca universal (Cobalto): campo em pílula com "Cancelar"; grupos em listas agrupadas. Enter abre o primeiro. */
 export function SearchScreen() {
   const s = useStyles();
+  const t = useTheme();
   const [query, setQuery] = useState('');
   const sections = useSearchResults(query);
   useMarkSearchOpen();
@@ -56,42 +70,59 @@ export function SearchScreen() {
   const empty = sections !== null && sections.length === 0;
 
   return (
-    <Screen title="Buscar" action={<IconButton icon={X} label="Fechar" variant="ghost" onPress={close} />}>
-      <SearchField
-        value={query}
-        onChangeText={setQuery}
-        placeholder="Notas, pastas, tags, ações…"
-        autoFocus
-        onSubmit={() => first && openHit(first)}
-      />
+    <Screen gap={t.space[5]}>
+      <View style={s.bar}>
+        <View style={s.grow}>
+          <SearchField value={query} onChangeText={setQuery} placeholder="Buscar ou fazer algo" autoFocus onSubmit={() => first && openHit(first)} />
+        </View>
+        <Button label="Cancelar" variant="ghost" size="sm" selfAlign="center" onPress={close} />
+      </View>
       {empty ? (
-        <Text variant="small" tone="tertiary" style={s.message}>
-          Nada encontrado para “{query.trim()}”.
-        </Text>
+        <View style={s.nothing}>
+          <Mascot size={t.size.moduleIconLarge} eyes={t.colors.bg} mood="pensando" />
+          <Text variant="heading" align="center">{`Nada com “${query.trim()}”`}</Text>
+          <Text variant="small" tone="tertiary" align="center" style={s.nothingText}>
+            Procurei em notas, pastas, tags e ações.
+          </Text>
+        </View>
       ) : (
-        <View style={s.sections}>
+        <Reveal>
           {sections?.map((section) => (
             <Section key={section.group} title={query.trim() || section.group !== 'notes' ? GROUP[section.group].title : 'Recentes'}>
-              {section.hits.map((hit, i) => (
-                <ListItem
-                  key={hit.id}
-                  icon={GROUP[hit.group].icon}
-                  title={hit.title}
-                  subtitle={hit.snippet ? <Snippet text={hit.snippet} /> : hit.meta}
-                  separator={i < section.hits.length - 1}
-                  onPress={() => openHit(hit)}
-                />
-              ))}
+              <ListGroup>
+                {section.hits.map((hit) => (
+                  <ListItem
+                    key={hit.id}
+                    icon={GROUP[hit.group].icon}
+                    module={GROUP[hit.group].module}
+                    title={hit.title}
+                    subtitle={hit.snippet ? <Snippet text={hit.snippet} /> : hit.meta}
+                    onPress={() => openHit(hit)}
+                    trailing={
+                      hit === first && query.trim() ? (
+                        <View style={s.kbd}>
+                          <Text variant="micro" tone="tertiary">
+                            Enter
+                          </Text>
+                        </View>
+                      ) : undefined
+                    }
+                  />
+                ))}
+              </ListGroup>
             </Section>
           ))}
-        </View>
+        </Reveal>
       )}
     </Screen>
   );
 }
 
 const useStyles = makeStyles((t) => ({
-  sections: { gap: t.layout.blockGap },
-  message: { paddingVertical: t.space[4] },
-  mark: { fontFamily: t.type.item.font },
+  bar: { flexDirection: 'row', alignItems: 'center', gap: t.space[2.5] },
+  grow: { flex: 1 },
+  mark: { fontFamily: t.type.tag.font, backgroundColor: t.colors.tonal },
+  nothing: { alignItems: 'center', gap: t.space[3], paddingTop: t.space[7], paddingBottom: t.space[1.5] },
+  nothingText: { maxWidth: t.layout.emptyTextMax - t.space[5] },
+  kbd: { paddingHorizontal: t.space[1.5], borderRadius: t.radius.checkbox, backgroundColor: t.colors.bg },
 }));

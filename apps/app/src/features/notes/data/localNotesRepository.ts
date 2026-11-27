@@ -16,6 +16,7 @@ import {
   folderNameSchema,
   newNote,
   newNoteFolder,
+  FOLDER_CYCLE_MESSAGE,
   wouldCreateFolderCycle,
   type Note,
   type NoteFolder,
@@ -201,6 +202,35 @@ export function createLocalNotesRepository(db: LocalDb, userId: string): NotesRe
       });
     },
 
+    async updateMany(changes) {
+      return db.writeTransaction(async (tx) => {
+        const staged = new Map<string, Note>();
+        for (const { id, patch } of changes) {
+          const n = applyNotePatch(staged.get(id) ?? (await aliveNote(tx, id)), patch);
+          if (n.folder_id) await aliveFolder(tx, n.folder_id);
+          staged.set(id, n);
+        }
+        for (const n of staged.values()) await writeNote(tx, n, false);
+        return changes.map(({ id }) => staged.get(id)!);
+      });
+    },
+
+    async removeMany(ids) {
+      await db.writeTransaction(async (tx) => {
+        for (const id of ids) await writeNote(tx, softDelete(await aliveNote(tx, id)), false);
+      });
+    },
+
+    async restoreMany(ids) {
+      await db.writeTransaction(async (tx) => {
+        for (const id of ids) {
+          const row = await tx.getOptional<NoteRow>(`SELECT ${NOTE_COLUMNS} FROM notes WHERE id = ?`, [id]);
+          if (!row) throw new RepositoryError('not_found');
+          await writeNote(tx, restoreEntity(toNote(row)), false);
+        }
+      });
+    },
+
     async listTrash(page) {
       const k = keyset('deleted_at', page);
       const rows = await db.getAll<NoteRow>(
@@ -251,6 +281,18 @@ export function createLocalNotesRepository(db: LocalDb, userId: string): NotesRe
 
 export function createLocalNoteFoldersRepository(db: LocalDb, userId: string): NoteFoldersRepository {
   return {
+    async listSummaries() {
+      const columns = FOLDER_COLUMNS.split(', ').map((c) => `f.${c}`).join(', ');
+      const rows = await db.getAll<NoteFolder & { note_count: number; child_count: number }>(
+        `SELECT ${columns}, coalesce(n.note_count, 0) AS note_count, coalesce(c.child_count, 0) AS child_count
+         FROM note_folders f
+         LEFT JOIN (SELECT folder_id, count(*) AS note_count FROM notes WHERE deleted_at IS NULL GROUP BY folder_id) n ON n.folder_id = f.id
+         LEFT JOIN (SELECT parent_id, count(*) AS child_count FROM note_folders WHERE deleted_at IS NULL GROUP BY parent_id) c ON c.parent_id = f.id
+         WHERE f.deleted_at IS NULL`,
+      );
+      return rows.map(({ note_count, child_count, ...folder }) => ({ folder, notes: Number(note_count), children: Number(child_count) }))
+        .sort((a, b) => a.folder.name.localeCompare(b.folder.name, 'pt-BR', { sensitivity: 'base' }));
+    },
     async list() {
       const rows = await db.getAll<NoteFolder>(`SELECT ${FOLDER_COLUMNS} FROM note_folders WHERE deleted_at IS NULL`);
       return rows.sort((a, b) => a.name.localeCompare(b.name, 'pt-BR', { sensitivity: 'base' }));
@@ -283,7 +325,9 @@ export function createLocalNoteFoldersRepository(db: LocalDb, userId: string): N
             (r) => [r.id, r.parent_id] as const,
           ),
         );
-        if (wouldCreateFolderCycle(id, parentId, (x) => parents.get(x) ?? null)) throw new RepositoryError('validation');
+        if (wouldCreateFolderCycle(id, parentId, (x) => parents.get(x) ?? null)) {
+          throw new RepositoryError('validation', { cause: new RangeError(FOLDER_CYCLE_MESSAGE) });
+        }
         const moved = { ...f, parent_id: parentId, updated_at: nowIso() };
         await writeFolder(tx, moved, false);
         return moved;

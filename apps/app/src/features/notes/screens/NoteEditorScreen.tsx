@@ -1,31 +1,34 @@
-import { NOTE_TITLE_MAX, type Note, type NoteFolder, type NoteKind, type NotePatch } from '@glife/domain/notes';
+import { parseBibleRef, toOsis } from '@glife/domain/bible';
+import { NOTE_TITLE_MAX, folderPath, type Note, type NoteFolder, type NoteKind, type NotePatch } from '@glife/domain/notes';
 import type { Tag as TagModel } from '@glife/domain/tags';
 import { useLocalSearchParams } from 'expo-router';
 import {
   Bold,
-  BookOpen,
-  Check,
   ChevronDown,
   ChevronLeft,
   CloudOff,
-  EllipsisVertical,
+  Ellipsis,
   FileText,
   Folder,
   FolderInput,
   FolderPlus,
-  FolderX,
+  Heading1,
+  Heading2,
+  Highlighter,
+  Italic,
   KeyboardOff,
   List,
-  PencilLine,
   Pin,
   PinOff,
   Plus,
+  Strikethrough,
   TextQuote,
   Trash2,
+  Underline,
   X,
   type LucideIcon,
 } from 'lucide-react-native';
-import { useCallback, useEffect, useRef, useState, type ComponentRef } from 'react';
+import { useCallback, useEffect, useMemo, useReducer, useRef, useState, type ComponentRef } from 'react';
 import {
   Keyboard,
   Platform,
@@ -39,7 +42,7 @@ import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { useLinksData } from '@/features/links';
+import { useLinksData, useOpenAddress } from '@/features/links';
 import { useSyncOnline } from '@/shared/lib/powersync';
 import {
   Button,
@@ -47,8 +50,11 @@ import {
   Icon,
   IconButton,
   Input,
+  ListGroup,
   NavRow,
   Pill,
+  Radio,
+  SegmentedControl,
   Sheet,
   Text,
   makeStyles,
@@ -58,19 +64,25 @@ import {
 } from '@/shared/ui';
 
 import { FolderNameSheet } from '../components/FolderNameSheet';
+import { FolderPicker } from '../components/FolderPicker';
 import { KIND_LABEL, KIND_OPTIONS } from '../components/kinds';
+import { INLINE_MARKS } from '../components/markdown';
+import { editorLineHeight } from '../components/editorLineHeight';
+import { LiveMarkdown } from '../components/LiveMarkdownText';
 import { MarkdownView } from '../components/MarkdownView';
 import { NoteLinks } from '../components/NoteLinks';
 import {
   applyWikilink,
   insertAt,
   prefixLines,
-  toggleBold,
+  toggleHeading,
+  toggleWrap,
   wikilinkQuery,
   type Edit,
   type Selection,
 } from '../components/textEdits';
 import { syncNoteLinks } from '../data/noteLinks';
+import { cursorIn, editorSelectionReducer, initialEditorSelection } from '../hooks/editorSelection';
 import { useNotesData } from '../hooks/NotesData';
 import { goBack, openNote, useTrashActions } from '../hooks/useNoteActions';
 
@@ -78,17 +90,25 @@ const SAVE_DELAY_MS = 600;
 const BAR_TITLE_AFTER = 70;
 type SheetKind = 'tipo' | 'mais' | 'pasta' | 'tags' | null;
 type Mode = 'read' | 'write';
+const MODES = [
+  { value: 'read' as const, label: 'Ler' },
+  { value: 'write' as const, label: 'Escrever' },
+];
 
 /**
  * Editor da nota (protótipo "Glife Notas"): Ler ⇄ Escrever, pasta e tags, salvamento silencioso,
  * [[vínculos]] com sugestões e, no Android, barra de formatação acima do teclado.
  */
+/** Markdown ao vivo no campo de escrever (o TextInput nativo aceita filhos com estilo; o do web, não). */
+const LIVE = Platform.OS !== 'web';
+
 export function NoteEditorScreen() {
   const s = useStyles();
   const t = useTheme();
   const reduceMotion = useReduceMotion();
   const { id, nova } = useLocalSearchParams<{ id: string; nova?: string }>();
   const { notes, folders } = useNotesData();
+  const openAddress = useOpenAddress();
   const { links, tags } = useLinksData();
   const { moveToTrash } = useTrashActions();
   const online = useSyncOnline();
@@ -96,6 +116,7 @@ export function NoteEditorScreen() {
   const [note, setNote] = useState<Note | null | undefined>(undefined);
   const [title, setTitle] = useState('');
   const [body, setBody] = useState('');
+  // Escrever mostra a formatação ao vivo (Android/iOS) com as marcações apagadas; Ler mostra a nota limpa, sem elas.
   const [mode, setMode] = useState<Mode>(nova ? 'write' : 'read');
   const [saving, setSaving] = useState(false);
   const [sheet, setSheet] = useState<SheetKind>(null);
@@ -104,8 +125,8 @@ export function NoteEditorScreen() {
   const [noteTags, setNoteTags] = useState<TagModel[]>([]);
   const [tagDraft, setTagDraft] = useState('');
   const [scrolled, setScrolled] = useState(false);
-  const [selection, setSelection] = useState<Selection>({ start: 0, end: 0 });
-  const [forcedSelection, setForcedSelection] = useState<Selection | undefined>();
+  // Seleção crua do campo (o evento nativo pode chegar antes do texto novo); só é limitada ao texto ao usar.
+  const [cursor, dispatchCursor] = useReducer(editorSelectionReducer, initialEditorSelection);
   const [bodyFocused, setBodyFocused] = useState(false);
   const [keyboard, setKeyboard] = useState(false);
   const [linkVersion, setLinkVersion] = useState(0);
@@ -196,6 +217,9 @@ export function NoteEditorScreen() {
     [notes, id, flush],
   );
 
+  const selection = useMemo(() => cursorIn(body, cursor), [body, cursor]);
+  const forcedSelection = useMemo(() => cursor.forced && cursorIn(body, { raw: cursor.forced }), [body, cursor.forced]);
+
   // ---------- [[ sugestões ----------
   const query = mode === 'write' && bodyFocused ? wikilinkQuery(body, selection.start) : null;
   const q = query?.query ?? null;
@@ -214,8 +238,7 @@ export function NoteEditorScreen() {
   const applyEdit = (edit: Edit) => {
     setBody(edit.text);
     schedule({ body_md: edit.text });
-    setForcedSelection(edit.selection);
-    setSelection(edit.selection);
+    dispatchCursor({ type: 'edit', edit });
   };
 
   const pickSuggestion = async (titleToLink: string, create = false) => {
@@ -226,13 +249,15 @@ export function NoteEditorScreen() {
   };
 
   const onSelectionChange = (e: TextInputSelectionChangeEvent) => {
-    setSelection(e.nativeEvent.selection);
-    if (forcedSelection) setForcedSelection(undefined);
+    dispatchCursor({ type: 'native', selection: e.nativeEvent.selection });
   };
 
   const openWikilink = async (target: string) => {
     const found = await notes.findIdByTitle(target);
-    if (found) openNote(found);
+    if (found) return openNote(found);
+    // Sem nota com esse título: "[[Jo 3:16]]" abre o versículo no leitor.
+    const verse = parseBibleRef(target);
+    if (verse) openAddress('bible', toOsis(verse));
   };
 
   const toggleMode = () => {
@@ -274,7 +299,7 @@ export function NoteEditorScreen() {
     );
   }
 
-  const folderName = folderList.find((f) => f.id === note.folder_id)?.name ?? 'Sem pasta';
+  const folderName = note.folder_id ? folderPath(folderList, note.folder_id) || 'Sem pasta' : 'Sem pasta';
   const showFormatBar = Platform.OS === 'android' && keyboard && bodyFocused && mode === 'write';
   const fadeIn = reduceMotion ? undefined : FadeIn.duration(t.motion.standard);
   const fadeOut = reduceMotion ? undefined : FadeOut.duration(t.motion.tap);
@@ -285,41 +310,30 @@ export function NoteEditorScreen() {
   return (
     <SafeAreaView style={s.root} edges={['top', 'left', 'right', 'bottom']}>
       <KeyboardAvoidingView style={s.flex} behavior="padding">
-        {/* Barra: voltar, tipo (ou título ao rolar), Ler/Escrever, fixar, mais ações */}
+        {/* Barra (TopBar do Cobalto): voltar, estado de salvamento (ou o título ao rolar), fixar e mais ações */}
         <View style={[s.barWrap, scrolled && s.barLine]}>
           <View style={[s.column, s.bar]}>
-            <View style={s.edgeLeft}>
-              <IconButton icon={ChevronLeft} label="Voltar" variant="ghost" onPress={() => goBack()} />
-            </View>
+            <IconButton icon={ChevronLeft} label="Voltar" onPress={() => goBack()} />
             <View style={s.barMiddle}>
               {scrolled ? (
                 <Animated.View key="title" entering={fadeIn} exiting={fadeOut} style={s.barTitle}>
-                  <Text variant="button" numberOfLines={1} style={s.barTitleText}>
+                  <Text variant="emphasis" align="center" numberOfLines={1}>
                     {title || 'Sem título'}
                   </Text>
                 </Animated.View>
               ) : (
-                <Animated.View key="kind" entering={fadeIn} exiting={fadeOut}>
-                  <Pill
-                    label={KIND_LABEL[note.kind]}
-                    trailingIcon={ChevronDown}
-                    onPress={() => openSheet('tipo')}
-                    accessibilityLabel={`Tipo: ${KIND_LABEL[note.kind]}. Trocar`}
-                  />
+                <Animated.View key="save" entering={fadeIn} exiting={fadeOut}>
+                  <SaveStatus saving={saving} online={online} />
                 </Animated.View>
               )}
             </View>
-            <Pill label={mode === 'write' ? 'Ler' : 'Escrever'} icon={mode === 'write' ? BookOpen : PencilLine} onPress={toggleMode} />
             <IconButton
               icon={note.pinned ? Pin : PinOff}
               label={note.pinned ? 'Desafixar' : 'Fixar'}
-              variant="ghost"
-              color={note.pinned ? 'accentInk' : 'textSecondary'}
+              variant={note.pinned ? 'tonal' : 'card'}
               onPress={() => void saveNow({ pinned: !note.pinned })}
             />
-            <View style={s.edgeRight}>
-              <IconButton icon={EllipsisVertical} label="Mais ações" variant="ghost" onPress={() => openSheet('mais')} />
-            </View>
+            <IconButton icon={Ellipsis} label="Mais ações" onPress={() => openSheet('mais')} />
           </View>
         </View>
 
@@ -334,6 +348,22 @@ export function NoteEditorScreen() {
           }}
         >
           <View style={s.column}>
+            <View style={s.modeRow}>
+              <SegmentedControl
+                label="Modo"
+                options={MODES}
+                value={mode}
+                onChange={(m) => {
+                  if (m !== mode) toggleMode();
+                }}
+              />
+              <Pill
+                label={KIND_LABEL[note.kind]}
+                trailingIcon={ChevronDown}
+                onPress={() => openSheet('tipo')}
+                accessibilityLabel={`Tipo: ${KIND_LABEL[note.kind]}. Trocar`}
+              />
+            </View>
             <TextInput
               value={title}
               editable={mode === 'write'}
@@ -361,20 +391,19 @@ export function NoteEditorScreen() {
               {noteTags.map((tag) => (
                 <Pill key={tag.id} size="sm" label={`#${tag.name}`} tone="secondary" onPress={() => openSheet('tags')} />
               ))}
-              <Pill size="sm" bare icon={Plus} label="Tag" tone="tertiary" onPress={() => openSheet('tags')} />
-              <View style={s.metaSpacer} />
-              <SaveStatus saving={saving} online={online} />
+              <Pill size="sm" icon={Plus} label="Tag" tone="tertiary" onPress={() => openSheet('tags')} />
             </View>
 
-            <View style={s.divider} />
-
             {mode === 'write' ? (
-              <Animated.View key="write" entering={fadeIn}>
+              <Animated.View key="write" entering={fadeIn} style={s.pane}>
+                <View style={s.bodyCard}>
                 <TextInput
                   ref={bodyRef}
-                  value={body}
+                  // Ao vivo: o texto vem como filhos estilizados (o mesmo markdown, com as marcações apagadas).
+                  {...(LIVE ? { children: <LiveMarkdown markdown={body} /> } : { value: body })}
                   onChangeText={(v) => {
                     setBody(v);
+                    dispatchCursor({ type: 'text' });
                     schedule({ body_md: v });
                   }}
                   onSelectionChange={onSelectionChange}
@@ -396,9 +425,11 @@ export function NoteEditorScreen() {
                   textAlignVertical="top"
                   style={[s.body, noFocusRing]}
                 />
+                </View>
+                {LIVE && <NoteLinks noteId={id} version={linkVersion} />}
               </Animated.View>
             ) : (
-              <Animated.View key="read" entering={fadeIn}>
+              <Animated.View key="read" entering={fadeIn} style={s.pane}>
                 {body.trim() ? (
                   <MarkdownView markdown={body} onWikilink={(target) => void openWikilink(target)} />
                 ) : (
@@ -455,26 +486,22 @@ export function NoteEditorScreen() {
 
         {showFormatBar && (
           <View style={s.formatBar}>
-            <IconButton icon={Bold} label="Negrito" variant="ghost" size={t.touch.minTarget} onPress={() => applyEdit(toggleBold(body, selection))} />
-            <IconButton icon={List} label="Lista" variant="ghost" size={t.touch.minTarget} onPress={() => applyEdit(prefixLines(body, selection, '- '))} />
-            <IconButton
-              icon={TextQuote}
-              label="Citação"
-              variant="ghost"
-              size={t.touch.minTarget}
-              onPress={() => applyEdit(prefixLines(body, selection, '> '))}
-            />
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Ligar a outra nota"
-              onPress={() => applyEdit(insertAt(body, selection, '[['))}
-              style={({ pressed }) => [s.linkButton, query && s.linkButtonActive, pressed && s.soft]}
-            >
-              <Text variant="chip" tone={query ? 'accent' : 'primary'}>
-                {'[[ ]]'}
-              </Text>
-            </Pressable>
-            <View style={s.flex} />
+            {/* Rola na horizontal: em 360 dp os botões não cabem todos; "fechar teclado" fica sempre à vista. */}
+            <ScrollView horizontal style={s.flex} showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="always" contentContainerStyle={s.formatScroll}>
+              {formatActions(body, selection).map((a) => (
+                <IconButton key={a.label} icon={a.icon} label={a.label} variant="ghost" size={t.touch.minTarget} onPress={() => applyEdit(a.edit())} />
+              ))}
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Ligar a outra nota"
+                onPress={() => applyEdit(insertAt(body, selection, '[['))}
+                style={({ pressed }) => [s.linkButton, query && s.linkButtonActive, pressed && s.soft]}
+              >
+                <Text variant="chip" tone={query ? 'accent' : 'primary'}>
+                  {'[[ ]]'}
+                </Text>
+              </Pressable>
+            </ScrollView>
             <IconButton icon={KeyboardOff} label="Fechar teclado" variant="ghost" size={t.touch.minTarget} onPress={() => Keyboard.dismiss()} />
           </View>
         )}
@@ -482,7 +509,7 @@ export function NoteEditorScreen() {
 
       {/* Folhas */}
       <Sheet visible={sheet === 'tipo'} onClose={() => setSheet(null)} title="Tipo da nota">
-        <View>
+        <ListGroup>
           {KIND_OPTIONS.map((o) => (
             <OptionRow
               key={o.kind}
@@ -495,40 +522,21 @@ export function NoteEditorScreen() {
               }}
             />
           ))}
-        </View>
+        </ListGroup>
       </Sheet>
 
       <Sheet visible={sheet === 'mais'} onClose={() => setSheet(null)}>
-        <View>
-          <NavRow divider={false} icon={FolderInput} label="Mover para pasta" meta={folderName} onPress={() => setSheet('pasta')} />
+        <ListGroup>
+          <NavRow icon={FolderInput} label="Mover para pasta" meta={folderName} onPress={() => setSheet('pasta')} />
           <NavRow danger icon={Trash2} label="Mover para a lixeira" onPress={() => void trash()} />
-        </View>
+        </ListGroup>
       </Sheet>
 
       <Sheet visible={sheet === 'pasta'} onClose={() => setSheet(null)} title="Mover para pasta">
-        <View>
-          <OptionRow
-            icon={FolderX}
-            label="Sem pasta"
-            selected={!note.folder_id}
-            onPress={() => {
-              setSheet(null);
-              void saveNow({ folder_id: null });
-            }}
-          />
-          {folderList.map((f) => (
-            <OptionRow
-              key={f.id}
-              icon={Folder}
-              label={f.name}
-              selected={note.folder_id === f.id}
-              onPress={() => {
-                setSheet(null);
-                void saveNow({ folder_id: f.id });
-              }}
-            />
-          ))}
-          <NavRow
+        <FolderPicker folders={folderList} selectedId={note.folder_id} onPick={(f) => {
+          setSheet(null);
+          void saveNow({ folder_id: f?.id ?? null });
+        }} footer={<NavRow
             accent
             icon={FolderPlus}
             label="Nova pasta"
@@ -536,8 +544,7 @@ export function NoteEditorScreen() {
               setSheet(null);
               setNewFolder(true);
             }}
-          />
-        </View>
+          />} />
       </Sheet>
 
       <Sheet visible={sheet === 'tags'} onClose={() => setSheet(null)} title="Tags">
@@ -560,7 +567,7 @@ export function NoteEditorScreen() {
             onPress={() => void addTag()}
           />
         </View>
-        <View>
+        <ListGroup>
           {noteTags.map((tag) => (
             <View key={tag.id} style={s.tagRow}>
               <Text variant="body" style={s.flex}>
@@ -569,7 +576,7 @@ export function NoteEditorScreen() {
               <IconButton icon={X} label={`Tirar #${tag.name}`} variant="ghost" onPress={() => void tags.remove({ type: 'note', id }, tag.id)} />
             </View>
           ))}
-        </View>
+        </ListGroup>
       </Sheet>
 
       <FolderNameSheet
@@ -584,19 +591,35 @@ export function NoteEditorScreen() {
   );
 }
 
-/** "Salvando…" sem ícone → "Salvo" com check; sem conexão, "Salvo no aparelho" com nuvem riscada. */
+/** "Salvando…" com ponto cinza → "Salvo" com ponto verde; sem conexão, "Salvo no aparelho" com nuvem riscada. */
 function SaveStatus({ saving, online }: { saving: boolean; online: boolean }) {
   const s = useStyles();
   const t = useTheme();
   const label = saving ? 'Salvando…' : online ? 'Salvo' : 'Salvo no aparelho';
   return (
     <View style={s.save} accessibilityLiveRegion="polite" accessibilityLabel={label}>
-      {!saving && <Icon icon={online ? Check : CloudOff} size={t.icon.tiny} color="textTertiary" />}
+      {online || saving ? <View style={[s.saveDot, saving ? s.saveDotBusy : s.saveDotOk]} /> : <Icon icon={CloudOff} size={t.icon.tiny} color="textTertiary" />}
       <Text variant="caption" tone="tertiary">
         {label}
       </Text>
     </View>
   );
+}
+
+/** Botões da barra de formatação, na ordem: título, subtítulo, estilos de trecho, lista e citação. */
+function formatActions(body: string, selection: Selection): { label: string; icon: LucideIcon; edit: () => Edit }[] {
+  const wrap = (mark: string) => () => toggleWrap(body, selection, mark);
+  return [
+    { label: 'Título', icon: Heading1, edit: () => toggleHeading(body, selection, 1) },
+    { label: 'Subtítulo', icon: Heading2, edit: () => toggleHeading(body, selection, 2) },
+    { label: 'Negrito', icon: Bold, edit: wrap(INLINE_MARKS.bold) },
+    { label: 'Itálico', icon: Italic, edit: wrap(INLINE_MARKS.italic) },
+    { label: 'Sublinhado', icon: Underline, edit: wrap(INLINE_MARKS.underline) },
+    { label: 'Tachado', icon: Strikethrough, edit: wrap(INLINE_MARKS.strike) },
+    { label: 'Marca-texto', icon: Highlighter, edit: wrap(INLINE_MARKS.highlight) },
+    { label: 'Lista', icon: List, edit: () => prefixLines(body, selection, '- ') },
+    { label: 'Citação', icon: TextQuote, edit: () => prefixLines(body, selection, '> ') },
+  ];
 }
 
 function OptionRow({
@@ -632,20 +655,16 @@ function OptionRow({
           </Text>
         )}
       </View>
-      {/* espaço do check sempre reservado: marcar não muda a quebra de linha da descrição */}
-      <View style={[s.optionCheck, !selected && s.hidden]} importantForAccessibility="no-hide-descendants">
-        <Icon icon={Check} color="accentInk" />
-      </View>
+            <Radio selected={selected} />
     </Pressable>
   );
 }
 
 const useStyles = makeStyles((t) => {
-  const bodyLine = Math.round(t.type.body.fontSize * 1.6);
   return {
     root: { flex: 1, backgroundColor: t.colors.bg },
     flex: { flex: 1 },
-    soft: { backgroundColor: t.colors.soft },
+    soft: { backgroundColor: t.colors.bg },
     column: {
       width: '100%',
       maxWidth: t.layout.contentMaxWidth + 2 * t.layout.gutter,
@@ -654,31 +673,32 @@ const useStyles = makeStyles((t) => {
     },
     barWrap: { borderBottomWidth: t.hairline, borderBottomColor: 'transparent' },
     barLine: { borderBottomColor: t.colors.hairline },
-    bar: { height: t.size.editorBar, flexDirection: 'row', alignItems: 'center', gap: t.space[1] },
-    edgeLeft: { marginLeft: -(t.space[2] + t.space[0.5]) },
-    edgeRight: { marginRight: -(t.space[2] + t.space[0.5]) },
+    bar: { height: t.size.editorBar, flexDirection: 'row', alignItems: 'center', gap: t.space[2] },
     // alignItems flex-start: a pílula do tipo fica do tamanho do texto (não estica na coluna).
-    barMiddle: { flex: 1, minWidth: 0, justifyContent: 'center', alignItems: 'flex-start' },
-    barTitle: { paddingLeft: t.space[1], alignSelf: 'stretch' },
-    barTitleText: { fontFamily: t.type.item.font },
-    scroll: { paddingTop: t.space[3] + t.space[0.5], paddingBottom: t.space[12] },
+    barMiddle: { flex: 1, minWidth: 0, justifyContent: 'center', alignItems: 'center' },
+    barTitle: { alignSelf: 'stretch' },
+    modeRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: t.space[2.5], marginBottom: t.space[5] },
+    pane: { marginTop: t.space[5] },
+    scroll: { paddingTop: t.space[2], paddingBottom: t.space[12] },
     title: {
-      fontFamily: t.type.title2.font,
-      fontSize: t.type.title2.fontSize,
-      lineHeight: t.type.title2.lineHeight,
-      letterSpacing: t.type.title2.letterSpacing,
+      fontFamily: t.type.title.font,
+      fontSize: t.type.title.fontSize - t.space[1],
+      lineHeight: t.type.title.lineHeight - t.space[0.5],
+      letterSpacing: t.type.title.letterSpacing,
       color: t.colors.text,
       padding: t.space[0],
     },
     meta: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: t.space[1.5], marginTop: t.space[2] + t.space[0.5] },
-    metaSpacer: { flex: 1 },
-    save: { flexDirection: 'row', alignItems: 'center', gap: t.space[1] },
-    divider: { height: t.hairline, backgroundColor: t.colors.hairline, marginVertical: t.layout.blockGap },
+    save: { flexDirection: 'row', alignItems: 'center', gap: t.space[1.5] },
+    saveDot: { width: t.size.badge - t.space[0.5], height: t.size.badge - t.space[0.5], borderRadius: t.radius.full },
+    saveDotBusy: { backgroundColor: t.colors.textQuaternary },
+    saveDotOk: { backgroundColor: t.colors.success },
+    bodyCard: { backgroundColor: t.colors.card, borderRadius: t.radius.fieldLarge, paddingHorizontal: t.space[4], paddingVertical: t.space[3.5] },
     body: {
       minHeight: t.size.captureFieldMinHeight * 2,
       fontFamily: t.type.body.font,
       fontSize: t.type.body.fontSize,
-      lineHeight: bodyLine,
+      ...editorLineHeight(t.type.body.lineHeight),
       color: t.colors.text,
       padding: t.space[0],
     },
@@ -687,10 +707,9 @@ const useStyles = makeStyles((t) => {
       width: '100%',
       maxWidth: t.layout.contentMaxWidth,
       alignSelf: 'center',
-      borderWidth: t.hairline,
-      borderColor: t.colors.hairline,
-      borderRadius: t.radius.field,
-      backgroundColor: t.colors.bg,
+      borderRadius: t.radius.tile,
+      backgroundColor: t.colors.card,
+      boxShadow: t.colors.shadow.level2,
       paddingVertical: t.space[1.5],
     },
     suggestLabel: { paddingHorizontal: t.space[4], paddingTop: t.space[2], paddingBottom: t.space[1.5] },
@@ -710,29 +729,27 @@ const useStyles = makeStyles((t) => {
       flexDirection: 'row',
       alignItems: 'center',
       gap: t.space[0.5],
-      paddingHorizontal: t.space[3],
+      paddingRight: t.space[3],
       borderTopWidth: t.hairline,
       borderTopColor: t.colors.hairline,
-      backgroundColor: t.colors.bg,
+      backgroundColor: t.colors.card,
     },
+    formatScroll: { flexDirection: 'row', alignItems: 'center', gap: t.space[0.5], paddingLeft: t.space[3], paddingRight: t.space[2] },
     linkButton: {
       height: t.size.pill + t.space[1],
       justifyContent: 'center',
       paddingHorizontal: t.space[3],
       marginLeft: t.space[1],
       borderRadius: t.radius.full,
-      borderWidth: t.hairline,
-      borderColor: t.colors.hairline,
+      backgroundColor: t.colors.bg,
     },
-    linkButtonActive: { borderColor: t.colors.accent },
+    linkButtonActive: { backgroundColor: t.colors.tonal },
     option: {
       flexDirection: 'row',
       alignItems: 'center',
       gap: t.space[3],
       minHeight: t.size.navRow,
       paddingVertical: t.space[3],
-      borderTopWidth: t.hairline,
-      borderTopColor: t.colors.hairline,
     },
     optionTexts: { flex: 1, gap: t.space[0.5] },
     optionLabel: { fontFamily: t.type.item.font },
@@ -743,8 +760,6 @@ const useStyles = makeStyles((t) => {
       flexDirection: 'row',
       alignItems: 'center',
       minHeight: t.size.navRow,
-      borderTopWidth: t.hairline,
-      borderTopColor: t.colors.hairline,
       paddingVertical: t.space[2],
     },
   };

@@ -1,10 +1,12 @@
+import { formatRef, parseOsis } from '@glife/domain/bible';
+import type { EntityType } from '@glife/domain/core';
 import type { Link } from '@glife/domain/links';
 import { BookOpen, FileText, NotebookPen } from 'lucide-react-native';
 import { useEffect, useState } from 'react';
 import { View } from 'react-native';
 
-import { useLinksData } from '@/features/links';
-import { NavRow, Text, makeStyles } from '@/shared/ui';
+import { useAddressHref, useHasTargetSource, useLinksData, useOpenAddress, useOpenTarget } from '@/features/links';
+import { ListGroup, NavRow, Section, makeStyles } from '@/shared/ui';
 
 import { useNotesData } from '../hooks/NotesData';
 import { openNote } from '../hooks/useNoteActions';
@@ -16,6 +18,10 @@ interface Row {
   meta: string;
   kind: 'note' | 'journal' | 'bible' | 'other';
   noteId?: string;
+  /** endereço sem UUID (ex.: versículo) que um módulo abre */
+  address?: { type: EntityType; ref: string };
+  /** alvo que não está vivo (lixeira, ainda não chegou, excluído): abre "Item não encontrado" */
+  target?: { type: EntityType; id: string };
 }
 
 const ICONS = { note: FileText, journal: NotebookPen, bible: BookOpen, other: FileText } as const;
@@ -25,6 +31,10 @@ export function NoteLinks({ noteId, version }: { noteId: string; version: number
   const s = useStyles();
   const { notes } = useNotesData();
   const { links } = useLinksData();
+  const openTarget = useOpenTarget();
+  const canOpen = useHasTargetSource();
+  const openAddress = useOpenAddress();
+  const addressHref = useAddressHref();
   const [outgoing, setOutgoing] = useState<Row[]>([]);
   const [backlinks, setBacklinks] = useState<Link[]>([]);
   const [backRows, setBackRows] = useState<Row[]>([]);
@@ -38,10 +48,19 @@ export function NoteLinks({ noteId, version }: { noteId: string; version: number
         out.map(async (l): Promise<Row | null> => {
           if (l.target_type === 'note') {
             const n = await notes.get(l.target_ref);
-            return n ? { key: l.id, label: n.title || 'Sem título', meta: 'Nota', kind: n.kind === 'journal' ? 'journal' : 'note', noteId: n.id } : null;
+            return n
+              ? { key: l.id, label: n.title || 'Sem título', meta: 'Nota', kind: n.kind === 'journal' ? 'journal' : 'note', noteId: n.id }
+              : { key: l.id, label: 'Nota indisponível', meta: 'Vínculo quebrado', kind: 'note', target: { type: 'note', id: l.target_ref } };
           }
-          if (l.target_type === 'bible') return { key: l.id, label: l.target_ref, meta: 'Bíblia', kind: 'bible' };
-          return { key: l.id, label: l.target_ref, meta: l.target_type, kind: 'other' };
+          if (l.target_type === 'bible') {
+            const ref = parseOsis(l.target_ref);
+            const address = addressHref('bible', l.target_ref) ? { type: 'bible' as const, ref: l.target_ref } : undefined;
+            return { key: l.id, label: ref ? formatRef(ref, 'name') : l.target_ref, meta: 'Bíblia', kind: 'bible', address };
+          }
+          // Tipo sem tela registrada: a linha só informa (sem ação que não levaria a lugar nenhum).
+          return canOpen(l.target_type)
+            ? { key: l.id, label: 'Item vinculado', meta: 'Abrir', kind: 'other', target: { type: l.target_type, id: l.target_ref } }
+            : { key: l.id, label: 'Item vinculado', meta: 'Ainda não abre por aqui', kind: 'other' };
         }),
       );
       if (active) setOutgoing(rows.filter((r): r is Row => r !== null));
@@ -49,7 +68,7 @@ export function NoteLinks({ noteId, version }: { noteId: string; version: number
     return () => {
       active = false;
     };
-  }, [links, notes, noteId, version]);
+  }, [links, notes, noteId, version, canOpen, addressHref]);
 
   // Entrada: observada (outra nota pode passar a citar esta a qualquer momento, inclusive pela sincronização).
   useEffect(() => links.watchBacklinks({ type: 'note', ref: noteId }, setBacklinks), [links, noteId]);
@@ -77,33 +96,39 @@ export function NoteLinks({ noteId, version }: { noteId: string; version: number
 
   const section = (title: string, rows: Row[], accent: boolean) =>
     rows.length > 0 && (
-      <View style={s.section}>
-        <Text variant="label" tone="tertiary" accessibilityRole="header" style={s.label}>
-          {title}
-        </Text>
-        {rows.map((r) => (
-          <NavRow
-            key={r.key}
-            icon={ICONS[r.kind]}
-            iconColor={accent ? 'accentInk' : 'textSecondary'}
-            label={r.label}
-            meta={r.meta}
-            onPress={r.noteId ? () => openNote(r.noteId!) : undefined}
-          />
-        ))}
-      </View>
+      <Section title={title}>
+        <ListGroup>
+          {rows.map((r) => (
+            <NavRow
+              key={r.key}
+              icon={ICONS[r.kind]}
+              iconSize="md"
+              module={accent ? 'notes' : 'annotations'}
+              label={r.label}
+              meta={r.meta}
+              onPress={
+                r.noteId
+                  ? () => openNote(r.noteId!)
+                  : r.address
+                    ? () => openAddress(r.address!.type, r.address!.ref)
+                    : r.target
+                      ? () => void openTarget(r.target!.type, r.target!.id)
+                      : undefined
+              }
+            />
+          ))}
+        </ListGroup>
+      </Section>
     );
 
   return (
     <View style={s.root}>
-      {section('Vínculos', outgoing, true)}
+      {section('Liga para', outgoing, true)}
       {section('Mencionada em', backRows, false)}
     </View>
   );
 }
 
 const useStyles = makeStyles((t) => ({
-  root: { marginTop: t.space[5] + t.space[0.5], gap: t.space[6] },
-  section: {},
-  label: { paddingBottom: t.space[2] },
+  root: { marginTop: t.space[6], gap: t.space[6] },
 }));

@@ -1,6 +1,6 @@
 // Exclusões de Finanças: detalhe de um lançamento com "Excluir" (uma parcela ou a compra inteira) e a confirmação
 // de excluir uma conta ou um cartão (some junto com os lançamentos e as recorrências dele).
-import type { Account, IsoDate, PlannedItem, Transaction } from '@glife/domain/finance';
+import { ADJUSTMENT_DESCRIPTION, type Account, type IsoDate, type PlannedItem, type Transaction } from '@glife/domain/finance';
 import { router } from 'expo-router';
 import { HandCoins, Trash2 } from 'lucide-react-native';
 import { useEffect, useState, type ReactNode } from 'react';
@@ -11,7 +11,8 @@ import { Button, Sheet, Text, makeStyles, useTheme, useToast } from '@/shared/ui
 import { useFinance } from '../hooks/FinanceData';
 import { useFinanceActions } from '../hooks/useFinanceActions';
 import { useAvailableFor, usePlannedActions } from '../hooks/useFlows';
-import { dmy, money } from './format';
+import { dmy } from './format';
+import { useMoneyFormat } from '../hooks/useMoneyFormat';
 import { NoFundsNote } from './sheets';
 import { RadioRow } from './ui';
 
@@ -32,6 +33,7 @@ export function useTransactionSheet(opts: { aboveTabBar?: boolean } = {}): { ope
 }
 
 function TransactionDetail({ tx, onDone, aboveTabBar }: { tx: Transaction; onDone: () => void; aboveTabBar?: boolean }) {
+  const { money } = useMoneyFormat();
   const s = useStyles();
   const t = useTheme();
   const toast = useToast();
@@ -43,7 +45,13 @@ function TransactionDetail({ tx, onDone, aboveTabBar }: { tx: Transaction; onDon
   const category = data?.categories.find((c) => c.id === tx.category_id);
   const series = tx.installment_of ? (data?.transactions ?? []).filter((x) => x.installment_of === tx.installment_of) : [];
   const where = tx.type === 'transfer' ? `${accounts.get(tx.account_id) ?? ''} → ${accounts.get(tx.to_account_id ?? '') ?? ''}` : (accounts.get(tx.account_id) ?? '');
-  const kind = tx.type === 'transfer' ? 'Transferência' : tx.type === 'income' ? 'Receita' : 'Gasto';
+  const kind = tx.is_adjustment
+    ? `${ADJUSTMENT_DESCRIPTION} (${tx.type === 'income' ? 'entrada' : 'saída'})`
+    : tx.type === 'transfer'
+      ? 'Transferência'
+      : tx.type === 'income'
+        ? 'Receita'
+        : 'Gasto';
   const details = [
     `${kind} · ${money(tx.amount_cents)}`,
     `${dmy(tx.date)} · ${where}`,
@@ -125,6 +133,7 @@ export function usePlannedSheet(today: IsoDate): { open: (item: PlannedItem) => 
 }
 
 function PlannedDetail({ item, today, onDone }: { item: PlannedItem; today: IsoDate; onDone: () => void }) {
+  const { money } = useMoneyFormat();
   const s = useStyles();
   const t = useTheme();
   const { data } = useFinance();

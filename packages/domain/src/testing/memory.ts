@@ -10,6 +10,7 @@ import {
   restore as restoreEntity,
   softDelete,
   type CursorKey,
+  type EntityType,
   type Listener,
   type Page,
   type PageRequest,
@@ -31,6 +32,7 @@ import {
   folderNameSchema,
   newNote,
   newNoteFolder,
+  FOLDER_CYCLE_MESSAGE,
   wouldCreateFolderCycle,
   type Note,
   type NoteFolder,
@@ -149,6 +151,33 @@ export function createInMemoryNotes(userId: string): { notes: NotesRepository; f
       if (!n) throw new RepositoryError('not_found');
       return save(notes, id, restoreEntity(n));
     },
+    async updateMany(changes) {
+      // Calcula tudo numa cópia; só grava se todas passarem (atomicidade).
+      const staged = new Map<string, Note>();
+      for (const { id, patch } of changes) {
+        const base = staged.get(id) ?? aliveNote(id);
+        const n = applyNotePatch(base, patch);
+        if (n.folder_id) aliveFolder(n.folder_id);
+        staged.set(id, n);
+      }
+      for (const [id, n] of staged) notes.set(id, n);
+      subs.notify();
+      return changes.map(({ id }) => ({ ...staged.get(id)! }));
+    },
+    async removeMany(ids) {
+      const rows = ids.map((id) => softDelete(aliveNote(id)));
+      for (const n of rows) notes.set(n.id, n);
+      subs.notify();
+    },
+    async restoreMany(ids) {
+      const rows = ids.map((id) => {
+        const n = notes.get(id);
+        if (!n) throw new RepositoryError('not_found');
+        return restoreEntity(n);
+      });
+      for (const n of rows) notes.set(n.id, n);
+      subs.notify();
+    },
     async listTrash(page) {
       return paginate([...notes.values()].filter((n) => n.deleted_at !== null), (n) => n.deleted_at ?? '', page);
     },
@@ -179,6 +208,13 @@ export function createInMemoryNotes(userId: string): { notes: NotesRepository; f
   };
 
   const foldersRepo: NoteFoldersRepository = {
+    async listSummaries() {
+      const noteCounts = new Map<string, number>();
+      const childCounts = new Map<string, number>();
+      for (const n of notes.values()) if (n.deleted_at === null && n.folder_id) noteCounts.set(n.folder_id, (noteCounts.get(n.folder_id) ?? 0) + 1);
+      for (const f of folders.values()) if (f.deleted_at === null && f.parent_id) childCounts.set(f.parent_id, (childCounts.get(f.parent_id) ?? 0) + 1);
+      return (await foldersRepo.list()).map((folder) => ({ folder, notes: noteCounts.get(folder.id) ?? 0, children: childCounts.get(folder.id) ?? 0 }));
+    },
     async list() {
       return [...folders.values()]
         .filter((f) => f.deleted_at === null)
@@ -199,7 +235,7 @@ export function createInMemoryNotes(userId: string): { notes: NotesRepository; f
       const f = aliveFolder(id);
       if (parentId !== null && parentId !== id) aliveFolder(parentId);
       if (wouldCreateFolderCycle(id, parentId, (x) => folders.get(x)?.parent_id ?? null)) {
-        throw new RepositoryError('validation');
+        throw new RepositoryError('validation', { cause: new RangeError(FOLDER_CYCLE_MESSAGE) });
       }
       return save(folders, id, { ...f, parent_id: parentId, updated_at: nowIso() });
     },
@@ -274,6 +310,13 @@ export function createInMemoryLinks(userId: string): LinksRepository {
     watchBacklinks(target, listener) {
       return subs.add(() => listener(backlinks(target.type, target.ref).items));
     },
+    watchBibleBook(book, listener) {
+      return subs.add(() => listener(alive().filter((l) => l.target_type === 'bible' && l.target_ref.startsWith(`${book}.`))));
+    },
+    watchBibleAll(listener) {
+      const newest = (a: Link, b: Link) => (a.created_at < b.created_at ? 1 : a.created_at > b.created_at ? -1 : a.id < b.id ? 1 : -1);
+      return subs.add(() => listener(alive().filter((l) => l.target_type === 'bible').sort(newest)));
+    },
     async add(source, link) {
       const v = validateNewLink(source, link);
       const row = insert(v.source, v.link, 'manual');
@@ -315,6 +358,11 @@ export function createInMemoryTags(userId: string): TagsRepository {
   const forEntity = (e: TaggedEntity) => {
     const ids = new Set(linksOf(e).map((l) => l.tag_id));
     return aliveTags().filter((t) => ids.has(t.id)).sort(byName).map((t) => ({ ...t }));
+  };
+  const aliveTag = (id: string) => {
+    const tag = tags.get(id);
+    if (!tag || tag.deleted_at !== null) throw new RepositoryError('not_found');
+    return tag;
   };
 
   return {
@@ -359,6 +407,129 @@ export function createInMemoryTags(userId: string): TagsRepository {
     },
     async remove(entity, tagId) {
       for (const l of linksOf(entity)) if (l.tag_id === tagId) links.set(l.id, softDelete(l));
+      subs.notify();
+    },
+    async listWithCounts() {
+      return aliveTags()
+        .sort(byName)
+        .map((tag) => {
+          const counts: Partial<Record<EntityType, number>> = {};
+          for (const l of links.values()) {
+            if (l.deleted_at === null && l.tag_id === tag.id) counts[l.entity_type] = (counts[l.entity_type] ?? 0) + 1;
+          }
+          return { tag: { ...tag }, counts };
+        });
+    },
+    async rename(tagId, name) {
+      const clean = normalizeTagName(name);
+      const tag = aliveTag(tagId);
+      if (aliveTags().some((t) => t.id !== tagId && tagKey(t.name) === tagKey(clean))) throw new RepositoryError('conflict');
+      const next = { ...tag, name: clean, updated_at: nowIso() };
+      tags.set(tagId, next);
+      subs.notify();
+      return { ...next };
+    },
+    async merge(fromId, intoId) {
+      if (fromId === intoId) throw new RepositoryError('validation');
+      const from = aliveTag(fromId);
+      const into = aliveTag(intoId);
+      const has = new Set(
+        [...links.values()].filter((l) => l.deleted_at === null && l.tag_id === intoId).map((l) => `${l.entity_type}:${l.entity_id}`),
+      );
+      const now = nowIso();
+      const movedLinkIds: string[] = [];
+      const removedLinkIds: string[] = [];
+      for (const l of [...links.values()]) {
+        if (l.deleted_at !== null || l.tag_id !== fromId) continue;
+        const key = `${l.entity_type}:${l.entity_id}`;
+        if (has.has(key)) {
+          links.set(l.id, softDelete(l));
+          removedLinkIds.push(l.id);
+        } else {
+          links.set(l.id, { ...l, tag_id: intoId, updated_at: now });
+          movedLinkIds.push(l.id);
+          has.add(key);
+        }
+      }
+      tags.set(fromId, softDelete(from));
+      subs.notify();
+      return { into: { ...into }, from: { ...from }, movedLinkIds, removedLinkIds };
+    },
+    async unmerge(receipt) {
+      const from = tags.get(receipt.from.id);
+      if (!from) throw new RepositoryError('not_found');
+      if (aliveTags().some((t) => t.id !== from.id && tagKey(t.name) === tagKey(from.name))) throw new RepositoryError('conflict');
+      const now = nowIso();
+      tags.set(from.id, { ...restoreEntity(from), updated_at: now });
+      for (const id of receipt.movedLinkIds) {
+        const l = links.get(id);
+        if (l && l.deleted_at === null && l.tag_id === receipt.into.id) links.set(id, { ...l, tag_id: from.id, updated_at: now });
+      }
+      for (const id of receipt.removedLinkIds) {
+        const l = links.get(id);
+        if (l && l.deleted_at !== null) links.set(id, restoreEntity(l));
+      }
+      subs.notify();
+    },
+    async create(name) {
+      const clean = normalizeTagName(name);
+      const found = aliveTags().find((t) => tagKey(t.name) === tagKey(clean));
+      if (found) return { tag: { ...found }, created: false };
+      const tag = newTag(clean, userId);
+      tags.set(tag.id, tag);
+      subs.notify();
+      return { tag: { ...tag }, created: true };
+    },
+    async replaceMany(entries) {
+      const list = entries.map((x) => ({ entity: parseOrThrow(taggedEntitySchema, x.entity), tagIds: new Set(x.tagIds) }));
+      const alive = new Set(aliveTags().map((t) => t.id));
+      for (const { entity, tagIds } of list) {
+        const current = linksOf(entity);
+        for (const l of current) if (!tagIds.has(l.tag_id)) links.set(l.id, softDelete(l));
+        for (const tagId of tagIds) {
+          if (!alive.has(tagId) || current.some((l) => l.tag_id === tagId)) continue;
+          const now = nowIso();
+          const row: EntityTag = {
+            id: newId(),
+            user_id: userId,
+            tag_id: tagId,
+            entity_type: entity.type,
+            entity_id: entity.id,
+            created_at: now,
+            updated_at: now,
+            deleted_at: null,
+          };
+          links.set(row.id, row);
+        }
+      }
+      subs.notify();
+    },
+    async delete(tagId) {
+      const tag = aliveTag(tagId);
+      for (const l of [...links.values()]) if (l.deleted_at === null && l.tag_id === tagId) links.set(l.id, softDelete(l));
+      tags.set(tagId, softDelete(tag));
+      subs.notify();
+    },
+    async applyMany(entities, change) {
+      // Valida tudo antes de gravar qualquer coisa (atomicidade).
+      const list = entities.map((e) => parseOrThrow(taggedEntitySchema, e));
+      const cleanNames = change.add.map(normalizeTagName);
+      for (const name of cleanNames) {
+        let tag = aliveTags().find((t) => tagKey(t.name) === tagKey(name));
+        if (!tag) {
+          tag = newTag(name, userId);
+          tags.set(tag.id, tag);
+        }
+        for (const e of list) {
+          if (linksOf(e).some((l) => l.tag_id === tag.id)) continue;
+          const now = nowIso();
+          const row: EntityTag = { id: newId(), user_id: userId, tag_id: tag.id, entity_type: e.type, entity_id: e.id, created_at: now, updated_at: now, deleted_at: null };
+          links.set(row.id, row);
+        }
+      }
+      for (const tagId of change.remove) {
+        for (const e of list) for (const l of linksOf(e)) if (l.tag_id === tagId) links.set(l.id, softDelete(l));
+      }
       subs.notify();
     },
   };

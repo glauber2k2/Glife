@@ -1,9 +1,15 @@
-// Markdown mínimo do modo Ler: títulos, parágrafos, listas, citações; negrito, [[vínculos]] e links http(s).
+// Markdown mínimo do modo Ler: títulos (# título, ## subtítulo), parágrafos, listas, citações; **negrito**, *itálico*,
+// ++sublinhado++, ~~tachado~~, ==marca-texto==, [[vínculos]] e links http(s). Os estilos de trecho não se aninham.
 // Tudo vira dados (nunca HTML): a tela decide como desenhar, sem risco de injeção.
+
+/** Estilos de trecho e a marcação que os envolve (a barra de formatação usa a mesma tabela). */
+export const INLINE_MARKS = { bold: '**', italic: '*', underline: '++', strike: '~~', highlight: '==' } as const;
+export type InlineStyle = keyof typeof INLINE_MARKS;
+const STYLE_GROUPS: InlineStyle[] = ['bold', 'italic', 'underline', 'strike', 'highlight'];
 
 export type Inline =
   | { type: 'text'; text: string }
-  | { type: 'bold'; text: string }
+  | { type: InlineStyle; text: string }
   | { type: 'wikilink'; target: string; text: string }
   | { type: 'link'; url: string; text: string };
 
@@ -13,7 +19,9 @@ export type Block =
   | { type: 'list'; ordered: boolean; items: Inline[][] }
   | { type: 'quote'; inline: Inline[]; cite: string | null };
 
-const INLINE_RE = /\*\*([^*\n]+)\*\*|\[\[([^[\]\n|]+)(?:\|([^[\]\n]+))?\]\]|\[([^\]\n]+)\]\((https?:\/\/[^)\s]+)\)/g;
+// Grupos 1–5: negrito, itálico, sublinhado, tachado, marca-texto (** antes de *); 6–7 vínculo; 8–9 link.
+const INLINE_RE =
+  /\*\*([^*\n]+)\*\*|\*([^*\n]+)\*|\+\+([^+\n]+)\+\+|~~([^~\n]+)~~|==([^=\n]+)==|\[\[([^[\]\n|]+)(?:\|([^[\]\n]+))?\]\]|\[([^\]\n]+)\]\((https?:\/\/[^)\s]+)\)/g;
 
 export function parseInline(text: string): Inline[] {
   const out: Inline[] = [];
@@ -26,9 +34,10 @@ export function parseInline(text: string): Inline[] {
   };
   for (const m of text.matchAll(INLINE_RE)) {
     push(text.slice(last, m.index));
-    if (m[1] !== undefined) out.push({ type: 'bold', text: m[1] });
-    else if (m[2] !== undefined) out.push({ type: 'wikilink', target: m[2].trim(), text: (m[3] ?? m[2]).trim() });
-    else out.push({ type: 'link', text: m[4]!, url: m[5]! });
+    const styled = STYLE_GROUPS.findIndex((_, i) => m[i + 1] !== undefined);
+    if (styled !== -1) out.push({ type: STYLE_GROUPS[styled]!, text: m[styled + 1]! });
+    else if (m[6] !== undefined) out.push({ type: 'wikilink', target: m[6].trim(), text: (m[7] ?? m[6]).trim() });
+    else out.push({ type: 'link', text: m[8]!, url: m[9]! });
     last = m.index + m[0].length;
   }
   push(text.slice(last));

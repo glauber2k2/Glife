@@ -1,18 +1,22 @@
 import type { NoteListQuery } from '@glife/domain/notes';
-import { router, useLocalSearchParams } from 'expo-router';
-import { Folder, Plus, Search, Trash2 } from 'lucide-react-native';
-import { useEffect, useState } from 'react';
-import { ScrollView, View } from 'react-native';
+import { router, useLocalSearchParams, useNavigation } from 'expo-router';
+import { Folder, Folders, Hash, ListChecks, SquarePen, Trash2 } from 'lucide-react-native';
+import { useEffect, useLayoutEffect, useMemo, useState } from 'react';
+import { BackHandler, ScrollView, View } from 'react-native';
 
 import { useLinksData } from '@/features/links';
-import { Chip, EmptyState, IconButton, NavRow, Screen, SearchField, Text, makeStyles } from '@/shared/ui';
+import { Alert, Button, Chip, EmptyState, IconButton, Screen, SearchField, Section, Text, makeStyles } from '@/shared/ui';
 
+import { BulkTagsSheet, MoveNotesSheet } from '../components/BulkSheets';
 import { NoteRows } from '../components/NoteRows';
-import { useNoteQuickActions } from '../components/NoteQuickActions';
+import { PinnedNoteCard } from '../components/PinnedNoteCard';
+import { SelectionBar, type BulkAction } from '../components/SelectionBar';
 import { useNotesData } from '../hooks/NotesData';
+import { bulkPinTarget, selectionKey, selectionLabel } from '../hooks/selection';
 import { useFocusData } from '../hooks/useFocusData';
 import { useNoteList } from '../hooks/useNoteList';
 import { openNote, useCreateNote } from '../hooks/useNoteActions';
+import { useBulkNoteActions, useNoteSelection } from '../hooks/useNoteSelection';
 
 type KindFilter = 'all' | 'pinned' | 'journal' | 'devotional';
 
@@ -24,11 +28,18 @@ const KIND_FILTERS: { value: KindFilter; label: string; query: NoteListQuery }[]
 ];
 
 const LIST_LIMIT = 200;
+const HIDDEN_TAB_BAR = { display: 'none' } as const;
 
-/** Notas do aparelho (funciona sem internet), com acesso a Pastas e à Lixeira. */
+/**
+ * Notas do aparelho (funciona sem internet), com acesso a Pastas, Tags e Lixeira.
+ * Seleção múltipla: toque longo numa nota ou "Selecionar"; as abas somem e a barra de ações flutua no lugar.
+ */
 export function NoteListScreen() {
   const s = useStyles();
-  const quick = useNoteQuickActions();
+  const navigation = useNavigation();
+  const selection = useNoteSelection();
+  const [sheet, setSheet] = useState<'move' | 'tags' | null>(null);
+  const [busy, setBusy] = useState(false);
   const { notes, folders } = useNotesData();
   const { tags } = useLinksData();
   const [kind, setKind] = useState<KindFilter>('all');
@@ -47,12 +58,13 @@ export function NoteListScreen() {
   const { items, failed } = useNoteList({ ...query, search: search.trim(), limit: LIST_LIMIT });
   const create = useCreateNote();
 
-  const { data: side } = useFocusData(
+  const { data: side, reload } = useFocusData(
     async () => {
       const [allFolders, allTags, trash] = await Promise.all([folders.list(), tags.list(), notes.countTrash()]);
       return { folders: allFolders, tags: allTags, trash };
     },
   );
+  const bulk = useBulkNoteActions(reload);
   const [tagged, setTagged] = useState<Set<string> | null>(null);
   useEffect(() => {
     let active = true;
@@ -63,31 +75,114 @@ export function NoteListScreen() {
     };
   }, [tags, tagId, items]);
 
-  const visible = items && tagId && tagged ? items.filter((n) => tagged.has(n.id)) : items;
+  // Seleção: as abas somem; o voltar do Android sai da seleção em vez de sair da tela.
+  useLayoutEffect(() => {
+    navigation.setOptions({ tabBarStyle: selection.active ? HIDDEN_TAB_BAR : undefined });
+  }, [navigation, selection.active]);
+  const { active: selecting, cancel } = selection;
+  useEffect(() => {
+    if (!selecting) return;
+    const sub = BackHandler.addEventListener('hardwareBackPress', () => {
+      cancel();
+      return true;
+    });
+    return () => sub.remove();
+  }, [selecting, cancel]);
+
+  const visible = useMemo(() => (items && tagId && tagged ? items.filter((n) => tagged.has(n.id)) : items), [items, tagId, tagged]);
   const filtered = kind !== 'all' || !!tagId || search.trim() !== '';
   const total = items?.length ?? 0;
-  const folderNames = side?.folders.map((f) => f.name) ?? [];
-  const folderSummary =
-    folderNames.length === 0
-      ? 'Nenhuma'
-      : folderNames.length <= 3
-        ? folderNames.join(', ')
-        : `${folderNames.slice(0, 3).join(', ')} +${folderNames.length - 3}`;
+  const pinned = !filtered && visible ? visible.filter((n) => n.pinned) : [];
+  const rest = !filtered && visible ? visible.filter((n) => !n.pinned) : visible;
+  // Na seleção, uma lista só (fixadas primeiro), como no protótipo.
+  const ordered = visible ? [...pinned, ...(rest ?? [])] : [];
+  // Mesma lista enquanto a seleção e as notas não mudam (as folhas não recarregam a cada renderização).
+  const key = selectionKey(selection.ids);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- `key` resume `selection.ids`
+  const chosen = useMemo(() => (visible ?? []).filter((n) => selection.ids.has(n.id)), [visible, key]);
+
+  const finish = async (work: () => Promise<boolean>) => {
+    setBusy(true);
+    try {
+      if (await work()) {
+        setSheet(null);
+        selection.cancel();
+        reload();
+      }
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const onBulk = (action: BulkAction) => {
+    if (!chosen.length || busy) return;
+    if (action === 'move' || action === 'tags') setSheet(action);
+    else if (action === 'pin') void finish(() => bulk.pin(chosen));
+    else if (action === 'export') void finish(() => bulk.exportMd(chosen));
+    else void finish(() => bulk.trash(chosen));
+  };
+
+  if (selection.active) {
+    return (
+      <View style={s.fill}>
+        <Screen
+          header={
+            <View style={s.selectTop}>
+              <Button label="Cancelar" variant="ghost" size="sm" selfAlign="center" onPress={selection.cancel} />
+              <Text variant="emphasis" numeric accessibilityLiveRegion="polite">
+                {selectionLabel(selection.ids.size)}
+              </Text>
+              <Button
+                label="Todas"
+                variant="ghost"
+                size="sm"
+                selfAlign="center"
+                onPress={() => selection.selectAll(ordered.map((n) => n.id))}
+              />
+            </View>
+          }
+          tabBar
+        >
+          {ordered.length > 0 && (
+            <NoteRows notes={ordered} onOpen={(n) => selection.toggle(n.id)} selection={selection.ids} />
+          )}
+        </Screen>
+        <SelectionBar
+          disabled={!chosen.length || busy}
+          pinLabel={chosen.length && !bulkPinTarget(chosen) ? 'Desafixar' : 'Fixar'}
+          onAction={onBulk}
+        />
+        <MoveNotesSheet
+          visible={sheet === 'move'}
+          folders={side?.folders ?? []}
+          onClose={() => setSheet(null)}
+          onPick={(f) => void finish(() => bulk.move(chosen, f && { id: f.id, name: f.name }))}
+        />
+        <BulkTagsSheet
+          visible={sheet === 'tags'}
+          notes={chosen}
+          onClose={() => setSheet(null)}
+          onDone={(change) => void finish(() => bulk.applyTags(chosen, change))}
+        />
+      </View>
+    );
+  }
 
   return (
     <Screen
       title="Notas"
       eyebrow={filtered || !items ? ' ' : `${total}${total === LIST_LIMIT ? '+' : ''} ${total === 1 ? 'nota' : 'notas'}`}
+      tabBar
       action={
         <View style={s.actions}>
-          <IconButton icon={Search} label="Buscar em tudo" variant="ghost" onPress={() => router.push('/busca')} />
-          <IconButton icon={Plus} label="Nova nota" onPress={() => void create({})} />
+          <IconButton icon={Folder} label="Pastas" onPress={() => router.push('/pastas')} />
+          <IconButton icon={SquarePen} label="Nova nota" onPress={() => void create({})} />
         </View>
       }
     >
       <View style={s.controls}>
         <SearchField value={search} onChangeText={setSearch} placeholder="Buscar notas" />
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.chips}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={s.bleed} contentContainerStyle={s.chips}>
           {KIND_FILTERS.map((f) => (
             <Chip
               key={f.value}
@@ -110,47 +205,71 @@ export function NoteListScreen() {
             />
           ))}
         </ScrollView>
+        {side && side.folders.length > 0 && (
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={s.bleed} contentContainerStyle={s.chips}>
+            {side.folders.map((f) => (
+              <Chip key={f.id} size="sm" icon={Folder} label={f.name} onPress={() => router.push({ pathname: '/pasta/[id]', params: { id: f.id } })} />
+            ))}
+            <Chip size="sm" icon={Folders} label="Todas" onPress={() => router.push('/pastas')} />
+          </ScrollView>
+        )}
       </View>
 
-      <View>
-        <NavRow icon={Folder} label="Pastas" meta={folderSummary} onPress={() => router.push('/pastas')} />
-        {failed ? (
-          <Text tone="secondary" style={s.message}>
-            Não foi possível ler as notas deste aparelho.
-          </Text>
-        ) : visible === null ? null : visible.length === 0 ? (
-          filtered ? (
-            <Text variant="small" tone="tertiary" style={s.message}>
-              Nenhuma nota encontrada.
-            </Text>
-          ) : (
-            <View style={s.empty}>
-              <EmptyState message="Nenhuma nota ainda." actionLabel="Nova nota" onAction={() => void create({})} />
-            </View>
-          )
+      {failed ? (
+        <Alert tone="danger">Não foi possível ler as notas deste aparelho.</Alert>
+      ) : visible === null ? null : visible.length === 0 ? (
+        filtered ? (
+          <EmptyState compact message="Nenhuma nota aqui ainda." />
         ) : (
-          <NoteRows notes={visible} onOpen={(n) => openNote(n.id)} onLongPress={quick.open} />
-        )}
-        <View style={s.trash}>
-          <NavRow
-            icon={Trash2}
-            iconColor="textSecondary"
-            label="Lixeira"
-            meta={side ? String(side.trash) : undefined}
-            onPress={() => router.push('/lixeira')}
+          <EmptyState
+            title="Sua primeira nota"
+            message="Crie sua primeira anotação e eu guardo pra você. Funciona sem internet."
+            actionLabel="Escrever nota"
+            onAction={() => void create({})}
           />
-        </View>
+        )
+      ) : (
+        <>
+          {pinned.length > 0 && (
+            <Section title="Fixadas">
+              <View style={s.grid}>
+                {pinned.map((n) => (
+                  <PinnedNoteCard key={n.id} note={n} onPress={() => openNote(n.id)} />
+                ))}
+              </View>
+            </Section>
+          )}
+          {rest && rest.length > 0 && (
+            <Section title={filtered ? 'Notas' : 'Recentes'}>
+              <NoteRows notes={rest} onOpen={(n) => openNote(n.id)} onLongPress={(n) => selection.start(n.id)} />
+            </Section>
+          )}
+        </>
+      )}
+      <View style={s.footer}>
+        <Button label="Tags" icon={Hash} variant="subtle" size="sm" onPress={() => router.push('/tags')} />
+        {!!visible?.length && (
+          <Button label="Selecionar" icon={ListChecks} variant="subtle" size="sm" onPress={() => selection.start()} />
+        )}
+        <Button
+          label={side ? `Lixeira · ${side.trash}` : 'Lixeira'}
+          icon={Trash2}
+          variant="subtle"
+          size="sm"
+          onPress={() => router.push('/lixeira')}
+        />
       </View>
-      {quick.element}
     </Screen>
   );
 }
 
 const useStyles = makeStyles((t) => ({
+  fill: { flex: 1 },
   controls: { gap: t.space[3] },
   actions: { flexDirection: 'row', gap: t.space[2] },
-  chips: { gap: t.space[1.5] },
-  message: { paddingVertical: t.space[4], borderTopWidth: t.hairline, borderTopColor: t.colors.hairline },
-  empty: { borderTopWidth: t.hairline, borderTopColor: t.colors.hairline },
-  trash: { marginTop: t.layout.blockGap },
+  bleed: { marginHorizontal: -t.layout.gutter },
+  chips: { gap: t.space[2], paddingHorizontal: t.layout.gutter },
+  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: t.space[3] },
+  footer: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: t.space[1] },
+  selectTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: t.size.iconButton, gap: t.space[2] },
 }));

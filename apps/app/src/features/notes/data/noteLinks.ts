@@ -34,3 +34,24 @@ export async function syncNoteLinks(repos: NoteLinkRepos, noteId: string, markdo
   }
   return { unresolved };
 }
+
+export interface NewNoteRepos {
+  notes: Pick<NotesRepository, 'findIdByTitle' | 'create' | 'remove' | 'deleteForever'>;
+  links: Pick<LinksRepository, 'outgoing' | 'applyMarkdownDiff'>;
+}
+
+/**
+ * Nota nova que já nasce com texto (ex.: "Anotar" no leitor da Bíblia) e os vínculos dos `[[…]]` dele.
+ * Tudo ou nada: se os vínculos não gravam, a nota é apagada e o erro sobe.
+ */
+export async function createNoteWithBody(repos: NewNoteRepos, input: { title: string; body: string }) {
+  const note = await repos.notes.create({ title: input.title, body_md: input.body });
+  try {
+    await syncNoteLinks(repos, note.id, input.body);
+  } catch (e) {
+    // Some de vez: a nota nasceu agora e só existiria pela metade (sem o vínculo).
+    await repos.notes.remove(note.id).then(() => repos.notes.deleteForever(note.id)).catch(() => undefined);
+    throw e;
+  }
+  return note;
+}

@@ -2,15 +2,17 @@
 // (renomear, excluir — com escolha do que fazer com as notas de dentro).
 import { isRepositoryError } from '@glife/domain/core';
 import { FOLDER_NAME_MAX, type Note, type NoteFolder } from '@glife/domain/notes';
-import { FolderOpen, Pencil, Trash2 } from 'lucide-react-native';
+import { FolderInput, FolderOpen, Pencil, Trash2 } from 'lucide-react-native';
 import { useEffect, useState, type ReactNode } from 'react';
 import { Pressable, View } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 
-import { Button, Input, NavRow, Sheet, Text, makeStyles, resolveSpring, useReduceMotion, useTheme, useToast } from '@/shared/ui';
+import { Button, Input, ListGroup, NavRow, Sheet, Text, makeStyles, resolveSpring, useReduceMotion, useToast } from '@/shared/ui';
 
 import { useNotesData } from '../hooks/NotesData';
 import { openNote, useTrashActions } from '../hooks/useNoteActions';
+import { FolderPicker } from './FolderPicker';
+import { errorText } from '@/shared/lib/errorText';
 
 /** `open(note)` mostra as ações da nota; o elemento vai uma vez na tela. */
 export function useNoteQuickActions(onChanged?: () => void): { open: (note: Note) => void; element: ReactNode } {
@@ -21,7 +23,7 @@ export function useNoteQuickActions(onChanged?: () => void): { open: (note: Note
   const shown = note ?? last;
   const element = (
     <Sheet visible={!!note} onClose={() => setNote(null)} title={shown ? shown.title || 'Sem título' : undefined}>
-      <View>
+      <ListGroup>
         <NavRow
           divider={false}
           icon={FolderOpen}
@@ -41,13 +43,13 @@ export function useNoteQuickActions(onChanged?: () => void): { open: (note: Note
             if (id) void moveToTrash(id).then(onChanged);
           }}
         />
-      </View>
+      </ListGroup>
     </Sheet>
   );
   return { open: setNote, element };
 }
 
-type Step = 'menu' | 'rename' | 'delete' | null;
+type Step = 'menu' | 'rename' | 'delete' | 'move' | null;
 
 /** Menu de uma pasta: renomear e excluir. `notesInside` decide se a exclusão pergunta o que fazer com as notas. */
 export function FolderMenu({
@@ -57,6 +59,8 @@ export function FolderMenu({
   onClose,
   onRenamed,
   onDeleted,
+  allFolders,
+  onMoved,
 }: {
   folder: NoteFolder;
   open: boolean;
@@ -64,9 +68,10 @@ export function FolderMenu({
   onClose: () => void;
   onRenamed: (folder: NoteFolder) => void;
   onDeleted: () => void;
+  allFolders: readonly NoteFolder[];
+  onMoved: (folder: NoteFolder) => void;
 }) {
   const s = useStyles();
-  const t = useTheme();
   const toast = useToast();
   const { folders } = useNotesData();
   const [step, setStep] = useState<Step>(null);
@@ -121,15 +126,36 @@ export function FolderMenu({
     }
   };
 
-  const title = step === 'rename' ? 'Renomear pasta' : step === 'delete' ? `Excluir “${folder.name}”?` : folder.name;
+  const move = async (parent: NoteFolder | null) => {
+    if (busy) return;
+    // Escolheu a mãe atual: nada muda, não grava.
+    if ((parent?.id ?? null) === folder.parent_id) {
+      close();
+      return;
+    }
+    setBusy(true);
+    try {
+      const moved = await folders.move(folder.id, parent?.id ?? null);
+      close();
+      onMoved(moved);
+      toast({ message: 'Pasta movida', icon: FolderInput });
+    } catch (e) {
+      toast({ message: `Não foi possível mover: ${errorText(e)}` });
+    } finally {
+      setBusy(false);
+    }
+  };
+  const title = step === 'rename' ? 'Renomear pasta' : step === 'move' ? 'Mover pasta' : step === 'delete' ? `Excluir “${folder.name}”?` : folder.name;
   return (
     <Sheet visible={open} onClose={close} title={title}>
       {step === 'menu' && (
-        <View>
-          <NavRow divider={false} icon={Pencil} label="Renomear pasta" onPress={() => setStep('rename')} />
+        <ListGroup>
+          <NavRow icon={Pencil} label="Renomear pasta" onPress={() => setStep('rename')} />
+          <NavRow icon={FolderInput} label="Mover pasta" onPress={() => setStep('move')} />
           <NavRow danger icon={Trash2} label="Excluir pasta" onPress={() => setStep('delete')} />
-        </View>
+        </ListGroup>
       )}
+      {step === 'move' && <FolderPicker folders={allFolders} movingId={folder.id} selectedId={folder.parent_id} rootLabel="Raiz" disabled={busy} onPick={(parent) => void move(parent)} />}
       {step === 'rename' && (
         <>
           <Input
@@ -155,7 +181,7 @@ export function FolderMenu({
               <Text variant="small" tone="secondary">
                 {`Há ${notesInside} ${notesInside === 1 ? 'nota' : 'notas'} nesta pasta. O que fazer com ${notesInside === 1 ? 'ela' : 'elas'}?`}
               </Text>
-              <View>
+              <ListGroup>
                 <Option
                   title="Manter as notas"
                   sub="Saem da pasta e continuam nas suas notas"
@@ -163,16 +189,16 @@ export function FolderMenu({
                   onPress={() => setMode('keep')}
                 />
                 <Option title="Mover as notas para a lixeira" sub="Dá para restaurar pela Lixeira" selected={mode === 'trash'} onPress={() => setMode('trash')} />
-              </View>
+              </ListGroup>
             </>
           ) : (
             <Text variant="small" tone="secondary">
               A pasta está vazia. Subpastas, se houver, sobem um nível.
             </Text>
           )}
-          <View style={{ gap: t.space[1] }}>
+          <View style={s.buttons}>
             <Button label="Excluir pasta" icon={Trash2} variant="danger" fullWidth haptic loading={busy} onPress={() => void remove()} />
-            <Button label="Cancelar" variant="subtle" fullWidth onPress={close} />
+            <Button label="Cancelar" variant="neutral" fullWidth onPress={close} />
           </View>
         </>
       )}
@@ -218,16 +244,15 @@ const useStyles = makeStyles((t) => ({
     gap: t.space[3] + t.space[0.5],
     minHeight: t.size.button + t.space[3],
     paddingVertical: t.space[2],
-    borderTopWidth: t.hairline,
-    borderTopColor: t.colors.hairline,
   },
-  pressed: { backgroundColor: t.colors.soft },
+  buttons: { gap: t.space[2] },
+  pressed: { opacity: t.opacity.pressed },
   radio: {
     width: t.size.radio,
     height: t.size.radio,
     borderRadius: t.radius.full,
     borderWidth: t.size.radioBorder,
-    borderColor: t.colors.textTertiary,
+    borderColor: t.colors.border,
     alignItems: 'center',
     justifyContent: 'center',
   },

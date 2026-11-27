@@ -1,13 +1,29 @@
-// Ajustes › Segurança (protótipo "Glife Bloqueio", seção 04). O que não pode ser desligado aparece como texto
-// com cadeado. Ligar a biometria pede a digital uma vez antes de salvar; desligar não pede nada.
+// Ajustes › Segurança (protótipo do redesign Cobalto, tela "Segurança"). O bloqueio aparece como sempre ligado,
+// explicado e não desligável. Ligar a biometria pede a digital uma vez antes de salvar; desligar não pede nada.
 // Sem "Apps recentes": o app não se esconde da lista (decisão do usuário de 24/11/2026).
 import { LOCK_TIMEOUT_OPTIONS, disableBiometrics, enableBiometrics } from '@glife/domain/applock';
 import { router } from 'expo-router';
-import { Check, ChevronRight, Lock } from 'lucide-react-native';
+import { Fingerprint, KeyRound, Lock } from 'lucide-react-native';
 import { useState } from 'react';
 import { Platform, Pressable, View } from 'react-native';
+import Animated from 'react-native-reanimated';
 
-import { BackHeader, Icon, Screen, Section, Switch, Text, makeStyles, useTheme, useToast } from '@/shared/ui';
+import {
+  BackHeader,
+  Card,
+  ListGroup,
+  ModuleIcon,
+  NavRow,
+  Radio,
+  Reveal,
+  Screen,
+  Section,
+  Switch,
+  Text,
+  makeStyles,
+  usePress,
+  useToast,
+} from '@/shared/ui';
 
 import { useAppLock } from '../hooks/AppLockProvider';
 import { timeoutLabel } from '../hooks/lockText';
@@ -16,7 +32,6 @@ const isWeb = Platform.OS === 'web';
 
 export function SecurityScreen() {
   const s = useStyles();
-  const t = useTheme();
   const toast = useToast();
   const { lock, bio, status, bioAvailable, refresh, withSystemPrompt } = useAppLock();
   const [busy, setBusy] = useState(false);
@@ -44,100 +59,68 @@ export function SecurityScreen() {
   };
 
   return (
-    <Screen>
-      <BackHeader title="Segurança" backLabel="Ajustes" />
-
-      <Section title="Bloqueio">
-        <View>
-          <View style={s.row}>
-            <Text>Pedir desbloqueio</Text>
-            <View style={s.always}>
-              <Icon icon={Lock} size={t.icon.small - t.space[0.5]} color="textTertiary" />
+    <Screen header={<BackHeader title="Segurança" backLabel="Ajustes" fallback="/ajustes" />}>
+      <Reveal>
+        <Card>
+          <View style={s.intro}>
+            <ModuleIcon icon={Lock} tone="tonal" />
+            <View style={s.introText}>
+              <Text variant="emphasis">Bloqueio sempre ligado</Text>
               <Text variant="small" tone="tertiary">
-                Sempre ligado
+                {isWeb
+                  ? 'O Glife pede a senha do app ao abrir a página e quando a aba volta a ficar visível. Não pode ser desligado.'
+                  : 'O Glife pede a digital ou a senha do app ao abrir e ao voltar depois de um tempo. Seus dados ficam protegidos mesmo com o celular desbloqueado.'}
               </Text>
             </View>
           </View>
-          <Text variant="caption" tone="tertiary">
-            {isWeb
-              ? 'O Glife pede a senha do app ao abrir a página e quando a aba volta a ficar visível. Não pode ser desligado.'
-              : 'O Glife pede desbloqueio sempre que abre e quando volta do segundo plano. Não pode ser desligado.'}
-          </Text>
+        </Card>
+
+        <ListGroup>
           {!isWeb && (bioAvailable || bioOn) && (
-            <>
-              <View style={[s.row, s.rowGap]}>
-                <Text>Usar biometria</Text>
-                <Switch label="Usar biometria" value={bioOn} disabled={busy} onChange={(v) => void toggleBio(v)} />
-              </View>
-              <Text variant="caption" tone="tertiary">
-                Digital ou rosto cadastrados no celular. Se falhar, o Glife pede a senha do app, nunca o PIN do
-                celular.
-              </Text>
-            </>
+            <NavRow
+              icon={Fingerprint}
+              label="Usar digital"
+              meta="Se falhar, pede a senha do app"
+              tall
+              trailing={<Switch label="Usar digital" value={bioOn} disabled={busy} onChange={(v) => void toggleBio(v)} />}
+            />
           )}
-        </View>
-      </Section>
+          <NavRow icon={KeyRound} label="Trocar a senha do app" meta="Só deste aparelho" onPress={() => router.push('/trocar-senha')} />
+        </ListGroup>
 
-      <Section title="Bloquear depois de">
-        <View accessibilityRole="radiogroup">
-          <Text variant="caption" tone="tertiary" style={s.afterNote}>
-            {isWeb ? 'Tempo com a aba escondida antes de pedir de novo.' : 'Tempo em segundo plano antes de pedir de novo.'}
+        <Section title="Bloquear depois de">
+          <ListGroup>
+            {LOCK_TIMEOUT_OPTIONS.map((ms) => (
+              <TimeoutRow key={ms} label={timeoutLabel(ms)} selected={status?.timeoutMs === ms} onPress={() => void pickTimeout(ms)} />
+            ))}
+          </ListGroup>
+          <Text variant="micro" tone="tertiary">
+            {isWeb ? 'Conta o tempo com a aba escondida.' : 'Conta o tempo com o Glife em segundo plano.'}
           </Text>
-          {LOCK_TIMEOUT_OPTIONS.map((ms) => {
-            const on = status?.timeoutMs === ms;
-            return (
-              <Pressable
-                key={ms}
-                accessibilityRole="radio"
-                accessibilityState={{ checked: on }}
-                onPress={() => void pickTimeout(ms)}
-                style={({ pressed }) => [s.option, pressed && s.pressed]}
-              >
-                <Text>{timeoutLabel(ms)}</Text>
-                {on && <Icon icon={Check} size={t.icon.size} color="accentInk" />}
-              </Pressable>
-            );
-          })}
-        </View>
-      </Section>
-
-      <Section title="Senha do app">
-        <View>
-          <Pressable
-            accessibilityRole="button"
-            onPress={() => router.push('/trocar-senha')}
-            style={({ pressed }) => [s.option, s.nav, pressed && s.pressed]}
-          >
-            <Text>Trocar a senha do app</Text>
-            <Icon icon={ChevronRight} size={t.icon.small + t.space[0.5]} color="textTertiary" />
-          </Pressable>
-          <Text variant="caption" tone="tertiary">
-            Só deste aparelho. Diferente da senha da conta.
-          </Text>
-        </View>
-      </Section>
+        </Section>
+      </Reveal>
     </Screen>
   );
 }
 
+function TimeoutRow({ label, selected, onPress }: { label: string; selected: boolean; onPress: () => void }) {
+  const s = useStyles();
+  const press = usePress();
+  return (
+    <Pressable accessibilityRole="radio" accessibilityState={{ checked: selected }} onPress={onPress} onPressIn={press.onPressIn} onPressOut={press.onPressOut}>
+      <Animated.View style={[s.option, press.style]}>
+        <Text variant="item" style={s.grow}>
+          {label}
+        </Text>
+        <Radio selected={selected} />
+      </Animated.View>
+    </Pressable>
+  );
+}
+
 const useStyles = makeStyles((t) => ({
-  row: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    gap: t.space[3],
-    minHeight: t.size.navRow,
-    paddingVertical: t.space[2],
-  },
-  rowGap: { marginTop: t.space[4] },
-  always: { flexDirection: 'row', alignItems: 'center', gap: t.space[1.5] },
-  afterNote: { marginBottom: t.space[1] },
-  option: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    minHeight: t.touch.minTarget,
-  },
-  nav: { minHeight: t.size.navRow },
-  pressed: { opacity: t.opacity.pressed },
+  intro: { flexDirection: 'row', gap: t.space[3], alignItems: 'flex-start' },
+  introText: { flex: 1, gap: t.space[1] },
+  option: { flexDirection: 'row', alignItems: 'center', gap: t.space[3], minHeight: t.size.navRow, paddingVertical: t.space[3] },
+  grow: { flex: 1 },
 }));

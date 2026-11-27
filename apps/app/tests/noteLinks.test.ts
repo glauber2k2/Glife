@@ -1,7 +1,7 @@
 import { createInMemoryLinks, createInMemoryNotes } from '@glife/domain/testing';
 import { describe, expect, it } from 'vitest';
 
-import { syncNoteLinks } from '../src/features/notes/data/noteLinks';
+import { createNoteWithBody, syncNoteLinks } from '../src/features/notes/data/noteLinks';
 
 const USER = '11110000-0000-4000-8000-000000000001';
 
@@ -47,5 +47,22 @@ describe('vínculos [[ ]] gravados ao salvar a nota', () => {
     const nota = await repos.notes.create({ title: 'Eu mesma' });
     await syncNoteLinks(repos, nota.id, 'sou [[Eu mesma]]');
     expect(await repos.links.outgoing({ type: 'note', id: nota.id })).toEqual([]);
+  });
+});
+
+describe('nota nova que já nasce com texto e vínculos (Anotar no leitor da Bíblia)', () => {
+  it('cria a nota com o corpo e liga ao versículo citado', async () => {
+    const repos = setup();
+    const n = await createNoteWithBody(repos, { title: 'João 3:16', body: '> [[Jo 3:16]] Porque Deus amou o mundo.\n\n' });
+    expect(n.body_md).toContain('[[Jo 3:16]]');
+    expect(await repos.links.outgoing({ type: 'note', id: n.id })).toMatchObject([{ target_type: 'bible', target_ref: 'JHN.3.16', origin: 'markdown' }]);
+  });
+
+  it('se o vínculo não grava, a nota é apagada e o erro sobe (nada pela metade)', async () => {
+    const repos = setup();
+    const failing = { ...repos, links: { ...repos.links, applyMarkdownDiff: async () => Promise.reject(new Error('sem banco')) } };
+    await expect(createNoteWithBody(failing, { title: 'X', body: '[[Jo 3:16]]' })).rejects.toThrow('sem banco');
+    expect((await repos.notes.list()).items).toEqual([]);
+    expect(await repos.notes.countTrash()).toBe(0);
   });
 });

@@ -12,14 +12,16 @@ import {
   monthOverview,
   planInstallmentPurchase,
   purchaseDescription,
-  splitInstallments,
+  installmentAmount,
   type AfterPurchase,
   type IsoDate,
   type PurchaseReceipt,
   type ShoppingItem,
   type ShoppingList,
   type TransactionInput,
+  type InstallmentAmountMode,
 } from '@glife/domain/finance';
+import { router } from 'expo-router';
 import { CreditCard, Landmark, ReceiptText } from 'lucide-react-native';
 import { useState } from 'react';
 import { ScrollView, View, useWindowDimensions } from 'react-native';
@@ -29,9 +31,11 @@ import { Button, Chip, Icon, SegmentedControl, Sheet, Text, makeStyles, useTheme
 import { useFinance } from '../hooks/FinanceData';
 import { useOccurrences } from '../hooks/useFlows';
 import { categoryIcon } from './categories';
-import { MONTH_NAMES, balance, dayLabel, dm, money } from './format';
+import { MONTH_NAMES, dm, relativeDay, tinyInstallmentsHint } from './format';
+import { useMoneyFormat } from '../hooks/useMoneyFormat';
+import { InstallmentAmountChoice } from './InstallmentAmountChoice';
 import { NoFundsNote } from './sheets';
-import { DateRow, MoneyField, RadioRow } from './ui';
+import { DateRow, MoneyField, NoCategoriesNote, RadioRow } from './ui';
 
 const PARCS = Array.from({ length: 12 }, (_, i) => i + 1);
 const monthLabel = (m: string) => MONTH_NAMES[Number(m.slice(5, 7)) - 1]!;
@@ -63,7 +67,8 @@ export function PurchaseSheet(props: Props) {
   );
 }
 
-function PurchaseForm({ list, items, today, onDone }: Props & { list: ShoppingList }) {
+function PurchaseForm({ list, items, today, onDone, onClose }: Props & { list: ShoppingList }) {
+  const { money, balance } = useMoneyFormat();
   const s = useStyles();
   const t = useTheme();
   const { height } = useWindowDimensions();
@@ -82,16 +87,24 @@ function PurchaseForm({ list, items, today, onDone }: Props & { list: ShoppingLi
   const [bankId, setBankId] = useState(banks[0]?.id ?? null);
   const [cardId, setCardId] = useState(cards[0]?.id ?? null);
   const [parc, setParc] = useState(1);
+  const [amountMode, setAmountMode] = useState<InstallmentAmountMode>('total');
   const [catId, setCatId] = useState<string | null>(list.category_id);
   const [date, setDate] = useState<IsoDate>(today);
   const [after, setAfter] = useState<AfterPurchase>('remove');
   const [forced, setForced] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  const value = cents ?? 0;
   const onCard = source === 'card';
-  const account = accounts.find((a) => a.id === (onCard ? cardId : bankId)) ?? null;
-  const available = !onCard && account && data ? accountBalance(account, data.transactions) : null;
+  const hasInstallments = onCard && parc > 1;
+  let amount: ReturnType<typeof installmentAmount> | null = null;
+  try {
+    amount = installmentAmount(cents ?? 0, hasInstallments ? parc : 1, hasInstallments ? amountMode : 'total');
+  } catch { /* Sem valor resolvido, nenhuma linha é criada e Salvar fica desabilitado. */ }
+  const value = amount?.totalCents ?? 0;
+  // Cada parcela precisa de pelo menos 1 centavo: total menor que o número de parcelas não registra.
+  const tiny = hasInstallments ? tinyInstallmentsHint(amount?.amounts, parc) : null;
+  const account =accounts.find((a) => a.id === (onCard ? cardId : bankId)) ?? null;
+  const available = !onCard && account && data ? accountBalance(account, data.transactions, data.flows) : null;
   const short = available !== null && value > available;
 
   // Linhas do gasto: uma na conta; no cartão, uma por parcela (cada uma na sua fatura).
@@ -122,7 +135,7 @@ function PurchaseForm({ list, items, today, onDone }: Props & { list: ShoppingLi
         : `Fatura de ${monthLabel(inv)} · vence ${dm(invoiceDates(inv, cycle).dueDate)}`;
   }
 
-  const ready = rows.length > 0 && cart.length > 0 && !saving;
+  const ready = rows.length > 0 && cart.length > 0 && !tiny && !saving;
   const label = short && !forced ? 'Registrar mesmo assim' : `Registrar ${money(value)}`;
 
   const save = async () => {
@@ -153,15 +166,16 @@ function PurchaseForm({ list, items, today, onDone }: Props & { list: ShoppingLi
         </Text>
       </View>
       <ScrollView style={s.scroll} contentContainerStyle={s.scrollContent} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+        {hasInstallments && <InstallmentAmountChoice value={amountMode} onChange={setAmountMode} />}
         <MoneyField
           large
-          label="Valor pago"
+          label={hasInstallments ? amountMode === 'installment' ? 'Valor da parcela' : 'Valor total' : 'Valor pago'}
           cents={cents}
           onChange={(c) => {
             setCents(c);
             setForced(false);
           }}
-          hint={`${est.approx ? 'Estimado ≈ ' : 'Estimado '}${money(est.totalCents)}${est.approx ? ' · há item sem preço' : ''}`}
+          hint={!amount ? 'O valor total excede o limite permitido.' : tiny ? tiny : hasInstallments ? `${parc} parcelas · total ${money(value)}` : `${est.approx ? 'Estimado ≈ ' : 'Estimado '}${money(est.totalCents)}${est.approx ? ' · há item sem preço' : ''}`}
         />
 
         {noSource ? (
@@ -190,7 +204,7 @@ function PurchaseForm({ list, items, today, onDone }: Props & { list: ShoppingLi
                   sub={
                     a.kind === 'credit_card'
                       ? `Fecha dia ${a.closing_day}, vence dia ${a.due_day}`
-                      : `Saldo ${data ? balance(accountBalance(a, data.transactions)) : ''}`
+                      : `Saldo ${data ? balance(accountBalance(a, data.transactions, data.flows)) : ''}`
                   }
                   selected={a.id === (onCard ? cardId : bankId)}
                   onPress={() => {
@@ -212,7 +226,7 @@ function PurchaseForm({ list, items, today, onDone }: Props & { list: ShoppingLi
                 Parcelas
               </Text>
               <Text variant="small" numeric style={s.medium}>
-                {parc === 1 ? `À vista · ${money(value)}` : `${parc}× de ${money(splitInstallments(Math.max(value, parc), parc)[0]!)}`}
+                {parc === 1 ? `À vista · ${money(value)}` : `${parc} parcelas · ${money(value)} no total`}
               </Text>
             </View>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.parcs} style={s.parcScroll}>
@@ -232,6 +246,15 @@ function PurchaseForm({ list, items, today, onDone }: Props & { list: ShoppingLi
         <Text variant="label" tone="tertiary">
           Categoria
         </Text>
+        {categories.length === 0 && (
+          <NoCategoriesNote
+            kind="expense"
+            onCreate={() => {
+              onClose();
+              router.push({ pathname: '/financas/categoria/[id]', params: { id: 'novo', tipo: 'expense' } });
+            }}
+          />
+        )}
         <View style={s.chips}>
           {categories.map((c) => (
             <Chip
@@ -250,7 +273,7 @@ function PurchaseForm({ list, items, today, onDone }: Props & { list: ShoppingLi
           </Text>
         )}
 
-        <DateRow label="Data" date={date} display={dayLabel(date, today)} onChange={setDate} />
+        <DateRow label="Data" date={date} hint={relativeDay(date, today)} onChange={setDate} />
 
         <View style={s.afterBlock}>
           <Text variant="caption" tone="tertiary">

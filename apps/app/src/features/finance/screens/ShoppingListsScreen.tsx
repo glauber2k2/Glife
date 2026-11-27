@@ -6,14 +6,16 @@ import { ListPlus, Plus } from 'lucide-react-native';
 import { useMemo, useState } from 'react';
 import { View } from 'react-native';
 
-import { BackHeader, Button, EmptyState, Icon, IconButton, Input, Reveal, Screen, makeStyles, useTheme, useToast } from '@/shared/ui';
+import { BackHeader, Button, EmptyState, Icon, IconButton, Input, ListGroup, Reveal, Screen, makeStyles, useTheme, useToast } from '@/shared/ui';
 
-import { dm, money, todayIso } from '../components/format';
+import { dm, todayIso } from '../components/format';
+import { useMoneyFormat } from '../hooks/useMoneyFormat';
 import { ListRow } from '../components/shoppingRows';
 import { useFinance } from '../hooks/FinanceData';
 import { suggestCategory, useShopping } from '../hooks/useShopping';
 
 export function ShoppingListsScreen() {
+  const { money } = useMoneyFormat();
   const s = useStyles();
   const t = useTheme();
   const toast = useToast();
@@ -47,7 +49,7 @@ export function ShoppingListsScreen() {
               : `Última compra ${dm(l.last_purchase_date)}`,
         };
       }),
-    [snap, today],
+    [snap, today, money],
   );
 
   const create = async () => {
@@ -77,12 +79,7 @@ export function ShoppingListsScreen() {
 
   return (
     <Screen>
-      <View>
-        <BackHeader title="Compras" fallback="/financas" />
-        <View style={s.addAction}>
-          <IconButton icon={Plus} label="Nova lista" variant="outline" onPress={startNew} />
-        </View>
-      </View>
+      <BackHeader title="Compras" fallback="/financas" right={<IconButton icon={Plus} label="Nova lista" onPress={startNew} />} />
 
       {creating && (
         <Reveal>
@@ -105,10 +102,14 @@ export function ShoppingListsScreen() {
       )}
 
       {snap && snap.lists.length === 0 && !creating ? (
-        <EmptyState message="Nenhuma lista ainda." actionLabel="Criar lista" onAction={startNew} />
+        <EmptyState
+          title="Nenhuma lista ainda"
+          message="Monte a lista do mercado, da farmácia ou da casa. Ao comprar, vira gasto com um toque."
+          actionLabel="Criar lista"
+          onAction={startNew}
+        />
       ) : (
-        <View>
-          <Reveal>
+        <ListGroup>
             {rows.map((r) => (
               <ListRow
                 key={r.list.id}
@@ -120,9 +121,7 @@ export function ShoppingListsScreen() {
                 onPress={() => router.push({ pathname: '/financas/compra/[id]', params: { id: r.list.id } })}
               />
             ))}
-          </Reveal>
-          {rows.length > 0 && <View style={s.rule} />}
-        </View>
+        </ListGroup>
       )}
     </Screen>
   );
@@ -130,7 +129,5 @@ export function ShoppingListsScreen() {
 
 const useStyles = makeStyles((t) => ({
   flex: { flex: 1, minWidth: 0 },
-  addAction: { position: 'absolute', right: t.space[0], bottom: t.space[0] },
   newRow: { flexDirection: 'row', alignItems: 'center', gap: t.space[3] },
-  rule: { borderTopWidth: t.hairline, borderTopColor: t.colors.hairline },
 }));

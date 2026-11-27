@@ -41,3 +41,8 @@ export function useNotesData(): NotesData {
 export function useNotesSearchSources(): SearchSource[] {
   return useContext(NotesDataContext)?.search ?? NO_SOURCES;
 }
+
+/** Como `useNotesData`, mas null sem sessão (para o que a raiz compõe). */
+export function useNotesDataMaybe(): NotesData | null {
+  return useContext(NotesDataContext);
+}

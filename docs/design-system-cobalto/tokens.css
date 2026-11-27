@@ -1,0 +1,70 @@
+/* Glife Cobalto v1.0 — tokens de cor, sombra, fonte e movimento (claro + escuro), extraídos do protótipo do redesign (26/11/2026). Fonte para shared/ui/theme/tokens.ts. */
+:root{
+  --canvas:#DCE1EA; --bg:#F1F3F6; --card:#FFFFFF; --card-2:#F7F8FA;
+  --fg:#0E1116; --fg-2:#4B5260; --fg-3:#636A77; --fg-4:#9AA0AB;
+  --line:#ECEEF2; --line-2:#E3E7EC; --border:#C9CED8; --track:#E6E9EE;
+  --accent:#2D5BFF; --accent-press:#2349DB; --accent-text:#2D5BFF; --on-accent:#FFFFFF;
+  --tonal:#E2E8FF; --tonal-fg:#1F3FB8; --hl:#F3F5FF; --c200:#C9D4FF;
+  --inverse:#0E1116; --inverse-fg:#FFFFFF; --inverse-2:#9DB2FF; --inverse-3:#9AA0AB;
+  --ok:#15803D; --ok-soft:#DCF2E4; --warn:#7A5000; --warn-soft:#FCEFD6; --bad:#A3322A; --bad-strong:#C2453D; --bad-soft:#FBE3E1;
+  --scrim:rgba(14,17,22,.36);
+  --sh-1:0 1px 2px rgba(14,17,22,.04),0 6px 16px -8px rgba(14,17,22,.16);
+  --sh-2:0 14px 32px -12px rgba(14,17,22,.32);
+  --sh-3:0 -12px 40px -14px rgba(14,17,22,.34),0 18px 40px -16px rgba(14,17,22,.3);
+  --sh-seg:0 1px 3px rgba(14,17,22,.12);
+  --sh-nav:0 12px 32px -12px rgba(14,17,22,.3),0 0 0 1px rgba(14,17,22,.04);
+  --sh-fab:0 10px 22px -8px rgba(45,91,255,.7);
+  --sh-knob:0 2px 6px rgba(14,17,22,.2);
+  --soft-l:.95; --soft-c:.035; --strong-l:.47; --strong-c:.13; --chart-l:.62; --chart-c:.12;
+  --hlt-l:.92; --hlt-c:.07;
+  --frame:#0A0A0A;
+  --font:'Outfit',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --mono:'DM Mono',ui-monospace,'Cascadia Mono',monospace;
+  /* leitura bíblica: Outfit (a Literata saiu em 27/11/2026) */
+  --std:cubic-bezier(.2,0,0,1); --enter:cubic-bezier(.05,.7,.1,1); --exit:cubic-bezier(.3,0,.8,.15); --spring:cubic-bezier(.34,1.56,.64,1); --loop:cubic-bezier(.45,0,.55,1);
+  --slow:1;
+  --sb:50px;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --canvas:#05070B; --bg:#0C0F15; --card:#161B24; --card-2:#1D2330;
+  --fg:#EEF1F6; --fg-2:#C3C9D4; --fg-3:#98A1B0; --fg-4:#646D7D;
+  --line:#232A37; --line-2:#232A37; --border:#3A4252; --track:#262D3A;
+  --accent:#3F68FF; --accent-press:#2F57EE; --accent-text:#8FA7FF; --on-accent:#FFFFFF;
+  --tonal:#1B2650; --tonal-fg:#B7C5FF; --hl:#131A31; --c200:#2C3B78;
+  --inverse:#131F57; --inverse-fg:#FFFFFF; --inverse-2:#9DB2FF; --inverse-3:#AEB8DA;
+  --ok:#62D394; --ok-soft:#10301F; --warn:#F1C46B; --warn-soft:#33270F; --bad:#FF948A; --bad-strong:#FF948A; --bad-soft:#3B1917;
+  --scrim:rgba(0,0,0,.58);
+  --sh-1:0 1px 2px rgba(0,0,0,.3),0 6px 16px -8px rgba(0,0,0,.6);
+  --sh-2:0 14px 32px -12px rgba(0,0,0,.7);
+  --sh-3:0 -12px 40px -14px rgba(0,0,0,.7),0 18px 40px -16px rgba(0,0,0,.6);
+  --sh-seg:0 1px 3px rgba(0,0,0,.5);
+  --sh-nav:0 12px 32px -12px rgba(0,0,0,.8),0 0 0 1px rgba(255,255,255,.06);
+  --sh-fab:0 10px 22px -8px rgba(63,104,255,.6);
+  --sh-knob:0 2px 6px rgba(0,0,0,.5);
+  --soft-l:.31; --soft-c:.05; --strong-l:.85; --strong-c:.10; --chart-l:.72; --chart-c:.12;
+  --hlt-l:.40; --hlt-c:.07;
+  --frame:#1A1D24;
+  color-scheme:dark;
+}}
+:root[data-theme="dark"]{
+  --canvas:#05070B; --bg:#0C0F15; --card:#161B24; --card-2:#1D2330;
+  --fg:#EEF1F6; --fg-2:#C3C9D4; --fg-3:#98A1B0; --fg-4:#646D7D;
+  --line:#232A37; --line-2:#232A37; --border:#3A4252; --track:#262D3A;
+  --accent:#3F68FF; --accent-press:#2F57EE; --accent-text:#8FA7FF; --on-accent:#FFFFFF;
+  --tonal:#1B2650; --tonal-fg:#B7C5FF; --hl:#131A31; --c200:#2C3B78;
+  --inverse:#131F57; --inverse-fg:#FFFFFF; --inverse-2:#9DB2FF; --inverse-3:#AEB8DA;
+  --ok:#62D394; --ok-soft:#10301F; --warn:#F1C46B; --warn-soft:#33270F; --bad:#FF948A; --bad-strong:#FF948A; --bad-soft:#3B1917;
+  --scrim:rgba(0,0,0,.58);
+  --sh-1:0 1px 2px rgba(0,0,0,.3),0 6px 16px -8px rgba(0,0,0,.6);
+  --sh-2:0 14px 32px -12px rgba(0,0,0,.7);
+  --sh-3:0 -12px 40px -14px rgba(0,0,0,.7),0 18px 40px -16px rgba(0,0,0,.6);
+  --sh-seg:0 1px 3px rgba(0,0,0,.5);
+  --sh-nav:0 12px 32px -12px rgba(0,0,0,.8),0 0 0 1px rgba(255,255,255,.06);
+  --sh-fab:0 10px 22px -8px rgba(63,104,255,.6);
+  --sh-knob:0 2px 6px rgba(0,0,0,.5);
+  --soft-l:.31; --soft-c:.05; --strong-l:.85; --strong-c:.10; --chart-l:.72; --chart-c:.12;
+  --hlt-l:.40; --hlt-c:.07;
+  --frame:#1A1D24;
+  color-scheme:dark;
+}

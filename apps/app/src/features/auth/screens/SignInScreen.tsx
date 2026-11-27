@@ -3,7 +3,7 @@ import { Eye, EyeOff } from 'lucide-react-native';
 import { useEffect, useState } from 'react';
 import { View } from 'react-native';
 
-import { Button, IconButton, Input, Reveal, Text, makeStyles, useTheme } from '@/shared/ui';
+import { Button, IconButton, Input, Mascot, Reveal, Text, makeStyles, useTheme } from '@/shared/ui';
 
 import { AuthMessage } from '../components/AuthMessage';
 import { AuthScreen } from '../components/AuthLayout';
@@ -44,16 +44,18 @@ export function SignInScreen() {
 
   return (
     <AuthScreen>
-      <View style={s.brand}>
-        <Text variant="wordmark" accessibilityRole="header">
-          Glife
-        </Text>
-        <Text variant="small" tone="tertiary" style={s.tagline}>
-          Organizador de vida
-        </Text>
-      </View>
-      <View style={s.form}>
-        <Reveal>
+      <View style={s.top} />
+      <Reveal>
+        <View style={s.brand}>
+          <Mascot size={t.size.ringSmall + t.space[2]} eyes={t.colors.bg} float />
+          <View style={s.titles}>
+            <Text variant="big" accessibilityRole="header">
+              Que bom te ver
+            </Text>
+            <Text tone="tertiary">Entre para abrir suas notas, finanças e planos.</Text>
+          </View>
+        </View>
+        <View style={s.form}>
           <Input
             label="E-mail"
             value={email}
@@ -92,23 +94,21 @@ export function SignInScreen() {
           />
           {error && <AuthMessage message={authMessage(error, 'signin')} />}
           <View style={s.action}>
-            <Button
-              label={busy ? 'Entrando' : 'Entrar'}
-              onPress={submit}
-              loading={busy}
-              disabled={!canSubmit}
-              fullWidth
-            />
+            <Button label={busy ? 'Entrando' : 'Entrar'} onPress={submit} loading={busy} disabled={!canSubmit} fullWidth />
           </View>
-        </Reveal>
-      </View>
+        </View>
+        <Text variant="small" tone="tertiary">
+          O cadastro é fechado: este Glife é só seu. Esqueceu a senha? Use a recuperação do e-mail da conta.
+        </Text>
+      </Reveal>
     </AuthScreen>
   );
 }
 
 const useStyles = makeStyles((t) => ({
-  brand: { paddingTop: t.layout.authTop - t.space[6] },
-  tagline: { marginTop: t.space[3] },
-  form: { marginTop: t.space[12] + t.space[4], gap: t.space[4] },
-  action: { marginTop: t.space[4] },
+  top: { height: t.touch.minTarget },
+  brand: { gap: t.space[4], alignItems: 'flex-start' },
+  titles: { gap: t.space[1.5] },
+  form: { gap: t.space[3.5], marginVertical: t.space[6] },
+  action: { marginTop: t.space[4.5] },
 }));

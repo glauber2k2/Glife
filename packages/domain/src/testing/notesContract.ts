@@ -3,7 +3,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { decodeCursor, encodeCursor, isRepositoryError } from '../core/index.ts';
-import type { Note, NoteFoldersRepository, NotesRepository } from '../notes/index.ts';
+import { FOLDER_CYCLE_MESSAGE, type Note, type NoteFoldersRepository, type NotesRepository } from '../notes/index.ts';
 
 export interface NotesContractSubject {
   notes: NotesRepository;
@@ -70,6 +70,61 @@ export function notesRepositoryContract(name: string, make: () => Promise<NotesC
       expect(r.deleted_at).toBeNull();
       expect(await notes.get(n.id)).toMatchObject({ id: n.id });
       await expectCode(notes.restore(MISSING), 'not_found');
+    });
+
+    it('atualiza várias de uma vez (fixar, mover) e desfaz com os valores antigos', async () => {
+      const { notes, folders } = await make();
+      const f = await folders.create({ name: 'Casa' });
+      const a = await notes.create({ title: 'a', pinned: true });
+      const b = await notes.create({ title: 'b' });
+      const out = await notes.updateMany([
+        { id: a.id, patch: { pinned: true, folder_id: f.id } },
+        { id: b.id, patch: { pinned: true, folder_id: f.id } },
+      ]);
+      expect(out.map((n) => [n.id, n.pinned, n.folder_id])).toEqual([
+        [a.id, true, f.id],
+        [b.id, true, f.id],
+      ]);
+      await notes.updateMany([
+        { id: a.id, patch: { pinned: true, folder_id: null } },
+        { id: b.id, patch: { pinned: false, folder_id: null } },
+      ]);
+      expect(await notes.get(b.id)).toMatchObject({ pinned: false, folder_id: null });
+    });
+
+    it('atualizar em lote é tudo ou nada', async () => {
+      const { notes } = await make();
+      const a = await notes.create({ title: 'a' });
+      await expectCode(
+        notes.updateMany([
+          { id: a.id, patch: { pinned: true } },
+          { id: MISSING, patch: { pinned: true } },
+        ]),
+        'not_found',
+      );
+      await expectCode(
+        notes.updateMany([
+          { id: a.id, patch: { pinned: true } },
+          { id: a.id, patch: { folder_id: MISSING } },
+        ]),
+        'not_found',
+      );
+      expect((await notes.get(a.id))!.pinned).toBe(false);
+    });
+
+    it('manda várias para a lixeira e traz de volta, tudo ou nada', async () => {
+      const { notes } = await make();
+      const a = await notes.create({ title: 'a' });
+      const b = await notes.create({ title: 'b' });
+      await notes.removeMany([a.id, b.id]);
+      expect(await notes.countTrash()).toBe(2);
+      await notes.restoreMany([a.id, b.id]);
+      expect(await notes.countTrash()).toBe(0);
+      await expectCode(notes.removeMany([a.id, MISSING]), 'not_found');
+      expect(await notes.get(a.id)).not.toBeNull();
+      await notes.removeMany([a.id]);
+      await expectCode(notes.restoreMany([a.id, MISSING]), 'not_found');
+      expect(await notes.get(a.id)).toBeNull();
     });
 
     it('conta e esvazia a lixeira sem tocar nas notas ativas', async () => {
@@ -188,6 +243,22 @@ export function notesRepositoryContract(name: string, make: () => Promise<NotesC
   });
 
   describe(`NoteFoldersRepository (${name})`, () => {
+    it('resume todas as notas e subpastas vivas sem o limite de uma página', async () => {
+      const { folders, notes } = await make();
+      const parent = await folders.create({ name: 'Pai' });
+      const child = await folders.create({ name: 'Filha', parent_id: parent.id });
+      const removedChild = await folders.create({ name: 'Excluída', parent_id: parent.id });
+      await folders.remove(removedChild.id);
+      for (let i = 0; i < 201; i++) await notes.create({ title: `Nota ${i}`, folder_id: parent.id });
+      const removedNote = await notes.create({ title: 'Lixeira', folder_id: parent.id });
+      await notes.remove(removedNote.id);
+      await notes.create({ title: 'Na filha', folder_id: child.id });
+      const summaries = await folders.listSummaries();
+      expect(summaries.find((s) => s.folder.id === parent.id)).toMatchObject({ notes: 201, children: 1 });
+      expect(summaries.find((s) => s.folder.id === child.id)).toMatchObject({ notes: 1, children: 0 });
+      expect(summaries.some((s) => s.folder.id === removedChild.id)).toBe(false);
+    });
+
     it('cria, renomeia e lista em ordem alfabética', async () => {
       const { folders } = await make();
       const b = await folders.create({ name: 'Trabalho' });
@@ -208,6 +279,19 @@ export function notesRepositoryContract(name: string, make: () => Promise<NotesC
       await expectCode(folders.move(a.id, a.id), 'validation');
       await expectCode(folders.move(a.id, MISSING), 'not_found');
       expect((await folders.move(c.id, null)).parent_id).toBeNull();
+    });
+
+    it('recusa ciclo com o motivo para o usuário', async () => {
+      const { folders } = await make();
+      const a = await folders.create({ name: 'A' });
+      const b = await folders.create({ name: 'B', parent_id: a.id });
+      for (const target of [b.id, a.id]) {
+        const error = await folders.move(a.id, target).then(() => null, (e: unknown) => e);
+        expect(isRepositoryError(error, 'validation')).toBe(true);
+        const cause = (error as { cause?: unknown }).cause;
+        expect(cause).toBeInstanceOf(RangeError);
+        expect((cause as RangeError).message).toBe(FOLDER_CYCLE_MESSAGE);
+      }
     });
 
     it('só exclui pasta vazia', async () => {

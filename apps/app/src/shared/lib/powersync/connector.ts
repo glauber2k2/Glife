@@ -27,7 +27,23 @@ export interface UploadClient {
 }
 
 export interface SessionSource {
-  auth: { getSession: () => Promise<{ data: { session: { access_token: string } | null } }> };
+  auth: { getSession: () => Promise<{ data: { session: { access_token: string } | null }; error?: unknown }> };
+}
+
+/** ok: token aal2 · offline: não deu para renovar por falta de rede · refused: o servidor não aceita mais a sessão. */
+export type CredentialsOutcome = 'ok' | 'offline' | 'refused';
+
+/** Falha de rede (ou servidor fora) ao renovar a sessão: não significa que ela expirou. */
+function isNetworkError(e: unknown): boolean {
+  if (!e || typeof e !== 'object') return false;
+  const { name, status, message } = e as { name?: unknown; status?: unknown; message?: unknown };
+  if (name === 'AuthRetryableFetchError' || status === 0) return true;
+  return e instanceof TypeError && typeof message === 'string' && /fetch|network/i.test(message);
+}
+
+export function credentialsOutcome({ token, error }: { token: string | null; error: unknown }): CredentialsOutcome {
+  if (token && sessionAal(token) === 'aal2') return 'ok';
+  return isNetworkError(error) ? 'offline' : 'refused';
 }
 
 export interface DiscardInfo {
@@ -94,16 +110,26 @@ export interface ConnectorOptions {
   endpoint: string;
   client: UploadClient;
   onDiscard?: (info: DiscardInfo) => void;
+  /** avisa se a sessão deste aparelho foi aceita, recusada ou não deu para renovar por falta de rede */
+  onCredentials?: (outcome: CredentialsOutcome) => void;
 }
 
-export function createSupabaseConnector({ supabase, endpoint, client, onDiscard }: ConnectorOptions) {
+export function createSupabaseConnector({ supabase, endpoint, client, onDiscard, onCredentials }: ConnectorOptions) {
   return {
     /** Token só de sessão com MFA: o banco recusa aal1, e o PowerSync também não deve entregar dados a ela. */
     async fetchCredentials() {
-      const { data } = await supabase.auth.getSession();
-      const token = data.session?.access_token;
-      if (!token || sessionAal(token) !== 'aal2') return null;
-      return { endpoint, token };
+      let token: string | null = null;
+      let error: unknown = null;
+      try {
+        const res = await supabase.auth.getSession();
+        token = res.data.session?.access_token ?? null;
+        error = res.error ?? null;
+      } catch (e) {
+        error = e;
+      }
+      const outcome = credentialsOutcome({ token, error });
+      onCredentials?.(outcome);
+      return outcome === 'ok' && token ? { endpoint, token } : null;
     },
     async uploadData(db: { getNextCrudTransaction: () => Promise<CrudTx | null> }) {
       const tx = await db.getNextCrudTransaction();

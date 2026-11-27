@@ -36,6 +36,7 @@ function row(base: PurchaseBase, fields: Partial<PlannedTransaction> & Pick<Plan
     installment_count: null,
     recurrence_id: null,
     occurrence_date: null,
+    is_adjustment: false,
     ...fields,
   };
 }

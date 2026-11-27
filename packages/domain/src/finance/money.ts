@@ -63,6 +63,20 @@ export function splitInstallments(total: Cents, count: number): Cents[] {
   return Array.from({ length: count }, (_, i) => sign * (base + (i < remainder ? 1 : 0)));
 }
 
+export type InstallmentAmountMode = 'total' | 'installment';
+
+/** Resolve o que foi digitado sem arredondar centavos nem multiplicar a compra duas vezes. */
+export function installmentAmount(cents: number, count: number, mode: InstallmentAmountMode): { totalCents: number; amounts: number[] } {
+  assertCents(cents);
+  if (cents < 0) throw new RangeError('Valor da compra não pode ser negativo');
+  if (mode !== 'total' && mode !== 'installment') throw new RangeError('Modo de valor inválido');
+  const entered = splitInstallments(cents, count);
+  if (mode === 'total') return { totalCents: cents, amounts: entered };
+  const totalCents = cents * count;
+  assertCents(totalCents);
+  return { totalCents, amounts: Array.from({ length: count }, () => cents) };
+}
+
 /** Soma valores em centavos, recusando floats e estouro do intervalo seguro. */
 export function sumCents(values: readonly Cents[]): Cents {
   let total = 0;

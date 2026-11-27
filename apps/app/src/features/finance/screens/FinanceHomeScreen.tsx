@@ -8,11 +8,13 @@ import {
   lastDayOf,
   monthOf,
   monthOverview,
+  portfolio,
   type CardOverview,
   type PlannedItem,
 } from '@glife/domain/finance';
 import { router } from 'expo-router';
 import {
+  ChartColumn,
   ChartNoAxesColumn,
   Check,
   ChevronRight,
@@ -20,27 +22,35 @@ import {
   CreditCard,
   Ellipsis,
   HandCoins,
+  Landmark,
   PencilLine,
   Plus,
   Repeat,
+  Shapes,
   SkipForward,
   type LucideIcon,
   ShoppingCart,
+  TrendingUp,
 } from 'lucide-react-native';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Platform, Pressable, View } from 'react-native';
 import Animated, { Easing, FadeOut, LinearTransition, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 
-import { Button, EmptyState, Icon, IconButton, Reveal, Screen, Text, makeStyles, useReduceMotion, useTheme } from '@/shared/ui';
+import { MoneyFade } from '@/shared/lib/MoneyVisibility';
+import { Button, EmptyState, Icon, IconButton, Reveal, Screen, Tag, Text, makeStyles, moduleHue, useReduceMotion, useTheme } from '@/shared/ui';
 
 import { ACCOUNT_KIND_LABEL, accountIcon, categoryIcon, TRANSFER_ICON } from '../components/categories';
-import { balance, dm, lateText, longDay, money, monthName, monthShort, signed, todayIso } from '../components/format';
+import { dm, lateText, longDay, monthName, monthShort, todayIso } from '../components/format';
+import { MoneyEyeButton } from '../components/MoneyEyeButton';
+import { useMoneyFormat } from '../hooks/useMoneyFormat';
 import { NewEntrySheet } from '../components/NewEntrySheet';
 import { useTransactionSheet } from '../components/deleteSheets';
 import { INVOICE_STATUS } from '../components/status';
 import { ConfirmSheet } from '../components/sheets';
+import { ChartsSummaryBlock } from '../components/charts/SummaryBlocks';
 import { Block, BlockHeader, BudgetBar, Disc, MoneyRow, MonthSlide, MonthStepper, useCountUp } from '../components/ui';
 import { useFinance } from '../hooks/FinanceData';
+import { useInvestments, useRefreshQuotes } from '../hooks/useInvestments';
 import { useShopping } from '../hooks/useShopping';
 import { invoiceTitle, useAvailableFor, useOccurrences, usePayInvoice, usePlannedActions } from '../hooks/useFlows';
 
@@ -54,12 +64,16 @@ const FREQ_LABEL = {
 type Leaving = { item: PlannedItem; kind: 'confirmed' | 'skipped' };
 
 export function FinanceHomeScreen() {
+  const { money, signed, balance, toneOf } = useMoneyFormat();
   const s = useStyles();
   const t = useTheme();
   const reduceMotion = useReduceMotion();
   const today = todayIso();
   const { data } = useFinance();
   const shopping = useShopping();
+  // A linha de Investimentos mostra o patrimônio: as cotações vencidas são pedidas ao abrir Finanças.
+  const invest = useInvestments();
+  useRefreshQuotes(invest);
   const [offset, setOffset] = useState(0);
   const [dir, setDir] = useState(1);
   const month = addMonths(monthOf(today), offset);
@@ -146,47 +160,52 @@ export function FinanceHomeScreen() {
   const budgetCount = overview.budgets.filter((b) => b.budget !== null).length;
   const activeRules = data.rules.filter((r) => isRecurrenceActive(r, today)).length;
   const pendingItems = shopping ? shopping.items.filter((i) => !i.in_cart).length : 0;
+  const investedTotal = invest && invest.assets.length > 0 ? portfolio(invest.assets, invest.movements, today).total : null;
+  const investMeta = investedTotal === null ? 'Nenhum ativo' : money(investedTotal);
   const shoppingMeta = !shopping || shopping.lists.length === 0 ? 'Listas' : pendingItems === 0 ? 'Nada faltando' : `${pendingItems} ${pendingItems === 1 ? 'item falta' : 'itens faltam'}`;
 
   return (
     <Screen
       eyebrow={longDay(today)}
       title="Finanças"
+      tabBar
       action={
         hasAccounts ? (
-          <MonthStepper
-            label={name}
-            onPrev={() => goMonth(-1)}
-            onNext={() => goMonth(1)}
-            canPrev={offset > 0}
-            canNext={offset < MAX_AHEAD}
-          />
+          <View style={s.topActions}>
+            <MonthStepper
+              compact
+              label={name}
+              onPrev={() => goMonth(-1)}
+              onNext={() => goMonth(1)}
+              canPrev={offset > 0}
+              canNext={offset < MAX_AHEAD}
+            />
+            <MoneyEyeButton />
+          </View>
         ) : undefined
       }
     >
       {!hasAccounts ? (
         <EmptyState
-          message="Nenhuma conta cadastrada."
+          title="Comece por uma conta"
+          message="Adicione a conta corrente ou o cartão que você mais usa. Com ela eu mostro saldo, previsão e orçamento."
           actionLabel="Adicionar conta"
+          mood="feliz"
           onAction={() => router.push('/financas/nova-conta')}
         />
       ) : (
+<MoneyFade>
         <MonthSlide id={month} direction={dir}>
           <Reveal>
             {/* Saldo */}
             <View style={s.hero}>
-              <Text variant="label" tone="tertiary">
+              <Text variant="small" tone="tertiary">
                 Saldo hoje
               </Text>
-              <Text variant="display" numeric style={s.heroValue} accessibilityLabel={`Saldo hoje ${balance(overview.balanceToday)}`}>
+              <Text variant="big" numeric accessibilityLabel={`Saldo hoje ${balance(overview.balanceToday)}`}>
                 {balance(saldo)}
               </Text>
-              <View style={s.expected}>
-                <Text tone="tertiary">Esperado em {dm(overview.endDate)}</Text>
-                <Text variant="digit" numeric>
-                  {balance(esperado)}
-                </Text>
-              </View>
+              <Tag large tone={toneOf(esperado < 0 ? 'danger' : 'success', 'neutral')} icon={TrendingUp} label={`Esperado em ${dm(overview.endDate)}: ${balance(esperado)}`} />
               <View style={s.heroAction}>
                 <Button label="Novo lançamento" icon={Plus} haptic onPress={() => setEntryOpen(true)} />
               </View>
@@ -247,7 +266,8 @@ export function FinanceHomeScreen() {
                             <IconButton
                               icon={Ellipsis}
                               label="Mais opções"
-                              variant="ghost"
+                              variant="soft"
+                              size={t.size.iconButtonSmall}
                               color="textSecondary"
                               onPress={() => setMenuFor(menuFor === item.key ? null : item.key)}
                             />
@@ -403,6 +423,9 @@ export function FinanceHomeScreen() {
               )}
             </Block>
 
+            {/* Resumo dos gráficos (só no mês atual: são os últimos 6 meses até hoje) */}
+            {overview.isCurrentMonth && <ChartsSummaryBlock />}
+
             {/* Contas */}
             <Block>
               <BlockHeader title="Contas" />
@@ -410,11 +433,11 @@ export function FinanceHomeScreen() {
                 <MoneyRow
                   key={a.id}
                   divider={i > 0}
-                  leading={<Icon icon={accountIcon(a.kind)} size={t.icon.size - t.space[0.5]} color="textSecondary" />}
+                  leading={<Disc icon={accountIcon(a.kind)} hue={moduleHue.investments} />}
                   title={a.name}
                   meta={ACCOUNT_KIND_LABEL[a.kind]}
-                  amount={balance(accountBalance(a, data.transactions))}
-                  trailing={<Icon icon={ChevronRight} size={t.icon.small} color="textTertiary" />}
+                  amount={balance(accountBalance(a, data.transactions, data.flows))}
+                  trailing={<Icon icon={ChevronRight} size={t.icon.small + t.space[0.5]} color="textQuaternary" />}
                   onPress={() =>
                     router.push({
                       pathname: '/financas/conta/[id]',
@@ -480,6 +503,7 @@ export function FinanceHomeScreen() {
                 meta={shoppingMeta}
                 onPress={() => router.push('/financas/compras')}
               />
+              <PlanRow icon={TrendingUp} label="Investimentos" meta={investMeta} onPress={() => router.push('/financas/investimentos')} />
               <PlanRow
                 icon={ChartNoAxesColumn}
                 label="Orçamentos"
@@ -491,9 +515,23 @@ export function FinanceHomeScreen() {
                   })
                 }
               />
+              <PlanRow
+                icon={ChartColumn}
+                label="Gráficos"
+                meta="Entradas, gastos e saldo"
+                onPress={() => router.push({ pathname: '/financas/graficos', params: { modo: '6m', de: 'Finanças' } })}
+              />
+              <PlanRow
+                icon={Landmark}
+                label="Contas e cartões"
+                meta="Saldos, ordem, ajuste e arquivadas"
+                onPress={() => router.push('/financas/contas')}
+              />
+              <PlanRow icon={Shapes} label="Categorias" meta="Cores, ícones e ordem" onPress={() => router.push('/financas/categorias')} />
             </Block>
           </Reveal>
         </MonthSlide>
+</MoneyFade>
       )}
 
       <NewEntrySheet visible={entryOpen} onClose={() => setEntryOpen(false)} today={today} aboveTabBar />
@@ -531,17 +569,18 @@ function DateCol({ date }: { date: string }) {
   const s = useStyles();
   return (
     <View style={s.dateCol}>
-      <Text variant="digit" tone="secondary" numeric>
+      <Text variant="tag" numeric>
         {date.slice(8, 10)}
       </Text>
-      <Text variant="label" tone="tertiary">
-        {monthShort(date)}
+      <Text variant="tab" tone="tertiary">
+        {monthShort(date).toLowerCase()}
       </Text>
     </View>
   );
 }
 
 function CardRow({ c, divider, onPay }: { c: CardOverview; divider: boolean; onPay: () => void }) {
+  const { money } = useMoneyFormat();
   const s = useStyles();
   const t = useTheme();
   const st = INVOICE_STATUS[c.summary.status];
@@ -596,12 +635,14 @@ function PlanRow({ icon, label, meta, onPress }: { icon: LucideIcon; label: stri
   const t = useTheme();
   return (
     <Pressable accessibilityRole="button" onPress={onPress} style={({ pressed }) => [s.planRow, pressed && s.pressed]}>
-      <Icon icon={icon} size={t.icon.size - t.space[0.5]} color="textSecondary" />
-      <Text style={[s.flex, s.medium]}>{label}</Text>
-      <Text variant="caption" tone="tertiary">
-        {meta}
-      </Text>
-      <Icon icon={ChevronRight} size={t.icon.small} color="textTertiary" />
+      <Disc icon={icon} />
+      <View style={s.flex}>
+        <Text variant="item">{label}</Text>
+        <Text variant="caption" tone="tertiary">
+          {meta}
+        </Text>
+      </View>
+      <Icon icon={ChevronRight} size={t.icon.small + t.space[0.5]} color="textQuaternary" />
     </Pressable>
   );
 }
@@ -639,15 +680,9 @@ const useStyles = makeStyles((t) => ({
   flex: { flex: 1, minWidth: 0, gap: t.space[0.5] },
   medium: { fontFamily: t.type.chip.font },
   semibold: { fontFamily: t.type.label.font },
-  hero: { gap: t.space[1.5], paddingBottom: t.space[1.5] },
-  heroValue: { lineHeight: t.type.display.fontSize + t.space[1] },
-  expected: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
-    gap: t.space[2],
-    flexWrap: 'wrap',
-  },
-  heroAction: { marginTop: t.space[3] + t.space[0.5], flexDirection: 'row' },
+  topActions: { flexDirection: 'row', alignItems: 'center', gap: t.space[2], flexShrink: 1, minWidth: 0 },
+  hero: { gap: t.space[1.5] },
+  heroAction: { marginTop: t.space[3], flexDirection: 'row' },
   divider: { borderTopWidth: t.hairline, borderTopColor: t.colors.hairline },
   confirmRow: {
     flexDirection: 'row',
@@ -679,10 +714,9 @@ const useStyles = makeStyles((t) => ({
     zIndex: 6,
     minWidth: t.size.menuWidth,
     padding: t.space[1.5],
-    backgroundColor: t.colors.bg,
-    borderWidth: t.hairline,
-    borderColor: t.colors.hairline,
-    borderRadius: t.radius.field,
+    backgroundColor: t.colors.card,
+    borderRadius: t.radius.tile,
+    boxShadow: t.colors.shadow.level2,
   },
   menuItem: {
     flexDirection: 'row',
@@ -692,9 +726,16 @@ const useStyles = makeStyles((t) => ({
     paddingHorizontal: t.space[3],
     borderRadius: t.radius.field - t.space[1],
   },
-  pressed: { backgroundColor: t.colors.soft },
+  pressed: { opacity: t.opacity.pressed },
   emptyLine: { paddingVertical: t.space[1] },
-  dateCol: { width: t.size.dateColumn, alignItems: 'center' },
+  dateCol: {
+    width: t.size.moduleIcon,
+    height: t.size.moduleIcon,
+    borderRadius: t.radius.icon,
+    backgroundColor: t.colors.bg,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   cardRow: {
     flexDirection: 'row',
     gap: t.space[3],
@@ -712,7 +753,7 @@ const useStyles = makeStyles((t) => ({
     flexDirection: 'row',
     alignItems: 'center',
     gap: t.space[3],
-    minHeight: t.size.button,
+    minHeight: t.size.navRow,
     borderTopWidth: t.hairline,
     borderTopColor: t.colors.hairline,
   },
@@ -720,10 +761,8 @@ const useStyles = makeStyles((t) => ({
     flexDirection: 'row',
     alignItems: 'center',
     gap: t.space[3],
-    minHeight: t.size.navRowTall,
-    borderTopWidth: t.hairline,
-    borderTopColor: t.colors.hairline,
-    paddingVertical: t.space[2],
+    minHeight: t.size.navRow,
+    paddingVertical: t.space[3],
   },
   struck: { flexShrink: 1, justifyContent: 'center' },
   strike: {

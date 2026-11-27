@@ -21,7 +21,7 @@ export interface ToastOptions {
 
 const ToastContext = createContext<(t: ToastOptions) => void>(() => {});
 
-/** Mostra uma confirmação curta: pílula escura por 4 s, sobe 16 px e esmaece. Uma por vez. */
+/** Mostra uma confirmação curta: cartão de tinta por 4 s, sobe com mola e esmaece. Uma por vez. */
 export function useToast() {
   return useContext(ToastContext);
 }
@@ -65,7 +65,7 @@ function ToastView({ toast, onAction }: { toast: (ToastOptions & { key: number }
   const t = useTheme();
   const insets = useSafeAreaInsets();
   const reduceMotion = useReduceMotion();
-  const spring = resolveSpring('standard', reduceMotion);
+  const spring = resolveSpring('emphasis', reduceMotion);
   const visible = useSharedValue(0);
   const [shown, setShown] = useState(toast);
 
@@ -83,24 +83,34 @@ function ToastView({ toast, onAction }: { toast: (ToastOptions & { key: number }
 
   const current = toast ?? shown;
   if (!current) return null;
-  const bottom = insets.bottom + (current.aboveTabBar ? t.size.tabBar + t.space[4] + t.space[0.5] : t.space[6]);
+  const bottom = insets.bottom + (current.aboveTabBar ? t.size.tabBar + t.layout.tabBarBottom + t.space[4] : t.space[7]);
 
   return (
     // Toques controlados por uma View comum: no web, pointerEvents no Animated.View não é confiável.
     <View pointerEvents={toast ? 'box-none' : 'none'} style={[s.host, { bottom }]}>
-      <Animated.View accessibilityRole="alert" accessibilityLiveRegion="polite" style={[s.pill, style]}>
-        {current.icon && <current.icon size={t.icon.small} strokeWidth={t.icon.strokeWidth} color={t.colors.bg} />}
+      <Animated.View
+        accessibilityRole="alert"
+        accessibilityLiveRegion="polite"
+        style={[s.pill, current.actionLabel ? s.pillWithAction : s.pillPlain, style]}
+      >
+        {current.icon && (
+          <View style={s.icon}>
+            <current.icon size={t.icon.small} strokeWidth={t.icon.strokeWidth} color={t.colors.inverseInk} />
+          </View>
+        )}
         <Text variant="small" style={s.message} numberOfLines={1}>
           {current.message}
         </Text>
         {current.actionLabel && (
-          // Text com onPress: clique direto no web e toque nativo no Android.
+          // Text com onPress: clique direto no web e toque nativo no Android. A altura do texto é a da área de toque
+          // (entrelinha = altura), então o rótulo fica centrado e a pílula inteira da ação responde.
           <Text
             variant="small"
             accessibilityRole="button"
             onPress={onAction}
             suppressHighlighting
-            style={[s.action, s.actionText]}
+            numberOfLines={1}
+            style={s.action}
           >
             {current.actionLabel}
           </Text>
@@ -111,24 +121,41 @@ function ToastView({ toast, onAction }: { toast: (ToastOptions & { key: number }
 }
 
 const useStyles = makeStyles((t) => ({
-  host: { position: 'absolute', left: t.space[0], right: t.space[0], alignItems: 'center' },
+  host: { position: 'absolute', left: t.space[0], right: t.space[0], alignItems: 'center', paddingHorizontal: t.space[4] },
+  // Cobalto: cartão de tinta r18 com sombra nível 2; a ação em azul claro.
   pill: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: t.space[2] + t.space[0.5],
+    gap: t.space[3],
     minHeight: t.size.toast,
+    paddingVertical: t.space[1],
     paddingLeft: t.space[4],
-    paddingRight: t.space[1.5],
-    borderRadius: t.radius.full,
-    backgroundColor: t.colors.text,
+    borderRadius: t.radius.fieldLarge,
+    backgroundColor: t.colors.inverse,
+    boxShadow: t.colors.shadow.level2,
     maxWidth: t.layout.sheetMaxWidth,
+    width: '100%',
   },
-  message: { color: t.colors.bg, fontFamily: t.type.chip.font, flexShrink: 1 },
+  /** sem ação, a folga da direita é igual à da esquerda; com ação, a pílula da ação fica a 4 px da borda */
+  pillPlain: { paddingRight: t.space[4] },
+  pillWithAction: { paddingRight: t.space[1] },
+  icon: { height: t.type.small.lineHeight, justifyContent: 'center' },
+  message: {
+    color: t.colors.inverseInk,
+    fontFamily: t.type.chip.font,
+    flex: 1,
+    includeFontPadding: false,
+    textAlignVertical: 'center',
+  },
   action: {
-    minHeight: t.size.toast - t.space[2] - t.space[0.5],
+    height: t.size.toast - 2 * t.space[1],
+    lineHeight: t.size.toast - 2 * t.space[1],
     paddingHorizontal: t.space[3],
-    justifyContent: 'center',
     borderRadius: t.radius.full,
+    overflow: 'hidden',
+    color: t.colors.inverseAccent,
+    fontFamily: t.type.button.font,
+    includeFontPadding: false,
+    textAlignVertical: 'center',
   },
-  actionText: { color: t.colors.bg, fontFamily: t.type.button.font, textDecorationLine: 'underline' },
 }));

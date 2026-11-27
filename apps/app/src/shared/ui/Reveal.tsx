@@ -26,7 +26,7 @@ export function riseIn(offset: number, duration: number, delay = 0) {
 }
 
 /**
- * Entrada em cascata: cada filho sobe 12 px e aparece, 40 ms depois do anterior, na duração padrão.
+ * Entrada em cascata: cada filho sobe 18 px e aparece, 70 ms depois (até o 6º) do anterior, na duração padrão.
  * Com "reduzir movimento" os filhos aparecem sem animação.
  */
 export function Reveal({ children, delay = 0 }: RevealProps) {
@@ -43,7 +43,7 @@ export function Reveal({ children, delay = 0 }: RevealProps) {
             entering={
               reduceMotion
                 ? undefined
-                : riseIn(t.motion.enterOffset, t.motion.standard, delay + index * t.motion.stagger)
+                : riseIn(t.motion.enterOffset, t.motion.standard, delay + Math.min(index, t.motion.staggerMax) * t.motion.stagger)
             }
           >
             {child}

@@ -1,15 +1,17 @@
 // Tela 5 do protótipo: Nova conta ou cartão. Tipo em chips; conta pede nome e saldo inicial; cartão pede dias de
 // fechamento e vencimento, limite e conta pagadora e, depois, "Este cartão já está em uso?".
-import { isRepositoryError } from '@glife/domain/core';
-import { currentInvoiceMonth, invoiceDates } from '@glife/domain/finance';
-import { router } from 'expo-router';
+// Com `?id=` vira "Editar conta" (Contas e cartões → …): mesmo formulário, sem trocar o tipo nem o passo do cartão.
+import { currentInvoiceMonth, invoiceDates, type Account } from '@glife/domain/finance';
+import { router, useLocalSearchParams } from 'expo-router';
 import { Plus, X } from 'lucide-react-native';
 import { useState } from 'react';
 import { Pressable, View } from 'react-native';
 
-import { Button, Chip, Icon, IconButton, Input, Reveal, Screen, Text, makeStyles, useTheme, useToast } from '@/shared/ui';
+import { BackHeader, Button, Chip, EmptyState, Icon, IconButton, Input, Reveal, Screen, Text, makeStyles, useTheme, useToast } from '@/shared/ui';
 
-import { money, dm, MONTH_NAMES, todayIso } from '../components/format';
+import { failureReason as reasonOf } from '../components/errors';
+import { dm, MONTH_NAMES, todayIso } from '../components/format';
+import { useMoneyFormat } from '../hooks/useMoneyFormat';
 import { Block, BlockHeader, DayField, MoneyField, RadioRow } from '../components/ui';
 import { useFinance } from '../hooks/FinanceData';
 import { useFinanceActions } from '../hooks/useFinanceActions';
@@ -22,15 +24,7 @@ const KINDS: { value: Kind; label: string }[] = [
   { value: 'credit_card', label: 'Cartão de crédito' },
 ];
 
-/** Motivo curto para o aviso (sem dados pessoais): o que deu errado e onde olhar. */
-function failureReason(e: unknown): string {
-  if (isRepositoryError(e, 'validation')) return 'confira o valor e os números das parcelas.';
-  if (isRepositoryError(e, 'unavailable')) {
-    const cause = (e as { cause?: unknown }).cause;
-    return `o banco do aparelho recusou (${cause instanceof Error ? cause.message.slice(0, 80) : 'sem detalhe'}).`;
-  }
-  return e instanceof Error ? `${e.message.slice(0, 80)}.` : 'erro desconhecido.';
-}
+const failureReason = (e: unknown) => reasonOf(e, 'confira o valor e os números das parcelas.');
 
 interface Parcel {
   description: string;
@@ -40,23 +34,43 @@ interface Parcel {
 }
 
 export function NewAccountScreen() {
+  const { id } = useLocalSearchParams<{ id?: string }>();
+  const { data } = useFinance();
+  if (!id) return <AccountForm account={null} />;
+  if (!data) return <Screen>{null}</Screen>;
+  const account = data.accounts.find((a) => a.id === id && a.deleted_at === null) ?? null;
+  if (!account) {
+    return (
+      <Screen header={<BackHeader title="Conta" fallback="/financas/contas" />}>
+        <EmptyState title="Não encontrada" message="Esta conta não existe mais." mood="pensando" />
+      </Screen>
+    );
+  }
+  return <AccountForm key={account.id} account={account} />;
+}
+
+function AccountForm({ account }: { account: Account | null }) {
+  const { money } = useMoneyFormat();
   const s = useStyles();
   const t = useTheme();
   const toast = useToast();
   const today = todayIso();
   const { data } = useFinance();
-  const { createAccount, createCard } = useFinanceActions();
-  const banks = (data?.accounts ?? []).filter((a) => a.kind !== 'credit_card' && !a.archived);
+  const { createAccount, createCard, updateAccount } = useFinanceActions();
+  const banks = (data?.accounts ?? []).filter(
+    (a) => a.kind !== 'credit_card' && a.deleted_at === null && (!a.archived || a.id === account?.payment_account_id),
+  );
+  const editing = account !== null;
 
   const [step, setStep] = useState<'form' | 'inUse'>('form');
-  const [kind, setKind] = useState<Kind>('checking');
-  const [name, setName] = useState('');
-  const [initial, setInitial] = useState<number | null>(null);
-  const [negative, setNegative] = useState(false);
-  const [closing, setClosing] = useState<number | null>(1);
-  const [due, setDue] = useState<number | null>(8);
-  const [limit, setLimit] = useState<number | null>(null);
-  const [payerId, setPayerId] = useState<string | null>(banks[0]?.id ?? null);
+  const [kind, setKind] = useState<Kind>(account?.kind ?? 'checking');
+  const [name, setName] = useState(account?.name ?? '');
+  const [initial, setInitial] = useState<number | null>(account && account.kind !== 'credit_card' ? Math.abs(account.initial_balance_cents) : null);
+  const [negative, setNegative] = useState((account?.initial_balance_cents ?? 0) < 0);
+  const [closing, setClosing] = useState<number | null>(account?.closing_day ?? 1);
+  const [due, setDue] = useState<number | null>(account?.due_day ?? 8);
+  const [limit, setLimit] = useState<number | null>(account?.credit_limit_cents ?? null);
+  const [payerId, setPayerId] = useState<string | null>(account?.payment_account_id ?? banks[0]?.id ?? null);
   const [inUse, setInUse] = useState<'bring' | 'zero'>('bring');
   const [openCents, setOpenCents] = useState<number | null>(null);
   const [parcels, setParcels] = useState<Parcel[]>([]);
@@ -87,7 +101,29 @@ export function NewAccountScreen() {
     else router.replace('/financas');
   };
 
+  const saveEdit = async () => {
+    if (!account || !name.trim()) return;
+    if (isCard && (!payer || closing === null || due === null)) return;
+    setSaving(true);
+    try {
+      await updateAccount(
+        account.id,
+        isCard
+          ? { name: name.trim(), closing_day: closing, due_day: due, credit_limit_cents: limit, payment_account_id: payer }
+          : { name: name.trim(), initial_balance_cents: (negative ? -1 : 1) * (initial ?? 0) },
+      );
+      toast({ message: isCard ? 'Cartão salvo' : 'Conta salva' });
+      back();
+    } catch (e) {
+      console.warn('Falha ao salvar a conta', e);
+      toast({ message: `Não foi possível salvar: ${reasonOf(e, 'confira os dias e a conta que paga a fatura.')}` });
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const saveAccount = async () => {
+    if (editing) return saveEdit();
     if (!name.trim() || isCard) return;
     setSaving(true);
     try {
@@ -144,15 +180,21 @@ export function NewAccountScreen() {
     setNn(null);
   };
 
-  const title = step === 'inUse' ? name || 'Novo cartão' : isCard ? 'Novo cartão' : 'Nova conta';
+  const title = editing
+    ? isCard
+      ? 'Editar cartão'
+      : 'Editar conta'
+    : step === 'inUse'
+      ? name || 'Novo cartão'
+      : isCard
+        ? 'Novo cartão'
+        : 'Nova conta';
   const payerName = banks.find((b) => b.id === payer)?.name ?? '';
 
   return (
     <Screen>
       <View>
-        <View style={s.bar}>
-          <IconButton icon={X} label="Voltar" variant="ghost" size={t.touch.minTarget} onPress={back} />
-        </View>
+        <BackHeader left={<IconButton icon={X} label="Voltar" onPress={back} />} />
         <Text variant="title" accessibilityRole="header" style={s.title}>
           {title}
         </Text>
@@ -165,16 +207,18 @@ export function NewAccountScreen() {
 
       {step === 'form' ? (
         <Reveal>
-          <View style={s.group}>
-            <Text variant="label" tone="tertiary">
-              Tipo
-            </Text>
-            <View style={s.chips}>
-              {KINDS.map((k) => (
-                <Chip key={k.value} label={k.label} selected={kind === k.value} onPress={() => setKind(k.value)} />
-              ))}
+          {!editing && (
+            <View style={s.group}>
+              <Text variant="label" tone="tertiary">
+                Tipo
+              </Text>
+              <View style={s.chips}>
+                {KINDS.map((k) => (
+                  <Chip key={k.value} label={k.label} selected={kind === k.value} onPress={() => setKind(k.value)} />
+                ))}
+              </View>
             </View>
-          </View>
+          )}
           <View style={s.group}>
             <Input label="Nome" value={name} onChangeText={setName} placeholder={isCard ? 'Ex.: Nubank' : 'Ex.: Itaú'} maxLength={80} />
             {!isCard ? (
@@ -186,7 +230,11 @@ export function NewAccountScreen() {
                   allowNegative
                   negative={negative}
                   onNegativeChange={setNegative}
-                  hint="O saldo de hoje no banco. Pode ser negativo (digite − antes)."
+                  hint={
+                    editing
+                      ? 'Saldo com que a conta começou no Glife. Para igualar ao banco hoje, use “Ajustar saldo”.'
+                      : 'O saldo de hoje no banco. Pode ser negativo (digite − antes).'
+                  }
                 />
                 <View style={s.actions}>
                   <Button label="Salvar conta" haptic disabled={!name.trim()} loading={saving} onPress={saveAccount} />
@@ -222,9 +270,11 @@ export function NewAccountScreen() {
                 )}
                 <View style={s.actions}>
                   <Button
-                    label="Continuar"
+                    label={editing ? 'Salvar cartão' : 'Continuar'}
+                    haptic={editing}
+                    loading={editing && saving}
                     disabled={!name.trim() || !payer || closing === null || due === null}
-                    onPress={() => setStep('inUse')}
+                    onPress={editing ? () => void saveEdit() : () => setStep('inUse')}
                   />
                 </View>
               </>
@@ -368,10 +418,10 @@ const useStyles = makeStyles((t) => ({
     flexDirection: 'row',
     alignItems: 'center',
     gap: t.space[3],
-    minHeight: t.size.button,
+    minHeight: t.size.navRow,
     borderTopWidth: t.hairline,
     borderTopColor: t.colors.hairline,
   },
-  pressed: { backgroundColor: t.colors.soft },
+  pressed: { opacity: t.opacity.pressed },
   summary: { paddingTop: t.space[2] },
 }));

@@ -2,6 +2,8 @@
 // `id` é implícito; booleano e números (centavos, dias) viram integer; datas, meses e uuids são texto.
 import { Table, column } from '@powersync/common';
 
+import type { SyncTableLabel } from '@/shared/lib/powersync';
+
 const base = {
   user_id: column.text,
   created_at: column.text,
@@ -28,6 +30,7 @@ export const financeTables = {
     due_day: column.integer,
     credit_limit_cents: column.integer,
     payment_account_id: column.text,
+    sort_order: column.integer,
   }),
   categories: new Table({
     ...base,
@@ -36,6 +39,7 @@ export const financeTables = {
     color: column.text,
     icon: column.text,
     archived: column.integer,
+    sort_order: column.integer,
   }),
   recurrences: new Table({
     ...base,
@@ -57,6 +61,7 @@ export const financeTables = {
       installment_count: column.integer,
       recurrence_id: column.text,
       occurrence_date: column.text,
+      is_adjustment: column.integer,
     },
     {
       indexes: {
@@ -90,4 +95,40 @@ export const financeTables = {
     },
     { indexes: { by_list: ['list_id'] } },
   ),
+  investment_assets: new Table({
+    ...base,
+    name: column.text,
+    kind: column.text,
+    institution: column.text,
+    notes: column.text,
+    quote_symbol: column.text,
+    last_price_e8: column.integer,
+    last_price_at: column.text,
+  }),
+  investment_movements: new Table(
+    {
+      ...base,
+      asset_id: column.text,
+      kind: column.text,
+      amount_cents: column.integer,
+      quantity: column.integer,
+      date: column.text,
+      account_id: column.text,
+      notes: column.text,
+    },
+    { indexes: { by_asset: ['asset_id'] } },
+  ),
+};
+
+/** Nome de cada tabela na fila de envio e nas contagens de Ajustes › Sincronização (nunca o conteúdo). */
+export const financeTableLabels: Record<keyof typeof financeTables, SyncTableLabel> = {
+  accounts: { noun: 'Conta', gender: 'f' },
+  categories: { noun: 'Categoria', gender: 'f' },
+  recurrences: { noun: 'Recorrente', gender: 'm' },
+  transactions: { noun: 'Lançamento', gender: 'm', count: 'transactions' },
+  budgets: { noun: 'Orçamento', gender: 'm' },
+  shopping_lists: { noun: 'Lista de compras', gender: 'f' },
+  shopping_items: { noun: 'Item de compra', gender: 'm' },
+  investment_assets: { noun: 'Investimento', gender: 'm' },
+  investment_movements: { noun: 'Movimentação', gender: 'f' },
 };

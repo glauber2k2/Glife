@@ -9,6 +9,7 @@ export interface SyncDatabase<C = unknown> {
 }
 
 type Action = 'connect' | 'disconnect' | 'clear';
+export type ReconnectResult = 'started' | 'failed' | 'disabled';
 
 const ACTION: Record<SyncStage, Action> = {
   ready: 'connect',
@@ -25,12 +26,15 @@ export function createSyncController<C>(
   onError: (e: unknown) => void = () => {},
 ) {
   let last: Action | null = null;
+  // O que o estado de acesso pede agora (mesmo que a última tentativa tenha falhado).
+  let wanted: Action | null = null;
   let queue: Promise<void> = Promise.resolve();
 
   return {
     /** Aplica o estado em ordem; repetir o mesmo estado não faz nada. */
     apply(stage: SyncStage): Promise<void> {
       const action = ACTION[stage];
+      wanted = action;
       queue = queue.then(async () => {
         if (action === last) return;
         try {
@@ -44,6 +48,22 @@ export function createSyncController<C>(
         }
       });
       return queue;
+    },
+    /** "Sincronizar agora": reconecta (envia a fila e baixa) só se a sincronização estiver ligada. */
+    reconnect(): Promise<ReconnectResult> {
+      const attempt = queue.then(async (): Promise<ReconnectResult> => {
+        if (wanted !== 'connect') return 'disabled';
+        try {
+          await db.connect(connector);
+          last = 'connect';
+          return 'started';
+        } catch (e) {
+          onError(e);
+          return 'failed';
+        }
+      });
+      queue = attempt.then(() => {});
+      return attempt;
     },
   };
 }

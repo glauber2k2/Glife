@@ -14,7 +14,8 @@ import { Pressable, View } from 'react-native';
 import { Button, Chip, Icon, Input, Reveal, Sheet, Switch, Text, makeStyles, useTheme, type IconColor, type TextTone } from '@/shared/ui';
 
 import { categoryIcon } from './categories';
-import { money } from './format';
+
+import { useMoneyFormat } from '../hooks/useMoneyFormat';
 import { itemMeta } from './shoppingRows';
 import { MoneyField, SwitchRow } from './ui';
 
@@ -45,6 +46,7 @@ export function ItemEditSheet({
 }
 
 function ItemForm({ item, onSave }: { item: ShoppingItem; onSave: (c: ItemChanges) => Promise<void> }) {
+  const { money } = useMoneyFormat();
   const s = useStyles();
   const [name, setName] = useState(item.name);
   const [qty, setQty] = useState<number | null>(item.quantity);
@@ -95,7 +97,7 @@ function ItemForm({ item, onSave }: { item: ShoppingItem; onSave: (c: ItemChange
 
 // ---------- Ações do item ----------
 
-function ActionRow({
+export function ActionRow({
   icon,
   label,
   aside,
@@ -148,11 +150,12 @@ export function ItemMenuSheet({
   onToggleAlways: (item: ShoppingItem) => void;
   onDelete: (item: ShoppingItem) => void;
 }) {
+  const { money } = useMoneyFormat();
   const s = useStyles();
   const t = useTheme();
   const [moving, setMoving] = useState<string | null>(null);
   const mode = item && moving === item.id ? 'move' : 'main';
-  const meta = item ? `${item.unit_price_cents !== null ? `${item.quantity} × ${money(item.unit_price_cents)}` : itemMeta(item).invite ? 'Sem preço' : itemMeta(item).text} · ${listName}` : '';
+  const meta = item ? `${item.unit_price_cents !== null ? `${item.quantity} × ${money(item.unit_price_cents)}` : itemMeta(item, money).invite ? 'Sem preço' : itemMeta(item, money).text} · ${listName}` : '';
   return (
     <Sheet
       visible={!!item}
@@ -291,7 +294,7 @@ const useStyles = makeStyles((t) => ({
   form: { gap: t.space[3] + t.space[0.5] },
   flex: { flex: 1, minWidth: 0 },
   medium: { fontFamily: t.type.chip.font },
-  pressed: { backgroundColor: t.colors.soft },
+  pressed: { opacity: t.opacity.pressed },
   action: {
     flexDirection: 'row',
     alignItems: 'center',

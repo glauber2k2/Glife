@@ -11,9 +11,11 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   BackHeader,
   Button,
+  EmptyState,
   Icon,
   IconButton,
   Input,
+  ListGroup,
   Screen,
   Text,
   makeStyles,
@@ -24,7 +26,8 @@ import {
 } from '@/shared/ui';
 
 import { PurchaseSheet, type PurchaseDone } from '../components/PurchaseSheet';
-import { dm, money, todayIso } from '../components/format';
+import { dm, todayIso } from '../components/format';
+import { useMoneyFormat } from '../hooks/useMoneyFormat';
 import { ItemRow } from '../components/shoppingRows';
 import { ItemEditSheet, ItemMenuSheet, ListSettingsSheet, type ItemChanges } from '../components/shoppingSheets';
 import { useFinance } from '../hooks/FinanceData';
@@ -33,6 +36,7 @@ import { useShopping } from '../hooks/useShopping';
 const warn = (what: string) => (e: unknown) => console.warn(what, e);
 
 export function ShoppingListScreen() {
+  const { money } = useMoneyFormat();
   const s = useStyles();
   const t = useTheme();
   const toast = useToast();
@@ -58,9 +62,8 @@ export function ShoppingListScreen() {
   if (!snap) return <Screen>{null}</Screen>;
   if (!list) {
     return (
-      <Screen>
-        <BackHeader title="Lista" fallback="/financas/compras" />
-        <Text tone="tertiary">Lista não encontrada.</Text>
+      <Screen header={<BackHeader title="Lista" fallback="/financas/compras" />}>
+        <EmptyState title="Lista não encontrada" message="Esta lista não existe mais." mood="pensando" />
       </Screen>
     );
   }
@@ -153,8 +156,12 @@ export function ShoppingListScreen() {
   return (
     <View style={s.root}>
       <Screen>
-        <View>
-          <BackHeader title={list.name} fallback="/financas/compras" />
+        <View style={s.head}>
+          <BackHeader
+            title={list.name}
+            fallback="/financas/compras"
+            right={<IconButton icon={Ellipsis} label="Ajustes da lista" onPress={() => setSettings(true)} />}
+          />
           <View style={s.subRow}>
             <Text variant="small" tone="tertiary" style={s.flex} numberOfLines={1}>
               {eyebrow}
@@ -167,7 +174,6 @@ export function ShoppingListScreen() {
                 </Text>
               </View>
             )}
-            <IconButton icon={Ellipsis} label="Ajustes da lista" variant="ghost" color="textSecondary" onPress={() => setSettings(true)} />
           </View>
         </View>
 
@@ -183,7 +189,7 @@ export function ShoppingListScreen() {
           maxLength={SHOPPING_ITEM_NAME_MAX}
           trailing={
             text.trim() ? (
-              <IconButton icon={CornerDownLeft} label="Adicionar" variant="outline" size={t.size.pill} onPress={add} />
+              <IconButton icon={CornerDownLeft} label="Adicionar" variant="accent" size={t.size.iconButtonSmall} onPress={add} />
             ) : (
               <Icon icon={Plus} size={t.icon.size} color={focused ? 'accentInk' : 'textTertiary'} />
             )
@@ -191,29 +197,18 @@ export function ShoppingListScreen() {
         />
 
         {items.length === 0 ? (
-          <View style={s.empty}>
-            <Text variant="heading" tone="secondary" style={s.light}>
-              Lista vazia.
-            </Text>
-            <Text variant="small" tone="tertiary">
-              Itens adicionados aparecem aqui.
-            </Text>
-          </View>
+          <EmptyState title="Lista vazia" message="Itens adicionados aparecem aqui. Digite acima e toque em Enter." />
         ) : (
-          <View>
+          <View style={s.lists}>
             <View style={s.header}>
-              <Text variant="label" tone="tertiary">
-                Faltam
-              </Text>
-              <Text variant="label" tone="tertiary" numeric>
+              <Text variant="heading">Faltam</Text>
+              <Text variant="small" tone="tertiary" numeric>
                 {String(pending.filter((i) => !i.in_cart).length)}
               </Text>
             </View>
-            {pending.length === 0 && (
-              <Text variant="small" tone="tertiary" style={s.note}>
-                Tudo no carrinho.
-              </Text>
-            )}
+            {pending.length === 0 && <EmptyState compact message="Tudo no carrinho." />}
+            {pending.length > 0 && (
+            <ListGroup>
             {pending.map((item, i) => (
               <Animated.View key={item.id} layout={layout} entering={entering(i)}>
                 <ItemRow
@@ -225,16 +220,18 @@ export function ShoppingListScreen() {
                 />
               </Animated.View>
             ))}
+            </ListGroup>
+            )}
             {inCart.length > 0 && (
               <Animated.View layout={layout} style={[s.header, s.cartHeader]}>
-                <Text variant="label" tone="tertiary">
-                  No carrinho
-                </Text>
-                <Text variant="label" tone="tertiary" numeric>
+                <Text variant="heading">No carrinho</Text>
+                <Text variant="small" tone="tertiary" numeric>
                   {String(inCart.length)}
                 </Text>
               </Animated.View>
             )}
+            {inCart.length > 0 && (
+            <ListGroup>
             {inCart.map((item, i) => (
               <Animated.View key={item.id} layout={layout} entering={entering(pending.length + i)}>
                 <ItemRow
@@ -246,7 +243,8 @@ export function ShoppingListScreen() {
                 />
               </Animated.View>
             ))}
-            <Animated.View layout={layout} style={s.rule} />
+            </ListGroup>
+            )}
           </View>
         )}
       </Screen>
@@ -256,7 +254,7 @@ export function ShoppingListScreen() {
           <Text variant="caption" tone="tertiary">
             {cart.count === 0 ? 'Carrinho vazio' : cart.count === 1 ? '1 item no carrinho' : `${cart.count} itens no carrinho`}
           </Text>
-          <Text variant="heading" numeric style={s.light}>
+          <Text variant="title2" numeric>
             {`${cart.approx ? '≈ ' : ''}${money(cart.totalCents)}`}
           </Text>
         </View>
@@ -316,26 +314,25 @@ const useStyles = makeStyles((t) => ({
   flex: { flex: 1, minWidth: 0 },
   light: { fontFamily: t.type.title.font },
   inline: { flexDirection: 'row', alignItems: 'center', gap: t.space[1] },
-  subRow: { flexDirection: 'row', alignItems: 'center', gap: t.space[2], marginTop: t.space[1], marginRight: -t.space[2] },
+  head: { gap: t.space[2] },
+  subRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: t.space[2] },
+  lists: { gap: t.space[3] },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'baseline',
-    paddingBottom: t.space[2] + t.space[0.5],
   },
-  cartHeader: { paddingTop: t.space[6] },
-  note: { paddingVertical: t.space[3], borderTopWidth: t.hairline, borderTopColor: t.colors.hairline },
-  rule: { borderTopWidth: t.hairline, borderTopColor: t.colors.hairline },
-  empty: { gap: t.space[2], paddingVertical: t.space[8] },
+  cartHeader: { paddingTop: t.space[3] },
   footer: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: t.space[4],
     paddingTop: t.space[3] + t.space[0.5],
     paddingHorizontal: t.layout.gutter,
-    borderTopWidth: t.hairline,
-    borderTopColor: t.colors.hairline,
-    backgroundColor: t.colors.bg,
+    borderTopLeftRadius: t.radius.sheet,
+    borderTopRightRadius: t.radius.sheet,
+    backgroundColor: t.colors.card,
+    boxShadow: t.colors.shadow.level3,
   },
   footerText: { flex: 1, minWidth: 0, gap: t.space[0.5] },
 }));

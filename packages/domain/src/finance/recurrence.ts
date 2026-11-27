@@ -137,6 +137,7 @@ export function materializeOccurrence(
     installment_count: null,
     recurrence_id: rule.id,
     occurrence_date: date,
+    is_adjustment: false,
   };
 }
 

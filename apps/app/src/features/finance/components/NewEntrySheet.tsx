@@ -6,12 +6,14 @@ import {
   invoiceDates,
   invoiceMonthFor,
   nextDayOfMonth,
-  splitInstallments,
+  installmentAmount,
   type Account,
   type Frequency,
   type IsoDate,
   type TxType,
+  type InstallmentAmountMode,
 } from '@glife/domain/finance';
+import { router } from 'expo-router';
 import { ArrowLeftRight, CreditCard, X } from 'lucide-react-native';
 import { useMemo, useState } from 'react';
 import { ScrollView, View, useWindowDimensions } from 'react-native';
@@ -20,9 +22,11 @@ import { Button, Chip, Icon, IconButton, Input, SegmentedControl, Sheet, Switch,
 
 import { useFinance } from '../hooks/FinanceData';
 import { useFinanceActions } from '../hooks/useFinanceActions';
+import { InstallmentAmountChoice } from './InstallmentAmountChoice';
 import { accountIcon, categoryIcon } from './categories';
-import { MONTH_NAMES, dayLabel, dm, dmy, money, weekday } from './format';
-import { DateRow, DayField, MoneyField, Stepper, SwitchRow } from './ui';
+import { MONTH_NAMES, dm, dmy, relativeDay, tinyInstallmentsHint, weekday } from './format';
+import { useMoneyFormat } from '../hooks/useMoneyFormat';
+import { DateRow, DayField, MoneyField, NoCategoriesNote, Stepper, SwitchRow } from './ui';
 
 type Freq = 'weekly' | 'monthly' | 'yearly' | 'every';
 const PARCS = [1, 2, 3, 4, 5, 6, 8, 10, 12, 18, 24] as const;
@@ -66,6 +70,7 @@ export function NewEntrySheet(props: Props) {
 }
 
 function EntryForm({ onClose, today, preset, aboveTabBar }: Props) {
+  const { money } = useMoneyFormat();
   const s = useStyles();
   const t = useTheme();
   const toast = useToast();
@@ -85,6 +90,7 @@ function EntryForm({ onClose, today, preset, aboveTabBar }: Props) {
   const [acctId, setAcctId] = useState<string | null>(() => banks[0]?.id ?? null);
   const [toId, setToId] = useState<string | null>(null);
   const [parc, setParc] = useState(1);
+  const [amountMode, setAmountMode] = useState<InstallmentAmountMode>('total');
   const [planned, setPlanned] = useState(!!preset?.planned);
   const [repeat, setRepeat] = useState(!!preset?.repeat);
   const [freq, setFreq] = useState<Freq>('monthly');
@@ -140,26 +146,33 @@ function EntryForm({ onClose, today, preset, aboveTabBar }: Props) {
         : `Cai na fatura de ${monthYear(first, today)} · vence ${dm(invoiceDates(first, cycle).dueDate)}`;
   }
 
+  const hasInstallments = isCard && parc > 1 && !repeat;
+  let amount: ReturnType<typeof installmentAmount> | null = null;
+  try {
+    amount = installmentAmount(cents, hasInstallments ? parc : 1, hasInstallments ? amountMode : 'total');
+  } catch { /* O formulário mantém o valor e impede salvar fora do limite. */ }
+  // Cada parcela precisa de pelo menos 1 centavo: total menor que o número de parcelas não salva.
+  const tiny = hasInstallments ? tinyInstallmentsHint(amount?.amounts, parc) : null;
   const amountSub =
-    isCard && parc > 1 && cents > 0 && !repeat
-      ? `${parc} × ${money(splitInstallments(cents, parc)[0]!)}`
+    !amount ? 'O valor total excede o limite permitido.' : tiny ? tiny : hasInstallments && cents > 0
+      ? `${parc} parcelas · total ${money(amount.totalCents)}`
       : planned
         ? 'Previsto · confirma no dia'
         : ' ';
 
   const transferNote =
     target?.kind === 'credit_card' ? 'Pagamento de fatura: é transferência, não é gasto.' : 'Transferência não conta no orçamento.';
-  const canSave = cents > 0 && !!acctId && (type !== 'transfer' || !!toId) && (!monthly || chargeDay !== null) && !saving;
+  const canSave = cents > 0 && !!amount && !tiny && !!acctId && (type !== 'transfer' || !!toId) && (!monthly || chargeDay !== null) && !saving;
   const saveLabel =
     firstPlanned || repeat ? 'Agendar' : type === 'expense' ? 'Salvar gasto' : type === 'income' ? 'Salvar receita' : 'Salvar transferência';
 
   const save = async () => {
-    if (!canSave || !acctId) return;
+    if (!canSave || !acctId || !amount) return;
     setSaving(true);
     try {
       await createEntry({
         type,
-        cents,
+        cents: amount.totalCents,
         description: desc,
         categoryId: type === 'transfer' ? null : catId,
         accountId: acctId,
@@ -199,13 +212,14 @@ function EntryForm({ onClose, today, preset, aboveTabBar }: Props) {
     <View style={[s.root, { height: height - t.space[12] - t.space[8] }]}>
       <View style={s.header}>
         <Text variant="heading">Novo lançamento</Text>
-        <IconButton icon={X} label="Fechar" variant="ghost" color="textSecondary" onPress={onClose} />
+        <IconButton icon={X} label="Fechar" variant="soft" onPress={onClose} />
       </View>
-      <SegmentedControl label="Tipo de lançamento" options={TYPES} value={type} onChange={changeType} />
+      <SegmentedControl label="Tipo de lançamento" shape="block" options={TYPES} value={type} onChange={changeType} />
+      {hasInstallments && <InstallmentAmountChoice value={amountMode} onChange={setAmountMode} />}
       <MoneyField
         large
         autoFocus
-        label="Valor"
+        label={hasInstallments ? amountMode === 'installment' ? 'Valor da parcela' : 'Valor total' : 'Valor'}
         cents={cents || null}
         onChange={(c) => setCents(c ?? 0)}
         hint={amountSub.trim() || undefined}
@@ -289,6 +303,15 @@ function EntryForm({ onClose, today, preset, aboveTabBar }: Props) {
             <Text variant="label" tone="tertiary">
               Categoria
             </Text>
+            {catsForType.length === 0 && (
+              <NoCategoriesNote
+                kind={type === 'income' ? 'income' : 'expense'}
+                onCreate={() => {
+                  onClose();
+                  router.push({ pathname: '/financas/categoria/[id]', params: { id: 'novo', tipo: type === 'income' ? 'income' : 'expense' } });
+                }}
+              />
+            )}
             <View style={s.chips}>
               {catsForType.map((c) => (
                 <Chip
@@ -309,7 +332,7 @@ function EntryForm({ onClose, today, preset, aboveTabBar }: Props) {
         <DateRow
           label={monthly ? 'A partir de' : 'Data'}
           date={date}
-          display={dayLabel(date, today)}
+          hint={relativeDay(date, today)}
           onChange={setDate}
         />
         <SwitchRow
@@ -368,7 +391,7 @@ function EntryForm({ onClose, today, preset, aboveTabBar }: Props) {
                 onChange={setEnds}
               />
             </View>
-            {ends === 'date' && <DateRow label="Última" date={endDate} display={dmy(endDate)} onChange={setEndDate} />}
+            {ends === 'date' && <DateRow label="Última" date={endDate} onChange={setEndDate} />}
           </View>
         )}
       </ScrollView>

@@ -31,6 +31,22 @@ export function signed(cents: number): string {
 /** Saldo que pode ser negativo: "R$ 10,00" · "− R$ 10,00". */
 export const balance = (cents: number) => (cents < 0 ? `${MINUS} ${money(cents)}` : money(cents));
 
+/** Máscara de valor oculto: largura fixa, para a linha não pular ao alternar. */
+export const MONEY_MASK = 'R$ ••••';
+
+/** Os mesmos formatadores, mas com a máscara neutra (sem sinal) quando os valores estão ocultos. */
+export function createMoneyFormat(hidden: boolean) {
+  if (!hidden) return { money, signed, balance };
+  const masked = () => MONEY_MASK;
+  return {
+    money: masked,
+    // Sem sinal: "− R$ ••••" entregaria se o valor é negativo.
+    signed: masked,
+    balance: masked,
+  };
+}
+export type MoneyFormat = ReturnType<typeof createMoneyFormat>;
+
 /** Só os dígitos do que foi digitado, lidos como centavos ("23990" → 23990). */
 export function digitsToCents(text: string): number {
   const digits = text.replace(/\D/g, '').replace(/^0+/, '').slice(0, 11);
@@ -85,12 +101,24 @@ export const monthShort = (d: IsoDate) => MONTH_NAMES[Number(d.slice(5, 7)) - 1]
 export const daysBetween = (a: IsoDate, b: IsoDate) =>
   Math.round((Date.parse(`${b}T12:00:00Z`) - Date.parse(`${a}T12:00:00Z`)) / 86_400_000);
 
+/**
+ * Total menor que o número de parcelas deixaria parcela de R$ 0,00 (recusada só ao salvar): explica o mínimo.
+ * Campo ainda vazio (tudo zero) não é erro.
+ */
+export function tinyInstallmentsHint(amounts: readonly number[] | undefined, count: number): string | null {
+  if (!amounts || amounts.every((a) => a > 0) || amounts.every((a) => a <= 0)) return null;
+  return `Com ${count} parcelas, o total precisa ser de pelo menos ${money(count)}.`;
+}
+
+/** "Hoje" · "Ontem" · "Amanhã"; nos outros dias, nada (a data já diz tudo). */
+export function relativeDay(d: IsoDate, today: IsoDate): string | undefined {
+  return ({ [-1]: 'Ontem', 0: 'Hoje', 1: 'Amanhã' } as Record<number, string>)[daysBetween(today, d)];
+}
+
 /** "Hoje, 10/12" · "Ontem, 09/12" · "Amanhã, 11/12" · "08/12/2026". */
 export function dayLabel(d: IsoDate, today: IsoDate): string {
-  const diff = daysBetween(today, d);
-  if (diff === 0) return `Hoje, ${dm(d)}`;
-  if (diff === -1) return `Ontem, ${dm(d)}`;
-  if (diff === 1) return `Amanhã, ${dm(d)}`;
+  const near = relativeDay(d, today);
+  if (near) return `${near}, ${dm(d)}`;
   return d.slice(0, 4) === today.slice(0, 4) ? dm(d) : dmy(d);
 }
 

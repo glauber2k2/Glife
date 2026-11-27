@@ -1,6 +1,46 @@
 import { describe, expect, it } from 'vitest';
 
-import { applyWikilink, prefixLines, toggleBold, insertAt, wikilinkQuery } from '../src/features/notes/components/textEdits';
+import { applyWikilink, prefixLines, toggleBold, toggleHeading, toggleWrap, insertAt, normalizeSelection, wikilinkQuery } from '../src/features/notes/components/textEdits';
+
+describe('seleção após alterações e linhas vazias', () => {
+  it('normaliza índices atrasados, invertidos, fracionários e não finitos', () => {
+    expect(normalizeSelection('curto', { start: 20, end: 30 })).toEqual({ start: 5, end: 5 });
+    expect(normalizeSelection('abc', { start: 2.8, end: -4 })).toEqual({ start: 0, end: 2 });
+    expect(normalizeSelection('', { start: NaN, end: Infinity })).toEqual({ start: 0, end: 0 });
+  });
+
+  it('insere no final do texto encurtado em vez de enviar cursor além do conteúdo', () => {
+    expect(insertAt('a', { start: 12, end: 12 }, 'x')).toEqual({ text: 'ax', selection: { start: 2, end: 2 } });
+  });
+
+  it('formata a primeira linha vazia sem deslocar a quebra para cima', () => {
+    expect(prefixLines('\nitem', { start: 0, end: 0 }, '- ')).toEqual({ text: '- \nitem', selection: { start: 2, end: 2 } });
+    expect(toggleHeading('\nitem', { start: 0, end: 0 }, 1)).toEqual({ text: '# \nitem', selection: { start: 2, end: 2 } });
+  });
+
+  it('mantém cursor válido ao desmarcar no início de uma lista', () => {
+    expect(prefixLines('- item', { start: 0, end: 0 }, '- ')).toEqual({ text: 'item', selection: { start: 0, end: 0 } });
+  });
+
+  it('não seleciona a linha anterior ao remover o marcador de uma linha seguinte', () => {
+    for (const cursor of [4, 5, 6]) {
+      expect(prefixLines('- a\n- b', { start: cursor, end: cursor }, '- ')).toEqual({ text: '- a\nb', selection: { start: 4, end: 4 } });
+    }
+    expect(prefixLines('- a\n- b', { start: 4, end: 7 }, '- ')).toEqual({ text: '- a\nb', selection: { start: 4, end: 5 } });
+  });
+
+  it('todas as ações respeitam limites mesmo com eventos de seleção antigos', () => {
+    const text = '- item\n\n  😀';
+    for (const selection of [{ start: 99, end: 99 }, { start: -8, end: 5 }, { start: 9, end: 2 }, { start: NaN, end: Infinity }]) {
+      const edits = [insertAt(text, selection, '[['), toggleWrap(text, selection, '**'), toggleHeading(text, selection, 1), prefixLines(text, selection, '- '), applyWikilink(text, selection.start, selection.end, 'Nota')];
+      for (const edit of edits) {
+        expect(edit.selection.start).toBeGreaterThanOrEqual(0);
+        expect(edit.selection.end).toBeGreaterThanOrEqual(edit.selection.start);
+        expect(edit.selection.end).toBeLessThanOrEqual(edit.text.length);
+      }
+    }
+  });
+});
 
 describe('edições da barra de formatação', () => {
   it('negrito envolve a seleção', () => {
@@ -54,5 +94,34 @@ describe('sugestões de [[', () => {
 
   it('aproveita o ]] que já estava depois do cursor', () => {
     expect(applyWikilink('[[Le]] fim', 0, 4, 'Lectio')).toEqual({ text: '[[Lectio]] fim', selection: { start: 10, end: 10 } });
+  });
+});
+
+describe('nenhuma edição devolve seleção fora do texto', () => {
+  it('vale para textos com listas e linhas vazias e qualquer cursor, inclusive atrasado ou inválido', () => {
+    const texts = ['', '- a', '- a\n', '- a\n\n', '- a\n\n\n', '1. um\n\n  ', '# T\n\n- b\n\n', '\n\n'];
+    const cursors = [-3, 0, 1, 2, 3, 4, 5, 7, 12, NaN, Infinity];
+    for (const text of texts) {
+      for (const a of cursors) {
+        for (const b of [a, 0, 4, 99]) {
+          const sel = { start: a, end: b };
+          const edits = [
+            insertAt(text, sel, '[['),
+            toggleWrap(text, sel, '**'),
+            toggleBold(text, sel),
+            toggleHeading(text, sel, 1),
+            toggleHeading(text, sel, 2),
+            prefixLines(text, sel, '- '),
+            prefixLines(text, sel, '> '),
+            applyWikilink(text, a, b, 'Nota'),
+          ];
+          for (const edit of edits) {
+            const { start, end } = edit.selection;
+            expect(Number.isInteger(start) && Number.isInteger(end), JSON.stringify({ text, sel })).toBe(true);
+            expect(0 <= start && start <= end && end <= edit.text.length, JSON.stringify({ text, sel, edit })).toBe(true);
+          }
+        }
+      }
+    }
   });
 });
