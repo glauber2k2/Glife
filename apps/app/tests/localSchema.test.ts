@@ -53,6 +53,8 @@ describe('schema local (PowerSync) espelha as migrações', () => {
     expect(Object.keys(local).sort()).toEqual([
       'accounts',
       'bible_highlights',
+      'bible_plan_reads',
+      'bible_plans',
       'budgets',
       'categories',
       'diet_goals',

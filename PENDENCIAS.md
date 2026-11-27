@@ -2,6 +2,11 @@
 
 O que só o dono do projeto pode fazer (contas, chaves, testes no aparelho, decisões). Ao concluir um item, apague-o.
 
+## Bíblia v2: planos de leitura (27/11/2026)
+
+- [ ] Aplicar a migração `20261129000001_biblia_planos.sql` no GLIFE (`pnpm sb db push --remote`; posso rodar se você confirmar na hora).
+- [ ] Republicar o `supabase/powersync/sync-streams.yaml` no painel do PowerSync (Validate → Deploy; colar, não digitar).
+
 ## Bíblia (26/11/2026)
 
 - [ ] Gerar APK novo (bibliotecas nativas novas: expo-file-system, expo-document-picker; `prebuild --clean`).

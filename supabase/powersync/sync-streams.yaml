@@ -32,3 +32,5 @@ streams:
       - SELECT * FROM meals WHERE user_id = auth.user_id() AND auth.parameter('aal') = 'aal2'
       - SELECT * FROM diet_goals WHERE user_id = auth.user_id() AND auth.parameter('aal') = 'aal2'
       - SELECT * FROM bible_highlights WHERE user_id = auth.user_id() AND auth.parameter('aal') = 'aal2'
+      - SELECT * FROM bible_plans WHERE user_id = auth.user_id() AND auth.parameter('aal') = 'aal2'
+      - SELECT * FROM bible_plan_reads WHERE user_id = auth.user_id() AND auth.parameter('aal') = 'aal2'
