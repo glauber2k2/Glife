@@ -46,6 +46,17 @@ describe('agenda e dieta: isolamento e regras do banco', () => {
     await expect(fails(`insert into public.events (title, start_date, end_date, end_time) values ('X', '2026-11-25', '2026-11-25', '09:00')`)).rejects.toThrow();
   });
 
+  it('lembrete com vários horários: lista e intervalo como o app envia; o banco recusa o incoerente', async () => {
+    const ok = (sql: string) => asUser(db, USER_A, (tx) => tx.query(sql));
+    await ok(`insert into public.reminders (title, start_date, time, time_mode, times, done_slots) values ('Remédio', '2026-11-25', '08:00', 'list', '["08:00","20:00"]', '["2026-11-25T08:00"]')`);
+    await ok(`insert into public.reminders (title, start_date, time, time_mode, every_minutes, end_time) values ('Água', '2026-11-25', '08:00', 'interval', 120, '18:00')`);
+    await expect(fails(`insert into public.reminders (title, start_date, time, time_mode, times) values ('X', '2026-11-25', '08:00', 'list', '["08:00"]')`)).rejects.toThrow();
+    await expect(fails(`insert into public.reminders (title, start_date, time, time_mode, every_minutes, end_time) values ('X', '2026-11-25', '08:00', 'interval', 10, '18:00')`)).rejects.toThrow();
+    await expect(fails(`insert into public.reminders (title, start_date, time, time_mode, every_minutes, end_time) values ('X', '2026-11-25', '08:00', 'interval', 60, '07:00')`)).rejects.toThrow();
+    await expect(fails(`insert into public.reminders (title, start_date, time, every_minutes) values ('X', '2026-11-25', '08:00', 60)`)).rejects.toThrow();
+    await expect(fails(`insert into public.reminders (title, start_date, time, time_mode, times, done_at) values ('X', '2026-11-25', '08:00', 'list', '["08:00","09:00"]', now())`)).rejects.toThrow();
+  });
+
   it('plano precisa de ao menos um dia', async () => {
     await expect(fails(`insert into public.meal_plans (name, time, weekdays) values ('X', '10:00', 0)`)).rejects.toThrow();
   });

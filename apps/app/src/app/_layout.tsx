@@ -14,16 +14,16 @@ import { AppLockGate, AppLockProvider, createDeviceAppLock, deviceBiometrics, us
 import { AuthProvider, createSupabaseAuthService, useAuth } from '@/features/auth';
 import { AgendaProvider, DayMarksProvider, agendaTableLabels, agendaTables, useAgendaTargetSources } from '@/features/agenda';
 import { BibleProvider, bibleHref, bibleLocalTables, bibleTableLabels, bibleTables } from '@/features/bible';
-import { DietProvider, dietTableLabels, dietTables, useDietDayMarks, useDietTargetSource } from '@/features/diet';
+import { DietProvider, dietTableLabels, dietTables, useDietDayMarks, useDietTargetSources } from '@/features/diet';
 import {
   FinanceProvider,
   createEdgeQuoteClient,
   financeTableLabels,
   financeTables,
   useFinanceTaggedSource,
-  useFinanceTargetSource,
+  useFinanceTargetSources,
 } from '@/features/finance';
-import { LinksProvider, TaggedItemsProvider, TargetsProvider, linksTableLabels, linksTables, useLinksSearchSources } from '@/features/links';
+import { LinksProvider, NoteLinkerProvider, TaggedItemsProvider, TargetsProvider, linksTableLabels, linksTables, useLinksSearchSources } from '@/features/links';
 import {
   NotesProvider,
   notesSearchIndex,
@@ -31,6 +31,7 @@ import {
   notesTables,
   useNotesSearchSources,
   useNotesTaggedSource,
+  useNotesLinkerPort,
   useNotesTargetSource,
 } from '@/features/notes';
 import { SearchProvider, useSearchShortcut } from '@/features/search';
@@ -106,13 +107,14 @@ const ADDRESSES = [{ type: 'bible' as const, href: bibleHref }];
 /** Alvos de vínculos e avisos: cada módulo diz a tabela, a tela e como restaurar ("item não encontrado"). */
 function TargetsComposition({ children }: { children: ReactNode }) {
   const notes = useNotesTargetSource();
-  const finance = useFinanceTargetSource();
+  const noteLinker = useNotesLinkerPort();
+  const finance = useFinanceTargetSources();
   const agenda = useAgendaTargetSources();
-  const diet = useDietTargetSource();
-  const sources = useMemo(() => [notes, finance, diet, ...agenda].filter((s) => s !== null), [notes, finance, agenda, diet]);
+  const diet = useDietTargetSources();
+  const sources = useMemo(() => [notes, ...finance, ...diet, ...agenda].filter((s) => s !== null), [notes, finance, agenda, diet]);
   return (
     <TargetsProvider sources={sources} addresses={ADDRESSES}>
-      {children}
+      <NoteLinkerProvider port={noteLinker}>{children}</NoteLinkerProvider>
     </TargetsProvider>
   );
 }

@@ -65,15 +65,15 @@ export function AgendaScreen() {
             item: { kind: 'reminder', id: r.id, date: r.start_date, time: r.time, end_time: null, title: r.title, location: null },
           }))
       : [];
-  const reminders: Row[] = [...late, ...items.filter((i) => i.kind === 'reminder').map((i) => ({ key: `${i.kind}:${i.id}:${i.date}`, item: i }))];
+  const reminders: Row[] = [...late, ...items.filter((i) => i.kind === 'reminder').map((i) => ({ key: `${i.kind}:${i.id}:${i.date}:${i.time ?? ''}`, item: i }))];
   const events = items.filter((i) => i.kind === 'event');
   const allDay = events.filter((e) => !e.time);
   const timed = events.filter((e) => e.time);
   const nowIndex = isToday ? timed.findIndex((e) => (e.time ?? '') > now.time) : -1;
 
-  const complete = async (id: string, date: string) => {
+  const complete = async (id: string, date: string, time?: string) => {
     try {
-      await repo.completeReminder(id, date);
+      await repo.completeReminder(id, date, time);
     } catch (e) {
       toast({ message: errorText(e) });
     }
@@ -124,7 +124,7 @@ export function AgendaScreen() {
               <SectionHeader title="Lembretes" actionLabel="Novo" onAction={newReminder} />
               <ListGroup>
                 {reminders.map((r) => (
-                  <TaskRow key={r.key} row={r} onOpen={() => open(r.item)} onDone={() => void complete(r.item.id, r.item.date)} />
+                  <TaskRow key={r.key} row={r} onOpen={() => open(r.item)} onDone={() => void complete(r.item.id, r.item.date, r.item.time ?? undefined)} />
                 ))}
               </ListGroup>
             </View>

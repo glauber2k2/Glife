@@ -1,7 +1,7 @@
 // O que acontece quando: ocorrências de eventos e lembretes num período, o próximo compromisso (bloco de Hoje) e os
 // avisos a agendar no aparelho. Funções puras sobre as linhas.
 import { addDays, daysBetween, occurrenceDates, shiftMinutes, type IsoDate, type LocalTime, type ScheduledNotice } from '../time/index.ts';
-import { ALL_DAY_NOTICE_TIME, type CalendarEvent, type Reminder } from './model.ts';
+import { ALL_DAY_NOTICE_TIME, isMultiTime, reminderTimes, type CalendarEvent, type Reminder } from './model.ts';
 
 export interface AgendaItem {
   kind: 'event' | 'reminder';
@@ -58,18 +58,33 @@ export function agendaBetween(events: readonly CalendarEvent[], reminders: reado
       });
     }
   }
-  for (const r of reminders.filter((x) => alive(x) && x.done_at === null)) {
-    for (const date of occurrenceDates(r, from, to)) {
-      out.push({ kind: 'reminder', id: r.id, date, time: r.time, end_time: null, end_date: date, title: r.title, location: null, repeats: r.frequency !== 'none' });
-    }
+  for (const { r, date, time } of reminderSlots(reminders, from, to)) {
+    out.push({ kind: 'reminder', id: r.id, date, time, end_time: null, end_date: date, title: r.title, location: null, repeats: r.frequency !== 'none' || isMultiTime(r) });
   }
   return out.sort(byWhen);
 }
 
+/** Cada horário de cada lembrete vivo e pendente entre `from` e `to`, sem os horários já concluídos. */
+export function reminderSlots(reminders: readonly Reminder[], from: IsoDate, to: IsoDate): { r: Reminder; date: IsoDate; time: LocalTime }[] {
+  const out: { r: Reminder; date: IsoDate; time: LocalTime }[] = [];
+  for (const r of reminders.filter((x) => alive(x) && x.done_at === null)) {
+    const times = reminderTimes(r);
+    const done = new Set(r.done_slots);
+    for (const date of occurrenceDates(r, from, to)) {
+      for (const time of times) if (!done.has(`${date}T${time}`)) out.push({ r, date, time });
+    }
+  }
+  return out;
+}
+
+/** Chave do aviso: o horário entra só quando o lembrete tem várias vezes no dia (os de antes seguem iguais). */
+export const reminderNoticeKey = (r: Reminder, date: IsoDate, time: LocalTime) =>
+  isMultiTime(r) ? `reminder:${r.id}:${date}:${time.replace(':', '')}` : `reminder:${r.id}:${date}`;
+
 /** Lembretes únicos que já passaram e não foram concluídos (aparecem como atrasados). */
 export function overdueReminders(reminders: readonly Reminder[], now: { date: IsoDate; time: LocalTime }): Reminder[] {
   return reminders
-    .filter((r) => alive(r) && r.frequency === 'none' && r.done_at === null && `${r.start_date}T${r.time}` < `${now.date}T${now.time}`)
+    .filter((r) => alive(r) && r.frequency === 'none' && !isMultiTime(r) && r.done_at === null && `${r.start_date}T${r.time}` < `${now.date}T${now.time}`)
     .sort((a, b) => (`${a.start_date}T${a.time}` < `${b.start_date}T${b.time}` ? -1 : 1));
 }
 
@@ -114,10 +129,9 @@ export function agendaNotices(events: readonly CalendarEvent[], reminders: reado
       });
     }
   }
-  for (const r of reminders.filter((x) => alive(x) && x.done_at === null)) {
-    for (const date of occurrenceDates(r, today, to)) {
-      out.push({ key: `reminder:${r.id}:${date}`, title: r.title, body: r.notes.split('\n')[0] ?? '', date, time: r.time, url: `/agenda/lembrete/${r.id}`, ref: { kind: 'reminder', id: r.id, date } });
-    }
+  for (const { r, date, time } of reminderSlots(reminders, today, to)) {
+    const ref = isMultiTime(r) ? { kind: 'reminder' as const, id: r.id, date, time } : { kind: 'reminder' as const, id: r.id, date };
+    out.push({ key: reminderNoticeKey(r, date, time), title: r.title, body: r.notes.split('\n')[0] ?? '', date, time, url: `/agenda/lembrete/${r.id}`, ref });
   }
   return out;
 }

@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.9.0 — 2026-11-27
+
+- Agenda: lembrete mais de uma vez no dia. Em "Quantas vezes no dia", escolha **Horários** (uma lista, ex.: 08:00,
+  14:00 e 20:00) ou **Intervalo** (de tanto em tanto tempo, a partir de uma hora até outra, ex.: a cada 2 h das 08:00
+  às 18:00). Cada horário aparece na agenda, no Início e na central, tem o próprio aviso e se conclui sozinho
+  ("Feito" e "Adiar" no aviso valem só para aquele horário).
+- Notas vinculadas: nos campos de descrição de lembrete, evento, refeição, refeição do plano, lançamento e investimento,
+  "Vincular nota" liga uma nota que já existe e "Nova nota" cria uma nota já ligada. Toque na nota para abri-la; o X
+  desfaz o vínculo. Na nota, "Mencionada em" mostra o item que a vinculou.
+
 ## 0.8.2 — 2026-11-27
 
 - Notas: o filtro não mostra mais chips de tag; para achar, busque `#nome` no campo de busca (acha as notas com a tag e as que têm o texto).
