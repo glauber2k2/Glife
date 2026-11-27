@@ -18,6 +18,7 @@ export { SearchField, type SearchFieldProps } from './SearchField';
 export { Pill, type PillProps } from './Pill';
 export { NavRow, type NavRowProps } from './NavRow';
 export { Switch, type SwitchProps } from './Switch';
+export { Slider, type SliderProps } from './Slider';
 export { ToastProvider, useToast, type ToastOptions } from './Toast';
 export { SegmentedControl, type SegmentedControlProps, type SegmentedOption } from './SegmentedControl';
 export { BackHeader, type BackHeaderProps } from './BackHeader';

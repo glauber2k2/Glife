@@ -442,6 +442,9 @@ export const size = {
   switchWidth: 50,
   switchHeight: 30,
   switchKnob: 26,
+  /** controle deslizante: trilho de 6 e botão de 26 */
+  sliderTrack: 6,
+  sliderKnob: 26,
   /** indicador do segmentado (altura de cada opção) */
   segment: 34,
   segmentPill: 32,
