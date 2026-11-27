@@ -1,7 +1,7 @@
-# Status: 2026-11-27
-- Tarefa atual: ajustes pós-Bíblia v2 (0.8.2) — PR #2 aberto (fase-4-biblia → master)
-- Branch: fase-4-biblia (PR #1 já juntado)
-- Feito: filtro de notas sem chips de tag (busca `#nome`); sublinhado 2,75 desenhado por linha no Android; nota excluída some na hora na Bíblia (`watchChanges` das fontes); transições direcionais (abas, `ios_from_right`, voltar como voltar via `replaceBack`/`goBackOr`)
-- Falta: conferir o APK 0.8.2 no aparelho e juntar o PR #2
-- Atenção (riscos/decisões): nada conferido na tela (login com MFA); a tag "#oração" que aparece é dado do usuário (apague em Notas → Tags se não quiser)
-- Último commit: 9b323c0
+﻿# Status: 2026-11-27
+- Tarefa atual: 0.9.0 â€” lembretes com vÃ¡rios horÃ¡rios no dia e notas vinculadas nas descriÃ§Ãµes â€” PR #3 (base fase-4-biblia)
+- Branch: lembretes-horarios-e-notas-vinculadas (PR #2 fase-4-biblia â†’ master ainda aberto)
+- Feito: lembrete "Uma vez / HorÃ¡rios / Intervalo" (done_slots por horÃ¡rio, aviso e Feito/Adiar por horÃ¡rio); "Vincular nota"/"Nova nota" em lembrete, evento, refeiÃ§Ã£o, refeiÃ§Ã£o do plano, lanÃ§amento e investimento (links manuais `about`); "Mencionada em" mostra esses itens; APK 0.9.0 em Desktop\Glauber\apk
+- Falta: usuÃ¡rio instalar o APK e rodar `pnpm sb db push --remote` logo em seguida (2 migraÃ§Ãµes); conferir na tela; juntar PR #2 e #3
+- AtenÃ§Ã£o (riscos/decisÃµes): nada conferido na tela (MFA); linhas antigas sem `time_mode` sÃ£o lidas como 'once'; lanÃ§amento com "Repetir" nÃ£o mostra notas vinculadas (regra nÃ£o se desfaz)
+- Ãšltimo commit: 43f68fd
