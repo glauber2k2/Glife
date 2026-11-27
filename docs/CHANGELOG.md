@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.7.0 — 2026-11-27
+
+- Bíblia: leitor offline com a Bíblia Livre e a Bíblia Portuguesa Mundial; troca de tradução; livros, "Ir para" e continuar de onde parou.
+- Bíblia: toque nos versículos para grifar em 4 cores ou sublinhar; "Anotar" cria uma nota comum já ligada ao versículo, e o versículo mostra as notas que o citam (a nota também abre o versículo).
+- Bíblia: importar uma tradução própria (USFM ou JSON), guardada só no aparelho.
+- Início: atalho da Bíblia em "Seus espaços".
+- Notas: editor no Android sem entrelinha fixa (texto não treme com linhas vazias); erro que fecha o app aparece num aviso na abertura seguinte.
+- Sincronização: Sync Streams v9 publicados (marcações da Bíblia).
+
 ## 0.6.1 — 2026-11-26
 
 - Notas: duas linhas em branco depois de uma lista não criam mais espaço no topo nem fecham o app ao tocar; o cursor não atrasa ao formatar; subir de pasta volta em vez de empilhar a mesma tela; mover pasta para dentro dela mesma explica o motivo.
