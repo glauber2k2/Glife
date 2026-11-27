@@ -20,3 +20,19 @@ export { parseTranslationFiles, type ImportedFile, type TranslationImport } from
 export { BIBLE_TABLES, createBibleHighlightsRepository, type BibleHighlightsRepository, type BibleRows } from './repository.ts';
 export { SEARCH_LIMIT, hitSegments, indexVerses, normalizeText, searchVerses, type IndexedVerse, type SearchScope } from './search.ts';
 export { buildRecords, type BibleRecord, type LinkedNote } from './records.ts';
+export {
+  PLAN_GROUPS,
+  PLAN_GROUP_CODES,
+  PLAN_TEMPLATES,
+  chapterCount,
+  dayLabel,
+  planChapters,
+  planStatus,
+  schedule,
+  type PlanDay,
+  type PlanGroup,
+  type PlanPause,
+  type PlanRead,
+  type PlanRule,
+  type PlanStatus,
+} from './plans.ts';
