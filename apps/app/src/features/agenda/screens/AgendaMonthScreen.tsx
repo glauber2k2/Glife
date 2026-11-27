@@ -57,7 +57,8 @@ export function AgendaMonthScreen() {
     () => items.map((i) => ({ date: i.date, module: i.kind === 'event' ? ('agenda' as const) : ('reminders' as const) })),
     [items],
   );
-  const dayItems = useMemo(() => items.filter((i) => i.date === selected), [items, selected]);
+  // Feitos no fim (a ordem por horário se mantém dentro de cada grupo).
+  const dayItems = useMemo(() => items.filter((i) => i.date === selected).sort((a, b) => Number(a.done) - Number(b.done)), [items, selected]);
 
   const goTo = (next: YearMonth, dir: number) => {
     direction.current = dir;

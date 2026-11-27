@@ -1,5 +1,6 @@
 // Bloco "Para hoje" do Início (Cobalto): compromissos e lembretes do dia, com o horário em pílula. Concluir um
-// lembrete enche o círculo e risca o texto (a linha fica e se desmarca). Lembretes atrasados vêm primeiro, em vermelho.
+// lembrete enche o círculo, risca e esmaece o texto e leva a linha para o fim (dá para desmarcar). Atrasados vêm
+// primeiro, em vermelho.
 import { agendaBetween, lateReminders } from '@glife/domain/agenda';
 import { localNow } from '@glife/domain/time';
 import { router } from 'expo-router';
@@ -9,7 +10,8 @@ import { errorText } from '@/shared/lib/errorText';
 import { Button, ListGroup, SectionHeader, Text, makeStyles, useToast } from '@/shared/ui';
 
 import { useAgendaMaybe } from '../hooks/AgendaData';
-import { TaskRow, type Row } from './TaskRow';
+import { sortRows, type Row } from './rows';
+import { TaskRow } from './TaskRow';
 
 export function TodayAgendaBlock() {
   const s = useStyles();
@@ -28,7 +30,7 @@ export function TodayAgendaBlock() {
     key: `${i.kind}:${i.id}:${i.date}:${i.time ?? ''}`,
     item: i,
   }));
-  const rows = [...late, ...today];
+  const rows = sortRows([...late, ...today]);
 
   /** Marca ou desmarca o lembrete nesta data/horário; diz se gravou. */
   const toggle = async (id: string, date: string, time: string | undefined, done: boolean) => {

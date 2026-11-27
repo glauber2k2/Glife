@@ -30,7 +30,8 @@ import {
   useToast,
 } from '@/shared/ui';
 
-import { TaskRow, type Row } from '../components/TaskRow';
+import { sortRows, type Row } from '../components/rows';
+import { TaskRow } from '../components/TaskRow';
 import { weekStart } from '../components/week';
 import { useAgenda } from '../hooks/AgendaData';
 
@@ -65,7 +66,7 @@ export function AgendaScreen() {
             item: { kind: 'reminder', id: r.id, date: r.start_date, time: r.time, end_time: null, title: r.title, location: null, done },
           }))
       : [];
-  const reminders: Row[] = [...late, ...items.filter((i) => i.kind === 'reminder').map((i) => ({ key: `${i.kind}:${i.id}:${i.date}:${i.time ?? ''}`, item: i }))];
+  const reminders: Row[] = sortRows([...late, ...items.filter((i) => i.kind === 'reminder').map((i) => ({ key: `${i.kind}:${i.id}:${i.date}:${i.time ?? ''}`, item: i }))]);
   const events = items.filter((i) => i.kind === 'event');
   const allDay = events.filter((e) => !e.time);
   const timed = events.filter((e) => e.time);

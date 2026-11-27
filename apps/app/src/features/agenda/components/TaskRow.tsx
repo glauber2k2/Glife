@@ -1,19 +1,14 @@
-// Linha de tarefa da agenda (Cobalto): círculo que enche e título que se risca (o feito fica na lista e se desmarca
-// com outro toque); horário em pílula.
-import type { AgendaItem } from '@glife/domain/agenda';
+// Linha de tarefa da agenda (Cobalto): círculo que enche e título que se risca; o feito esmaece, desce para o fim da
+// lista e se desmarca com outro toque. Horário em pílula.
 import { CalendarDays } from 'lucide-react-native';
 import { useState } from 'react';
 import { Pressable, View } from 'react-native';
-import Animated, { FadeOut, LinearTransition } from 'react-native-reanimated';
+import Animated, { FadeOut, LinearTransition, useAnimatedStyle, withTiming } from 'react-native-reanimated';
 
 import { formatDateInput } from '@/shared/lib/calendarInput';
 import { Checkbox, Icon, Text, makeStyles, useReduceMotion, useTheme } from '@/shared/ui';
 
-export interface Row {
-  key: string;
-  item: Pick<AgendaItem, 'kind' | 'id' | 'date' | 'time' | 'end_time' | 'title' | 'location'> & { repeats?: boolean; done?: boolean };
-  late?: boolean;
-}
+import type { Row } from './rows';
 
 /**
  * Linha de tarefa: o toque no círculo marca (enche e risca) ou desmarca. O estado aparece na hora e se acerta com o
@@ -27,6 +22,9 @@ export function TaskRow({ row, onOpen, onToggle }: { row: Row; onOpen: () => voi
   // O toque vale até o banco mudar: quando `saved` muda, ele volta a mandar.
   const [local, setLocal] = useState({ saved, done: saved });
   const done = local.saved === saved ? local.done : saved;
+  const fade = useAnimatedStyle(() => ({
+    opacity: withTiming(done ? t.opacity.muted : t.opacity.full, { duration: reduceMotion ? 0 : t.motion.standard }),
+  }));
   const { item } = row;
   const reminder = item.kind === 'reminder';
   const time = item.time ? `${item.time}${item.end_time ? `–${item.end_time}` : ''}` : 'Dia todo';
@@ -37,7 +35,7 @@ export function TaskRow({ row, onOpen, onToggle }: { row: Row; onOpen: () => voi
     <Animated.View
       exiting={reduceMotion ? undefined : FadeOut.duration(t.motion.tap)}
       layout={reduceMotion ? undefined : LinearTransition.duration(t.motion.gentle)}
-      style={s.row}
+      style={[s.row, fade]}
     >
       {reminder ? (
         <Pressable
