@@ -7,6 +7,7 @@ import { useFonts } from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useMemo, type ReactNode } from 'react';
+import { Alert } from 'react-native';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
@@ -37,6 +38,7 @@ import { FirstSyncGate, NoticesSync, NotificationsProvider } from '@/features/to
 import { installIdGenerator } from '@/shared/lib/ids';
 import { MoneyVisibilityProvider } from '@/shared/lib/MoneyVisibility';
 import { createMoneyVisibilityStore } from '@/shared/lib/moneyVisibilityStore';
+import { installCrashReport, takeCrashReport, type GlobalErrorUtils } from '@/shared/lib/crashReport';
 import { createSeenStore } from '@/shared/lib/seenStore';
 import { SyncStatusProvider, createLocalSync } from '@/shared/lib/powersync';
 import { createNoticeScheduler } from '@/shared/lib/notices';
@@ -66,6 +68,8 @@ const noticeScheduler = createNoticeScheduler();
 /** "Visto até" da central de notificações (preferência do aparelho). */
 const seenStore = createSeenStore(AsyncStorage);
 void SplashScreen.preventAutoHideAsync();
+// Erro que fechar o app fica guardado no aparelho e aparece uma vez na próxima abertura (nada é enviado).
+installCrashReport(AsyncStorage, (globalThis as { ErrorUtils?: GlobalErrorUtils }).ErrorUtils);
 
 /** Busca universal: cada feature entrega as suas fontes; Ctrl+K só com acesso completo e app desbloqueado. */
 function SearchComposition({ enabled, children }: { enabled: boolean; children: ReactNode }) {
@@ -117,6 +121,10 @@ function RootStack() {
   useEffect(() => {
     if (stage) void SplashScreen.hideAsync();
   }, [stage]);
+  // O app fechou por um erro na última vez: mostra o motivo uma vez (para fotografar e mandar).
+  useEffect(() => {
+    void takeCrashReport(AsyncStorage).then((r) => r && Alert.alert('O Glife fechou por um erro', `${r.at}\n\n${r.message}`));
+  }, []);
   // Sincroniza só com MFA concluído; ao sair, apaga o banco local.
   useEffect(() => {
     if (stage) void localSync.apply(stage);
