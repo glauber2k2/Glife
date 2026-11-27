@@ -1,6 +1,5 @@
 // Início da Bíblia (protótipo Bíblia v2): busca no topo, Antigo/Novo Testamento logo abaixo (visíveis ao abrir),
-// continuar de onde parou, últimos registros com filtro e o crédito da tradução. A leitura de hoje (planos) entra
-// pela feature de planos.
+// leitura de hoje (planos lado a lado), continuar de onde parou, últimos registros com filtro e o crédito da tradução.
 import { getBook } from '@glife/domain/bible';
 import { router, type Href } from 'expo-router';
 import { Bookmark, BookOpen, Library, ScrollText, Search } from 'lucide-react-native';
@@ -14,6 +13,7 @@ import { chapterHref } from '../components/navigation';
 import { RecordFilter } from '../components/RecordFilter';
 import { RecordRow } from '../components/RecordRow';
 import { openRecord } from '../components/openRecord';
+import { TodayPlans } from '../components/TodayPlans';
 import { TranslationSheet } from '../components/TranslationSheet';
 import { useBibleText } from '../hooks/BibleData';
 import { useBibleRecords, type RecordFilter as Filter } from '../hooks/useBibleRecords';
@@ -70,6 +70,8 @@ export function BibleHomeScreen() {
         <NavRow icon={ScrollText} hue={moduleHue.bible} iconSize="sm" label="Antigo Testamento" meta="39 livros · Gênesis a Malaquias" onPress={() => setSheet('books-AT')} />
         <NavRow icon={BookOpen} hue={moduleHue.neutral} iconSize="sm" label="Novo Testamento" meta="27 livros · Mateus a Apocalipse" onPress={() => setSheet('books-NT')} />
       </ListGroup>
+
+      <TodayPlans />
 
       <Section title={last ? 'Continuar lendo' : 'Começar a leitura'}>
         <Pressable

@@ -22,3 +22,9 @@ export function neighborChapter(book: string, chapter: number, step: 1 | -1): { 
   if (!other) return null;
   return { book: other.code, chapter: step === 1 ? 1 : other.chapters };
 }
+
+/** Leitor aberto dentro de um plano: `/biblia/PSA/23?plano=<id>` (o capítulo vem em OSIS, ex.: PSA.23). */
+export function planChapterHref(planId: string, ref: string): string {
+  const i = ref.lastIndexOf('.');
+  return `${chapterHref(ref.slice(0, i), Number(ref.slice(i + 1)))}?plano=${planId}`;
+}

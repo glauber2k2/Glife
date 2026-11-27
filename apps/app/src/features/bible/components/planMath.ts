@@ -34,3 +34,8 @@ export function nextHue(used: readonly number[]): number {
 
 export const weekdaysToMask = (days: readonly number[]): number => days.reduce((m, d) => m | (1 << d), 0);
 export const maskToWeekdays = (mask: number): number[] => Array.from({ length: 7 }, (_, d) => d).filter((d) => (mask & (1 << d)) !== 0);
+
+/** Primeiro capítulo do dia ainda não lido, sem contar o que está aberto agora (null = era o último). */
+export function nextUnread(dayRefs: readonly string[], read: ReadonlySet<string>, open: string): string | null {
+  return dayRefs.find((r) => r !== open && !read.has(r)) ?? null;
+}

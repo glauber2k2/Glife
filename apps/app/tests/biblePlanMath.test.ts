@@ -32,3 +32,14 @@ describe('contas dos planos na interface', () => {
     expect(maskToWeekdays(0b0111110)).toEqual([1, 2, 3, 4, 5]);
   });
 });
+
+import { nextUnread } from '../src/features/bible/components/planMath';
+
+describe('próximo capítulo do dia', () => {
+  it('o primeiro não lido, sem contar o que está aberto; nada quando tudo está lido', () => {
+    const day = ['PSA.23', 'PSA.24', 'PSA.25'];
+    expect(nextUnread(day, new Set(['PSA.23']), 'PSA.24')).toBe('PSA.25');
+    expect(nextUnread(day, new Set(), 'PSA.23')).toBe('PSA.24');
+    expect(nextUnread(day, new Set(['PSA.23', 'PSA.25']), 'PSA.24')).toBeNull();
+  });
+});

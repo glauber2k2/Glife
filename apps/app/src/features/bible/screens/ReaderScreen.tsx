@@ -16,6 +16,7 @@ import { passageActions, type PassageAction, type PassageContext } from '../comp
 import { registerBuiltinActions } from '../components/builtinActions';
 import { BooksSheet } from '../components/BooksSheet';
 import { ChapterHeader } from '../components/ChapterHeader';
+import { PlanReaderCard, PlanStrip } from '../components/PlanReader';
 import { LinkedItemsSheet } from '../components/LinkedItemsSheet';
 import { chapterHref, neighborChapter } from '../components/navigation';
 import { PassageBar } from '../components/PassageBar';
@@ -27,13 +28,14 @@ import { VerseRow } from '../components/VerseRow';
 import { useBibleText, useHighlightsMaybe } from '../hooks/BibleData';
 import { useChapter } from '../hooks/useChapter';
 import { useChapterLinks } from '../hooks/useChapterLinks';
+import { usePlanViews } from '../hooks/usePlanStatuses';
 
 registerBuiltinActions();
 
 const FLASH_MS = 1600;
 
 export function ReaderScreen() {
-  const { livro, cap, v } = useLocalSearchParams<{ livro: string; cap: string; v?: string }>();
+  const { livro, cap, v, plano } = useLocalSearchParams<{ livro: string; cap: string; v?: string; plano?: string }>();
   const book = getBook(String(livro ?? '').toUpperCase());
   const chapter = Number(cap);
   const s = useStyles();
@@ -45,10 +47,10 @@ export function ReaderScreen() {
       </View>
     );
   }
-  return <Reader key={`${book.code}.${chapter}`} book={book.code} chapter={chapter} target={Number(v) || null} />;
+  return <Reader key={`${book.code}.${chapter}`} book={book.code} chapter={chapter} target={Number(v) || null} planId={plano ?? null} />;
 }
 
-function Reader({ book, chapter, target }: { book: string; chapter: number; target: number | null }) {
+function Reader({ book, chapter, target, planId }: { book: string; chapter: number; target: number | null; planId: string | null }) {
   const s = useStyles();
   const t = useTheme();
   const toast = useToast();
@@ -62,6 +64,8 @@ function Reader({ book, chapter, target }: { book: string; chapter: number; targ
   const highlightsRepo = useHighlightsMaybe();
   const linked = useChapterLinks(book, chapter, verses.length);
   const name = getBook(book)!.name;
+  const plans = usePlanViews();
+  const planView = planId ? plans.views.find((x) => x.plan.id === planId) : undefined;
 
   const [selected, setSelected] = useState<number[]>([]);
   // modo escolhido na barra (vale para as próximas seleções); sem escolha, segue a marcação dos selecionados
@@ -189,6 +193,7 @@ function Reader({ book, chapter, target }: { book: string; chapter: number; targ
         showsVerticalScrollIndicator={false}
       >
         <View style={s.column}>
+          {planView && <PlanStrip view={planView} book={book} chapter={chapter} today={plans.today} />}
           <ChapterHeader book={name} chapter={chapter} verses={state.status === 'ready' ? verses.length : null} minutes={state.status === 'ready' ? readMinutes(verses) : null} />
           {state.status === 'loading' && <Spinner />}
           {state.status === 'missing' && <EmptyState compact message={`A ${translation.name} não tem ${name} ${chapter}. Troque a tradução na Bíblia.`} />}
@@ -214,7 +219,8 @@ function Reader({ book, chapter, target }: { book: string; chapter: number; targ
               )}
             </View>
           )}
-          {next && state.status === 'ready' && (
+          {planView && state.status === 'ready' && <PlanReaderCard view={planView} book={book} chapter={chapter} today={plans.today} />}
+          {!planView && next && state.status === 'ready' && (
             <Pressable style={s.next} onPress={() => go(next)} accessibilityRole="button" accessibilityLabel={`Próximo capítulo: ${getBook(next.book)!.name} ${next.chapter}`}>
               <View style={s.grow}>
                 <Text variant="caption" tone="tertiary">

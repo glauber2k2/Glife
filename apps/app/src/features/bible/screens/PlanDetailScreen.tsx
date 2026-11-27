@@ -30,7 +30,7 @@ import {
   useToast,
 } from '@/shared/ui';
 
-import { chapterHref } from '../components/navigation';
+import { planChapterHref } from '../components/navigation';
 import { shortDate } from '../components/planMath';
 import { usePlansMaybe } from '../hooks/BibleData';
 import { usePlanViews } from '../hooks/usePlanStatuses';
@@ -39,11 +39,6 @@ const HISTORY_MAX = 35;
 const PLANS_HREF = '/biblia/planos' as Href;
 const NEXT_DAYS = 3;
 const DEFAULT_TIME = '06:30';
-
-export const planReaderHref = (planId: string, ref: string) => {
-  const i = ref.lastIndexOf('.');
-  return `${chapterHref(ref.slice(0, i), Number(ref.slice(i + 1)))}?plano=${planId}`;
-};
 
 export function PlanDetailScreen() {
   const s = useStyles();
@@ -80,7 +75,7 @@ export function PlanDetailScreen() {
   const recover = () => {
     const day = days.find((d) => d.n === oldestMissed);
     const ref = day?.refs.find((r) => !read.has(r));
-    if (ref) router.push(planReaderHref(plan.id, ref) as Href);
+    if (ref) router.push(planChapterHref(plan.id, ref) as Href);
   };
   const remove = () => {
     setConfirm(false);
@@ -136,7 +131,7 @@ export function PlanDetailScreen() {
                   <Text variant="item" tone={done ? 'tertiary' : 'primary'} style={s.grow}>
                     {dayLabel([ref])}
                   </Text>
-                  <Button label={done ? 'Reler' : 'Ler'} size="sm" variant={done ? 'neutral' : 'secondary'} selfAlign="center" onPress={() => router.push(planReaderHref(plan.id, ref) as Href)} />
+                  <Button label={done ? 'Reler' : 'Ler'} size="sm" variant={done ? 'neutral' : 'secondary'} selfAlign="center" onPress={() => router.push(planChapterHref(plan.id, ref) as Href)} />
                 </View>
               );
             })}
