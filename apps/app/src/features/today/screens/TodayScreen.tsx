@@ -1,5 +1,5 @@
 import { router, useFocusEffect } from 'expo-router';
-import { Bell, CalendarCheck, Plus, Salad, Search, Settings, ShoppingBasket, StickyNote, TrendingUp, Wallet } from 'lucide-react-native';
+import { Bell, BookOpen, CalendarCheck, Plus, Salad, Search, Settings, ShoppingBasket, StickyNote, TrendingUp, Wallet } from 'lucide-react-native';
 import { useCallback, useRef, useState } from 'react';
 import { Pressable, View } from 'react-native';
 import Animated from 'react-native-reanimated';
@@ -31,7 +31,7 @@ import { greeting } from './greeting';
 
 /**
  * Início (protótipo do redesign Cobalto): um resumo calmo do dia. A única tela que compõe várias features — cada
- * bloco vem da feature dona. Blocos de módulos que ainda não existem (Bíblia, Galeria, IA) ficam de fora.
+ * bloco vem da feature dona. Blocos de módulos que ainda não existem (Galeria, IA) ficam de fora.
  */
 export function TodayScreen() {
   const s = useStyles();
@@ -118,6 +118,7 @@ function Spaces() {
         <ModuleTile label="Investir" icon={TrendingUp} module="investments" onPress={() => router.push('/financas/investimentos')} />
         <ModuleTile label="Dieta" icon={Salad} module="diet" onPress={() => router.push('/dieta')} />
         <ModuleTile label="Compras" icon={ShoppingBasket} module="shopping" onPress={() => router.push('/financas/compras')} />
+        <ModuleTile label="Bíblia" icon={BookOpen} module="bible" onPress={() => router.push('/biblia')} />
       </ModuleTiles>
     </View>
   );

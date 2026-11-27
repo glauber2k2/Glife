@@ -9,13 +9,15 @@ import { Pressable, ScrollView, View, useWindowDimensions, Platform } from 'reac
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { errorText } from '@/shared/lib/errorText';
-import { BackHeader, EmptyState, IconButton, ListGroup, NavRow, Section, Spinner, Text, makeStyles, useTheme, useToast } from '@/shared/ui';
+import { BackHeader, EmptyState, IconButton, ListGroup, NavRow, Pill, Section, Spinner, Text, makeStyles, useTheme, useToast } from '@/shared/ui';
 
 import { passageActions, type PassageAction, type PassageContext } from '../components/actions';
 import { registerBuiltinActions } from '../components/builtinActions';
+import { BooksSheet } from '../components/BooksSheet';
 import { LinkedItemsSheet } from '../components/LinkedItemsSheet';
 import { chapterHref, neighborChapter } from '../components/navigation';
 import { PassageBar } from '../components/PassageBar';
+import { TranslationSheet } from '../components/TranslationSheet';
 import { VerseRow } from '../components/VerseRow';
 import { useBibleText, useHighlightsMaybe } from '../hooks/BibleData';
 import { useChapter } from '../hooks/useChapter';
@@ -58,6 +60,7 @@ function Reader({ book, chapter, target }: { book: string; chapter: number; targ
   const [flash, setFlash] = useState<number | null>(target);
   const [sheet, setSheet] = useState<{ verse: number | null } | null>(null);
   const [busy, setBusy] = useState(false);
+  const [picker, setPicker] = useState<'books' | 'translation' | null>(null);
   const scroll = useRef<ComponentRef<typeof ScrollView>>(null);
   const scrolled = useRef(false);
   const top = useRef(0);
@@ -216,7 +219,7 @@ function Reader({ book, chapter, target }: { book: string; chapter: number; targ
         <View pointerEvents="box-none" style={[s.navHost, { bottom: t.layout.tabBarBottom + insets.bottom }]}>
           <View style={s.nav}>
             <IconButton icon={ChevronLeft} label={prev ? `Capítulo anterior` : 'Início da Bíblia'} variant="ghost" disabled={!prev} onPress={() => go(prev)} />
-            <Pressable style={s.navTitle} accessibilityRole="header">
+            <Pressable style={s.navTitle} accessibilityRole="button" accessibilityLabel="Escolher livro e capítulo" onPress={() => setPicker('books')}>
               <Text variant="emphasis" numberOfLines={1}>
                 {name} {chapter}
               </Text>
@@ -224,11 +227,14 @@ function Reader({ book, chapter, target }: { book: string; chapter: number; targ
                 {translation.name}
               </Text>
             </Pressable>
+            <Pill label={translation.abbr} size="sm" onPress={() => setPicker('translation')} />
             <IconButton icon={ChevronRight} label={next ? 'Próximo capítulo' : 'Fim da Bíblia'} variant="ghost" disabled={!next} onPress={() => go(next)} />
           </View>
         </View>
       )}
 
+      <BooksSheet visible={picker === 'books'} onClose={() => setPicker(null)} current={{ book, chapter }} />
+      <TranslationSheet visible={picker === 'translation'} onClose={() => setPicker(null)} />
       <LinkedItemsSheet
         visible={sheet !== null}
         title={sheetTitle}
