@@ -1,4 +1,4 @@
-// Calendário do mês (protótipo "agenda-mes"): grade de semanas com até 3 pontos por dia (agenda, lembrete, dieta),
+// Calendário do mês (protótipo "agenda-mes"): grade de semanas com até 2 pontos por dia (agenda, lembrete; dia livre sem ponto),
 // o dia escolhido embaixo e "Novo no dia". A grade desliza ao trocar de mês e o destaque anda com mola.
 import { agendaBetween, dayDots, monthGrid, shiftMonth, type AgendaItem, type DayDotModule, type DayOccurrence, type YearMonth } from '@glife/domain/agenda';
 import { localNow, type IsoDate } from '@glife/domain/time';
@@ -28,13 +28,12 @@ import {
 } from '@/shared/ui';
 
 import { useAgenda } from '../hooks/AgendaData';
-import { useExtraDayMarks } from '../hooks/DayMarks';
 
 const MONTHS = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
 const WEEKDAYS = ['D', 'S', 'T', 'Q', 'Q', 'S', 'S'] as const;
 const WEEKDAY_NAMES = ['domingo', 'segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado'] as const;
 /** Lembrete usa o matiz das anotações para se distinguir do evento (como no protótipo). */
-const DOT_HUE: Record<DayDotModule, number> = { agenda: moduleHue.agenda, reminders: moduleHue.annotations, diet: moduleHue.diet };
+const DOT_HUE: Record<DayDotModule, number> = { agenda: moduleHue.agenda, reminders: moduleHue.annotations };
 
 const capital = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 const monthName = (m: YearMonth) => capital(MONTHS[Number(m.slice(5, 7)) - 1]!);
@@ -54,10 +53,9 @@ export function AgendaMonthScreen() {
   const first = cells[0]!.date;
   const last = cells[cells.length - 1]!.date;
   const items = useMemo(() => (data ? agendaBetween(data.events, data.reminders, first, last) : []), [data, first, last]);
-  const extra = useExtraDayMarks(first, last);
   const occurrences = useMemo<DayOccurrence[]>(
-    () => [...items.map((i) => ({ date: i.date, module: i.kind === 'event' ? ('agenda' as const) : ('reminders' as const) })), ...extra],
-    [items, extra],
+    () => items.map((i) => ({ date: i.date, module: i.kind === 'event' ? ('agenda' as const) : ('reminders' as const) })),
+    [items],
   );
   const dayItems = useMemo(() => items.filter((i) => i.date === selected), [items, selected]);
 
@@ -177,9 +175,9 @@ export function AgendaMonthScreen() {
             <ListGroup>
               {dayItems.map((i) => (
                 <ListItem
-                  key={`${i.kind}:${i.id}:${i.date}`}
+                  key={`${i.kind}:${i.id}:${i.date}:${i.time ?? ''}`}
                   title={i.title}
-                  subtitle={i.time ? `${i.time}${i.end_time ? `–${i.end_time}` : ''}` : 'Dia inteiro'}
+                  subtitle={`${i.time ? `${i.time}${i.end_time ? `–${i.end_time}` : ''}` : 'Dia inteiro'}${i.done ? ' · Feito' : ''}`}
                   icon={i.kind === 'event' ? CalendarDays : AlarmClock}
                   module={i.kind === 'event' ? 'agenda' : 'reminders'}
                   onPress={() => open(i)}
