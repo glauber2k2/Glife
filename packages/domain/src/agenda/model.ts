@@ -157,7 +157,7 @@ export function reminderTimes(r: Pick<Reminder, 'time' | 'time_mode' | 'times' |
 }
 
 /** Mais de uma vez no dia: cada horário se conclui sozinho e o lembrete nunca fica "concluído" nem "atrasado". */
-export const isMultiTime = (r: Pick<Reminder, 'time_mode'>) => r.time_mode !== 'once';
+export const isMultiTime = (r: Pick<Reminder, 'time_mode'>) => r.time_mode === 'list' || r.time_mode === 'interval';
 
 const reminderData = reminderFields.superRefine((r, ctx) => {
   const p = repeatProblem(r);
