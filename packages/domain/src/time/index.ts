@@ -188,6 +188,8 @@ export interface NoticeRef {
   kind: 'reminder' | 'meal';
   id: string;
   date: IsoDate;
+  /** horário da ocorrência, só nos lembretes com várias vezes no dia */
+  time?: LocalTime;
 }
 
 /** Os mais próximos primeiro, só os que ainda não passaram, no máximo `max` (o Android limita alarmes). */

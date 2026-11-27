@@ -7,6 +7,6 @@ import { createLocalRowStore } from '@/shared/lib/localRowStore';
 import { agendaTables } from './schema';
 
 export function createLocalAgenda(db: LocalDb, userId: string, clock?: () => Date): AgendaRepository {
-  const store = createLocalRowStore<AgendaRows>(db, userId, agendaTables, { json: ['skipped_dates'] });
+  const store = createLocalRowStore<AgendaRows>(db, userId, agendaTables, { json: ['skipped_dates', 'times', 'done_slots'] });
   return createAgendaRepository(store, userId, clock);
 }

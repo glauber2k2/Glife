@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { emptyEventForm, readEventForm, readReminderForm, emptyReminderForm } from '../src/features/agenda/components/forms';
+import { addReminderTime, emptyEventForm, previewReminderTimes, readEventForm, readReminderForm, emptyReminderForm } from '../src/features/agenda/components/forms';
 import { emptyLogForm, readLogForm, readPlanForm, emptyPlanForm } from '../src/features/diet/components/forms';
 import { maskDate, maskTime, parseDateInput, parseTimeInput, weekdaysLabel } from '../src/shared/lib/calendarInput';
 
@@ -32,6 +32,27 @@ describe('formulários da agenda e da dieta', () => {
     const r = readReminderForm(f);
     expect(r.ok && r.value.weekdays).toBe(1 << 3);
     expect(readReminderForm({ ...f, repeat: { ...f.repeat, until: '99/99/2026' } }).ok).toBe(false);
+  });
+
+  it('lembrete com lista de horários: ordem, sem repetir e ao menos 2', () => {
+    let times = addReminderTime([], '20:00');
+    times = addReminderTime(times, '08:00');
+    times = addReminderTime(times, '08:00');
+    expect(times).toEqual(['08:00', '20:00']);
+    const f = { ...emptyReminderForm('2026-11-25'), title: 'Remédio', mode: 'list' as const, times };
+    const r = readReminderForm(f);
+    expect(r.ok && r.value).toMatchObject({ time: '08:00', time_mode: 'list', times: ['08:00', '20:00'] });
+    expect(readReminderForm({ ...f, times: ['08:00'] })).toEqual({ ok: false, error: 'Escolha ao menos 2 horários' });
+  });
+
+  it('lembrete por intervalo: resumo ao vivo e fim depois do início', () => {
+    const f = { ...emptyReminderForm('2026-11-25'), title: 'Água', mode: 'interval' as const, time: '08:00', every: 180, endTime: '17:00' };
+    expect(previewReminderTimes(f)).toEqual(['08:00', '11:00', '14:00', '17:00']);
+    const r = readReminderForm(f);
+    expect(r.ok && r.value).toMatchObject({ time: '08:00', time_mode: 'interval', every_minutes: 180, end_time: '17:00' });
+    expect(readReminderForm({ ...f, endTime: '07:00' }).ok).toBe(false);
+    expect(readReminderForm({ ...f, endTime: '' }).ok).toBe(false);
+    expect(readReminderForm({ ...f, every: 15, time: '00:00', endTime: '23:45' }).ok).toBe(false);
   });
 
   it('dieta: hora inválida no plano e no registro', () => {

@@ -25,14 +25,14 @@ export function TodayAgendaBlock() {
       item: { kind: 'reminder', id: r.id, date: r.start_date, time: r.time, end_time: null, title: r.title, location: null },
     }));
   const today: Row[] = agendaBetween(agenda.data.events, agenda.data.reminders, now.date, now.date).map((i) => ({
-    key: `${i.kind}:${i.id}:${i.date}`,
+    key: `${i.kind}:${i.id}:${i.date}:${i.time ?? ''}`,
     item: i,
   }));
   const rows = [...late, ...today];
 
-  const complete = async (id: string, date: string) => {
+  const complete = async (id: string, date: string, time?: string) => {
     try {
-      await agenda.repo.completeReminder(id, date);
+      await agenda.repo.completeReminder(id, date, time);
     } catch (e) {
       toast({ message: errorText(e) });
     }
@@ -58,7 +58,7 @@ export function TodayAgendaBlock() {
             />
           </View>
         ) : (
-          rows.map((r) => <TaskRow key={r.key} row={r} onOpen={() => open(r.item)} onDone={() => void complete(r.item.id, r.item.date)} />)
+          rows.map((r) => <TaskRow key={r.key} row={r} onOpen={() => open(r.item)} onDone={() => void complete(r.item.id, r.item.date, r.item.time ?? undefined)} />)
         )}
       </ListGroup>
     </View>

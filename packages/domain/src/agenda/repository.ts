@@ -41,8 +41,8 @@ export interface AgendaRepository {
   getReminder(id: string): Promise<Reminder>;
   createReminder(draft: ReminderDraft): Promise<Reminder>;
   updateReminder(id: string, patch: ReminderPatch): Promise<Reminder>;
-  /** Único: marca como feito. Repetido: pula esta data. */
-  completeReminder(id: string, date: IsoDate): Promise<Reminder>;
+  /** Único: marca como feito. Repetido: pula esta data. Várias vezes no dia: conclui só o horário `time`. */
+  completeReminder(id: string, date: IsoDate, time?: string): Promise<Reminder>;
   removeReminder(id: string): Promise<void>;
   restoreReminder(id: string): Promise<void>;
 }
@@ -90,7 +90,7 @@ export function createAgendaRepository(store: RowStore<AgendaRows>, userId: stri
     getReminder: (id) => guardRules(() => aliveRow<AgendaRows, 'reminders'>(store, 'reminders', id)),
     createReminder: (draft) => guardRules(() => create('reminders', newReminder(draft, userId, clock))),
     updateReminder: (id, patch) => change('reminders', id, (r) => applyReminderPatch(r, patch, clock)),
-    completeReminder: (id, date) => change('reminders', id, (r) => completeReminder(r, date, clock)),
+    completeReminder: (id, date, time) => change('reminders', id, (r) => completeReminder(r, date, clock, time)),
     removeReminder: (id) => remove('reminders', id),
     restoreReminder: (id) => undelete('reminders', id),
   };

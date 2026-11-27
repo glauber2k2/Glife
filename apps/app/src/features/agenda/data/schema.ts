@@ -25,7 +25,19 @@ export const agendaTables = {
     end_time: column.text,
     remind_before: column.integer,
   }),
-  reminders: new Table({ ...base, ...repeat, title: column.text, notes: column.text, time: column.text, done_at: column.text }),
+  reminders: new Table({
+    ...base,
+    ...repeat,
+    title: column.text,
+    notes: column.text,
+    time: column.text,
+    time_mode: column.text,
+    times: column.text,
+    every_minutes: column.integer,
+    end_time: column.text,
+    done_slots: column.text,
+    done_at: column.text,
+  }),
 };
 
 /** Nome de cada tabela na fila de envio e nas contagens de Ajustes › Sincronização (nunca o conteúdo). */

@@ -50,7 +50,7 @@ export function NoticesSync({ scheduler, signedOut }: { scheduler: NoticeSchedul
     }
     // Sem os dados ainda (lendo ou esperando o MFA): não mexe no que está agendado.
     if (agenda === null || diet === null || plans === null || !reminderPending || !mealPending) return;
-    const keepSnoozed = (ref: NoticeRef) => (ref.kind === 'reminder' ? reminderPending(ref.id, ref.date) : mealPending(ref.id, ref.date));
+    const keepSnoozed = (ref: NoticeRef) => (ref.kind === 'reminder' ? reminderPending(ref.id, ref.date, ref.time) : mealPending(ref.id, ref.date));
     const t = setTimeout(() => void scheduler.replaceAll(upcomingNotices([...agenda, ...diet, ...plans], localNow(), MAX), keepSnoozed), DEBOUNCE_MS);
     return () => clearTimeout(t);
   }, [signedOut, agenda, diet, plans, reminderPending, mealPending, scheduler]);
@@ -62,7 +62,7 @@ export function NoticesSync({ scheduler, signedOut }: { scheduler: NoticeSchedul
   const complete = useRef<((e: NoticeActionEvent) => void) | null>(null);
   useEffect(() => {
     complete.current = completeReminder
-      ? (e) => void completeReminder(e.notice.id, e.notice.date).catch((err) => toast({ message: `Lembrete não concluído: ${errorText(err)}` }))
+      ? (e) => void completeReminder(e.notice.id, e.notice.date, e.notice.time).catch((err) => toast({ message: `Lembrete não concluído: ${errorText(err)}` }))
       : null;
     if (!completeReminder) return;
     const queued = freshPending(pending.current, Date.now());
