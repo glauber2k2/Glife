@@ -10,6 +10,7 @@ import type { KeyValueStorage } from '@/shared/ui/theme/preferenceStore';
 import { BLIVRE } from '../data/bundled/blivre';
 import { BPM } from '../data/bundled/bpm';
 import { createBundledText } from '../data/bundledText';
+import { createImportedText, type ImportedTextSource } from '../data/importedText';
 import { createLocalHighlights } from '../data/localHighlights';
 import { DEFAULT_TRANSLATION, createReadingPrefsStore, type ReadingPrefs } from '../data/readingPrefs';
 
@@ -18,6 +19,7 @@ export const useHighlights = highlights.use;
 export const useHighlightsMaybe = highlights.useMaybe;
 
 const bundled = createBundledText([BLIVRE, BPM]);
+const BUNDLED_ABBRS = [BLIVRE.abbr, BPM.abbr];
 
 interface BibleText {
   text: BibleTextSource;
@@ -29,28 +31,29 @@ interface BibleText {
   setLast(book: string, chapter: number): void;
   /** recarrega a lista de traduções (depois de importar ou remover) */
   refreshTranslations(): void;
+  /** traduções importadas pelo usuário, só neste aparelho */
+  imported: ImportedTextSource;
+  /** siglas das traduções que vêm no app (não podem repetir na importação) */
+  bundledAbbrs: readonly string[];
 }
 
 const TextContext = createContext<BibleText | null>(null);
 const FALLBACK: Translation = { id: BLIVRE.id, abbr: BLIVRE.abbr, name: BLIVRE.name, credit: BLIVRE.credit, source: 'bundled' };
-const NO_SOURCES: readonly BibleTextSource[] = [];
 
 export function BibleProvider({
   db,
   userId,
   storage,
-  extraSources = NO_SOURCES,
   children,
 }: {
   db: LocalDb;
   userId: string | null;
   storage: KeyValueStorage;
-  /** fontes além das embutidas (traduções importadas, só no aparelho) */
-  extraSources?: readonly BibleTextSource[];
   children: ReactNode;
 }) {
   const prefsStore = useMemo(() => createReadingPrefsStore(storage), [storage]);
-  const text = useMemo(() => combineSources(bundled, ...extraSources), [extraSources]);
+  const imported = useMemo(() => createImportedText(db), [db]);
+  const text = useMemo(() => combineSources(bundled, imported), [imported]);
   const [prefs, setPrefs] = useState<ReadingPrefs>({ translationId: DEFAULT_TRANSLATION, last: null });
   const [translations, setTranslations] = useState<Translation[]>([FALLBACK]);
   const [version, setVersion] = useState(0);
@@ -83,8 +86,10 @@ export function BibleProvider({
       last: prefs.last,
       setLast: (book, chapter) => update((p) => (p.last?.book === book && p.last.chapter === chapter ? p : { ...p, last: { book, chapter } })),
       refreshTranslations: () => setVersion((v) => v + 1),
+      imported,
+      bundledAbbrs: BUNDLED_ABBRS,
     }),
-    [text, translations, prefs, update],
+    [text, translations, prefs, update, imported],
   );
 
   return (

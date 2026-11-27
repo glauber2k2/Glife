@@ -14,7 +14,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AppLockGate, AppLockProvider, createDeviceAppLock, deviceBiometrics, useAppLock } from '@/features/app-lock';
 import { AuthProvider, createSupabaseAuthService, useAuth } from '@/features/auth';
 import { AgendaProvider, DayMarksProvider, agendaTableLabels, agendaTables, useAgendaTargetSources } from '@/features/agenda';
-import { BibleProvider, bibleHref, bibleTableLabels, bibleTables } from '@/features/bible';
+import { BibleProvider, bibleHref, bibleLocalTables, bibleTableLabels, bibleTables } from '@/features/bible';
 import { DietProvider, dietTableLabels, dietTables, useDietDayMarks, useDietTargetSource } from '@/features/diet';
 import {
   FinanceProvider,
@@ -61,7 +61,7 @@ const quoteClient = createEdgeQuoteClient(getSupabase());
 const appLock = createDeviceAppLock();
 const signOut = () => authService.signOut();
 // Banco local com as tabelas das features; sincroniza com o Supabase via PowerSync.
-const localSync = createLocalSync({ ...notesTables, ...linksTables, ...financeTables, ...agendaTables, ...dietTables, ...bibleTables }, [notesSearchIndex]);
+const localSync = createLocalSync({ ...notesTables, ...linksTables, ...financeTables, ...agendaTables, ...dietTables, ...bibleTables, ...bibleLocalTables }, [notesSearchIndex]);
 /** Nome de cada tabela (fila de envio e contagens de Ajustes › Sincronização), entregue por cada módulo. */
 const syncLabels = { ...notesTableLabels, ...linksTableLabels, ...financeTableLabels, ...agendaTableLabels, ...dietTableLabels, ...bibleTableLabels };
 /** Avisos locais do aparelho (agenda e dieta); no web não faz nada. */
@@ -211,6 +211,7 @@ function RootStack() {
                   <Stack.Screen name="financas/grafico/[categoria]" options={{ animation: animation.detail }} />
                   <Stack.Screen name="biblia" options={{ animation: animation.detail }} />
                   <Stack.Screen name="biblia/[livro]/[cap]" options={{ animation: animation.detail }} />
+                  <Stack.Screen name="biblia/traducoes" options={{ animation: animation.detail }} />
                   <Stack.Screen name="agenda/mes" options={{ animation: animation.detail }} />
                   <Stack.Screen name="agenda/evento/novo" options={{ animation: animation.detail }} />
                   <Stack.Screen name="agenda/evento/[id]" options={{ animation: animation.detail }} />

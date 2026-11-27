@@ -17,3 +17,15 @@ export const bibleTables = {
 export const bibleTableLabels: Record<keyof typeof bibleTables, SyncTableLabel> = {
   bible_highlights: { noun: 'Marcação da Bíblia', gender: 'f' },
 };
+
+/**
+ * Traduções importadas pelo usuário: tabelas **só locais** (nunca sobem ao Supabase nem passam pelo sync), porque o
+ * texto pode ter direitos autorais. Um capítulo por linha (versículos em JSON) para importar rápido.
+ */
+export const bibleLocalTables = {
+  bible_local_translations: new Table({ abbr: column.text, name: column.text, created_at: column.text }, { localOnly: true }),
+  bible_local_chapters: new Table(
+    { translation_id: column.text, book: column.text, chapter: column.integer, verses: column.text },
+    { localOnly: true, indexes: { by_chapter: ['translation_id', 'book', 'chapter'] } },
+  ),
+};
