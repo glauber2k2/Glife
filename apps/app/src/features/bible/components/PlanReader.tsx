@@ -9,6 +9,7 @@ import { View } from 'react-native';
 
 import { errorText } from '@/shared/lib/errorText';
 import { Button, Mascot, Tag, Text, makeStyles, moduleColors, useTheme, useToast } from '@/shared/ui';
+import { goBackOr } from '@/shared/navigation/backNavigation';
 
 import { usePlansMaybe } from '../hooks/BibleData';
 import type { PlanView } from '../hooks/usePlanStatuses';
@@ -61,8 +62,7 @@ export function PlanReaderCard({ view, book, chapter, today }: { view: PlanView;
       const after = planStatus(plan, [...view.reads, { ref, read_on: today }], today);
       if (after.completed) await repo.complete(plan.id);
       toast({ message: after.completed ? `Plano “${plan.name}” concluído` : `Dia ${day.n} concluído · ${after.streak} ${after.streak === 1 ? 'dia seguido' : 'dias seguidos'}` });
-      if (router.canGoBack()) router.back();
-      else router.replace(`/biblia/planos/${plan.id}` as Href);
+      goBackOr(`/biblia/planos/${plan.id}` as Href);
     } catch (e) {
       toast({ message: `Não deu para marcar a leitura: ${errorText(e)}` });
     } finally {

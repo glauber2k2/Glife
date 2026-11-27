@@ -27,7 +27,6 @@ describe('newNote', () => {
       body_md: '',
       folder_id: null,
       pinned: false,
-      kind: 'note',
       created_at: '2026-11-22T12:00:00.000Z',
       deleted_at: null,
     });
@@ -40,7 +39,6 @@ describe('newNote', () => {
 
   it.each([
     [{ title: 'x'.repeat(NOTE_TITLE_MAX + 1) }],
-    [{ kind: 'outro' }],
     [{ folder_id: 'nao-uuid' }],
     [{ title: 'Quebra\nde linha' }],
   ])('rejeita rascunho inválido %#', (draft) => {
@@ -72,7 +70,7 @@ describe('applyNotePatch', () => {
 
   it('valida o patch', () => {
     const n = newNote({}, USER, clock);
-    expect(() => applyNotePatch(n, { kind: 'x' } as never, clock)).toThrowError(RepositoryError);
+    expect(() => applyNotePatch(n, { pinned: 'x' } as never, clock)).toThrowError(RepositoryError);
   });
 });
 

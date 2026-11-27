@@ -1,10 +1,7 @@
-// Notas, devocionais e diário (markdown), espelhando `public.notes` e `public.note_folders`.
+// Notas (markdown), espelhando `public.notes` e `public.note_folders`.
 import { z } from 'zod';
 
 import { baseEntitySchema, parseOrThrow, stampNew, stampUpdate } from '../core/index.ts';
-
-export const NOTE_KINDS = ['note', 'devotional', 'journal'] as const;
-export type NoteKind = (typeof NOTE_KINDS)[number];
 
 export const NOTE_TITLE_MAX = 300;
 export const NOTE_BODY_MAX = 1_000_000;
@@ -19,7 +16,6 @@ export const noteSchema = baseEntitySchema.extend({
   body_md: z.string(),
   folder_id: z.uuid().nullable(),
   pinned: z.boolean(),
-  kind: z.enum(NOTE_KINDS),
 });
 export type Note = z.infer<typeof noteSchema>;
 
@@ -29,7 +25,6 @@ export const noteDraftSchema = z.object({
   body_md: z.string().max(NOTE_BODY_MAX).default(''),
   folder_id: z.uuid().nullable().default(null),
   pinned: z.boolean().default(false),
-  kind: z.enum(NOTE_KINDS).default('note'),
 });
 export type NoteDraft = z.input<typeof noteDraftSchema>;
 
@@ -38,7 +33,6 @@ export const notePatchSchema = z.object({
   body_md: z.string().max(NOTE_BODY_MAX).optional(),
   folder_id: z.uuid().nullable().optional(),
   pinned: z.boolean().optional(),
-  kind: z.enum(NOTE_KINDS).optional(),
 });
 export type NotePatch = z.input<typeof notePatchSchema>;
 

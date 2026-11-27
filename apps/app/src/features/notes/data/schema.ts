@@ -23,7 +23,6 @@ export const notesTables = {
       body_md: column.text,
       folder_id: column.text,
       pinned: column.integer,
-      kind: column.text,
       created_at: column.text,
       updated_at: column.text,
       deleted_at: column.text,

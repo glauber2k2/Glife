@@ -56,6 +56,7 @@ import { useCountUp } from "../components/ui";
 import { useMoneyFormat } from "../hooks/useMoneyFormat";
 import { useFinance } from "../hooks/FinanceData";
 import { useInvestments, useRefreshQuotes } from "../hooks/useInvestments";
+import { goBackOr } from '@/shared/navigation/backNavigation';
 
 const SOURCE_LABELS = { brapi: "B3", coingecko: "CoinGecko" } as const;
 const SAVED: Record<MovementKind, string> = {
@@ -274,8 +275,7 @@ export function InvestmentAssetScreen() {
     setMenu(false);
     try {
       const ids = await repos.investments.removeAsset(asset.id);
-      if (router.canGoBack()) router.back();
-      else router.replace("/financas/investimentos");
+      goBackOr('/financas/investimentos');
       toast({
         message: "Ativo excluído",
         actionLabel: "Desfazer",

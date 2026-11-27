@@ -1,7 +1,7 @@
 import type { EntityType } from '@glife/domain/core';
 import type { TaggedItemSource, TagWithCounts, TagsRepository } from '@glife/domain/tags';
 import type { LucideIcon } from 'lucide-react-native';
-import { createContext, useContext, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 
 import type { ModuleKey } from '@/shared/ui';
 
@@ -9,6 +9,8 @@ import type { ModuleKey } from '@/shared/ui';
 export interface TaggedItemUiSource extends TaggedItemSource {
   icon: LucideIcon;
   module: ModuleKey;
+  /** Avisa quando os itens do módulo mudam (título, lixeira, exclusão), para quem os mostra reler na hora. */
+  watchChanges?(onChange: () => void): () => void;
 }
 
 const TaggedItemsContext = createContext<readonly TaggedItemUiSource[]>([]);
@@ -23,6 +25,18 @@ export function TaggedItemsProvider({ sources, children }: { sources: readonly T
 
 export function useTaggedItemSources(): readonly TaggedItemUiSource[] {
   return useContext(TaggedItemsContext);
+}
+
+/** Número que sobe a cada mudança nos itens de qualquer fonte: use como dependência para reler títulos e vivos. */
+export function useTaggedItemsVersion(): number {
+  const sources = useTaggedItemSources();
+  const [version, setVersion] = useState(0);
+  useEffect(() => {
+    const bump = () => setVersion((v) => v + 1);
+    const offs = sources.map((src) => src.watchChanges?.(bump));
+    return () => offs.forEach((off) => off?.());
+  }, [sources]);
+  return version;
 }
 
 /**

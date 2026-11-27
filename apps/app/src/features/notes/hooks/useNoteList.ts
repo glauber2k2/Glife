@@ -8,18 +8,18 @@ export function useNoteList(query: NoteListQuery) {
   const { notes } = useNotesData();
   const [items, setItems] = useState<Note[] | null>(null);
   const [failed, setFailed] = useState(false);
-  const { folderId, kind, pinned, search, limit } = query;
+  const { folderId, pinned, search, limit } = query;
 
   useEffect(() => {
     return notes.watch(
-      { folderId, kind, pinned, search: search || undefined, limit },
+      { folderId, pinned, search: search || undefined, limit },
       (rows) => {
         setItems(rows);
         setFailed(false);
       },
       () => setFailed(true),
     );
-  }, [notes, folderId, kind, pinned, search, limit]);
+  }, [notes, folderId, pinned, search, limit]);
 
   return { items, failed };
 }

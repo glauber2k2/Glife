@@ -48,7 +48,7 @@ Novo Testamento visíveis ao abrir (logo abaixo da busca); textos de campos e bo
 
 ## Fora do escopo
 
-Devocional SOAP, editar versículo / ver original, ouvir, comparar traduções, grifo de parte do versículo, índice de
+Editar versículo / ver original, ouvir, comparar traduções, grifo de parte do versículo, índice de
 busca persistente (FTS), IA, modo parágrafo, tema sépia. Planos com livros escolhidos um a um ("Escolher livros")
 ficam como evolução: nesta etapa o plano é feito de **grupos de livros**.
 

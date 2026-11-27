@@ -30,7 +30,6 @@ const note = (id: string, pinned = false): Note => ({
   body_md: '',
   folder_id: null,
   pinned,
-  kind: 'note',
   created_at: at(2026, 10, 1),
   updated_at: at(2026, 10, 1),
   deleted_at: null,

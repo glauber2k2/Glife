@@ -22,7 +22,7 @@ interligada aos itens."
 
 ## Fora do escopo agora (resto da Fase 4)
 
-Devocional SOAP e linha do tempo, planos de leitura, busca no texto da Bíblia, editar versículo / ver original,
+Planos de leitura, busca no texto da Bíblia, editar versículo / ver original,
 grifo de parte do versículo (o banco já reserva), ouvir, comparar traduções lado a lado, IA.
 **Não** mexer nos tipos de nota existentes (`note/journal/devotional`): a anotação nasce como nota comum (`note`).
 

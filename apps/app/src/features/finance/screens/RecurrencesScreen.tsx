@@ -18,6 +18,7 @@ import { useState } from 'react';
 import { View } from 'react-native';
 
 import { BackHeader, Button, EmptyState, IconButton, Input, Reveal, Screen, SegmentedControl, Text, makeStyles, useTheme, useToast } from '@/shared/ui';
+import { goBackOr } from '@/shared/navigation/backNavigation';
 
 import { TRANSFER_ICON, categoryHue, categoryIcon } from '../components/categories';
 import { dm, dmy, todayIso, weekday } from '../components/format';
@@ -253,8 +254,7 @@ function RuleEditor({ rule }: { rule: Recurrence }) {
       await changeRule(rule, applyFrom, changes);
       setSheet(null);
       toast({ message: `${title} atualizado a partir de ${dm(applyFrom)}` });
-      if (router.canGoBack()) router.back();
-      else router.replace('/financas/recorrentes');
+      goBackOr('/financas/recorrentes');
     } catch (e) {
       console.warn('Falha ao atualizar a recorrência', e);
       toast({ message: 'Não foi possível salvar a recorrência.' });
@@ -269,8 +269,7 @@ function RuleEditor({ rule }: { rule: Recurrence }) {
       await endRule(rule, end === 'now' && canEndNow ? endNow! : endAfter);
       setSheet(null);
       toast({ message: 'Recorrência encerrada' });
-      if (router.canGoBack()) router.back();
-      else router.replace('/financas/recorrentes');
+      goBackOr('/financas/recorrentes');
     } catch (e) {
       console.warn('Falha ao encerrar a recorrência', e);
       toast({ message: 'Não foi possível encerrar.' });

@@ -44,7 +44,7 @@ import { SyncStatusProvider, createLocalSync } from '@/shared/lib/powersync';
 import { createNoticeScheduler } from '@/shared/lib/notices';
 import { getSupabase } from '@/shared/lib/supabase';
 import { toNavigationTheme } from '@/shared/navigation/navigationTheme';
-import { resolveNavigationMotion } from '@/shared/navigation/navigationMotion';
+import { isBackParams, replaceAnimationFor, resolveNavigationMotion } from '@/shared/navigation/navigationMotion';
 import { SEARCH_ACTIONS } from '@/shared/navigation/searchActions';
 import { ExpandProvider, ThemeProvider, ToastProvider, createThemePreferenceStore, useReduceMotion, useTheme } from '@/shared/ui';
 
@@ -164,17 +164,19 @@ function RootStack() {
               {/* Primeiro acesso do aparelho: traz os dados uma vez (depois do bloqueio); nas outras aberturas, nada. */}
               <FirstSyncGate active={stage === 'ready'}>
               <ExpandProvider>
+              {/* Toda tela empurra da direita (o voltar faz o inverso); troca marcada como "voltar" anima como voltar. */}
               <Stack
-                screenOptions={{
+                screenOptions={({ route }) => ({
                   headerShown: false,
                   contentStyle: { backgroundColor: t.colors.bg },
-                  animation: animation.stack,
-                  animationDuration: t.motion.standard,
-                }}
+                  animation: animation.detail,
+                  animationDuration: t.motion.push,
+                  animationTypeForReplace: replaceAnimationFor(isBackParams(route.params)),
+                })}
               >
                 {/* O app só abre com sessão aal2; o banco também recusa qualquer outra (RLS). */}
                 <Stack.Protected guard={stage === 'ready'}>
-                  <Stack.Screen name="(tabs)" />
+                  <Stack.Screen name="(tabs)" options={{ animation: animation.stack }} />
                   <Stack.Screen
                     name="caixa-de-entrada"
                     options={{ presentation: 'modal', animation: animation.modal }}
@@ -226,10 +228,10 @@ function RootStack() {
                   <Stack.Screen name="trocar-senha" options={{ animation: animation.detail }} />
                 </Stack.Protected>
                 <Stack.Protected guard={stage === 'signed_out'}>
-                  <Stack.Screen name="entrar" />
+                  <Stack.Screen name="entrar" options={{ animation: animation.stack }} />
                 </Stack.Protected>
                 <Stack.Protected guard={stage === 'enroll_mfa' || stage === 'verify_mfa'}>
-                  <Stack.Screen name="verificacao" />
+                  <Stack.Screen name="verificacao" options={{ animation: animation.stack }} />
                 </Stack.Protected>
               </Stack>
               </ExpandProvider>

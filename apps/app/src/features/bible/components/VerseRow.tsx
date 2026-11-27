@@ -9,7 +9,7 @@ import { Platform, Pressable, View, type TextLayoutEvent, type TextStyle } from 
 import { Icon, Text, makeStyles, useTheme } from '@/shared/ui';
 
 import type { ReadingAdjust } from '../data/readingPrefs';
-import { highlightBands, type Rect } from './highlightBands';
+import { highlightBands, underlineStrokes, type Rect } from './highlightBands';
 import { letterSpacingPx } from './readerChrome';
 
 const WEB = Platform.OS === 'web';
@@ -39,17 +39,21 @@ export const VerseRow = memo(function VerseRow({ verse, text, highlight, selecte
 
   const fill = highlight?.style === 'highlight' ? t.colors.highlight[highlight.color] : null;
   const tone = selected ? t.colors.selectionTone : flash ? t.colors.accentSoft : null;
+  const lineColor = highlight?.style === 'underline' ? t.colors.highlightLine[highlight.color] : null;
+  // Web: sublinhado do CSS com espessura; Android: traços desenhados por baixo de cada linha.
   const underline: TextStyle | null =
-    highlight?.style === 'underline'
+    WEB && highlight?.style === 'underline'
       ? ({
           textDecorationLine: 'underline',
           textDecorationColor: t.colors.highlightLine[highlight.color],
-          ...(WEB ? { textUnderlineOffset: fontSize * t.reading.underlineOffsetEm, textDecorationThickness: t.size.underline } : null),
+          textUnderlineOffset: fontSize * t.reading.underlineOffsetEm,
+          textDecorationThickness: t.size.underline,
         } as TextStyle)
       : null;
 
   const onTextLayout = useCallback((e: TextLayoutEvent) => setLines(e.nativeEvent.lines.map(({ x, y, width, height }) => ({ x, y, width, height }))), []);
   const bands = !WEB && (fill || tone) ? highlightBands(lines, fontSize, lineHeight) : [];
+  const strokes = !WEB && lineColor ? underlineStrokes(lines, fontSize, t.size.underline) : [];
 
   // Web: o fundo do texto cobre só a caixa da letra; o padding vertical a estende até deixar o mesmo respiro.
   const gap = Math.max(t.reading.highlightGapEm * fontSize, t.reading.highlightGapMin);
@@ -89,6 +93,13 @@ export const VerseRow = memo(function VerseRow({ verse, text, highlight, selecte
             {tone && <View style={[s.layer, { backgroundColor: tone }]} />}
           </View>
         ))}
+        {strokes.map((b, i) => (
+          <View
+            key={`u${i}`}
+            pointerEvents="none"
+            style={[s.stroke, { left: b.x, top: b.y, width: b.width, height: b.height, backgroundColor: lineColor ?? undefined }]}
+          />
+        ))}
         {body}
         {linked > 0 && (
           <Pressable
@@ -116,6 +127,7 @@ const useStyles = makeStyles((t) => ({
   number: { textAlign: 'right', paddingRight: t.space[2] },
   text: { flex: 1, minWidth: t.space[0] },
   band: { position: 'absolute', borderRadius: t.radius.bandWeb, overflow: 'hidden' },
+  stroke: { position: 'absolute', borderRadius: t.radius.full },
   layer: { position: 'absolute', top: t.space[0], left: t.space[0], right: t.space[0], bottom: t.space[0] },
   marker: { alignSelf: 'flex-start', marginTop: t.space[1] },
   markerInner: {

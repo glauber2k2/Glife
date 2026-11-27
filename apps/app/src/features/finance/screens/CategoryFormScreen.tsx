@@ -2,7 +2,7 @@
 // A prévia mostra o chip como vai aparecer nos lançamentos e pula com uma mola curta ao trocar ícone ou cor.
 // Orçamento a partir do mês atual; zero tira a categoria do bloco de orçamento. Arquivar em vez de excluir.
 import { budgetFor, monthOf, type Category, type CategoryColor, type CategoryKind } from '@glife/domain/finance';
-import { router, useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams } from 'expo-router';
 import { Archive, CreditCard } from 'lucide-react-native';
 import { useEffect, useRef, useState } from 'react';
 import { Pressable, View } from 'react-native';
@@ -44,6 +44,7 @@ import { todayIso } from '../components/format';
 import { MoneyField } from '../components/ui';
 import { useFinance } from '../hooks/FinanceData';
 import { useFinanceActions } from '../hooks/useFinanceActions';
+import { goBackOr } from '@/shared/navigation/backNavigation';
 
 const KINDS = [
   { value: 'expense', label: 'Gasto' },
@@ -99,8 +100,7 @@ function CategoryEditor({ category, initialKind }: { category: Category | null; 
       (data?.rules ?? []).some((r) => r.deleted_at === null && r.category_id === category.id));
 
   const back = () => {
-    if (router.canGoBack()) router.back();
-    else router.replace('/financas/categorias');
+    goBackOr('/financas/categorias');
   };
 
   const save = async () => {

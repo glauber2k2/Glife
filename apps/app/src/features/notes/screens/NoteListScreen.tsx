@@ -18,13 +18,11 @@ import { useNoteList } from '../hooks/useNoteList';
 import { openNote, useCreateNote } from '../hooks/useNoteActions';
 import { useBulkNoteActions, useNoteSelection } from '../hooks/useNoteSelection';
 
-type KindFilter = 'all' | 'pinned' | 'journal' | 'devotional';
+type ListFilter = 'all' | 'pinned';
 
-const KIND_FILTERS: { value: KindFilter; label: string; query: NoteListQuery }[] = [
+const LIST_FILTERS: { value: ListFilter; label: string; query: NoteListQuery }[] = [
   { value: 'all', label: 'Todas', query: {} },
   { value: 'pinned', label: 'Fixadas', query: { pinned: true } },
-  { value: 'journal', label: 'Diário', query: { kind: 'journal' } },
-  { value: 'devotional', label: 'Devocional', query: { kind: 'devotional' } },
 ];
 
 const LIST_LIMIT = 200;
@@ -42,38 +40,50 @@ export function NoteListScreen() {
   const [busy, setBusy] = useState(false);
   const { notes, folders } = useNotesData();
   const { tags } = useLinksData();
-  const [kind, setKind] = useState<KindFilter>('all');
-  const [tagId, setTagId] = useState<string | null>(null);
-  // `/notas?tag=<id>` (ex.: tag escolhida na busca universal) aplica o filtro.
-  // Ajuste durante a renderização (padrão do React para reagir a uma prop nova), sem efeito em cascata.
-  const { tag } = useLocalSearchParams<{ tag?: string }>();
-  const [appliedTag, setAppliedTag] = useState<string | undefined>(undefined);
-  if (typeof tag === 'string' && tag && tag !== appliedTag) {
-    setAppliedTag(tag);
-    setKind('all');
-    setTagId(tag);
-  }
+  const [filter, setFilter] = useState<ListFilter>('all');
   const [search, setSearch] = useState('');
-  const query = KIND_FILTERS.find((f) => f.value === kind)!.query;
-  const { items, failed } = useNoteList({ ...query, search: search.trim(), limit: LIST_LIMIT });
+  // `/notas?tag=<id>` (ex.: tag escolhida na busca universal) vira "#nome" no campo de busca.
+  const { tag } = useLocalSearchParams<{ tag?: string }>();
+  useEffect(() => {
+    if (typeof tag !== 'string' || !tag) return;
+    let active = true;
+    void tags.list().then((all) => {
+      const found = all.find((t) => t.id === tag);
+      if (!active || !found) return;
+      setFilter('all');
+      setSearch(`#${found.name}`);
+    });
+    return () => {
+      active = false;
+    };
+  }, [tags, tag]);
+  const term = search.trim();
+  // "#nome" na busca acha as notas com a tag (além das que têm o texto); não há chip de tag no filtro.
+  const tagTerm = term.startsWith('#') ? term.replace(/^#+/, '').toLowerCase() : null;
+  const query = LIST_FILTERS.find((f) => f.value === filter)!.query;
+  const { items, failed } = useNoteList({ ...query, search: tagTerm === null ? term : '', limit: LIST_LIMIT });
   const create = useCreateNote();
 
   const { data: side, reload } = useFocusData(
     async () => {
-      const [allFolders, allTags, trash] = await Promise.all([folders.list(), tags.list(), notes.countTrash()]);
-      return { folders: allFolders, tags: allTags, trash };
+      const [allFolders, trash] = await Promise.all([folders.list(), notes.countTrash()]);
+      return { folders: allFolders, trash };
     },
   );
   const bulk = useBulkNoteActions(reload);
-  const [tagged, setTagged] = useState<Set<string> | null>(null);
+  const [searchTagged, setSearchTagged] = useState<Set<string>>(new Set());
   useEffect(() => {
     let active = true;
-    if (!tagId) return;
-    void tags.entitiesWithTag(tagId, 'note').then((ids) => active && setTagged(new Set(ids)));
+    if (!tagTerm) return;
+    void (async () => {
+      const matching = (await tags.list()).filter((t) => t.name.toLowerCase().startsWith(tagTerm));
+      const ids = await Promise.all(matching.map((t) => tags.entitiesWithTag(t.id, 'note')));
+      if (active) setSearchTagged(new Set(ids.flat()));
+    })();
     return () => {
       active = false;
     };
-  }, [tags, tagId, items]);
+  }, [tags, tagTerm, items]);
 
   // Seleção: as abas somem; o voltar do Android sai da seleção em vez de sair da tela.
   useLayoutEffect(() => {
@@ -89,8 +99,17 @@ export function NoteListScreen() {
     return () => sub.remove();
   }, [selecting, cancel]);
 
-  const visible = useMemo(() => (items && tagId && tagged ? items.filter((n) => tagged.has(n.id)) : items), [items, tagId, tagged]);
-  const filtered = kind !== 'all' || !!tagId || search.trim() !== '';
+  const visible = useMemo(() => {
+    let list = items;
+    if (list && tagTerm !== null) {
+      const text = term.toLowerCase();
+      list = list.filter(
+        (n) => (tagTerm && searchTagged.has(n.id)) || n.title.toLowerCase().includes(text) || n.body_md.toLowerCase().includes(text),
+      );
+    }
+    return list;
+  }, [items, tagTerm, term, searchTagged]);
+  const filtered = filter !== 'all' || term !== '';
   const total = items?.length ?? 0;
   const pinned = !filtered && visible ? visible.filter((n) => n.pinned) : [];
   const rest = !filtered && visible ? visible.filter((n) => !n.pinned) : visible;
@@ -183,25 +202,13 @@ export function NoteListScreen() {
       <View style={s.controls}>
         <SearchField value={search} onChangeText={setSearch} placeholder="Buscar notas" />
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={s.bleed} contentContainerStyle={s.chips}>
-          {KIND_FILTERS.map((f) => (
+          {LIST_FILTERS.map((f) => (
             <Chip
               key={f.value}
               size="sm"
               label={f.label}
-              selected={kind === f.value && !tagId}
-              onPress={() => {
-                setKind(f.value);
-                setTagId(null);
-              }}
-            />
-          ))}
-          {side?.tags.map((tag) => (
-            <Chip
-              key={tag.id}
-              size="sm"
-              label={`#${tag.name}`}
-              selected={tagId === tag.id}
-              onPress={() => setTagId(tagId === tag.id ? null : tag.id)}
+              selected={filter === f.value}
+              onPress={() => setFilter(f.value)}
             />
           ))}
         </ScrollView>

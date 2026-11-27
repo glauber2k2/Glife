@@ -11,6 +11,7 @@ import Animated, { FadeIn } from 'react-native-reanimated';
 import { errorText } from '@/shared/lib/errorText';
 import { syncResultText, useSyncNow, useSyncState } from '@/shared/lib/powersync';
 import { BackHeader, Button, Mascot, Screen, Text, makeStyles, useReduceMotion, useTheme, useToast } from '@/shared/ui';
+import { goBackOr } from '@/shared/navigation/backNavigation';
 
 import { notFoundView, parseNotFoundParams, restoreRefusal, type NotFoundView, type TargetStatus } from '../data/targets';
 import { useResolveTarget, useTargetSources } from '../hooks/Targets';
@@ -34,7 +35,7 @@ const COPY: Record<NotFoundView, { title: (noun: string) => string; message: str
   },
 };
 
-const goBack = () => (router.canGoBack() ? router.back() : router.replace('/'));
+const goBack = () => goBackOr('/');
 
 export function NotFoundScreen() {
   const s = useStyles();

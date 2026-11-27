@@ -18,6 +18,8 @@ export function useNotesTaggedSource(): TaggedItemUiSource | null {
       label: 'Notas',
       icon: StickyNote,
       module: 'notes',
+      // A consulta observada relê a cada escrita na tabela de notas (inclusive ir para a lixeira ou excluir).
+      watchChanges: (onChange) => notes.watch({ limit: 1 }, () => onChange()),
       async alive(ids) {
         return (await live(ids)).map((n) => n.id);
       },

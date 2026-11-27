@@ -106,7 +106,6 @@ export function createInMemoryNotes(userId: string): { notes: NotesRepository; f
   const matches = (n: Note, q: NoteListQuery) => {
     if (n.deleted_at !== null) return false;
     if (q.folderId !== undefined && n.folder_id !== q.folderId) return false;
-    if (q.kind !== undefined && n.kind !== q.kind) return false;
     if (q.pinned !== undefined && n.pinned !== q.pinned) return false;
     if (q.search) {
       const s = q.search.toLowerCase();

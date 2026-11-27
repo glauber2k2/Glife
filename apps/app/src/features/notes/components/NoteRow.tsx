@@ -4,10 +4,9 @@ import { Pressable, View } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
 
 import { shortStamp } from '@/shared/lib/dates';
-import { Checkbox, Icon, Tag, Text, makeStyles, usePress, useReduceMotion, useTheme } from '@/shared/ui';
+import { Checkbox, Icon, Text, makeStyles, usePress, useReduceMotion, useTheme } from '@/shared/ui';
 
 import { noteExcerpt } from './excerpt';
-import { KIND_LABEL } from './kinds';
 
 /**
  * Linha da lista (Cobalto, dentro de um ListGroup): título, trecho de uma linha, data e o tipo quando não é nota.
@@ -65,7 +64,6 @@ export function NoteRow({
               {shortStamp(note.updated_at)}
             </Text>
           </View>
-          {note.kind !== 'note' && <Tag label={KIND_LABEL[note.kind]} />}
         </View>
       </Animated.View>
     </Pressable>

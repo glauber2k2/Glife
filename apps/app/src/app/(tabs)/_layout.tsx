@@ -16,7 +16,11 @@ export default function TabsLayout() {
   // Web largo: abas no topo (64 px); no Android e em janelas estreitas, a barra flutuante embaixo.
   const top = useTopNavigation();
   const renderTabScene = useCallback(
-    ({ children }: { children: ReactNode }) => <TabScene tracker={tracker}>{children}</TabScene>,
+    ({ children, route, navigation }: { children: ReactNode; route: { key: string }; navigation: { getState(): { routes: { key: string }[] } } }) => (
+      <TabScene tracker={tracker} index={navigation.getState().routes.findIndex((r) => r.key === route.key)}>
+        {children}
+      </TabScene>
+    ),
     [tracker],
   );
 

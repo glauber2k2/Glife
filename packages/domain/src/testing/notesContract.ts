@@ -45,7 +45,7 @@ export function notesRepositoryContract(name: string, make: () => Promise<NotesC
 
     it('valida o rascunho', async () => {
       const { notes } = await make();
-      await expectCode(notes.create({ kind: 'x' } as never), 'validation');
+      await expectCode(notes.create({ title: 'a\nb' }), 'validation');
     });
 
     it('atualiza só o enviado e recusa nota inexistente', async () => {
@@ -198,16 +198,15 @@ export function notesRepositoryContract(name: string, make: () => Promise<NotesC
       expect((await notes.list({}, { cursor: ok })).items).toEqual([]);
     });
 
-    it('filtra por pasta, tipo, fixadas e busca', async () => {
+    it('filtra por pasta, fixadas e busca', async () => {
       const { notes, folders } = await make();
       const f = await folders.create({ name: 'Igreja' });
-      const a = await notes.create({ title: 'Culto domingo', folder_id: f.id, kind: 'devotional' });
+      const a = await notes.create({ title: 'Culto domingo', folder_id: f.id });
       const b = await notes.create({ title: 'Mercado', body_md: 'comprar CAFÉ', pinned: true });
       const ids = async (q: Parameters<NotesRepository['list']>[0]) =>
         (await notes.list(q)).items.map((x) => x.id).sort();
       expect(await ids({ folderId: f.id })).toEqual([a.id]);
       expect(await ids({ folderId: null })).toEqual([b.id]);
-      expect(await ids({ kind: 'devotional' })).toEqual([a.id]);
       expect(await ids({ pinned: true })).toEqual([b.id]);
       expect(await ids({ search: 'café' })).toEqual([b.id]);
       expect(await ids({ search: 'CULTO' })).toEqual([a.id]);

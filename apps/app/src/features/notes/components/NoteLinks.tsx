@@ -1,7 +1,7 @@
 import { formatRef, parseOsis } from '@glife/domain/bible';
 import type { EntityType } from '@glife/domain/core';
 import type { Link } from '@glife/domain/links';
-import { BookOpen, FileText, NotebookPen } from 'lucide-react-native';
+import { BookOpen, FileText } from 'lucide-react-native';
 import { useEffect, useState } from 'react';
 import { View } from 'react-native';
 
@@ -10,13 +10,12 @@ import { ListGroup, NavRow, Section, makeStyles } from '@/shared/ui';
 
 import { useNotesData } from '../hooks/NotesData';
 import { openNote } from '../hooks/useNoteActions';
-import { KIND_LABEL } from './kinds';
 
 interface Row {
   key: string;
   label: string;
   meta: string;
-  kind: 'note' | 'journal' | 'bible' | 'other';
+  kind: 'note' | 'bible' | 'other';
   noteId?: string;
   /** endereço sem UUID (ex.: versículo) que um módulo abre */
   address?: { type: EntityType; ref: string };
@@ -24,7 +23,7 @@ interface Row {
   target?: { type: EntityType; id: string };
 }
 
-const ICONS = { note: FileText, journal: NotebookPen, bible: BookOpen, other: FileText } as const;
+const ICONS = { note: FileText, bible: BookOpen, other: FileText } as const;
 
 /** Fim da nota em Ler: ligações de saída e "Mencionada em" (backlinks), no estilo do NoteDetail do kit. */
 export function NoteLinks({ noteId, version }: { noteId: string; version: number }) {
@@ -49,7 +48,7 @@ export function NoteLinks({ noteId, version }: { noteId: string; version: number
           if (l.target_type === 'note') {
             const n = await notes.get(l.target_ref);
             return n
-              ? { key: l.id, label: n.title || 'Sem título', meta: 'Nota', kind: n.kind === 'journal' ? 'journal' : 'note', noteId: n.id }
+              ? { key: l.id, label: n.title || 'Sem título', meta: 'Nota', kind: 'note', noteId: n.id }
               : { key: l.id, label: 'Nota indisponível', meta: 'Vínculo quebrado', kind: 'note', target: { type: 'note', id: l.target_ref } };
           }
           if (l.target_type === 'bible') {
@@ -81,7 +80,7 @@ export function NoteLinks({ noteId, version }: { noteId: string; version: number
           .map(async (l): Promise<Row | null> => {
             const n = await notes.get(l.source_id);
             return n
-              ? { key: l.id, label: n.title || 'Sem título', meta: KIND_LABEL[n.kind], kind: n.kind === 'journal' ? 'journal' : 'note', noteId: n.id }
+              ? { key: l.id, label: n.title || 'Sem título', meta: 'Nota', kind: 'note', noteId: n.id }
               : null;
           }),
       );
