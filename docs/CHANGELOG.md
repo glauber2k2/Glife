@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.8.1 — 2026-11-27
+
+- Correção: o app fechava sozinho no Android sempre que mostrava uma caixinha de marcar (lembrete no Início, lista de compras, plano de leitura, seleção de notas). Um teste agora barra esse tipo de erro nas animações.
+- Notas: nota é só nota — sem os tipos Devocional e Diário (viram tags). A migração `20261130000001` só deve ser aplicada depois de instalar esta versão.
+
 ## 0.8.0 — 2026-11-27
 
 - Bíblia: texto todo em Outfit (a mesma fonte do app), um versículo por linha, cabeçalho leve e barras que somem ao rolar.
