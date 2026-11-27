@@ -30,7 +30,6 @@ plano `docs/superpowers/plans/2026-11-27-biblia-v2.md`.
 ## Decisões tomadas
 - Outfit em tudo (Literata removida); um versículo por linha; dia do plano pelo calendário; plano = regra + leituras.
 - Aviso do plano sem botões (só abre `/biblia/planos/<id>`); excluir plano pede confirmação; pausa fecha na véspera.
-- Lista de rulings completa na mensagem final da execução (sessão de 27/11).
 
 ## Como testar
 `pnpm lint && pnpm typecheck && pnpm test` (banco 119, domínio 642, app 559) e `pnpm build:web`.
