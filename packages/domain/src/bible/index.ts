@@ -19,3 +19,4 @@ export { combineSources, type BibleTextSource, type Translation } from './text.t
 export { parseTranslationFiles, type ImportedFile, type TranslationImport } from './importFile.ts';
 export { BIBLE_TABLES, createBibleHighlightsRepository, type BibleHighlightsRepository, type BibleRows } from './repository.ts';
 export { SEARCH_LIMIT, hitSegments, indexVerses, normalizeText, searchVerses, type IndexedVerse, type SearchScope } from './search.ts';
+export { buildRecords, type BibleRecord, type LinkedNote } from './records.ts';
