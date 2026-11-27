@@ -107,7 +107,11 @@ export interface ProgressBarProps {
   label?: string;
 }
 
-const clamp01 = (n: number) => Math.min(1, Math.max(0, n));
+// Worklet: a Checkbox usa dentro de useAnimatedStyle (thread de interface). Sem a marca, o Android fecha o app.
+const clamp01 = (n: number) => {
+  'worklet';
+  return Math.min(1, Math.max(0, n));
+};
 
 /** Barra com trilho; cresce da esquerda em 800 ms. O previsto aparece listrado logo depois do realizado. */
 export function ProgressBar({ value, planned = 0, tone = 'neutral', thickness = 'md', label }: ProgressBarProps) {
