@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.8.0 — 2026-11-27
+
+- Bíblia: texto todo em Outfit (a mesma fonte do app), um versículo por linha, cabeçalho leve e barras que somem ao rolar.
+- Bíblia: ajustes de leitura em "Aa" (tamanho, espaço entre linhas e entre letras, números dos versículos); grifos com respiro entre as linhas; seleção em sobretom, sem borda; barra de seleção em três linhas.
+- Bíblia: novo início com busca no texto (sem acento, sem internet, reconhece referências), Antigo/Novo Testamento, continuar lendo e últimos registros (anotações, grifos, sublinhados) com filtro.
+- Bíblia: planos de leitura — vários ao mesmo tempo, criar a partir de modelos ou personalizado, ler pelo plano e marcar como lido, dias perdidos e recuperar, pausar/retomar e lembrete diário.
+- Banco: tabelas dos planos de leitura (migrações aplicadas no GLIFE); Sync Streams com as tabelas novas (republicar no painel).
+
 ## 0.7.0 — 2026-11-27
 
 - Bíblia: leitor offline com a Bíblia Livre e a Bíblia Portuguesa Mundial; troca de tradução; livros, "Ir para" e continuar de onde parou.
