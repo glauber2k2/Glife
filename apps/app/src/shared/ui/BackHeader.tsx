@@ -1,7 +1,9 @@
-import { router, type Href } from 'expo-router';
+import type { Href } from 'expo-router';
 import { ChevronLeft } from 'lucide-react-native';
 import type { ReactNode } from 'react';
 import { View } from 'react-native';
+
+import { goBackOr } from '../navigation/backNavigation';
 
 import { IconButton } from './IconButton';
 import { Text } from './Text';
@@ -33,7 +35,7 @@ export function BackHeader({ title, subtitle, backLabel = 'Voltar', fallback = '
           <IconButton
             icon={ChevronLeft}
             label={backLabel}
-            onPress={onBack ?? (() => (router.canGoBack() ? router.back() : router.replace(fallback)))}
+            onPress={onBack ?? (() => goBackOr(fallback))}
           />
         )}
       </View>

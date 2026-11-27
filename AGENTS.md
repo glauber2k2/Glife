@@ -94,7 +94,9 @@ O Claude é o agente principal; o Codex só assume quando os créditos do Claude
   dentro de cartões/folhas (`SurfaceProvider`).
 - **Movimento "curto e gentil"** (Reanimated): toda mudança de estado anima; toque afunda 0,96 em 90 ms e volta com mola
   (`usePress`); durações 90–500 ms com as curvas de `t.easing`; listas em cascata de 70 ms até o 6º item (`Reveal`); folha
-  sobe em 400 e desce em 240 ms; troca de aba esmaece e cresce de 0,94; respeite "reduzir movimento" (vira esmaecer de
+  sobe em 400 e desce em 240 ms; troca de aba desliza do lado da aba escolhida (esmaece e cresce de leve);
+  tela nova empurra da direita com paralaxe (`ios_from_right`) e o voltar faz o inverso; troca que significa voltar
+  (capítulo anterior, voltar sem histórico) usa `replaceBack`/`goBackOr` para animar como voltar; respeite "reduzir movimento" (vira esmaecer de
   160 ms); haptics leve nas ações importantes.
 - Conferir toda tela nos dois temas (Ajustes → Aparência) e no Android e web.
 - **Teclado nunca cobre o campo:** tela com campos usa `Screen` (rola até o campo focado) ou `Sheet`; tela própria usa
@@ -118,6 +120,8 @@ O Claude é o agente principal; o Codex só assume quando os créditos do Claude
 - Monorepo pnpm: `apps/app`, `packages/domain`, `supabase/`. Testes vitest em todos os pacotes; banco em Postgres real via PGlite.
 - Bloqueio do app: o app **não** se esconde na lista de recentes e prints ficam liberados (usuário, 24/11/2026).
   Pendência futura opcional: esconder o conteúdo nos recentes (protótipo "Glife Bloqueio", seção 05).
+- **Tags só pelo usuário** (27/11/2026): o app não cria tags nem mostra chips de tag no filtro das notas; para achar,
+  busca-se `#nome` no campo de busca.
 - **Nota é só nota** (usuário, 27/11/2026): sem tipos (devocional, diário); quem quiser põe uma tag à mão (`#devocional`).
   Nada de módulo, tela, modelo SOAP ou opção própria para devocional. A coluna `notes.kind` saiu na migração `20261130000001`.
 - Hashes de commit citados antes de 23/11/2026 em `docs/arquivo/` são do histórico antigo (reescrito antes da publicação).

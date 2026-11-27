@@ -2,12 +2,13 @@
 // fechamento e vencimento, limite e conta pagadora e, depois, "Este cartão já está em uso?".
 // Com `?id=` vira "Editar conta" (Contas e cartões → …): mesmo formulário, sem trocar o tipo nem o passo do cartão.
 import { currentInvoiceMonth, invoiceDates, type Account } from '@glife/domain/finance';
-import { router, useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams } from 'expo-router';
 import { Plus, X } from 'lucide-react-native';
 import { useState } from 'react';
 import { Pressable, View } from 'react-native';
 
 import { BackHeader, Button, Chip, EmptyState, Icon, IconButton, Input, Reveal, Screen, Text, makeStyles, useTheme, useToast } from '@/shared/ui';
+import { goBackOr } from '@/shared/navigation/backNavigation';
 
 import { failureReason as reasonOf } from '../components/errors';
 import { dm, MONTH_NAMES, todayIso } from '../components/format';
@@ -97,8 +98,7 @@ function AccountForm({ account }: { account: Account | null }) {
 
   const back = () => {
     if (step === 'inUse') setStep('form');
-    else if (router.canGoBack()) router.back();
-    else router.replace('/financas');
+    else goBackOr('/financas');
   };
 
   const saveEdit = async () => {
@@ -158,8 +158,7 @@ function AccountForm({ account }: { account: Account | null }) {
         today,
       );
       toast({ message: 'Cartão criado', aboveTabBar: true });
-      if (router.canGoBack()) router.back();
-      else router.replace('/financas');
+      goBackOr('/financas');
     } catch (e) {
       console.warn('Falha ao criar o cartão', e, (e as { cause?: unknown })?.cause);
       toast({ message: `Não foi possível criar o cartão: ${failureReason(e)}` });

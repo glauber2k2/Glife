@@ -5,6 +5,7 @@ import { useEffect, useRef } from 'react';
 import { useLinksData } from '@/features/links';
 import { errorText } from '@/shared/lib/errorText';
 import { Screen, Spinner, useToast } from '@/shared/ui';
+import { goBackOr } from '@/shared/navigation/backNavigation';
 
 import { createNoteWithBody } from '../data/noteLinks';
 import { useNotesData } from '../hooks/NotesData';
@@ -28,8 +29,7 @@ export function NewNoteScreen() {
       .then((n) => router.replace({ pathname: '/nota/[id]', params: { id: n.id, nova: '1' } }))
       .catch((e: unknown) => {
         if (body) toast({ message: `Não deu para criar a nota ligada ao trecho: ${errorText(e)}` });
-        if (router.canGoBack()) router.back();
-        else router.replace('/notas');
+        goBackOr('/notas');
       });
   }, [notes, links, titulo, corpo, toast]);
   return (

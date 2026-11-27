@@ -6,6 +6,7 @@ import { ScrollView, View } from 'react-native';
 
 import { useLinksData } from '@/features/links';
 import { Button, Chip, EmptyState, ListGroup, NavRow, Screen, Section, Text, makeStyles } from '@/shared/ui';
+import { replaceBack } from '@/shared/navigation/backNavigation';
 
 import { NoteRows } from '../components/NoteRows';
 import { FolderNameSheet } from '../components/FolderNameSheet';
@@ -82,8 +83,8 @@ export function FolderScreen() {
   const goUp = () => {
     const state = navigation.getState() as Parameters<typeof folderUpAction>[0];
     if (folderUpAction(state, parent?.id ?? null) === 'back' && router.canGoBack()) router.back();
-    else if (parent) router.replace({ pathname: '/pasta/[id]', params: { id: parent.id } });
-    else router.replace('/pastas');
+    else if (parent) replaceBack({ pathname: '/pasta/[id]', params: { id: parent.id } });
+    else replaceBack('/pastas');
   };
   const notesInside = summaries.find((s) => s.folder.id === id)?.notes ?? items?.length ?? 0;
 

@@ -11,6 +11,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { errorText } from '@/shared/lib/errorText';
 import { BackHeader, EmptyState, Icon, IconButton, ListGroup, NavRow, Section, Spinner, Text, makeStyles, useReduceMotion, useTheme, useToast } from '@/shared/ui';
+import { goBackOr, replaceBack } from '@/shared/navigation/backNavigation';
 
 import { passageActions, type PassageAction, type PassageContext } from '../components/actions';
 import { registerBuiltinActions } from '../components/builtinActions';
@@ -173,7 +174,13 @@ function Reader({ book, chapter, target, planId }: { book: string; chapter: numb
 
   const prev = neighborChapter(book, chapter, -1);
   const next = neighborChapter(book, chapter, 1);
-  const go = (to: { book: string; chapter: number } | null) => to && router.replace(chapterHref(to.book, to.chapter) as Href);
+  // Próximo capítulo entra pela direita; o anterior, pela esquerda (a troca anima como "voltar").
+  const go = (to: { book: string; chapter: number } | null, back = false) => {
+    if (!to) return;
+    const href = chapterHref(to.book, to.chapter) as Href;
+    if (back) replaceBack(href);
+    else router.replace(href);
+  };
 
   const sheetItems = sheet ? (sheet.verse === null ? linked.chapter : (linked.byVerse.get(sheet.verse) ?? [])) : [];
   const sheetTitle = sheet ? formatRef(sheet.verse === null ? { book, chapter } : { book, chapter, verse: sheet.verse }, 'name') : '';
@@ -259,7 +266,7 @@ function Reader({ book, chapter, target, planId }: { book: string; chapter: numb
 
       <Animated.View style={[s.topBar, { paddingTop: insets.top }, topStyle]}>
         <View style={[s.topRow, web && s.topRowWeb]}>
-          <IconButton icon={ChevronLeft} label="Voltar" variant="ghost" onPress={() => (router.canGoBack() ? router.back() : router.replace('/biblia' as Href))} />
+          <IconButton icon={ChevronLeft} label="Voltar" variant="ghost" onPress={() => goBackOr('/biblia' as Href)} />
           <Pressable style={s.title} onPress={() => setPicker('books')} accessibilityRole="button" accessibilityLabel={`${name} ${chapter}. Escolher livro e capítulo`}>
             <View style={s.titleRow}>
               <Text variant="emphasis" numberOfLines={1}>
@@ -295,7 +302,7 @@ function Reader({ book, chapter, target, planId }: { book: string; chapter: numb
       ) : (
         <Animated.View pointerEvents="box-none" style={[s.navHost, { bottom: t.layout.tabBarBottom + insets.bottom }, bottomStyle]}>
           <View style={s.nav}>
-            <IconButton icon={ChevronLeft} label={prev ? 'Capítulo anterior' : 'Início da Bíblia'} variant="ghost" disabled={!prev} onPress={() => go(prev)} />
+            <IconButton icon={ChevronLeft} label={prev ? 'Capítulo anterior' : 'Início da Bíblia'} variant="ghost" disabled={!prev} onPress={() => go(prev, true)} />
             <Pressable style={s.navTitle} accessibilityRole="button" accessibilityLabel="Notas e anotar o capítulo" onPress={() => setSheet({ verse: null })}>
               <Text variant="emphasis" numberOfLines={1}>
                 {name} {chapter}

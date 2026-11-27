@@ -1,22 +1,27 @@
 import { describe, expect, it } from 'vitest';
+import type { Href } from 'expo-router';
 
 import {
+  asBackHref,
   createTabFocusTracker,
   isTabBarHidden,
   getTabDirection,
   getTabIndicatorX,
   getTabLineInsets,
   getTabLineMotion,
+  isBackParams,
+  replaceAnimationFor,
   resolveNavigationMotion,
   tabSceneEnterFrom,
+  tabSceneOffset,
 } from '../src/shared/navigation/navigationMotion';
 
 describe('acessibilidade da navegação', () => {
-  it('desliga todas as transições, incluindo opções específicas de modal e detalhe', () => {
+  it('com "reduzir movimento" toda transição vira esmaecer, incluindo modal e detalhe', () => {
     expect(resolveNavigationMotion(true)).toEqual({
-      stack: 'none',
-      modal: 'none',
-      detail: 'none',
+      stack: 'fade',
+      modal: 'fade',
+      detail: 'fade',
     });
   });
 
@@ -25,8 +30,24 @@ describe('acessibilidade da navegação', () => {
     expect(resolveNavigationMotion(false)).toEqual({
       stack: 'fade',
       modal: 'slide_from_bottom',
-      detail: 'slide_from_right',
+      detail: 'ios_from_right',
     });
+  });
+});
+
+describe('voltar por troca de tela', () => {
+  it('marca o endereço com volta=1 (texto, com ou sem consulta, e objeto)', () => {
+    expect(asBackHref('/biblia/GEN/2' as Href)).toBe('/biblia/GEN/2?volta=1');
+    expect(asBackHref('/biblia/GEN/2?plano=x' as Href)).toBe('/biblia/GEN/2?plano=x&volta=1');
+    expect(asBackHref({ pathname: '/pasta/[id]', params: { id: 'a' } })).toEqual({ pathname: '/pasta/[id]', params: { id: 'a', volta: '1' } });
+  });
+
+  it('a pilha anima a troca marcada como voltar e as outras como avanço', () => {
+    expect(isBackParams({ volta: '1' })).toBe(true);
+    expect(isBackParams({})).toBe(false);
+    expect(isBackParams(undefined)).toBe(false);
+    expect(replaceAnimationFor(true)).toBe('pop');
+    expect(replaceAnimationFor(false)).toBe('push');
   });
 });
 
@@ -50,8 +71,16 @@ describe('troca de aba', () => {
     expect(tracker.advance(1)).toBe(0);
   });
 
-  it('a tela esmaece e cresce de 0,94, sem direção', () => {
+  it('a primeira aba esmaece e cresce de 0,94, sem direção', () => {
     expect(tabSceneEnterFrom(false)).toEqual({ opacity: 0, scale: 0.94 });
+  });
+
+  it('a aba escolhida entra do seu lado: à direita vem da direita, à esquerda vem da esquerda', () => {
+    expect(tabSceneEnterFrom(false, 1)).toEqual({ opacity: 0, scale: 0.98 });
+    expect(tabSceneOffset(1, false, 400, 0.08)).toBe(32);
+    expect(tabSceneOffset(-1, false, 400, 0.08)).toBe(-32);
+    expect(tabSceneOffset(0, false, 400, 0.08)).toBe(0);
+    expect(tabSceneOffset(1, true, 400, 0.08)).toBe(0);
   });
 
   it('a pílula da aba ativa fica centrada na casa (o + ocupa o meio)', () => {
