@@ -6,7 +6,7 @@ import type { TaggedItem } from '@glife/domain/tags';
 import { useFocusEffect } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
-import { useLinksDataMaybe, useTaggedItemSources } from '@/features/links';
+import { useLinksDataMaybe, useTaggedItemSources, useTaggedItemsVersion } from '@/features/links';
 
 import { useHighlightsMaybe } from './BibleData';
 
@@ -19,6 +19,8 @@ export function useBibleRecords(filter: RecordFilter, limit?: number): { records
   const [rows, setRows] = useState<Link[] | null>(null);
   const [items, setItems] = useState<Map<string, TaggedItem>>(new Map());
   const [focus, setFocus] = useState(0);
+  // Nota excluída ou renomeada em qualquer lugar some/atualiza aqui na hora, sem esperar o foco.
+  const changes = useTaggedItemsVersion();
 
   useEffect(() => (links ? links.watchBibleAll(setRows) : undefined), [links]);
   // voltar de uma nota (que pode ter ido para a lixeira) relê os títulos
@@ -37,7 +39,7 @@ export function useBibleRecords(filter: RecordFilter, limit?: number): { records
     return () => {
       active = false;
     };
-  }, [rows, sources, focus]);
+  }, [rows, sources, focus, changes]);
 
   return useMemo(() => {
     const notes = new Map<string, LinkedNote & { refs: string[] }>();

@@ -5,7 +5,7 @@ import type { TaggedItem } from '@glife/domain/tags';
 import { useFocusEffect } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
-import { useLinksDataMaybe, useTaggedItemSources } from '@/features/links';
+import { useLinksDataMaybe, useTaggedItemSources, useTaggedItemsVersion } from '@/features/links';
 
 import { linksByVerse, type ChapterLinks } from '../components/chapterLinks';
 
@@ -20,6 +20,8 @@ export function useChapterLinks(book: string, chapter: number, verseCount: numbe
   const [rows, setRows] = useState<Link[]>([]);
   const [items, setItems] = useState<Map<string, TaggedItem>>(new Map());
   const [focus, setFocus] = useState(0);
+  // Nota excluída ou renomeada em qualquer lugar some/atualiza aqui na hora, sem esperar o foco.
+  const changes = useTaggedItemsVersion();
 
   useEffect(() => (links ? links.watchBibleBook(book, setRows) : undefined), [links, book]);
   // Voltar de uma nota (que pode ter ido para a lixeira) relê os títulos e quem continua vivo.
@@ -45,7 +47,7 @@ export function useChapterLinks(book: string, chapter: number, verseCount: numbe
     return () => {
       active = false;
     };
-  }, [rows, grouped, sources, focus]);
+  }, [rows, grouped, sources, focus, changes]);
 
   return useMemo(() => {
     const alive = (l: Link) => items.has(l.source_id);
