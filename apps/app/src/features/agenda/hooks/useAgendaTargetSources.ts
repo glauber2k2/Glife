@@ -17,6 +17,8 @@ export function useAgendaTargetSources(): TargetSource[] {
         routePrefix: '/agenda/evento/',
         href: async (id) => `/agenda/evento/${id}`,
         restore: (id) => repo.restoreEvent(id),
+        kindLabel: 'Evento',
+        title: async (id) => (await repo.getEvent(id).catch(() => null))?.title ?? null,
       },
       {
         type: 'reminder',
@@ -25,6 +27,8 @@ export function useAgendaTargetSources(): TargetSource[] {
         routePrefix: '/agenda/lembrete/',
         href: async (id) => `/agenda/lembrete/${id}`,
         restore: (id) => repo.restoreReminder(id),
+        kindLabel: 'Lembrete',
+        title: async (id) => (await repo.getReminder(id).catch(() => null))?.title ?? null,
       },
     ];
   }, [repo]);

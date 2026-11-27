@@ -6,6 +6,7 @@ import { X } from 'lucide-react-native';
 import { useState } from 'react';
 import { View } from 'react-native';
 
+import { LinkedNotesField, useLinkedNotes } from '@/features/links';
 import { useEntityForm } from '@/shared/hooks/useEntityForm';
 import { BackHeader, Button, Chip, DateInput, EmptyState, Input, RepeatFields, Screen, SegmentedControl, Tag, Text, TimeInput, makeStyles } from '@/shared/ui';
 
@@ -40,8 +41,10 @@ export function ReminderFormScreen() {
   const params = useLocalSearchParams<{ id?: string; data?: string }>();
   const { repo } = useAgenda();
   const day = isoOk(params.data) ? params.data : localNow().date;
+  const linked = useLinkedNotes('reminder', params.id);
   const f = useEntityForm({
     id: params.id,
+    extra: linked,
     load: (id) => repo.getReminder(id),
     toForm: reminderToForm,
     empty: () => emptyReminderForm(day),
@@ -137,6 +140,8 @@ export function ReminderFormScreen() {
       )}
       <RepeatFields value={form.repeat} onChange={(repeat) => setForm({ repeat })} />
       <Input label="Notas" value={form.notes} onChangeText={(notes) => setForm({ notes })} multiline maxLength={1000} />
+
+      <LinkedNotesField state={linked} />
       {f.entity?.done_at && <Tag tone="success" label="Concluído" />}
       <Button label="Salvar" onPress={() => void f.save()} loading={f.saving} haptic fullWidth />
       {!f.isNew && <Button label="Excluir lembrete" variant="danger" onPress={() => void f.remove()} fullWidth />}

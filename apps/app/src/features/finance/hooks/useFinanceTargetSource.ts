@@ -4,12 +4,12 @@ import type { TargetSource } from '@/features/links';
 
 import { useFinanceMaybe } from './FinanceData';
 
-/** Lançamentos como alvo de vínculos e avisos (abrem o extrato da conta); null sem sessão. */
-export function useFinanceTargetSource(): TargetSource | null {
+/** Lançamentos (abrem o extrato da conta) e ativos como alvo de vínculos e avisos; vazio sem sessão. */
+export function useFinanceTargetSources(): TargetSource[] {
   const repos = useFinanceMaybe()?.repos ?? null;
   return useMemo(() => {
-    if (!repos) return null;
-    return {
+    if (!repos) return [];
+    const tx: TargetSource = {
       type: 'tx',
       table: 'transactions',
       noun: 'Este lançamento',
@@ -18,6 +18,21 @@ export function useFinanceTargetSource(): TargetSource | null {
         return tx ? `/financas/conta/${tx.account_id}` : null;
       },
       restore: async (id) => void (await repos.transactions.restore(id)),
+      kindLabel: 'Lançamento',
+      title: async (id) => {
+        const tx = await repos.transactions.get(id);
+        return tx && tx.deleted_at === null ? tx.description || 'Lançamento' : null;
+      },
     };
+    const asset: TargetSource = {
+      type: 'asset',
+      table: 'investment_assets',
+      noun: 'Este ativo',
+      routePrefix: '/financas/investimento/',
+      href: async (id) => `/financas/investimento/${id}`,
+      kindLabel: 'Investimento',
+      title: async (id) => (await repos.investments.snapshot()).assets.find((a) => a.id === id)?.name ?? null,
+    };
+    return [tx, asset];
   }, [repos]);
 }

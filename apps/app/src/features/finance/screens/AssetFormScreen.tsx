@@ -18,6 +18,7 @@ import { Search } from 'lucide-react-native';
 import { useState } from 'react';
 import { Pressable, View } from 'react-native';
 
+import { LinkedNotesField, useLinkedNotes } from '@/features/links';
 import { BackHeader, Button, Chip, Icon, Input, Screen, Spinner, Switch, Text, makeStyles, useTheme, useToast } from '@/shared/ui';
 
 import { dm, todayIso } from '../components/format';
@@ -58,6 +59,7 @@ function AssetForm({ asset, hasMovements }: { asset: InvestmentAsset | null; has
   const [currentValue, setCurrentValue] = useState<number | null>(null);
   const [qtyText, setQtyText] = useState('');
   const [saving, setSaving] = useState(false);
+  const linked = useLinkedNotes('asset', asset?.id);
 
   const source = kind ? quoteSourceOf(kind) : null;
   const symbolOk = source === null || SYMBOL_PATTERNS[source].test(symbol);
@@ -97,7 +99,12 @@ function AssetForm({ asset, hasMovements }: { asset: InvestmentAsset | null; has
     const fields = { name: name.trim(), kind, institution: institution.trim(), notes: notes.trim(), quote_symbol: source ? symbol : null };
     try {
       if (asset) {
-        await repos.investments.updateAsset(asset.id, fields);
+        // Tudo ou nada: as notas vinculadas voltam se o ativo não grava.
+        const undo = await linked.apply(asset.id);
+        await repos.investments.updateAsset(asset.id, fields).catch(async (e: unknown) => {
+          await undo().catch(() => undefined);
+          throw e;
+        });
         if (router.canGoBack()) router.back();
         toast({ message: 'Ativo atualizado' });
       } else {
@@ -105,6 +112,10 @@ function AssetForm({ asset, hasMovements }: { asset: InvestmentAsset | null; has
           ? { investedCents: invested ?? 0, currentCents: source ? undefined : (currentValue ?? undefined), quantity: source ? (qty ?? undefined) : undefined, date: today }
           : undefined;
         const created = await repos.investments.createAsset(fields, opening);
+        await linked.apply(created.id).catch(async (e: unknown) => {
+          await repos.investments.removeAsset(created.id).catch(() => undefined);
+          throw e;
+        });
         router.replace({ pathname: '/financas/investimento/[id]', params: { id: created.id } });
       }
     } catch (e) {
@@ -215,6 +226,7 @@ function AssetForm({ asset, hasMovements }: { asset: InvestmentAsset | null; has
 
         <Input label="Instituição (opcional)" value={institution} onChangeText={setInstitution} maxLength={ASSET_INSTITUTION_MAX} />
         <Input label="Observação (opcional)" value={notes} onChangeText={setNotes} maxLength={ASSET_NOTES_MAX} multiline />
+        <LinkedNotesField state={linked} />
 
         {!asset && (
           <View style={s.group}>

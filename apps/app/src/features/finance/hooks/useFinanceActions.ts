@@ -75,6 +75,11 @@ export interface CategoryInput {
   budgetCents: number;
 }
 
+
+export interface CreatedEntry {
+  txIds: string[];
+  recurrenceId: string | null;
+}
 export function useFinanceActions() {
   const { repos, data, refresh } = useFinance();
 
@@ -130,7 +135,8 @@ export function useFinanceActions() {
       return suggestInvoiceToPay(card, data?.transactions ?? [], date) ?? currentInvoiceMonth(date, cycleOf(card));
     }
 
-    async function createEntry(f: EntryForm): Promise<void> {
+    /** Grava o lançamento e diz o que criou (lançamentos e regra), para quem precisa desfazer. */
+    async function createEntry(f: EntryForm): Promise<CreatedEntry> {
       const account = accountOf(f.accountId);
       const category = f.categoryId ? data?.categories.find((c) => c.id === f.categoryId) : null;
       const description = f.description.trim() || category?.name || (f.type === 'transfer' ? 'Transferência' : '');
@@ -153,11 +159,12 @@ export function useFinanceActions() {
         };
         const rule = await repos.recurrences.create(draft);
         // Sem "É previsto", a primeira ocorrência (hoje) já aconteceu.
+        const txIds: string[] = [];
         if (!f.planned) {
-          await repos.transactions.upsertOccurrence(materializeOccurrence(rule, f.date, { status: 'confirmed' }, account));
+          txIds.push((await repos.transactions.upsertOccurrence(materializeOccurrence(rule, f.date, { status: 'confirmed' }, account))).id);
         }
         await refresh();
-        return;
+        return { txIds, recurrenceId: rule.id };
       }
 
       if (account.kind === 'credit_card' && f.type === 'expense') {
@@ -169,12 +176,12 @@ export function useFinanceActions() {
           count: f.installments,
           date: f.date,
         }).map((r) => ({ ...r, status }));
-        await repos.transactions.createMany(rows);
-        return;
+        const created = await repos.transactions.createMany(rows);
+        return { txIds: created.map((x) => x.id), recurrenceId: null };
       }
 
       const target = toAccountId ? accountOf(toAccountId) : null;
-      await repos.transactions.create({
+      const tx = await repos.transactions.create({
         type: f.type,
         status,
         amount_cents: f.cents,
@@ -185,6 +192,7 @@ export function useFinanceActions() {
         description,
         invoice_month: target?.kind === 'credit_card' ? invoiceToPay(target.id, f.date) : null,
       });
+      return { txIds: [tx.id], recurrenceId: null };
     }
 
     /** Paga a fatura saindo de `fromId`; com `paidBy`, outra pessoa pagou (entrada + pagamento juntos, saldo igual). */
@@ -450,7 +458,15 @@ export function useFinanceActions() {
       };
     }
 
+    /** Desfaz `createEntry` de um lançamento sem repetição (os lançamentos criados agora). */
+    async function discardEntry(c: CreatedEntry) {
+      if (c.recurrenceId) throw new Error('Regra recorrente não se desfaz por aqui');
+      if (c.txIds.length) await repos.transactions.removeMany(c.txIds);
+      await refresh();
+    }
+
     return {
+      discardEntry,
       saveCategory,
       archiveCategory,
       unarchiveCategory,
