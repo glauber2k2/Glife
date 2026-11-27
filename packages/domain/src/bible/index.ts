@@ -36,3 +36,13 @@ export {
   type PlanRule,
   type PlanStatus,
 } from './plans.ts';
+export {
+  PLAN_TABLES,
+  createBiblePlansRepository,
+  type BiblePlan,
+  type BiblePlanRead,
+  type BiblePlansRepository,
+  type NewPlanInput,
+  type PlanRows,
+  type PlanWithReads,
+} from './planRepository.ts';

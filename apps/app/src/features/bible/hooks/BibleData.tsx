@@ -1,6 +1,6 @@
 // Dados da Bíblia compostos na raiz: texto (traduções embutidas e importadas), marcações ao vivo e preferências de
 // leitura do aparelho (tradução escolhida e último capítulo).
-import { combineSources, type BibleHighlight, type BibleHighlightsRepository, type BibleTextSource, type Translation } from '@glife/domain/bible';
+import { combineSources, type BibleHighlight, type BibleHighlightsRepository, type BiblePlansRepository, type BibleTextSource, type PlanWithReads, type Translation } from '@glife/domain/bible';
 import type { LocalDb } from '@glife/domain/core';
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 
@@ -12,6 +12,7 @@ import { BPM } from '../data/bundled/bpm';
 import { createBundledText } from '../data/bundledText';
 import { createImportedText, type ImportedTextSource } from '../data/importedText';
 import { createLocalHighlights } from '../data/localHighlights';
+import { createLocalPlans } from '../data/localPlans';
 import { createRecentSearches, type RecentSearches } from '../data/recentSearches';
 import { createTextIndex, type TextIndex } from '../data/textIndex';
 import { DEFAULT_TRANSLATION, READING_DEFAULTS, createReadingPrefsStore, mergeLoadedPrefs, type ReadingAdjust, type ReadingPrefs } from '../data/readingPrefs';
@@ -19,6 +20,10 @@ import { DEFAULT_TRANSLATION, READING_DEFAULTS, createReadingPrefsStore, mergeLo
 const highlights = createSnapshotProvider<BibleHighlightsRepository, BibleHighlight[]>('as marcações da Bíblia', createLocalHighlights);
 export const useHighlights = highlights.use;
 export const useHighlightsMaybe = highlights.useMaybe;
+
+const plans = createSnapshotProvider<BiblePlansRepository, PlanWithReads[]>('os planos de leitura', createLocalPlans);
+export const usePlans = plans.use;
+export const usePlansMaybe = plans.useMaybe;
 
 const bundled = createBundledText([BLIVRE, BPM]);
 const BUNDLED_ABBRS = [BLIVRE.abbr, BPM.abbr];
@@ -117,7 +122,9 @@ export function BibleProvider({
   return (
     <TextContext.Provider value={value}>
       <highlights.Provider db={db} userId={userId}>
-        {children}
+        <plans.Provider db={db} userId={userId}>
+          {children}
+        </plans.Provider>
       </highlights.Provider>
     </TextContext.Provider>
   );
