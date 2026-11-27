@@ -4,8 +4,6 @@ O que só o dono do projeto pode fazer (contas, chaves, testes no aparelho, deci
 
 ## Bíblia (26/11/2026)
 
-- [ ] Aplicar a migração das marcações no Supabase (projeto GLIFE), na raiz `glife/`: `pnpm sb db push --remote`.
-- [ ] Republicar `supabase/powersync/sync-streams.yaml` no painel do PowerSync (Validate → Deploy; cole o arquivo inteiro).
 - [ ] Gerar APK novo (bibliotecas nativas novas: expo-file-system, expo-document-picker; `prebuild --clean`).
 - [ ] Conferir no Chrome e no APK (claro/escuro, 360 dp): Início → Bíblia, abrir um capítulo, grifar nas 4 cores e sublinhar, remover, Anotar (vira nota com [[Jo 3:16]]), ver o marcador no versículo, abrir o versículo pela nota, trocar BLIVRE/BPM, importar uma tradução (USFM) e remover.
 - [ ] Saber: traduções importadas ficam só no aparelho e somem ao sair da conta (importar de novo depois).
