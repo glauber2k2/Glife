@@ -1,6 +1,9 @@
 export { BibleHomeScreen } from './screens/BibleHomeScreen';
 export { BibleSearchScreen } from './screens/BibleSearchScreen';
 export { BibleRecordsScreen } from './screens/BibleRecordsScreen';
+export { PlansScreen } from './screens/PlansScreen';
+export { PlanEditScreen } from './screens/PlanEditScreen';
+export { PlanDetailScreen } from './screens/PlanDetailScreen';
 export { bibleLocalTables, bibleTableLabels, bibleTables } from './data/schema';
 export { TranslationsScreen } from './screens/TranslationsScreen';
 export { BibleProvider } from './hooks/BibleData';
