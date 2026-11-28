@@ -4,8 +4,9 @@ O que só o dono do projeto pode fazer (contas, chaves, testes no aparelho, deci
 
 ## Investimentos v2 (28/11/2026) — branch `investimentos-v2`
 
-- [ ] Publicar (migração autorizada em 27/11): `pnpm sb db push --remote` (`20261203000001_investimentos_v2`),
-  publicar a função `quotes` e **republicar o `sync-streams.yaml`** no painel do PowerSync (Validate → Deploy).
+- [ ] **Republicar o `sync-streams.yaml`** desta branch no painel do PowerSync (Validate → Deploy; cole, não digite):
+  traz a linha nova de `investment_targets`. Sem isso as metas não sincronizam. (Migração `20261203000001` e a
+  função `quotes` v5 já publicadas em 28/11/2026; `rls_check.sql` = 0 linhas.)
 - [ ] Conferir no Chrome e no APK (claro/escuro, 360 dp, nomes longos): painel (gráfico com arraste e períodos,
   rosca Atual/Meta, "Definir metas" somando 100, ranking Minha carteira e Mercado, leitura da carteira), detalhe do
   ativo (Resumo com preço médio, Estatísticas tocando nos números, IA salvando nota, Notas) e o "Novo ativo" com a
