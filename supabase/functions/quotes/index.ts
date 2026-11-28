@@ -5,6 +5,7 @@ import { createClient } from '@supabase/supabase-js';
 
 import { supabaseQuoteCache } from './cache.ts';
 import { createHandler } from './handler.ts';
+import { supabaseMarketLists, supabasePriceHistory } from './history.ts';
 
 const env = (name: string) => Deno.env.get(name)?.trim() || null;
 
@@ -17,6 +18,8 @@ const fetchFn = (url: string, init?: { headers?: Record<string, string> }) => fe
 const service = new QuoteService({
   providers: [new BrapiProvider({ fetch: fetchFn, token: env('BRAPI_TOKEN') }), new CoinGeckoProvider({ fetch: fetchFn, demoKey: env('COINGECKO_DEMO_KEY') })],
   cache: supabaseQuoteCache(admin),
+  history: supabasePriceHistory(admin),
+  lists: supabaseMarketLists(admin),
 });
 
 const verify = async (jwt: string) => {
