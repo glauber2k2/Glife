@@ -16,8 +16,8 @@ export function useNotesLinkerPort(): NoteLinkerPort | null {
         const page = await notes.list(query ? { search: query } : {}, { limit: RESULTS });
         return page.items.map((n) => ({ id: n.id, title: n.title }));
       },
-      create: async (title) => {
-        const n = await notes.create({ title, body_md: '' });
+      create: async (title, body) => {
+        const n = await notes.create({ title, body_md: body ?? '' });
         return { id: n.id, title: n.title };
       },
       title: async (id) => (await notes.get(id))?.title ?? null,
