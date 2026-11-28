@@ -1,5 +1,6 @@
 export { BIBLE_BOOKS, findBook, getBook, type BibleBook } from './books.ts';
 export { parseUsfm, type BookText } from './usfm.ts';
+export { findBibleRefs, type FoundRef } from './findRefs.ts';
 export { formatRef, isValidRef, parseBibleRef, parseOsis, toOsis, type BibleRef } from './refs.ts';
 export { annotationDraft, copyText, groupVerses, refCoversVerse, refTouchesChapter, type PassageBlock } from './coverage.ts';
 export {

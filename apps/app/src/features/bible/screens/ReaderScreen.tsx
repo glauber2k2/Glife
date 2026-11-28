@@ -122,6 +122,8 @@ function Reader({ book, chapter, target, planId }: { book: string; chapter: numb
     [book, chapter, setLast, selected],
   );
   const openLinked = useCallback((verse: number) => setSheet({ verse }), []);
+  // Referência citada no texto abre o versículo em cima desta leitura (voltar retorna aqui).
+  const openRef = useCallback((href: string) => router.push(href as Href), []);
   const onLayoutY = useCallback(
     (verse: number, y: number) => {
       if (verse !== target || scrolled.current) return;
@@ -219,6 +221,7 @@ function Reader({ book, chapter, target, planId }: { book: string; chapter: numb
                     reading={reading}
                     onPress={toggle}
                     onLinkedPress={openLinked}
+                    onRefPress={openRef}
                     onLayoutY={onLayoutY}
                   />
                 ) : null,
