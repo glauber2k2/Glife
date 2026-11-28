@@ -66,7 +66,7 @@ export function AiChatScreen() {
             style={s.grow}
           />
           {busy ? (
-            <IconButton icon={Square} label="Parar" onPress={() => void chat.stop()} />
+            <IconButton icon={Square} label="Parar" onPress={chat.stop} />
           ) : (
             <IconButton icon={ArrowUp} label="Enviar" onPress={() => send()} disabled={!text.trim()} />
           )}
@@ -116,6 +116,10 @@ export function AiChatScreen() {
             Pensando…
           </Text>
         </View>
+      )}
+
+      {chat.limitReached && (
+        <Alert tone="info">A Glife IA fez muitas ações seguidas e parou para você conferir. Diga se quer continuar.</Alert>
       )}
 
       {chat.error && <Alert tone="danger">{chat.error}</Alert>}

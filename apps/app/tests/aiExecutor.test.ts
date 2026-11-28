@@ -109,3 +109,25 @@ describe('executor da IA', () => {
     expect(await run('notes_update', { note: 'n1', pinned: true })).toEqual({ error: expect.stringMatching(/excluído|não encontrad/i) });
   });
 });
+
+describe('alterações em sequência na mesma resposta', () => {
+  it('a partir da 4ª gravação direta na mesma vez, pede confirmação', async () => {
+    const { ctx, confirm, log } = setup();
+    const kit: AiToolKit = {
+      executors: { notes_create: async () => ({ output: { ok: true }, touches: [{ entity: 'note', id: NOTE, kind: 'create', before: null }], summary: 'Nota criada' }) },
+      undo: {},
+    };
+    const turn = { writes: 0 };
+    const run = (answer?: boolean) => {
+      if (answer !== undefined) confirm.mockResolvedValueOnce(answer);
+      return executeToolCall({ toolName: 'notes_create', input: { title: 'x' } }, { kit, ctx, confirm, log, conversationId: 'c1', turn });
+    };
+    await run();
+    await run();
+    await run();
+    expect(confirm).not.toHaveBeenCalled();
+    expect(await run(false)).toEqual({ status: 'cancelled' });
+    expect(confirm).toHaveBeenCalledTimes(1);
+    expect(log.entries).toHaveLength(3);
+  });
+});

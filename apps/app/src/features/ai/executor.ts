@@ -31,7 +31,12 @@ export interface ExecuteDeps {
   conversationId: string;
   /** Avisado de cada ação gravada (cartão com "Desfazer"). */
   onAction?: (entry: AiActionEntry) => void;
+  /** Gravações diretas desta vez da conversa (zera a cada mensagem do usuário): muitas em sequência são "lote". */
+  turn?: { writes: number };
 }
+
+/** A partir desta gravação direta na mesma vez, cada uma pede "Confirmar?" (mudança em lote). */
+export const DIRECT_WRITES_PER_TURN = 3;
 
 const issuesText = (issues: readonly { path: readonly PropertyKey[]; message: string }[]) =>
   issues
@@ -48,12 +53,15 @@ export async function executeToolCall(call: { toolName: string; input: unknown }
   if (!parsed.success) return { error: `Entrada inválida: ${issuesText(parsed.error.issues)}` };
 
   try {
-    if (needsConfirmation(def)) {
+    const manyWrites = def.risk === 'write' && (deps.turn?.writes ?? 0) >= DIRECT_WRITES_PER_TURN;
+    if (needsConfirmation(def) || manyWrites) {
       const preview = deps.kit.preview?.[def.name];
-      const summary = preview ? await preview(parsed.data, deps.ctx) : def.description;
+      const base = preview ? await preview(parsed.data, deps.ctx) : def.description;
+      const summary = manyWrites && !needsConfirmation(def) ? `Mais uma alteração nesta resposta: ${base}` : base;
       if (!(await deps.confirm(summary))) return { status: 'cancelled' };
     }
     const result = await run(parsed.data, deps.ctx);
+    if (def.risk === 'write' && deps.turn) deps.turn.writes += 1;
     if (result.touches.length > 0) {
       const entry = await deps.log.record({ conversation_id: deps.conversationId, tool: def.name, summary: result.summary, touches: result.touches });
       deps.onAction?.(entry);
