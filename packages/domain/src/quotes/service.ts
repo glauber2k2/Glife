@@ -5,8 +5,8 @@ import { rankMarket, searchCatalog } from './catalog.ts';
 import {
   CATALOG_TTL_MS,
   LOOKUP_LIMIT,
-  QUOTE_SOURCES,
   QUOTE_TTL_MS,
+  SYMBOL_PATTERNS,
   brDate,
   keyOf,
   type LookupItem,
@@ -23,12 +23,16 @@ import {
   type QuoteSource,
 } from './model.ts';
 
+/** Minutos que uma lista que falhou fica marcada antes de tentar de novo. */
+const LIST_FAILURE_TTL_MS = 5 * 60 * 1000;
+
 const fromLookup = (l: LookupItem): MarketItem => ({
   source: l.source,
   symbol: l.symbol,
   ticker: l.ticker,
   name: l.name,
-  type: l.source === 'coingecko' ? 'crypto' : 'stock',
+  // Código exato não diz o tipo: final 11 costuma ser fundo (FII ou ETF); o app aceita os dois tipos da B3.
+  type: l.source === 'coingecko' ? 'crypto' : /11$/.test(l.ticker) ? 'reit' : 'stock',
   priceE8: l.priceE8,
   changeDay: null,
   change30d: null,
@@ -91,7 +95,8 @@ export class QuoteService {
     if (provider && !(await store.fetchedToday(key, today))) {
       const fetched = await provider.history(key.symbol);
       const kept = new Set((await store.get(key)).map((p) => p.date));
-      const fresh = fetched.filter((p) => !kept.has(p.date));
+      // Dias passados: o fechamento do provedor corrige a foto do meio do pregão. Hoje: vale a cotação guardada.
+      const fresh = fetched.filter((p) => p.date !== today || !kept.has(p.date));
       if (fresh.length) await store.put(key, fresh);
       await store.markFetched(key, today);
     }
@@ -100,11 +105,18 @@ export class QuoteService {
 
   private async list(source: QuoteSource, maxAgeMs: number): Promise<MarketItem[] | null> {
     const cached = await this.lists?.get(source);
-    if (cached && Date.parse(cached.fetchedAt) > this.now().getTime() - maxAgeMs) return cached.items;
+    const age = cached ? this.now().getTime() - Date.parse(cached.fetchedAt) : Infinity;
+    if (cached && cached.items.length && age < maxAgeMs) return cached.items;
+    // Lista que falhou fica marcada (vazia) por 5 min: digitar não refaz o pedido a cada letra.
+    if (cached && !cached.items.length && age < LIST_FAILURE_TTL_MS) return [];
     const provider = this.providers.get(source);
-    if (!provider) return cached?.items ?? null;
+    if (!provider) return cached?.items.length ? cached.items : null;
     const items = await provider.market();
-    if (!items.length) return cached?.items ?? null;
+    if (!items.length) {
+      if (cached?.items.length) return cached.items;
+      await this.lists?.put(source, []);
+      return [];
+    }
     await this.lists?.put(source, items);
     return items;
   }
@@ -113,17 +125,27 @@ export class QuoteService {
     return rankMarket((await this.list(source, QUOTE_TTL_MS)) ?? [], sort, type);
   }
 
-  /** Busca nos catálogos (até 24 h). Sem catálogo da B3: código exato; cripto fora do catálogo: busca da CoinGecko. */
-  async search(query: string): Promise<MarketItem[]> {
+  /**
+   * Busca nos catálogos (até 24 h), só nos tipos pedidos. Código B3 válido sem item igual no catálogo (ETF, BDR,
+   * Fiagro, catálogo fora do ar) também é conferido no código exato; cripto fora do catálogo vem da CoinGecko.
+   */
+  async search(query: string, types?: readonly MarketType[]): Promise<MarketItem[]> {
+    const wants = (s: QuoteSource) => !types?.length || types.some((t) => (s === 'coingecko' ? t === 'crypto' : t !== 'crypto'));
     const out: MarketItem[] = [];
-    for (const source of QUOTE_SOURCES) {
-      const catalog = await this.list(source, CATALOG_TTL_MS);
-      if (catalog && catalog.length) out.push(...searchCatalog(catalog, query));
-      else if (source === 'brapi') out.push(...(await this.lookup('brapi', query)).map(fromLookup));
+    if (wants('brapi')) {
+      const catalog = ((await this.list('brapi', CATALOG_TTL_MS)) ?? []).filter((m) => !types?.length || types.includes(m.type));
+      const found = searchCatalog(catalog, query);
+      out.push(...found);
+      const code = query.trim().toUpperCase();
+      if (SYMBOL_PATTERNS.brapi.test(code) && !found.some((m) => m.ticker === code)) out.unshift(...(await this.lookup('brapi', query)).map(fromLookup));
     }
-    if (out.length < 3) {
-      const seen = new Set(out.map(keyOf));
-      out.push(...(await this.lookup('coingecko', query)).map(fromLookup).filter((m) => !seen.has(keyOf(m))));
+    if (wants('coingecko')) {
+      const catalog = (await this.list('coingecko', CATALOG_TTL_MS)) ?? [];
+      out.push(...searchCatalog(catalog, query));
+      if (out.length < 3) {
+        const seen = new Set(out.map(keyOf));
+        out.push(...(await this.lookup('coingecko', query)).map(fromLookup).filter((m) => !seen.has(keyOf(m))));
+      }
     }
     return out.slice(0, LOOKUP_LIMIT);
   }

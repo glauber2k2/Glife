@@ -19,7 +19,7 @@ export interface QuotesService {
   lookup(source: QuoteSource, query: string): Promise<LookupItem[]>;
   history(key: QuoteKey): Promise<PricePoint[]>;
   market(source: QuoteSource, sort: MarketSort, type?: MarketType): Promise<MarketItem[]>;
-  search(query: string): Promise<MarketItem[]>;
+  search(query: string, types?: readonly MarketType[]): Promise<MarketItem[]>;
 }
 
 const MAX_BODY = 16_000;
@@ -62,7 +62,7 @@ export function createHandler(deps: { verify: VerifyJwt; service: QuotesService 
         case 'market':
           return json({ items: await deps.service.market(request.source, request.sort, request.type) });
         case 'search':
-          return json({ items: await deps.service.search(request.query) });
+          return json({ items: await deps.service.search(request.query, request.types) });
         default:
           return json(await deps.service.getQuotes(request.items));
       }

@@ -129,7 +129,7 @@ export const quoteRequestSchema = z.discriminatedUnion('action', [
   z.object({ action: z.literal('lookup'), source: z.enum(QUOTE_SOURCES), query: z.string().trim().min(1).max(LOOKUP_QUERY_MAX) }),
   z.object({ action: z.literal('history'), item: quoteKeySchema }),
   z.object({ action: z.literal('market'), source: z.enum(QUOTE_SOURCES), sort: z.enum(MARKET_SORTS), type: z.enum(MARKET_TYPES).optional() }),
-  z.object({ action: z.literal('search'), query: z.string().trim().min(SEARCH_MIN).max(LOOKUP_QUERY_MAX) }),
+  z.object({ action: z.literal('search'), query: z.string().trim().min(SEARCH_MIN).max(LOOKUP_QUERY_MAX), types: z.array(z.enum(MARKET_TYPES)).max(MARKET_TYPES.length).optional() }),
 ]);
 export type QuoteRequest = z.infer<typeof quoteRequestSchema>;
 

@@ -43,10 +43,14 @@ export function useMarketRank(source: QuoteSource, sort: MarketSort, type?: Mark
   return state?.id === id ? state : { items: state?.items ?? [], status: 'loading' };
 }
 
-export function useSymbolSearch(query: string): { items: MarketItem[]; status: LoadStatus } {
+export function useSymbolSearch(query: string, types?: readonly MarketType[]): { items: MarketItem[]; status: LoadStatus } {
   const { quotes } = useFinance();
   const [result, setResult] = useState<{ items: MarketItem[]; status: LoadStatus }>({ items: [], status: 'idle' });
-  const controller = useMemo(() => createSearchController({ client: quotes, onResult: (r) => setResult({ items: r.items, status: r.status }) }), [quotes]);
+  const typesKey = (types ?? []).join(',');
+  const controller = useMemo(
+    () => createSearchController({ client: quotes, types: typesKey ? (typesKey.split(',') as MarketType[]) : undefined, onResult: (r) => setResult({ items: r.items, status: r.status }) }),
+    [quotes, typesKey],
+  );
   useEffect(() => () => controller.dispose(), [controller]);
   useEffect(() => controller.set(query), [controller, query]);
   return result;

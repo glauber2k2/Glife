@@ -51,6 +51,8 @@ export function assetDaily(
   let manual = 0;
   let paidE8 = 0;
   let closeE8: number | null = null;
+  let paidDate: IsoDate | null = null;
+  const firstClose = sorted[0] ?? null;
 
   for (const day of days(ms[0]!.date, today)) {
     while (i < ms.length && ms[i]!.date <= day) {
@@ -62,12 +64,21 @@ export function assetDaily(
       if (auto && m.quantity !== null) {
         units += m.kind === "withdrawal" ? -m.quantity : m.quantity;
         paidE8 = Number((BigInt(m.amount_cents) * E14) / BigInt(m.quantity));
+        paidDate = m.date;
       }
     }
     while (p < sorted.length && sorted[p]!.date <= day) closeE8 = sorted[p++]!.closeE8;
 
     let value: number;
-    if (auto) value = units <= 0 ? 0 : unitsValue(units, closeE8 ?? paidE8);
+    if (auto) {
+      let price = closeE8 ?? paidE8;
+      // Antes do primeiro fechamento: anda do preço pago até ele (sem degrau quando o histórico começa).
+      if (closeE8 === null && firstClose && paidDate !== null) {
+        const span = daysBetween(paidDate, firstClose.date);
+        if (span > 0) price = Math.round(paidE8 + ((firstClose.closeE8 - paidE8) * daysBetween(paidDate, day)) / span);
+      }
+      value = units <= 0 ? 0 : unitsValue(units, price);
+    }
     else {
       value = manual;
       // Interpola até a próxima cotação manual (se a próxima coisa a acontecer for uma cotação).
@@ -99,7 +110,8 @@ export function portfolioDaily(
   today: IsoDate,
 ): DailyPoint[] {
   const totals = new Map<IsoDate, DailyPoint>();
-  for (const { asset } of p.groups.flatMap((g) => g.assets)) {
+  // Encerrados também: o passado do gráfico não muda quando um ativo é resgatado por inteiro.
+  for (const { asset } of [...p.groups.flatMap((g) => g.assets), ...p.closed]) {
     for (const pt of assetDaily(asset, movements, book.get(asset.id) ?? [], today)) {
       const t = totals.get(pt.date) ?? { date: pt.date, value: 0, invested: 0 };
       t.value += pt.value;

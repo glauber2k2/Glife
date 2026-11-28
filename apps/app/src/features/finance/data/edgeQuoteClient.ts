@@ -24,6 +24,6 @@ export function createEdgeQuoteClient(supabase: SupabaseClient): QuoteClient & M
     lookup: async (source, query) => (await call(supabase, { action: 'lookup', source, query }, isItems<LookupItem>)).items,
     history: async (item) => (await call(supabase, { action: 'history', item }, isPoints)).points,
     market: async (source, sort, type) => (await call(supabase, { action: 'market', source, sort, ...(type ? { type } : {}) }, isItems<MarketItem>)).items,
-    search: async (query) => (await call(supabase, { action: 'search', query }, isItems<MarketItem>)).items,
+    search: async (query, types) => (await call(supabase, { action: 'search', query, ...(types?.length ? { types } : {}) }, isItems<MarketItem>)).items,
   };
 }

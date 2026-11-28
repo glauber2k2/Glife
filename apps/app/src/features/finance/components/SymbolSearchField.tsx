@@ -13,15 +13,16 @@ import { useSymbolSearch } from '../hooks/useMarket';
 import { pctSigned } from './investmentFormat';
 import { highlightParts, moveActive } from './symbolSearch';
 
-export function SymbolSearchField({ initialText = '', onPick, types, label = 'Buscar ativo (código, nome ou moeda)' }: { initialText?: string; onPick: (item: MarketItem) => void; types: readonly MarketType[]; label?: string }) {
+export function SymbolSearchField({ initialText = '', onPick, onType, types, label = 'Buscar ativo (código, nome ou moeda)' }: { initialText?: string; onPick: (item: MarketItem) => void; onType?: (text: string) => void; types: readonly MarketType[]; label?: string }) {
   const s = useStyles();
   const t = useTheme();
   const { money } = useMoneyFormat();
   const [text, setText] = useState(initialText);
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(0);
-  const { items: all, status } = useSymbolSearch(open ? text : '');
-  const items = all.filter((m) => types.length === 0 || types.includes(m.type));
+  const { items: found, status } = useSymbolSearch(open ? text : '', types);
+  // O tipo escolhido vem primeiro (ação antes de FII no tipo Ações, e o contrário em FIIs).
+  const items = [...found].sort((a, b) => types.indexOf(a.type) - types.indexOf(b.type));
 
   const pick = (m: MarketItem) => {
     setText(m.ticker);
@@ -45,6 +46,7 @@ export function SymbolSearchField({ initialText = '', onPick, types, label = 'Bu
           setText(v);
           setOpen(true);
           setActive(0);
+          onType?.(v);
         }}
         onKeyPress={onKey}
         onSubmitEditing={() => items[Math.max(0, active)] && pick(items[Math.max(0, active)]!)}
@@ -79,11 +81,11 @@ export function SymbolSearchField({ initialText = '', onPick, types, label = 'Bu
             </Text>
           ) : status === 'offline' ? (
             <Text variant="small" tone="tertiary" style={s.note}>
-              Sem conexão para buscar agora. Digite o código completo (ex.: PETR4) e tente de novo.
+              Sem conexão para buscar agora. Código completo da B3 (ex.: PETR4) pode ser salvo assim mesmo; a cotação chega depois.
             </Text>
           ) : items.length === 0 ? (
             <Text variant="small" tone="tertiary" style={s.note}>
-              {`Nada encontrado para "${text.trim()}". Confira o código (ex.: PETR4, HGLG11) ou o nome da moeda.`}
+              {`Nada encontrado para "${text.trim()}". Confira o código (ex.: PETR4, HGLG11) ou o nome da moeda. Código completo da B3 pode ser salvo assim mesmo.`}
             </Text>
           ) : (
             items.map((m, i) => (

@@ -20,8 +20,8 @@ function fakeClient(o: { fail?: boolean; delays?: Record<string, number>; empty?
       if (o.fail) throw new Error('offline');
       return o.empty ? [] : [item('A1')];
     },
-    async search(q) {
-      searched.push(q);
+    async search(q, types) {
+      searched.push(types ? `${q}|${types.join(',')}` : q);
       await new Promise((r) => setTimeout(r, o.delays?.[q] ?? 0));
       if (o.fail) throw new Error('offline');
       return [item(q.toUpperCase())];
@@ -77,6 +77,19 @@ describe('busca com sugestões', () => {
     c2.set('itsa');
     await vi.runAllTimersAsync();
     expect(r2.at(-1)).toBe('offline');
+  });
+});
+
+describe('busca com tipos', () => {
+  beforeEach(() => vi.useFakeTimers());
+  afterEach(() => vi.useRealTimers());
+
+  it('manda os tipos pedidos ao servidor', async () => {
+    const { client, searched } = fakeClient();
+    const c = createSearchController({ client, types: ['crypto'], onResult: () => undefined });
+    c.set('btc');
+    await vi.runAllTimersAsync();
+    expect(searched).toEqual(['btc|crypto']);
   });
 });
 

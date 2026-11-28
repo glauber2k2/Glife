@@ -108,13 +108,13 @@ describe('histórico no serviço', () => {
     expect(b.calls.history).toBe(0);
   });
 
-  it('não buscado hoje: busca, junta sem repetir data (o guardado vence) e marca o dia', async () => {
-    const b = provider('brapi', { history: [{ date: '2026-11-25', closeE8: 5 }, { date: '2026-11-26', closeE8: 6 }] });
+  it('não buscado hoje: o fechamento do provedor corrige dias passados; hoje vale o guardado; marca o dia', async () => {
+    const b = provider('brapi', { history: [{ date: '2026-11-25', closeE8: 5 }, { date: '2026-11-26', closeE8: 6 }, { date: TODAY, closeE8: 7 }] });
     const history = memoryHistory({ 'brapi:ITSA4': [{ date: '2026-11-26', closeE8: 10 }, { date: TODAY, closeE8: 11 }] });
     const s = new QuoteService({ providers: [b.p], cache: noCache, history, now: () => NOW });
     expect(await s.history(ITSA)).toEqual([
       { date: '2026-11-25', closeE8: 5 },
-      { date: '2026-11-26', closeE8: 10 },
+      { date: '2026-11-26', closeE8: 6 },
       { date: TODAY, closeE8: 11 },
     ]);
     expect(b.calls.history).toBe(1);
@@ -176,11 +176,47 @@ describe('mercado e busca no serviço', () => {
   });
 });
 
+describe('busca: código fora do catálogo, tipos e falha da lista', () => {
+  it('código válido sem item igual no catálogo também é conferido no código exato (ETF, BDR)', async () => {
+    const b = provider('brapi', { lookup: [{ source: 'brapi', symbol: 'BOVA11', name: 'iShares Ibovespa', ticker: 'BOVA11', priceE8: 13_000_000_000 }] });
+    const lists = memoryLists({ brapi: { items: [mk('BOVV11', { name: 'Outro' })], fetchedAt: minutesAgo(5) }, coingecko: { items: [], fetchedAt: minutesAgo(5) } });
+    const s = new QuoteService({ providers: [b.p], cache: noCache, lists, now: () => NOW });
+    const r = await s.search('bova11');
+    expect(b.calls.lookup).toEqual(['bova11']);
+    expect(r.map((x) => x.ticker)).toContain('BOVA11');
+  });
+
+  it('filtra os tipos pedidos antes de cortar em 8', async () => {
+    const many = Array.from({ length: 12 }, (_, i) => mk(`AB${i}C3`, { name: `Empresa btc ${i}` }));
+    const g = provider('coingecko');
+    const lists = memoryLists({
+      brapi: { items: many, fetchedAt: minutesAgo(5) },
+      coingecko: { items: [mk('BTC', { source: 'coingecko', symbol: 'bitcoin', name: 'Bitcoin', type: 'crypto' })], fetchedAt: minutesAgo(5) },
+    });
+    const s = new QuoteService({ providers: [g.p], cache: noCache, lists, now: () => NOW });
+    expect((await s.search('btc', ['crypto'])).map((x) => x.ticker)).toEqual(['BTC']);
+  });
+
+  it('lista que falhou não é pedida de novo a cada busca por 5 minutos', async () => {
+    const b = provider('brapi', { market: [] });
+    const lists = memoryLists();
+    let now = NOW;
+    const s = new QuoteService({ providers: [b.p], cache: noCache, lists, now: () => now });
+    await s.search('itsa4');
+    await s.search('itsa');
+    expect(b.calls.market).toBe(1);
+    now = new Date(NOW.getTime() + 6 * 60_000);
+    await s.search('itsa4');
+    expect(b.calls.market).toBe(2);
+  });
+});
+
 describe('pedido validado (ações novas)', () => {
   it('aceita history, market e search válidos', () => {
     expect(quoteRequestSchema.safeParse({ action: 'history', item: ITSA }).success).toBe(true);
     expect(quoteRequestSchema.safeParse({ action: 'market', source: 'brapi', sort: 'up_day', type: 'reit' }).success).toBe(true);
     expect(quoteRequestSchema.safeParse({ action: 'search', query: 'logis' }).success).toBe(true);
+    expect(quoteRequestSchema.safeParse({ action: 'search', query: 'btc', types: ['crypto'] }).success).toBe(true);
   });
 
   it('recusa símbolo inválido, ordenação desconhecida e busca de 1 letra', () => {

@@ -1,7 +1,7 @@
 // Regras puras da busca de ativo com sugestões: destaque do trecho (sem acento e sem caixa), setas do teclado,
 // tipo de mercado de cada tipo de ativo e o total de um aporte pelo preço de hoje.
 import { unitsValue, type AssetKind } from '@glife/domain/finance';
-import type { MarketType } from '@glife/domain/quotes';
+import { SYMBOL_PATTERNS, type MarketType, type QuoteSource } from '@glife/domain/quotes';
 
 const fold = (ch: string) =>
   ch
@@ -45,8 +45,16 @@ export function moveActive(index: number, count: number, dir: 'up' | 'down'): nu
   return dir === 'down' ? (index + 1) % count : (index - 1 + count) % count;
 }
 
+/** Ação e FII buscam na B3 inteira (o tipo escolhido vem primeiro): o código exato não diz se é ação, FII ou ETF. */
 export function typesForKind(kind: AssetKind): MarketType[] {
-  return kind === 'stocks' ? ['stock'] : kind === 'reits' ? ['reit'] : kind === 'crypto' ? ['crypto'] : [];
+  return kind === 'stocks' ? ['stock', 'reit'] : kind === 'reits' ? ['reit', 'stock'] : kind === 'crypto' ? ['crypto'] : [];
+}
+
+/** Código B3 digitado à mão (ETF, BDR, sem internet): vale se o texto inteiro tiver o formato. Cripto escolhe na lista. */
+export function typedSymbol(text: string, source: QuoteSource): string | null {
+  if (source !== 'brapi') return null;
+  const code = text.trim().toUpperCase();
+  return SYMBOL_PATTERNS.brapi.test(code) ? code : null;
 }
 
 export function kindForMarketType(type: MarketType): AssetKind {

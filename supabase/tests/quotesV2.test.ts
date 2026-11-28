@@ -29,8 +29,8 @@ function setup(o: { fail?: boolean } = {}) {
       calls.push(['market', source, sort, type]);
       return [ITEM];
     },
-    async search(q: string): Promise<MarketItem[]> {
-      calls.push(['search', q]);
+    async search(q: string, types?: readonly MarketType[]): Promise<MarketItem[]> {
+      calls.push(types ? ['search', q, types] : ['search', q]);
       return [ITEM];
     },
   };
@@ -57,9 +57,11 @@ describe('quotes: ações novas', () => {
     const { handler, calls } = setup();
     expect(await (await handler(post({ action: 'market', source: 'brapi', sort: 'up_day', type: 'reit' }))).json()).toEqual({ items: [ITEM] });
     expect(await (await handler(post({ action: 'search', query: 'itsa' }))).json()).toEqual({ items: [ITEM] });
+    await handler(post({ action: 'search', query: 'btc', types: ['crypto'] }));
     expect(calls).toEqual([
       ['market', 'brapi', 'up_day', 'reit'],
       ['search', 'itsa'],
+      ['search', 'btc', ['crypto']],
     ]);
   });
 

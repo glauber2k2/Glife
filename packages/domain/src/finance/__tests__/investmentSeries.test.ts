@@ -56,7 +56,31 @@ describe('série diária de um ativo', () => {
   });
 });
 
+describe('automático antes do primeiro fechamento', () => {
+  it('interpola do preço pago até o primeiro fechamento (sem degrau)', () => {
+    const a = itsa(14);
+    const ms = [mov(a, { kind: 'contribution', amount_cents: 10000, quantity: 10 * QTY_SCALE, date: '2026-09-01' })];
+    const s = assetDaily(a, ms, [{ date: '2026-09-05', closeE8: E8(14) }], '2026-09-06');
+    expect(s.map((p) => p.value)).toEqual([10000, 11000, 12000, 13000, 14000, 14000]);
+  });
+});
+
 describe('série diária da carteira', () => {
+  it('ativo encerrado continua no passado do gráfico', () => {
+    const c = cdb();
+    const ms = [
+      mov(c, { kind: 'contribution', amount_cents: 100000, date: '2026-09-01' }),
+      mov(c, { kind: 'withdrawal', amount_cents: 100000, date: '2026-09-05' }),
+    ];
+    const other = cdb();
+    ms.push(mov(other, { kind: 'contribution', amount_cents: 50000, date: '2026-09-01' }));
+    const p = portfolio([c, other], ms, '2026-09-06');
+    expect(p.closed).toHaveLength(1);
+    const s = portfolioDaily(p, ms, new Map(), '2026-09-06');
+    expect(s.find((x) => x.date === '2026-09-02')).toEqual({ date: '2026-09-02', value: 150000, invested: 150000 });
+    expect(s.at(-1)).toEqual({ date: '2026-09-06', value: 50000, invested: 50000 });
+  });
+
   it('soma os ativos abertos e termina no patrimônio de hoje', () => {
     const a = itsa(12);
     const c = cdb();

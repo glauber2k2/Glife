@@ -6,7 +6,7 @@ import { SEARCH_MIN, keyOf, type MarketItem, type MarketSort, type MarketType, t
 export interface MarketClient {
   history(key: QuoteKey): Promise<PricePoint[]>;
   market(source: QuoteSource, sort: MarketSort, type?: MarketType): Promise<MarketItem[]>;
-  search(query: string): Promise<MarketItem[]>;
+  search(query: string, types?: readonly MarketType[]): Promise<MarketItem[]>;
 }
 
 export type LoadStatus = 'idle' | 'loading' | 'ok' | 'empty' | 'offline';
@@ -52,7 +52,7 @@ export async function loadMarketRank(client: MarketClient, source: QuoteSource, 
 export const SEARCH_DELAY_MS = 250;
 
 /** Busca enquanto digita: espera 250 ms parado, precisa de 2 letras e descarta respostas de buscas antigas. */
-export function createSearchController(o: { client: MarketClient; onResult: (r: { status: LoadStatus; items: MarketItem[]; query: string }) => void; delayMs?: number }) {
+export function createSearchController(o: { client: MarketClient; onResult: (r: { status: LoadStatus; items: MarketItem[]; query: string }) => void; delayMs?: number; types?: readonly MarketType[] }) {
   let timer: ReturnType<typeof setTimeout> | null = null;
   let seq = 0;
   return {
@@ -67,7 +67,7 @@ export function createSearchController(o: { client: MarketClient; onResult: (r: 
       o.onResult({ status: 'loading', items: [], query: q });
       timer = setTimeout(async () => {
         try {
-          const items = await o.client.search(q);
+          const items = await o.client.search(q, o.types);
           if (mine === seq) o.onResult({ status: items.length ? 'ok' : 'empty', items, query: q });
         } catch {
           if (mine === seq) o.onResult({ status: 'offline', items: [], query: q });

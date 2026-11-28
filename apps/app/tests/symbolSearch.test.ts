@@ -1,7 +1,7 @@
 import { QTY_SCALE } from '@glife/domain/finance';
 import { describe, expect, it } from 'vitest';
 
-import { highlightParts, kindForMarketType, moveActive, totalAtPrice, typesForKind } from '../src/features/finance/components/symbolSearch';
+import { highlightParts, kindForMarketType, moveActive, totalAtPrice, typedSymbol, typesForKind } from '../src/features/finance/components/symbolSearch';
 
 describe('destaque do trecho digitado', () => {
   it('acha sem acento e sem caixa, mantendo o texto original', () => {
@@ -32,9 +32,9 @@ describe('setas do teclado', () => {
 });
 
 describe('tipo do ativo e da busca', () => {
-  it('ação busca ações; FII busca FIIs; cripto busca cripto', () => {
-    expect(typesForKind('stocks')).toEqual(['stock']);
-    expect(typesForKind('reits')).toEqual(['reit']);
+  it('ação e FII buscam na B3 inteira (código exato não diz o tipo); cripto busca cripto', () => {
+    expect(typesForKind('stocks')).toEqual(['stock', 'reit']);
+    expect(typesForKind('reits')).toEqual(['reit', 'stock']);
     expect(typesForKind('crypto')).toEqual(['crypto']);
     expect(typesForKind('treasury')).toEqual([]);
   });
@@ -52,5 +52,18 @@ describe('aporte pelo preço de hoje', () => {
     expect(totalAtPrice(Math.round(0.0123 * QTY_SCALE), 48_991_300 * 1_000_000)).toBe(602593);
     expect(totalAtPrice(null, 1)).toBeNull();
     expect(totalAtPrice(10, null)).toBeNull();
+  });
+});
+
+describe('código digitado sem escolher sugestão', () => {
+  it('B3: vale se tiver o formato do código (ETF, BDR, offline)', () => {
+    expect(typedSymbol(' bova11 ', 'brapi')).toBe('BOVA11');
+    expect(typedSymbol('AAPL34', 'brapi')).toBe('AAPL34');
+    expect(typedSymbol('it', 'brapi')).toBeNull();
+    expect(typedSymbol('Itaú Unibanco', 'brapi')).toBeNull();
+  });
+
+  it('cripto precisa escolher na lista (o id da CoinGecko não é o que se digita)', () => {
+    expect(typedSymbol('bitcoin', 'coingecko')).toBeNull();
   });
 });

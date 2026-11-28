@@ -25,7 +25,7 @@ import { useMoneyFormat } from '../hooks/useMoneyFormat';
 import { parseQuantity, pctSigned } from '../components/investmentFormat';
 import { MoneyField, SwitchRow } from '../components/ui';
 import { SymbolSearchField } from '../components/SymbolSearchField';
-import { kindForMarketType, typesForKind } from '../components/symbolSearch';
+import { kindForMarketType, typedSymbol, typesForKind } from '../components/symbolSearch';
 import { useFinance } from '../hooks/FinanceData';
 import { useInvestments } from '../hooks/useInvestments';
 
@@ -160,6 +160,11 @@ function AssetForm({ asset, hasMovements, preset }: { asset: InvestmentAsset | n
               types={typesForKind(kind)}
               label={kind === 'crypto' ? 'Buscar moeda (nome ou sigla)' : 'Buscar na B3 (código ou nome)'}
               onPick={pickSymbol}
+              onType={(text) => {
+                const code = source ? typedSymbol(text, source) : null;
+                setSymbol(code ?? '');
+                setSymbolLabel(code ? 'digitado; a cotação confere depois de salvar' : '');
+              }}
             />
             {symbol ? (
               <Text variant="caption" tone="secondary" numeric>
