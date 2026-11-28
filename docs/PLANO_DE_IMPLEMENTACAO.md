@@ -149,11 +149,19 @@ Telas do protótipo: Galeria (com seleção), Foto ("usada em"), Álbum, Espaço
 Telas do protótipo: Captura (+), Caixa de entrada (organizando, propostas, pendentes), Glife IA (conversa), Conversas,
 Ações da IA (desfazer), uso e teto em Ajustes.
 
-- `ai-tools.ts` por feature (Zod → JSON Schema), Edge Function `ai-agent` com `AiProvider`.
-- Fluxo proposta → confirmação → `ai_actions` com desfazer.
-- Teto mensal de tokens; Haiku na caixa de entrada, Sonnet na conversa.
-- Suite de 20 frases de teste.
-- Estimativa de calorias pela foto da refeição (proposta, o usuário confirma).
+**Decisão de 27/11/2026** (spec `docs/superpowers/specs/2026-11-27-glife-ia-agente-design.md`): agente no aparelho
+com **DeepSeek Flash** pelo Vercel AI SDK (mesmo do guf_backend); a Edge Function `ai-agent` só faz a ponte (MFA,
+teto em R$, limpeza de dados pessoais). Criar/editar direto com "Desfazer"; lixeira, dinheiro e lote com "Confirmar?";
+a caixa de entrada segue a mesma regra. Excluir é sempre lixeira. Substitui o Haiku/Sonnet e o "proposta → Aplicar".
+
+| # | Etapa | Status |
+|---|-------|--------|
+| 6.1 | Fundação: domínio `ai`, `ai-agent`, uso/teto, executor, registro de ações, tela Glife IA, notas e agenda | 🟡 código e testes prontos; falta publicar (secrets, migração, deploy) e testar as frases (`docs/ia/frases-de-teste.md`) |
+| 6.2 | Finanças, investimentos e compras (análises de gastos e economia) | ⏳ |
+| 6.3 | Dieta e Bíblia | ⏳ |
+| 6.4 | Caixa de entrada e Captura, Conversas, Ações da IA, Ajustes (teto e uso) | ⏳ |
+
+- Estimativa de calorias pela foto da refeição (proposta, o usuário confirma) — depois da Fase 5.
 
 ## Fase 7 — Segurança nível 2, backup e exportação (≈ 2 semanas)
 

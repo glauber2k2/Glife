@@ -1,7 +1,7 @@
 # Status: 2026-11-27
-- Tarefa atual: 0.9.2 — lembrete feito esmaece, vai para o fim e é desmarcável (pendentes do mais próximo ao mais longe); calendário sem ponto da dieta — PR #4 (base lembretes-horarios-e-notas-vinculadas)
-- Branch: lembretes-feitos-e-calendario (PR #2 e #3 ainda abertos, em cadeia)
-- Feito: `done` em agendaBetween, `uncompleteReminder`, `lateReminders` (atrasado feito hoje fica riscado); TaskRow marca/desmarca; dieta não marca mais o calendário (DayMarks removido); APK 0.9.2 em Desktop\Glauber\apk
-- Falta: usuário instalar o APK e conferir na tela; se ainda não rodou, `pnpm sb db push --remote` (migrações da 0.9.0); juntar PR #2, #3 e #4
-- Atenção (riscos/decisões): nada conferido na tela (MFA); no lembrete repetido de um horário, `skipped_dates` = datas feitas (só o "feito" grava ali)
-- Último commit: 0c45261
+- Tarefa atual: Fase 6.1 — Glife IA (agente com DeepSeek Flash, Vercel AI SDK `ai@7.0.131`): fundação + notas e agenda
+- Branch: fase-6-ia (saiu de lembretes-feitos-e-calendario; PRs #2–#4 ainda abertos em cadeia)
+- Feito: domínio `ai` (ferramentas, política, limpeza/apelidos, preço), migração `20261202000001` (uso/teto, só service_role grava), Edge Function `ai-agent`, executor + registro local de ações com Desfazer, kits de notas/agenda, aba IA (Finanças virou rota com voltar); 1.420 testes verdes
+- Falta: usuário criar chave DeepSeek e pôr os secrets DEEPSEEK_API_KEY e GLIFE_AI_USD_BRL no Supabase; `pnpm sb db push --remote`; `pnpm sb functions deploy ai-agent`; rodar `docs/ia/frases-de-teste.md` no Chrome e no APK; revisão final do branch
+- Atenção (riscos/decisões): streaming no Android não testado (fallback sem stream não implementado); dados vão à DeepSeek (China) já minimizados e mascarados; spec `docs/superpowers/specs/2026-11-27-glife-ia-agente-design.md`, plano `docs/superpowers/plans/2026-11-27-glife-ia-etapa1-fundacao.md`
+- Último commit: ver `git log -1` (docs da etapa 1)
