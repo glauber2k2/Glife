@@ -1,8 +1,11 @@
 {
   "imports": {
+    "@glife/domain/ai": "../../packages/domain/src/ai/index.ts",
     "@glife/domain/bible": "../../packages/domain/src/bible/index.ts",
     "@glife/domain/quotes": "../../packages/domain/src/quotes/index.ts",
+    "@ai-sdk/deepseek": "npm:@ai-sdk/deepseek@3.0.61",
     "@supabase/supabase-js": "npm:@supabase/supabase-js@^2.119.2",
+    "ai": "npm:ai@7.0.131",
     "zod": "npm:zod@^4.6.7"
   }
 }
