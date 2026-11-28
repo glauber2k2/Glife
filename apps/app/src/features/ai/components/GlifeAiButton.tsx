@@ -9,7 +9,9 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Mascot, makeStyles, usePress, useTheme, useToast } from '@/shared/ui';
 
 import { startVoice, type VoiceSession } from '../data/speech';
-import { AiComposer, askGlifeAi } from './AiComposer';
+import { askGlifeAi } from '@/shared/navigation/askGlifeAi';
+
+import { AiComposer } from './AiComposer';
 import { HOLD_MS, holdStep, type HoldEffect, type HoldEvent, type HoldState } from './holdGesture';
 import { VoiceBar } from './VoiceBar';
 

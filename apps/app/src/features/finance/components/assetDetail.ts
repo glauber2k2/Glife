@@ -62,3 +62,9 @@ export function insightNote(assetName: string, question: string, blocks: readonl
   });
   return { title: `Leitura: ${assetName} · ${question}`, body: [...parts.filter(Boolean), `_Gerada pelo Glife em ${date}._`].join('\n\n') };
 }
+
+/** Pedido para a Glife IA a partir da leitura escolhida (o modelo explica; não recomenda compra ou venda). */
+export function assetQuestionPrompt(assetName: string, question: string, blocks: readonly InsightBlock[], date: string): string {
+  const body = insightNote(assetName, question, blocks, date).body.split('\n\n').slice(0, -1).join('\n\n');
+  return `Me ajude a entender esta leitura do meu ativo ${assetName} (${question}). Explique em poucas linhas, sem recomendação de compra ou venda.\n\n${body}`;
+}

@@ -1,7 +1,7 @@
 import { QTY_SCALE, newInvestmentAsset, newInvestmentMovement, type InsightBlock, type InvestmentAsset } from '@glife/domain/finance';
 import { describe, expect, it } from 'vitest';
 
-import { assetChartData, insightNote } from '../src/features/finance/components/assetDetail';
+import { assetChartData, assetQuestionPrompt, insightNote } from '../src/features/finance/components/assetDetail';
 
 const USER = '11110000-0000-4000-8000-000000000001';
 const E8 = (r: number) => Math.round(r * 1e8);
@@ -55,5 +55,16 @@ describe('leitura salva como nota', () => {
       title: 'Leitura: WEG · Vale a pena aportar mais?',
       body: 'Você começou em 06/10/2026.\n\n## A favor\n\n- Pagou R$ 2,10.\n\n- Investido: R$ 627,00\n\n_Não é recomendação de compra ou venda._\n\n_Gerada pelo Glife em 27/11/2026._',
     });
+  });
+});
+
+describe('pedido à Glife IA a partir da leitura', () => {
+  it('leva a pergunta e a leitura, sem pedir recomendação', () => {
+    const blocks: InsightBlock[] = [{ kind: 'text', text: 'Subiu 4% no mês.' }];
+    const p = assetQuestionPrompt('Itaúsa', 'Como foi o mês?', blocks, '2026-11-28');
+    expect(p.startsWith('Me ajude a entender esta leitura do meu ativo Itaúsa (Como foi o mês?).')).toBe(true);
+    expect(p).toContain('Subiu 4% no mês.');
+    expect(p).toContain('sem recomendação de compra ou venda');
+    expect(p).not.toContain('Gerada pelo Glife');
   });
 });

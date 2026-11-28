@@ -1,17 +1,18 @@
 // Abas do detalhe do ativo: Estatísticas (blocos que explicam ao tocar) e IA (leitura dos números com perguntas
 // prontas e "Salvar como nota vinculada"). Notas vinculadas gravam na hora (a tela não tem botão Salvar).
 import { ASSET_QUESTIONS, STATS_MIN_POINTS, type AssetQuestion, type AssetStats, type InsightBlock } from '@glife/domain/finance';
-import { Info } from 'lucide-react-native';
+import { Info, Sparkles } from 'lucide-react-native';
 import { useEffect, useRef, useState } from 'react';
 import { Pressable, View } from 'react-native';
 
 import { useNoteLinker, type LinkedNotes } from '@/features/links';
 import { errorText } from '@/shared/lib/errorText';
+import { askGlifeAi } from '@/shared/navigation/askGlifeAi';
 import { Button, Chip, EmptyState, Icon, Text, makeStyles, useTheme, useToast, type TextTone } from '@/shared/ui';
 
 import { dm } from './format';
 import { InsightBlocks } from './InsightBlocks';
-import { insightNote } from './assetDetail';
+import { assetQuestionPrompt, insightNote } from './assetDetail';
 import { pctSigned, shareText } from './investmentFormat';
 
 const OSC = { low: 'Baixa', medium: 'Média', high: 'Alta' } as const;
@@ -124,7 +125,10 @@ export function AssetInsightPanel({ assetName, answer, linked, today }: { assetN
       {q ? (
         <View key={q}>
           <InsightBlocks blocks={blocks} />
-          {port && saved !== q && <Button label="Salvar como nota vinculada" variant="secondary" size="sm" loading={saving} onPress={() => void save()} />}
+          <View style={s.actions}>
+            {port && saved !== q && <Button label="Salvar como nota vinculada" variant="secondary" size="sm" loading={saving} onPress={() => void save()} />}
+            <Button label="Perguntar à Glife IA" icon={Sparkles} variant="ghost" size="sm" onPress={() => askGlifeAi(assetQuestionPrompt(assetName, label, blocks, today))} />
+          </View>
         </View>
       ) : (
         <Text variant="small" tone="tertiary">
@@ -157,6 +161,7 @@ export function useApplyLinkedNow(linked: LinkedNotes, sourceId: string) {
 
 const useStyles = makeStyles((t) => ({
   gap12: { gap: t.space[3] },
+  actions: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: t.space[2], marginTop: t.space[3] },
   grow: { flex: 1, minWidth: 0 },
   strong: { fontFamily: t.type.button.font },
   grid: { flexDirection: 'row', flexWrap: 'wrap', marginHorizontal: -t.space[1] },
