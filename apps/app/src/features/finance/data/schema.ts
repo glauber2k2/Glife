@@ -118,6 +118,15 @@ export const financeTables = {
     },
     { indexes: { by_asset: ['asset_id'] } },
   ),
+  investment_targets: new Table({
+    ...base,
+    fixed_income: column.integer,
+    stocks: column.integer,
+    reits: column.integer,
+    funds: column.integer,
+    crypto: column.integer,
+    other: column.integer,
+  }),
 };
 
 /** Nome de cada tabela na fila de envio e nas contagens de Ajustes › Sincronização (nunca o conteúdo). */
@@ -131,4 +140,5 @@ export const financeTableLabels: Record<keyof typeof financeTables, SyncTableLab
   shopping_items: { noun: 'Item de compra', gender: 'm' },
   investment_assets: { noun: 'Investimento', gender: 'm' },
   investment_movements: { noun: 'Movimentação', gender: 'f' },
+  investment_targets: { noun: 'Meta de alocação', gender: 'f' },
 };
