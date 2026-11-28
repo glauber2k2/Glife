@@ -1,16 +1,17 @@
-// Glife IA (aba IA): conversa com o agente. Ações aparecem como cartão com "Desfazer"; lixeira, dinheiro e lote
+// Glife IA (tela /ia, aberta pelo botão do mascote): conversa com o agente. Ações aparecem como cartão com "Desfazer"; lixeira, dinheiro e lote
 // pedem "Confirmar?" antes. O texto do usuário sai mascarado (ver agentTransport) e a resposta é mostrada com os
 // dados reais repostos.
 import type { UIMessage } from 'ai';
-import { ArrowUp, SquarePen, Square, Sparkles } from 'lucide-react-native';
+import { ArrowUp, ChevronLeft, SquarePen, Square, Sparkles } from 'lucide-react-native';
 import { useState } from 'react';
 import { View } from 'react-native';
 
+import { goBackOr } from '@/shared/navigation/backNavigation';
 import { Alert, Card, Chip, EmptyState, IconButton, Input, Mascot, Screen, Spinner, Text, makeStyles, useTheme } from '@/shared/ui';
 
 import { ActionCard } from '../components/ActionCard';
 import { ConfirmCard } from '../components/ConfirmCard';
-import { useAgentChat } from '../hooks/useAgentChat';
+import { useAiChat } from '../AiChatProvider';
 
 const SUGGESTIONS = ['O que tenho na agenda hoje?', 'Me lembra de comprar café amanhã às 9h', 'Resumir minhas notas recentes'];
 const MESSAGE_MAX = 2000;
@@ -21,7 +22,7 @@ const toolCallIdOf = (p: Part) => (p.type.startsWith('tool-') ? (p as { toolCall
 export function AiChatScreen() {
   const s = useStyles();
   const t = useTheme();
-  const chat = useAgentChat();
+  const chat = useAiChat();
   const [text, setText] = useState('');
   const busy = chat.status === 'submitted' || chat.status === 'streaming';
 
@@ -38,9 +39,9 @@ export function AiChatScreen() {
 
   return (
     <Screen
-      tabBar
       header={
         <View style={s.header}>
+          <IconButton icon={ChevronLeft} label="Voltar" variant="ghost" onPress={() => goBackOr('/')} />
           <Mascot size={t.size.iconButton - t.space[2.5]} />
           <View style={s.grow}>
             <Text variant="heading" accessibilityRole="header">

@@ -3,7 +3,7 @@ import { AI_TOOLS, createAliasBook, type AiExecContext, type AiToolKit } from '@
 import { createInMemoryNotes, createMemoryRowStore } from '@glife/domain/testing';
 import { describe, expect, it } from 'vitest';
 
-import { mergeKits } from '@/features/ai/AiToolsProvider';
+import { mergeKits } from '@/features/ai/kits';
 import { createAgendaAiKit } from '@/features/agenda/ai/agendaAiKit';
 import { createNotesAiKit } from '@/features/notes/ai/notesAiKit';
 

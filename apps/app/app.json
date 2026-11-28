@@ -42,7 +42,14 @@
       "expo-secure-store",
       "react-native-quick-crypto",
       "@react-native-community/datetimepicker",
-      "expo-asset"
+      "expo-asset",
+      [
+        "expo-speech-recognition",
+        {
+          "microphonePermission": "O Glife usa o microfone para você pedir à Glife IA por voz.",
+          "speechRecognitionPermission": "O Glife transcreve o seu pedido de voz no aparelho para enviar à Glife IA."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

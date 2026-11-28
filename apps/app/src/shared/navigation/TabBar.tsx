@@ -24,9 +24,10 @@ export function tabIcon(icon: LucideIcon) {
 
 /**
  * Barra de abas flutuante do Cobalto: cartão r26 a 14 px das laterais e 20 px do rodapé, sombra de navegação,
- * cinco casas (duas abas, o + cobalto no centro, duas abas). A pílula tonal da aba ativa desliza em 340 ms.
+ * cinco casas (duas abas, o botão central, duas abas). A pílula tonal da aba ativa desliza em 340 ms.
+ * O botão central vem de fora (`center`, a rota monta o da Glife IA); sem ele, o + da captura.
  */
-export function TabBar({ state, descriptors, navigateToTab }: BottomTabBarProps) {
+export function TabBar({ state, descriptors, navigateToTab, center }: BottomTabBarProps & { center?: ReactNode }) {
   const s = useStyles();
   const t = useTheme();
   const insets = useSafeAreaInsets();
@@ -58,9 +59,7 @@ export function TabBar({ state, descriptors, navigateToTab }: BottomTabBarProps)
       <View style={s.bar} onLayout={(event) => setBarWidth(event.nativeEvent.layout.width - 2 * t.space[1])}>
         <Indicator index={state.index} tabCount={state.routes.length} barWidth={barWidth} />
         {tabs.slice(0, middle)}
-        <View style={s.slot}>
-          <CaptureButton />
-        </View>
+        <View style={s.slot}>{center ?? <CaptureButton />}</View>
         {tabs.slice(middle)}
       </View>
     </View>
