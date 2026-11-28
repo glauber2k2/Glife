@@ -52,7 +52,7 @@ gesture-handler (já instalados: svg 15.16, Reanimated 4.7.1, gesture-handler ~3
 
 ---
 
-### Tarefa 1: Histórico, mercado e busca no domain de cotações
+### Task 1: Histórico, mercado e busca no domain de cotações
 
 **Arquivos:** modificar `packages/domain/src/quotes/{model,brapi,coingecko,service,index}.ts`; criar
 `packages/domain/src/quotes/catalog.ts`; testes em `packages/domain/src/quotes/__tests__/{brapi,coingecko,service,catalog}.test.ts`.
@@ -97,7 +97,7 @@ search(q: string): Promise<MarketItem[]>;
 - [ ] Rodar `pnpm --filter @glife/domain test quotes` → falha; implementar; → passa.
 - [ ] Commit `feat(investimentos): histórico, mercado e busca no domain de cotações`.
 
-### Tarefa 2: Migração (metas, histórico diário e listas de mercado)
+### Task 2: Migração (metas, histórico diário e listas de mercado)
 
 **Arquivos:** criar `supabase/migrations/20261202000001_investimentos_v2.sql`; modificar
 `supabase/powersync/sync-streams.yaml`, `apps/app/src/features/finance/data/schema.ts`; testes em
@@ -123,7 +123,7 @@ search(q: string): Promise<MarketItem[]>;
 - [ ] Rodar `pnpm test` → falha; implementar; → passa (o PGlite aplica todas as migrações).
 - [ ] Commit `feat(investimentos): migração de metas, histórico diário e listas de mercado`.
 
-### Tarefa 3: Edge Function `quotes` com `history`, `market` e `search`
+### Task 3: Edge Function `quotes` com `history`, `market` e `search`
 
 **Arquivos:** modificar `supabase/functions/quotes/{handler,cache,index}.ts`; criar
 `supabase/functions/quotes/history.ts` (`PriceHistoryStore` e `MarketListCache` sobre as RPCs da Tarefa 2); teste em
@@ -138,7 +138,7 @@ search(q: string): Promise<MarketItem[]>;
 - [ ] Implementar; `deno check --config supabase/functions/deno.json supabase/functions/quotes/index.ts` → sem erro.
 - [ ] Commit `feat(investimentos): função quotes com histórico, mercado e busca`.
 
-### Tarefa 4: Grupos de alocação e metas no domain e no repositório
+### Task 4: Grupos de alocação e metas no domain e no repositório
 
 **Arquivos:** criar `packages/domain/src/finance/allocation.ts`; modificar
 `packages/domain/src/finance/{investmentsRepository,index}.ts`, `packages/domain/src/testing/financeMemory.ts`,
@@ -165,7 +165,7 @@ export function contributionToReach(p: Portfolio, targets: Targets): Partial<Rec
 - [ ] Rodar → falha; implementar (repositório segue `diet_goals`: `id = userId`, `put` em transação); → passa.
 - [ ] Commit `feat(investimentos): grupos de alocação e metas`.
 
-### Tarefa 5: Séries diárias (ativo e carteira)
+### Task 5: Séries diárias (ativo e carteira)
 
 **Arquivos:** criar `packages/domain/src/finance/investmentSeries.ts`; teste `__tests__/investmentSeries.test.ts`.
 
@@ -187,7 +187,7 @@ interpolado linearmente entre pontos de `quote`/movimento; `invested` = Σ aport
   = `portfolio().total`; `slicePeriod('1M')` corta no dia certo; série vazia sem movimentos.
 - [ ] Rodar → falha; implementar; → passa. Commit `feat(investimentos): séries diárias de ativo e carteira`.
 
-### Tarefa 6: Estatísticas por ativo
+### Task 6: Estatísticas por ativo
 
 **Arquivos:** criar `packages/domain/src/finance/investmentStats.ts`; teste `__tests__/investmentStats.test.ts`.
 
@@ -213,7 +213,7 @@ export function assetStats(asset: InvestmentAsset, position: AssetPosition, move
   médio 41,80 → `vsAverage ≈ −0,0682`; ativo manual → `vsAverage null`.
 - [ ] Rodar → falha; implementar; → passa. Commit `feat(investimentos): estatísticas por ativo`.
 
-### Tarefa 7: Leitura dos números e ranking da carteira
+### Task 7: Leitura dos números e ranking da carteira
 
 **Arquivos:** criar `packages/domain/src/finance/insights.ts`; teste `__tests__/insights.test.ts`.
 
@@ -245,7 +245,7 @@ futuro". Nenhuma frase contém "compre", "venda" ou "recomendo".
   `/\b(compre|venda|recomendo)\b/i`; `rankBySinceBuy` ordena por `pct` decrescente.
 - [ ] Rodar → falha; implementar; → passa. Commit `feat(investimentos): leitura dos números e ranking da carteira`.
 
-### Tarefa 8: Cliente e hooks de mercado no app
+### Task 8: Cliente e hooks de mercado no app
 
 **Arquivos:** modificar `apps/app/src/features/finance/data/{quoteRefresher,edgeQuoteClient}.ts`,
 `apps/app/src/features/finance/hooks/useInvestments.ts`; criar `apps/app/src/features/finance/hooks/useMarket.ts`;
@@ -265,7 +265,7 @@ export function useTargets(): { targets: Targets | null; save(t: Targets): Promi
   mesmo ativo na sessão.
 - [ ] Rodar → falha; implementar; → passa. Commit `feat(investimentos): histórico, mercado e busca no app`.
 
-### Tarefa 9: Componentes de gráfico
+### Task 9: Componentes de gráfico
 
 **Arquivos:** criar `apps/app/src/features/finance/components/charts/{LineChart,Donut,RankBars,Sparkline,index}.tsx`;
 modificar `apps/app/src/shared/ui/theme/tokens.ts` (cores `chart.fixed_income|crypto|stocks|reits|funds|other` claro
@@ -292,7 +292,7 @@ Leitores de tela: cada gráfico tem `accessibilityLabel` com o resumo (primeiro 
   barra negativa à esquerda do zero.
 - [ ] Rodar → falha; implementar; → passa. Commit `feat(investimentos): gráficos de linha, rosca, barras e mini gráfico`.
 
-### Tarefa 10: Tela Investimentos (painel)
+### Task 10: Tela Investimentos (painel)
 
 **Arquivos:** modificar `apps/app/src/features/finance/screens/InvestmentsScreen.tsx`; criar
 `apps/app/src/features/finance/components/{AllocationCard,RankingCard,TargetsSheet,InsightSheet,InsightBlocks}.tsx`;
@@ -314,7 +314,7 @@ e ordenação Valor · Resultado · Nome. `TargetsSheet`: um `Input` numérico p
 - [ ] Rodar → falha; implementar; → passa. Conferir no Chrome (claro/escuro, 360 dp, nomes longos).
 - [ ] Commit `feat(investimentos): painel com gráfico, alocação, metas, ranking e leitura`.
 
-### Tarefa 11: Detalhe do ativo com abas
+### Task 11: Detalhe do ativo com abas
 
 **Arquivos:** modificar `apps/app/src/features/finance/screens/InvestmentAssetScreen.tsx`; criar
 `apps/app/src/features/finance/components/{AssetStatsGrid,AssetInsightPanel}.tsx`; modificar
@@ -336,7 +336,7 @@ informado por você"); cartão de posição (Investido, Resultado, Rendeu, Preç
 - [ ] Rodar → falha; implementar; → passa. Conferir no Chrome (claro/escuro, 360 dp).
 - [ ] Commit `feat(investimentos): detalhe do ativo com resumo, estatísticas, leitura e notas`.
 
-### Tarefa 12: Busca de ativo com sugestões
+### Task 12: Busca de ativo com sugestões
 
 **Arquivos:** criar `apps/app/src/features/finance/components/SymbolSearchField.tsx`; modificar
 `apps/app/src/features/finance/screens/AssetFormScreen.tsx` e a folha de aporte de ativo automático
@@ -354,7 +354,7 @@ para "x". Confira o código (ex.: PETR4, HGLG11) ou o nome da moeda." Sem catál
 - [ ] Rodar → falha; implementar; → passa. Conferir no Chrome e no Android (teclado aberto, 360 dp).
 - [ ] Commit `feat(investimentos): busca de ativo com sugestões ao digitar`.
 
-### Tarefa 13: Publicação e fechamento
+### Task 13: Publicação e fechamento
 
 - [ ] Atualizar `docs/prototipos/investimentos.md` com as diferenças do app para o protótipo (sem CDI, sem
   "consistência", sem cotação ao vivo, sem botão da IA) e `PENDENCIAS.md` (o que o usuário confere).
