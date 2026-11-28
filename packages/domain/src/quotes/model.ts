@@ -51,12 +51,63 @@ export type FetchFn = (
   init?: { headers?: Record<string, string> },
 ) => Promise<{ ok: boolean; status: number; json(): Promise<unknown> }>;
 
+/** Fechamento de um dia (data local `YYYY-MM-DD`). */
+export interface PricePoint {
+  date: string;
+  closeE8: number;
+}
+
+export const MARKET_TYPES = ['stock', 'reit', 'crypto'] as const;
+export type MarketType = (typeof MARKET_TYPES)[number];
+/** Um ativo do mercado (lista, ranking e busca). Variações em % (5 = 5%). */
+export interface MarketItem {
+  source: QuoteSource;
+  symbol: string;
+  ticker: string;
+  name: string;
+  type: MarketType;
+  priceE8: number | null;
+  changeDay: number | null;
+  change30d: number | null;
+  change1y: number | null;
+  volume: number | null;
+}
+
+export const MARKET_SORTS = ['up_day', 'down_day', 'volume', 'up_30d', 'up_1y'] as const;
+export type MarketSort = (typeof MARKET_SORTS)[number];
+export const SEARCH_MIN = 2;
+export const MARKET_MIN_VOLUME = 100_000;
+export const MARKET_LIMIT = 10;
+/** Catálogo da busca vale um dia. */
+export const CATALOG_TTL_MS = 24 * 60 * 60 * 1000;
+
 /** Uma fonte de cotação. Fonte nova = classe nova registrada no `QuoteService`. */
 export interface QuoteProvider {
   readonly source: QuoteSource;
   fetchQuotes(symbols: readonly string[]): Promise<QuoteResult>;
   lookup(query: string): Promise<LookupItem[]>;
+  /** fechamentos diários disponíveis no plano grátis; [] se a fonte recusar */
+  history(symbol: string): Promise<PricePoint[]>;
+  /** lista do mercado; [] se a fonte falhar */
+  market(): Promise<MarketItem[]>;
 }
+
+/** Histórico diário guardado no servidor (cresce com o tempo). */
+export interface PriceHistoryStore {
+  get(key: QuoteKey): Promise<PricePoint[]>;
+  put(key: QuoteKey, points: readonly PricePoint[]): Promise<void>;
+  fetchedToday(key: QuoteKey, today: string): Promise<boolean>;
+  markFetched(key: QuoteKey, today: string): Promise<void>;
+}
+
+/** Cache da lista de mercado de cada fonte. */
+export interface MarketListCache {
+  get(list: QuoteSource): Promise<{ items: MarketItem[]; fetchedAt: string } | null>;
+  put(list: QuoteSource, items: readonly MarketItem[]): Promise<void>;
+}
+
+/** Data em Brasília (UTC−3, sem horário de verão desde 2019) de um instante em ms. */
+export const brDate = (ms: number) => new Date(ms - 3 * 3_600_000).toISOString().slice(0, 10);
 
 /** Cache das cotações (no servidor). `fetchedAt` decide a validade. */
 export interface QuoteCache {
@@ -76,6 +127,9 @@ export const quoteKeySchema = z
 export const quoteRequestSchema = z.discriminatedUnion('action', [
   z.object({ action: z.literal('quotes'), items: z.array(quoteKeySchema).min(1).max(QUOTE_BATCH_MAX) }),
   z.object({ action: z.literal('lookup'), source: z.enum(QUOTE_SOURCES), query: z.string().trim().min(1).max(LOOKUP_QUERY_MAX) }),
+  z.object({ action: z.literal('history'), item: quoteKeySchema }),
+  z.object({ action: z.literal('market'), source: z.enum(QUOTE_SOURCES), sort: z.enum(MARKET_SORTS), type: z.enum(MARKET_TYPES).optional() }),
+  z.object({ action: z.literal('search'), query: z.string().trim().min(SEARCH_MIN).max(LOOKUP_QUERY_MAX) }),
 ]);
 export type QuoteRequest = z.infer<typeof quoteRequestSchema>;
 
