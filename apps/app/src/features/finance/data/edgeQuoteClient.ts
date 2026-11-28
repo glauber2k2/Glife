@@ -1,7 +1,9 @@
-// QuoteClient pela Edge Function `quotes` (as chaves das APIs ficam no servidor). Só confere o formato da resposta.
-import type { LookupItem, QuoteResult } from '@glife/domain/quotes';
+// QuoteClient e MarketClient pela Edge Function `quotes` (as chaves das APIs ficam no servidor). Só confere o
+// formato da resposta.
+import type { LookupItem, MarketItem, PricePoint, QuoteResult } from '@glife/domain/quotes';
 import type { SupabaseClient } from '@supabase/supabase-js';
 
+import type { MarketClient } from './marketData';
 import type { QuoteClient } from './quoteRefresher';
 
 async function call<T>(supabase: SupabaseClient, body: object, ok: (data: unknown) => data is T): Promise<T> {
@@ -13,11 +15,15 @@ async function call<T>(supabase: SupabaseClient, body: object, ok: (data: unknow
 
 const isResult = (d: unknown): d is QuoteResult =>
   !!d && typeof d === 'object' && Array.isArray((d as QuoteResult).quotes) && Array.isArray((d as QuoteResult).errors);
-const isLookup = (d: unknown): d is { items: LookupItem[] } => !!d && typeof d === 'object' && Array.isArray((d as { items: unknown }).items);
+const isItems = <T,>(d: unknown): d is { items: T[] } => !!d && typeof d === 'object' && Array.isArray((d as { items: unknown }).items);
+const isPoints = (d: unknown): d is { points: PricePoint[] } => !!d && typeof d === 'object' && Array.isArray((d as { points: unknown }).points);
 
-export function createEdgeQuoteClient(supabase: SupabaseClient): QuoteClient {
+export function createEdgeQuoteClient(supabase: SupabaseClient): QuoteClient & MarketClient {
   return {
     quotes: (items) => call(supabase, { action: 'quotes', items }, isResult),
-    lookup: async (source, query) => (await call(supabase, { action: 'lookup', source, query }, isLookup)).items,
+    lookup: async (source, query) => (await call(supabase, { action: 'lookup', source, query }, isItems<LookupItem>)).items,
+    history: async (item) => (await call(supabase, { action: 'history', item }, isPoints)).points,
+    market: async (source, sort, type) => (await call(supabase, { action: 'market', source, sort, ...(type ? { type } : {}) }, isItems<MarketItem>)).items,
+    search: async (query) => (await call(supabase, { action: 'search', query }, isItems<MarketItem>)).items,
   };
 }

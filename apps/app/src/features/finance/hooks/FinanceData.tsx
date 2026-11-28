@@ -4,6 +4,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 
 import { DEFAULT_CATEGORIES } from '../components/categories';
 import { createLocalFinance } from '../data/localFinanceStore';
+import { createPriceBookLoader, type MarketClient } from '../data/marketData';
 import { createQuoteRefresher, type QuoteClient, type QuoteRefresher } from '../data/quoteRefresher';
 
 /** Todas as transações: o saldo real soma desde o início. */
@@ -15,20 +16,24 @@ interface FinanceState {
   data: FinanceData | null;
   /** Relê contas, categorias, regras e orçamentos (as transações já chegam pelo watch). */
   refresh: () => Promise<void>;
-  /** Cotações automáticas (ações, FIIs e cripto). */
-  quotes: QuoteClient;
+  /** Cotações automáticas (ações, FIIs e cripto), histórico, ranking e busca do mercado. */
+  quotes: QuoteClient & MarketClient;
   quoteRefresher: QuoteRefresher;
+  /** Histórico diário dos ativos automáticos, guardado na sessão. */
+  priceBook: ReturnType<typeof createPriceBookLoader>;
 }
 
 const FinanceContext = createContext<FinanceState | null>(null);
 
 /** Composto na raiz: o banco local, o dono da sessão e a fonte de cotações. Sem sessão, não há repositório. */
-export function FinanceProvider({ db, userId, quotes, children }: { db: LocalDb; userId: string | null; quotes: QuoteClient; children: ReactNode }) {
+export function FinanceProvider({ db, userId, quotes, children }: { db: LocalDb; userId: string | null; quotes: QuoteClient & MarketClient; children: ReactNode }) {
   const repos = useMemo(() => (userId ? createLocalFinance(db, userId) : null), [db, userId]);
   const quoteRefresher = useMemo(
     () => (repos ? createQuoteRefresher({ client: quotes, apply: (q) => repos.investments.applyQuotes(q) }) : null),
     [repos, quotes],
   );
+  // Histórico é dado de mercado (não do usuário): um cache por cliente basta.
+  const priceBook = useMemo(() => createPriceBookLoader(quotes), [quotes]);
   // Os dados ficam presos ao repositório que os leu: trocou a sessão, somem até a nova leitura.
   const [loaded, setLoaded] = useState<{
     repos: FinanceRepositories;
@@ -99,8 +104,8 @@ export function FinanceProvider({ db, userId, quotes, children }: { db: LocalDb;
   }, [repos, refresh, readSmall]);
 
   const value = useMemo(
-    () => (repos && quoteRefresher ? { repos, data, refresh, quotes, quoteRefresher } : null),
-    [repos, data, refresh, quotes, quoteRefresher],
+    () => (repos && quoteRefresher ? { repos, data, refresh, quotes, quoteRefresher, priceBook } : null),
+    [repos, data, refresh, quotes, quoteRefresher, priceBook],
   );
   return <FinanceContext.Provider value={value}>{children}</FinanceContext.Provider>;
 }
