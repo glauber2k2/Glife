@@ -45,6 +45,19 @@ describe('kits de ferramentas da IA', () => {
     expect(out).not.toContain('98765-4321');
   });
 
+  it('ler nota com wikilink não manda o id interno e regravar repõe o link', async () => {
+    const { kit, run, notes, ctx } = setup();
+    const body = 'Pago em [[transaction:0b9e1a52-8c39-4a0e-9d58-2f0c3b2f8a11]]';
+    const n = await notes.create({ title: 'Conta de luz', body_md: body });
+    ctx.aliases.alias('note', n.id);
+    const r = await run(kit, 'notes_get', { note: 'n1' });
+    const out = JSON.stringify(r.output);
+    expect(out).not.toMatch(UUID);
+    const masked = (r.output as { body_md: string }).body_md;
+    await run(kit, 'notes_update', { note: 'n1', body_md: `${masked} (ok)` });
+    expect((await notes.get(n.id))!.body_md).toBe(`${body} (ok)`);
+  });
+
   it('editar nota guarda só os campos mudados e desfazer volta o título', async () => {
     const { kit, run, notes, ctx } = setup();
     const n = await notes.create({ title: 'Antigo', body_md: 'texto' });

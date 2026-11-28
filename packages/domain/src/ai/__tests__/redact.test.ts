@@ -27,3 +27,9 @@ describe('redactPersonalData', () => {
     expect(redactPersonalData('[tel1] e [link2] e [email1] e [num3]')).toBe('[tel1] e [link2] e [email1] e [num3]');
   });
 });
+
+describe('ids internos', () => {
+  it('a limpeza do servidor remove UUID', () => {
+    expect(redactPersonalData('nota 0b9e1a52-8c39-4a0e-9d58-2f0c3b2f8a11')).not.toMatch(/0b9e1a52/);
+  });
+});

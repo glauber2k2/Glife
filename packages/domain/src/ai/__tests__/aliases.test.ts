@@ -52,3 +52,13 @@ describe('marcadores de dados pessoais', () => {
     expect(createAliasBook().unmask('[tel7]')).toBe('[tel7]');
   });
 });
+
+describe('ids internos no texto', () => {
+  it('UUID de wikilink vira marcador e volta ao gravar', () => {
+    const book = createAliasBook();
+    const body = 'ver [[transaction:0b9e1a52-8c39-4a0e-9d58-2f0c3b2f8a11]] e pronto';
+    const masked = book.mask(body);
+    expect(masked).toBe('ver [[transaction:[id1]]] e pronto');
+    expect(book.unmask(masked)).toBe(body);
+  });
+});

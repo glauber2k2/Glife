@@ -56,7 +56,7 @@ export function createAliasBook(): AliasBook {
       return PERSONAL_PATTERNS.reduce((out, { kind, pattern }) => out.replace(pattern, (value) => marker(kind, value)), text);
     },
     unmask(text) {
-      return text.replace(/\[(?:tel|email|link|num)\d+\]/g, (m) => valueOf.get(m) ?? m);
+      return text.replace(/\[(?:id|tel|email|link|num)\d+\]/g, (m) => valueOf.get(m) ?? m);
     },
   };
 }

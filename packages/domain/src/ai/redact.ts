@@ -1,11 +1,13 @@
-// Dados pessoais que nunca devem sair para o provedor de IA (LGPD art. 6º, III — necessidade). Mesmos padrões do
+// Dados pessoais e ids internos que nunca devem sair para o provedor de IA (LGPD art. 6º, III — necessidade). Mesmos padrões do
 // GUF AI. O app troca esses valores por marcadores locais antes de enviar (aliases.ts); o servidor ainda passa
 // tudo por `redactPersonalData` como segunda rede. A ordem importa: link e número longo antes do telefone, para o
 // telefone não "morder" o meio de um número de cartão.
 
-export type PersonalKind = 'link' | 'email' | 'num' | 'tel';
+export type PersonalKind = 'id' | 'link' | 'email' | 'num' | 'tel';
 
 export const PERSONAL_PATTERNS: readonly { kind: PersonalKind; pattern: RegExp }[] = [
+  // ids internos (UUID), por exemplo em wikilinks [[tipo:<uuid>]] no texto das notas
+  { kind: 'id', pattern: /\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b/gi },
   { kind: 'link', pattern: /\bhttps?:\/\/\S+/g },
   { kind: 'email', pattern: /[\w.+-]+@[\w-]+\.[\w.-]+/g },
   { kind: 'num', pattern: /\b\d{2}\.?\d{3}\.?\d{3}\/?\d{4}-?\d{2}\b/g }, // CNPJ
