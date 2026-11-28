@@ -134,10 +134,14 @@ O Claude é o agente principal; o Codex só assume quando os créditos do Claude
 - CLI do Supabase: `pnpm sb … --remote` (sem `--remote`, `db push` mira o Docker local). **Não** rode `pnpm sb config push`
   (o `config.toml` é de desenvolvimento); Auth do hospedado muda pela Management API, campo a campo. Contas de Auth: criar
   no projeto **GLIFE** (o usuário tem vários).
+- Edge Functions que usam o import map (`@glife/domain/*`, `ai`, `zod`): publique com `pnpm sb functions deploy <nome> --import-map supabase/functions/deno.json` (sem a flag, o bundle falha com "Relative import path").
 - QR do MFA do Supabase vem como data URL SVG sem viewBox: `svgFromDataUrl` trata.
 - PowerSync web: o worker vem de `public/@powersync` (`pnpm --filter app powersync:assets`, roda no postinstall).
   `op-sqlite` fixo em ~18.2. No navegador embutido do app Claude o banco local não abre ("Client has already been
-  closed": lá o shared worker não cria worker aninhado); teste o web no Chrome. Mudou o `sync-streams.yaml`? Republique no painel (Validate → Deploy; cole, não digite).
+  closed": lá o shared worker não cria worker aninhado); teste o web no Chrome.
+- Mudou o `sync-streams.yaml`? Republique pela CLI: `pnpm ps validate`, depois `pnpm ps deploy sync-config` (sem `--yes` é só prévia, mostra o que muda) e, **com o ok do dono do projeto**,
+  `pnpm ps deploy sync-config --yes`. `pnpm ps destroy` é bloqueado; `stop`/`compact` exigem `--yes`. Sem token, use o
+  painel (Glife → Production → Sync Streams; Validate → Deploy; cole, não digite).
 - Toast: a ação é um `Text` com `onPress` (o `Pressable` não recebia o toque no web); some em 4 s nos testes pelo navegador.
 - Telas de notas usam `goBack()`. Servidor estático simples dá 404 ao recarregar rotas: navegue a partir de `/`.
 - Screenshots logo após trocar de aba pegam a transição: espere ~1 s.
@@ -157,6 +161,8 @@ pnpm typecheck        # tsc em todos os pacotes
 pnpm test             # vitest: domain, app e banco (PGlite)
 pnpm build:web        # export web (apps/app/dist)
 pnpm sb <comando>     # CLI do Supabase com credenciais só deste projeto (.env.supabase.local)
+pnpm ps <comando>     # CLI do PowerSync (pacote `powersync` fixo) com token e ids só deste projeto (.env.powersync.local)
+pnpm ps fetch config  # lê a configuração publicada (ex.: comparar com supabase/powersync/sync-streams.yaml)
 pnpm codex            # abre o Codex já no fluxo de retomada
 cd apps/app && npx expo run:android --variant release   # APK local (receita do Windows na skill release-android)
 deno check --config supabase/functions/deno.json supabase/functions/hello/index.ts

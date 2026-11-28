@@ -13,7 +13,7 @@ const stock = (symbol: string, pricedAgo: number | null): InvestmentAsset => ({
   last_price_e8: pricedAgo === null ? null : 1,
   last_price_at: pricedAgo === null ? null : ago(pricedAgo),
 });
-const snap = (...assets: InvestmentAsset[]): InvestmentsSnapshot => ({ assets, movements: [] });
+const snap = (...assets: InvestmentAsset[]): InvestmentsSnapshot => ({ assets, movements: [], targets: null });
 
 function setup(fail = false, missing: string[] = []) {
   const asked: QuoteKey[][] = [];

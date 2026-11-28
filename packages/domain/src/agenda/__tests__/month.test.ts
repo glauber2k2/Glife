@@ -37,10 +37,10 @@ describe('agenda: grade do mês', () => {
 });
 
 describe('agenda: pontos do dia', () => {
-  const o = (date: string, module: 'agenda' | 'reminders' | 'diet') => ({ date, module });
-  it('um ponto por módulo, na ordem agenda, lembrete, dieta, só do dia', () => {
-    const occ = [o('2026-11-26', 'diet'), o('2026-11-26', 'agenda'), o('2026-11-26', 'agenda'), o('2026-11-26', 'reminders'), o('2026-11-27', 'agenda')];
-    expect(dayDots('2026-11-26', occ)).toEqual(['agenda', 'reminders', 'diet']);
+  const o = (date: string, module: 'agenda' | 'reminders') => ({ date, module });
+  it('um ponto por módulo, na ordem agenda, lembrete, só do dia (dia livre fica sem ponto)', () => {
+    const occ = [o('2026-11-26', 'reminders'), o('2026-11-26', 'agenda'), o('2026-11-26', 'agenda'), o('2026-11-27', 'agenda')];
+    expect(dayDots('2026-11-26', occ)).toEqual(['agenda', 'reminders']);
     expect(dayDots('2026-11-27', occ)).toEqual(['agenda']);
     expect(dayDots('2026-11-28', occ)).toEqual([]);
   });

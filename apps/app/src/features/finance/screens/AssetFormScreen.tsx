@@ -12,45 +12,47 @@ import {
   type AssetKind,
   type InvestmentAsset,
 } from '@glife/domain/finance';
-import { SYMBOL_PATTERNS, type LookupItem } from '@glife/domain/quotes';
+import { SYMBOL_PATTERNS, type MarketItem } from '@glife/domain/quotes';
 import { router, useLocalSearchParams } from 'expo-router';
-import { Search } from 'lucide-react-native';
 import { useState } from 'react';
-import { Pressable, View } from 'react-native';
+import { View } from 'react-native';
 
-import { BackHeader, Button, Chip, Icon, Input, Screen, Spinner, Switch, Text, makeStyles, useTheme, useToast } from '@/shared/ui';
+import { LinkedNotesField, useLinkedNotes } from '@/features/links';
+import { BackHeader, Button, Chip, Input, Screen, Switch, Text, makeStyles, useToast } from '@/shared/ui';
 
 import { dm, todayIso } from '../components/format';
 import { useMoneyFormat } from '../hooks/useMoneyFormat';
 import { parseQuantity, pctSigned } from '../components/investmentFormat';
 import { MoneyField, SwitchRow } from '../components/ui';
+import { SymbolSearchField } from '../components/SymbolSearchField';
+import { kindForMarketType, typedSymbol, typesForKind } from '../components/symbolSearch';
 import { useFinance } from '../hooks/FinanceData';
 import { useInvestments } from '../hooks/useInvestments';
 
-type LookupState = { status: 'idle' | 'loading' | 'none' | 'error' } | { status: 'found'; items: LookupItem[] };
 
 export function AssetFormScreen() {
-  const { id } = useLocalSearchParams<{ id?: string }>();
+  const { id, symbol: presetSymbol, type: presetType, name: presetName } = useLocalSearchParams<{ id?: string; symbol?: string; type?: string; name?: string }>();
   const snap = useInvestments();
   if (id && !snap) return <Screen>{null}</Screen>;
   const asset = id ? (snap?.assets.find((a) => a.id === id) ?? null) : null;
   const hasMovements = !!asset && !!snap?.movements.some((m) => m.asset_id === asset.id);
-  return <AssetForm key={asset?.id ?? 'novo'} asset={asset} hasMovements={hasMovements} />;
+  const preset =
+    !asset && presetSymbol && (presetType === 'stock' || presetType === 'reit' || presetType === 'crypto')
+      ? { symbol: presetSymbol, kind: kindForMarketType(presetType), name: presetName ?? '' }
+      : null;
+  return <AssetForm key={asset?.id ?? 'novo'} asset={asset} hasMovements={hasMovements} preset={preset} />;
 }
 
-function AssetForm({ asset, hasMovements }: { asset: InvestmentAsset | null; hasMovements: boolean }) {
+function AssetForm({ asset, hasMovements, preset }: { asset: InvestmentAsset | null; hasMovements: boolean; preset: { symbol: string; kind: AssetKind; name: string } | null }) {
   const { money, signed } = useMoneyFormat();
   const s = useStyles();
-  const t = useTheme();
   const toast = useToast();
   const today = todayIso();
-  const { repos, quotes } = useFinance();
-  const [name, setName] = useState(asset?.name ?? '');
-  const [kind, setKind] = useState<AssetKind | null>(asset?.kind ?? null);
-  const [symbol, setSymbol] = useState(asset?.quote_symbol ?? '');
+  const { repos } = useFinance();
+  const [name, setName] = useState(asset?.name ?? preset?.name ?? '');
+  const [kind, setKind] = useState<AssetKind | null>(asset?.kind ?? preset?.kind ?? null);
+  const [symbol, setSymbol] = useState(asset?.quote_symbol ?? preset?.symbol ?? '');
   const [symbolLabel, setSymbolLabel] = useState('');
-  const [query, setQuery] = useState('');
-  const [lookup, setLookup] = useState<LookupState>({ status: 'idle' });
   const [institution, setInstitution] = useState(asset?.institution ?? '');
   const [notes, setNotes] = useState(asset?.notes ?? '');
   const [already, setAlready] = useState(false);
@@ -58,6 +60,7 @@ function AssetForm({ asset, hasMovements }: { asset: InvestmentAsset | null; has
   const [currentValue, setCurrentValue] = useState<number | null>(null);
   const [qtyText, setQtyText] = useState('');
   const [saving, setSaving] = useState(false);
+  const linked = useLinkedNotes('asset', asset?.id);
 
   const source = kind ? quoteSourceOf(kind) : null;
   const symbolOk = source === null || SYMBOL_PATTERNS[source].test(symbol);
@@ -70,26 +73,16 @@ function AssetForm({ asset, hasMovements }: { asset: InvestmentAsset | null; has
     if (quoteSourceOf(k) !== source) {
       setSymbol('');
       setSymbolLabel('');
-      setLookup({ status: 'idle' });
     }
     setKind(k);
   };
 
-  const runLookup = async (text: string) => {
-    if (!source || !text.trim()) return;
-    setLookup({ status: 'loading' });
-    try {
-      const items = await quotes.lookup(source, text.trim());
-      setLookup(items.length ? { status: 'found', items } : { status: 'none' });
-      if (source === 'brapi' && items[0]) {
-        setSymbol(items[0].symbol);
-        setSymbolLabel(`${items[0].name}${items[0].priceE8 !== null ? ` · ${money(Math.round(items[0].priceE8 / 1e6))}` : ''}`);
-      }
-    } catch (e) {
-      console.warn('Falha ao conferir o código', e);
-      setLookup({ status: 'error' });
-    }
+  const pickSymbol = (m: MarketItem) => {
+    setSymbol(m.symbol);
+    setSymbolLabel(`${m.name}${m.priceE8 !== null ? ` · ${money(Math.round(m.priceE8 / 1e6))} hoje` : ''}`);
+    if (!name.trim()) setName(m.name.slice(0, ASSET_NAME_MAX));
   };
+
 
   const save = async () => {
     if (!kind) return;
@@ -97,7 +90,12 @@ function AssetForm({ asset, hasMovements }: { asset: InvestmentAsset | null; has
     const fields = { name: name.trim(), kind, institution: institution.trim(), notes: notes.trim(), quote_symbol: source ? symbol : null };
     try {
       if (asset) {
-        await repos.investments.updateAsset(asset.id, fields);
+        // Tudo ou nada: as notas vinculadas voltam se o ativo não grava.
+        const undo = await linked.apply(asset.id);
+        await repos.investments.updateAsset(asset.id, fields).catch(async (e: unknown) => {
+          await undo().catch(() => undefined);
+          throw e;
+        });
         if (router.canGoBack()) router.back();
         toast({ message: 'Ativo atualizado' });
       } else {
@@ -105,6 +103,10 @@ function AssetForm({ asset, hasMovements }: { asset: InvestmentAsset | null; has
           ? { investedCents: invested ?? 0, currentCents: source ? undefined : (currentValue ?? undefined), quantity: source ? (qty ?? undefined) : undefined, date: today }
           : undefined;
         const created = await repos.investments.createAsset(fields, opening);
+        await linked.apply(created.id).catch(async (e: unknown) => {
+          await repos.investments.removeAsset(created.id).catch(() => undefined);
+          throw e;
+        });
         router.replace({ pathname: '/financas/investimento/[id]', params: { id: created.id } });
       }
     } catch (e) {
@@ -150,71 +152,31 @@ function AssetForm({ asset, hasMovements }: { asset: InvestmentAsset | null; has
           )}
         </View>
 
-        {source === 'brapi' && (
+        {source !== null && kind !== null && (
           <View style={s.group}>
-            <Input
-              label="Código na B3 (ex.: ITSA4, HGLG11)"
-              value={symbol}
-              onChangeText={(v) => {
-                setSymbol(v.toUpperCase().replace(/[^A-Z0-9]/g, ''));
-                setSymbolLabel('');
-                setLookup({ status: 'idle' });
+            <SymbolSearchField
+              key={kind}
+              initialText={symbol}
+              types={typesForKind(kind)}
+              label={kind === 'crypto' ? 'Buscar moeda (nome ou sigla)' : 'Buscar na B3 (código ou nome)'}
+              onPick={pickSymbol}
+              onType={(text) => {
+                const code = source ? typedSymbol(text, source) : null;
+                setSymbol(code ?? '');
+                setSymbolLabel(code ? 'digitado; a cotação confere depois de salvar' : '');
               }}
-              autoCapitalize="characters"
-              autoCorrect={false}
-              maxLength={12}
-              returnKeyType="search"
-              onSubmitEditing={() => void runLookup(symbol)}
-              onBlur={() => void runLookup(symbol)}
-              invalid={symbol !== '' && !symbolOk}
-            />
-            <LookupLine state={lookup} found={symbolLabel} notFound="Código não encontrado na B3. Confira e tente de novo." />
-          </View>
-        )}
-
-        {source === 'coingecko' && (
-          <View style={s.group}>
-            <Input
-              label="Buscar moeda (nome ou sigla)"
-              value={query}
-              onChangeText={setQuery}
-              autoCorrect={false}
-              returnKeyType="search"
-              onSubmitEditing={() => void runLookup(query)}
-              trailing={
-                <Pressable accessibilityRole="button" accessibilityLabel="Buscar" onPress={() => void runLookup(query)} hitSlop={t.touch.hitSlop}>
-                  <Icon icon={Search} size={t.icon.small} color="textSecondary" />
-                </Pressable>
-              }
             />
             {symbol ? (
-              <Text variant="caption" tone="secondary">
-                {`Escolhida: ${symbolLabel || symbol}`}
+              <Text variant="caption" tone="secondary" numeric>
+                {`Escolhido: ${symbol}${symbolLabel ? ` · ${symbolLabel}` : ''}`}
               </Text>
             ) : null}
-            {lookup.status === 'found' ? (
-              <View style={s.chips}>
-                {lookup.items.map((c) => (
-                  <Chip
-                    key={c.symbol}
-                    size="sm"
-                    label={`${c.name} (${c.ticker})`}
-                    selected={symbol === c.symbol}
-                    onPress={() => {
-                      setSymbol(c.symbol);
-                      setSymbolLabel(`${c.name} (${c.ticker})`);
-                    }}
-                  />
-                ))}
-              </View>
-            ) : (
-              <LookupLine state={lookup} found="" notFound="Nenhuma moeda encontrada." />
-            )}
           </View>
         )}
 
         <Input label="Instituição (opcional)" value={institution} onChangeText={setInstitution} maxLength={ASSET_INSTITUTION_MAX} />
         <Input label="Observação (opcional)" value={notes} onChangeText={setNotes} maxLength={ASSET_NOTES_MAX} multiline />
+        <LinkedNotesField state={linked} />
 
         {!asset && (
           <View style={s.group}>
@@ -251,38 +213,6 @@ function AssetForm({ asset, hasMovements }: { asset: InvestmentAsset | null; has
   );
 }
 
-function LookupLine({ state, found, notFound }: { state: LookupState; found: string; notFound: string }) {
-  const s = useStyles();
-  if (state.status === 'loading') {
-    return (
-      <View style={s.lookup}>
-        <Spinner />
-        <Text variant="caption" tone="tertiary">
-          Conferindo…
-        </Text>
-      </View>
-    );
-  }
-  if (state.status === 'none') {
-    return (
-      <Text variant="caption" tone="warning">
-        {notFound}
-      </Text>
-    );
-  }
-  if (state.status === 'error') {
-    return (
-      <Text variant="caption" tone="tertiary">
-        Sem conexão para conferir agora. Dá para salvar e a cotação chega depois.
-      </Text>
-    );
-  }
-  return found ? (
-    <Text variant="caption" tone="secondary" numeric>
-      {found}
-    </Text>
-  ) : null;
-}
 
 const useStyles = makeStyles((t) => ({
   form: { gap: t.space[4], paddingTop: t.space[2] },
@@ -291,5 +221,4 @@ const useStyles = makeStyles((t) => ({
   kind: { width: '50%', padding: t.space[1] },
   disabled: { opacity: t.opacity.faint },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: t.space[2] },
-  lookup: { flexDirection: 'row', alignItems: 'center', gap: t.space[2] },
 }));

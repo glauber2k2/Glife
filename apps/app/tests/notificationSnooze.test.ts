@@ -25,6 +25,13 @@ describe('adiar na central de notificações', () => {
     expect(noticeForSnooze(meal)).toMatchObject({ key: meal.id, ref: { kind: 'meal', id, date: '2026-11-26' } });
   });
 
+  it('lembrete com várias vezes no dia: o adiamento guarda o horário', () => {
+    const slot = { ...reminder, id: `reminder:${id}:2026-11-26:1400` };
+    expect(noticeForSnooze(slot)).toMatchObject({ key: slot.id, ref: { kind: 'reminder', id, date: '2026-11-26', time: '14:00' } });
+    expect(noticeForSnooze({ ...reminder, id: `reminder:${id}:2026-11-26:2500` })).toBeNull();
+    expect(noticeForSnooze({ ...reminder, id: `reminder:${id}:2026-11-26:14` })).toBeNull();
+  });
+
   it('não oferece adiamento para finanças, ids malformados ou rotas externas', () => {
     expect(noticeForSnooze({ ...reminder, module: 'finance' })).toBeNull();
     expect(noticeForSnooze({ ...reminder, id: reminder.id + ':extra' })).toBeNull();

@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "main": "expo-router/entry",
   "dependencies": {
+    "@ai-sdk/react": "4.0.134",
     "@expo-google-fonts/dm-mono": "^0.4.2",
     "@expo-google-fonts/outfit": "^0.4.3",
     "@glife/domain": "workspace:*",
@@ -15,6 +16,7 @@
     "@react-native-async-storage/async-storage": "2.2.0",
     "@react-native-community/datetimepicker": "9.2.1",
     "@supabase/supabase-js": "^2.119.2",
+    "ai": "7.0.131",
     "expo": "~58.0.26",
     "expo-asset": "~58.0.21",
     "expo-clipboard": "~58.0.4",
@@ -30,6 +32,7 @@
     "expo-notifications": "~58.1.9",
     "expo-router": "~58.0.32",
     "expo-secure-store": "~58.0.3",
+    "expo-speech-recognition": "~58.0.1",
     "expo-splash-screen": "~58.0.14",
     "expo-status-bar": "~58.0.5",
     "expo-system-ui": "~58.0.7",

@@ -92,6 +92,11 @@ describe('agenda: repositório', () => {
     expect((await repo.snapshot()).events[0]?.location).toBe('Sala 2');
   });
 
+  it('restaurar item que não existe mais avisa em vez de fingir que restaurou', async () => {
+    await expect(repo.restoreEvent('00000000-0000-4000-8000-0000000000ff')).rejects.toMatchObject({ code: 'not_found' });
+    await expect(repo.restoreReminder('00000000-0000-4000-8000-0000000000ff')).rejects.toMatchObject({ code: 'not_found' });
+  });
+
   it('edição inválida não grava nada e vira erro de validação', async () => {
     const e = await repo.createEvent({ title: 'Aula', start_date: '2026-11-02' });
     await expect(repo.updateEvent(e.id, { title: '' })).rejects.toMatchObject({ code: 'validation' });

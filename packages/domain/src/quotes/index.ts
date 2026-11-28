@@ -1,17 +1,30 @@
 export {
+  CATALOG_TTL_MS,
   LOOKUP_LIMIT,
   LOOKUP_QUERY_MAX,
+  MARKET_LIMIT,
+  MARKET_MIN_VOLUME,
+  MARKET_SORTS,
+  MARKET_TYPES,
   PRICE_SCALE,
   QUOTE_BATCH_MAX,
   QUOTE_SOURCES,
   QUOTE_TTL_MS,
+  SEARCH_MIN,
   SYMBOL_PATTERNS,
+  brDate,
   keyOf,
   quoteKeySchema,
   quoteRequestSchema,
   toE8,
   type FetchFn,
   type LookupItem,
+  type MarketItem,
+  type MarketListCache,
+  type MarketSort,
+  type MarketType,
+  type PriceHistoryStore,
+  type PricePoint,
   type Quote,
   type QuoteCache,
   type QuoteError,
@@ -21,6 +34,7 @@ export {
   type QuoteResult,
   type QuoteSource,
 } from './model.ts';
+export { rankMarket, searchCatalog } from './catalog.ts';
 export { BrapiProvider } from './brapi.ts';
 export { CoinGeckoProvider } from './coingecko.ts';
 export { QuoteService } from './service.ts';

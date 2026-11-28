@@ -3,6 +3,7 @@
 import { router } from 'expo-router';
 import type { BottomTabBarProps } from 'expo-router/js-tabs';
 import { Plus, Search } from 'lucide-react-native';
+import type { ReactNode } from 'react';
 import { Platform, Pressable, View, useWindowDimensions } from 'react-native';
 
 import { Icon, Mascot, Text, makeStyles, useTheme } from '@/shared/ui';
@@ -16,7 +17,7 @@ export function useTopNavigation(): boolean {
   return Platform.OS === 'web' && width >= t.layout.contentMaxWidth + 2 * t.layout.gutterWeb;
 }
 
-export function TopNav({ state, descriptors, navigateToTab }: BottomTabBarProps) {
+export function TopNav({ state, descriptors, navigateToTab, center }: BottomTabBarProps & { center?: ReactNode }) {
   const s = useStyles();
   const t = useTheme();
   // A tela pode esconder as abas (ex.: seleção múltipla nas Notas) com `tabBarStyle: { display: 'none' }`.
@@ -68,6 +69,7 @@ export function TopNav({ state, descriptors, navigateToTab }: BottomTabBarProps)
           </Text>
         </View>
       </Pressable>
+      {center}
       <Pressable
         accessibilityRole="button"
         accessibilityLabel="Capturar"

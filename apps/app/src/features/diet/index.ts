@@ -5,7 +5,6 @@ export { MealPlanFormScreen } from './screens/MealPlanFormScreen';
 export { MealLogFormScreen } from './screens/MealLogFormScreen';
 export { TodayDietBlock } from './components/TodayDietBlock';
 export { useDietNotices } from './hooks/useDietNotices';
-export { useDietDayMarks } from './hooks/useDietDayMarks';
 export { DietHistoryScreen } from './screens/DietHistoryScreen';
 export { useDietNotifications, usePendingMeal } from './hooks/useDietNotifications';
-export { useDietTargetSource } from './hooks/useDietTargetSource';
+export { useDietTargetSources } from './hooks/useDietTargetSource';

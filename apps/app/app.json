@@ -2,7 +2,7 @@
   "expo": {
     "name": "Glife",
     "slug": "glife",
-    "version": "0.8.2",
+    "version": "0.10.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "glife",
@@ -13,7 +13,7 @@
     },
     "android": {
       "package": "app.glife.pessoal",
-      "versionCode": 12,
+      "versionCode": 16,
       "adaptiveIcon": {
         "backgroundColor": "#2D5BFF",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
@@ -42,7 +42,14 @@
       "expo-secure-store",
       "react-native-quick-crypto",
       "@react-native-community/datetimepicker",
-      "expo-asset"
+      "expo-asset",
+      [
+        "expo-speech-recognition",
+        {
+          "microphonePermission": "O Glife usa o microfone para você pedir à Glife IA por voz.",
+          "speechRecognitionPermission": "O Glife usa o reconhecimento de voz do sistema (no Android, normalmente o serviço do Google) para transformar seu pedido em texto para a Glife IA."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

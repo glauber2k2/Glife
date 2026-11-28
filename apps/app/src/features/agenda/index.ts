@@ -6,6 +6,6 @@ export { ReminderFormScreen } from './screens/ReminderFormScreen';
 export { TodayAgendaBlock } from './components/TodayAgendaBlock';
 export { useAgendaNotices } from './hooks/useAgendaNotices';
 export { AgendaMonthScreen } from './screens/AgendaMonthScreen';
-export { DayMarksProvider, type DayMarkSource } from './hooks/DayMarks';
 export { useAgendaNotifications, useCompleteReminder, usePendingReminder } from './hooks/useAgendaNotifications';
 export { useAgendaTargetSources } from './hooks/useAgendaTargetSources';
+export { useAgendaAiTools } from './ai/useAgendaAiTools';

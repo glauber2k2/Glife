@@ -1,5 +1,39 @@
 # Changelog
 
+## 0.10.0 — 2026-11-28
+
+- Glife IA no centro da barra (mascote): toque para digitar; segure para falar e solte para enviar; segure e arraste
+  para cima para travar e enviar quando quiser. A conversa abre numa tela própria e continua ao sair e voltar.
+- Anexos na conversa da IA: PDF, TXT, MD e CSV (o texto do PDF é lido pelo servidor, sem guardar o arquivo).
+- Finanças volta a ser a 5ª aba. No Início, "Mês até agora" mostra o saldo esperado no fim do mês.
+- Bíblia: referências citadas no texto (ex.: "Salmo 118:22") viram links para o versículo; trocar de capítulo ficou
+  mais suave (só o texto desliza; as barras ficam paradas).
+- Investimentos v2: painel com gráfico, metas por grupo, ranking, detalhe do ativo e "Perguntar à Glife IA".
+- Glife IA (etapa 6.1): agente que cria e organiza notas, lembretes e eventos, com Desfazer.
+
+## 0.9.2 — 2026-11-27
+
+- Agenda: lembrete feito fica mais apagado e desce para o fim da lista; os pendentes ficam em cima, do mais próximo ao
+  mais longe (atrasados primeiro). Vale na Agenda, no "Para hoje" do Início e no dia do calendário do mês.
+
+## 0.9.1 — 2026-11-27
+
+- Agenda: lembrete marcado como feito não some mais. Ele fica na lista com o círculo cheio e o texto riscado; outro
+  toque desmarca (para quando marcou sem querer). Vale na Agenda, no "Para hoje" do Início e no calendário do mês
+  ("· Feito"). Atrasado marcado hoje fica riscado na lista de hoje até o dia acabar.
+- Calendário: dia livre fica sem ponto. As refeições do plano da dieta não marcam mais o dia (o ponto verde aparecia
+  em todos os dias); os pontos mostram só eventos e lembretes.
+
+## 0.9.0 — 2026-11-27
+
+- Agenda: lembrete mais de uma vez no dia. Em "Quantas vezes no dia", escolha **Horários** (uma lista, ex.: 08:00,
+  14:00 e 20:00) ou **Intervalo** (de tanto em tanto tempo, a partir de uma hora até outra, ex.: a cada 2 h das 08:00
+  às 18:00). Cada horário aparece na agenda, no Início e na central, tem o próprio aviso e se conclui sozinho
+  ("Feito" e "Adiar" no aviso valem só para aquele horário).
+- Notas vinculadas: nos campos de descrição de lembrete, evento, refeição, refeição do plano, lançamento e investimento,
+  "Vincular nota" liga uma nota que já existe e "Nova nota" cria uma nota já ligada. Toque na nota para abri-la; o X
+  desfaz o vínculo. Na nota, "Mencionada em" mostra o item que a vinculou.
+
 ## 0.8.2 — 2026-11-27
 
 - Notas: o filtro não mostra mais chips de tag; para achar, busque `#nome` no campo de busca (acha as notas com a tag e as que têm o texto).

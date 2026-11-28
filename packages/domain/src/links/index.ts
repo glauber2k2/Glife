@@ -25,3 +25,4 @@ export {
   type SourceAddress,
   type SourceType,
 } from './repository.ts';
+export { NOTE_LINK_RELATION, isManualNoteLink, linkedNoteIds, noteLinkChange, type NoteLinkChange } from './noteLinks.ts';

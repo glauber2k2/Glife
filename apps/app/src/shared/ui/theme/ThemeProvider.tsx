@@ -9,6 +9,7 @@ import {
   layout,
   motion,
   opacity,
+  layer,
   palettes,
   pressScale,
   radius,
@@ -39,6 +40,7 @@ export interface Theme {
   pressScale: typeof pressScale;
   layout: typeof layout;
   opacity: typeof opacity;
+  layer: typeof layer;
   size: typeof size;
   field: typeof field;
   reading: typeof reading;
@@ -69,6 +71,7 @@ function buildTheme(scheme: ColorScheme): Theme {
     pressScale,
     layout,
     opacity,
+    layer,
     size,
     field,
     reading,

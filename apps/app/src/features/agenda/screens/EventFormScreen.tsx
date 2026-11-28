@@ -4,6 +4,7 @@ import { localNow } from '@glife/domain/time';
 import { router, useLocalSearchParams } from 'expo-router';
 import { View } from 'react-native';
 
+import { LinkedNotesField, useLinkedNotes } from '@/features/links';
 import { useEntityForm } from '@/shared/hooks/useEntityForm';
 import { errorText } from '@/shared/lib/errorText';
 import { formatDateInput } from '@/shared/lib/calendarInput';
@@ -20,8 +21,10 @@ export function EventFormScreen() {
   const params = useLocalSearchParams<{ id?: string; data?: string }>();
   const { repo } = useAgenda();
   const day = isoOk(params.data) ? params.data : localNow().date;
+  const linked = useLinkedNotes('event', params.id);
   const f = useEntityForm({
     id: params.id,
+    extra: linked,
     load: (id) => repo.getEvent(id),
     toForm: eventToForm,
     empty: () => emptyEventForm(day),
@@ -85,6 +88,8 @@ export function EventFormScreen() {
       </View>
       <Input label="Local (opcional)" value={form.location} onChangeText={(location) => setForm({ location })} maxLength={200} />
       <Input label="Notas" value={form.notes} onChangeText={(notes) => setForm({ notes })} multiline maxLength={2000} />
+
+      <LinkedNotesField state={linked} />
       <RepeatFields value={form.repeat} onChange={(repeat) => setForm({ repeat })} />
       <View style={s.block}>
         <Text variant="label" tone="tertiary">

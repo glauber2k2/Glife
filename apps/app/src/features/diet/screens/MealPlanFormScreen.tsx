@@ -2,6 +2,7 @@
 import { useLocalSearchParams } from 'expo-router';
 import { View } from 'react-native';
 
+import { LinkedNotesField, useLinkedNotes } from '@/features/links';
 import { useEntityForm } from '@/shared/hooks/useEntityForm';
 import { BackHeader, Button, EmptyState, Input, Screen, Switch, Text, TimeInput, WeekdayPicker, makeStyles } from '@/shared/ui';
 
@@ -13,8 +14,10 @@ export function MealPlanFormScreen() {
   const s = useStyles();
   const params = useLocalSearchParams<{ id?: string }>();
   const { repo } = useDiet();
+  const linked = useLinkedNotes('meal_plan', params.id);
   const f = useEntityForm({
     id: params.id,
+    extra: linked,
     load: (id) => repo.getPlanItem(id),
     toForm: planToForm,
     empty: emptyPlanForm,
@@ -48,6 +51,8 @@ export function MealPlanFormScreen() {
         ]}
       </FieldPair>
       <Input label="O que comer" value={form.description} onChangeText={(description) => setForm({ description })} multiline maxLength={500} />
+
+      <LinkedNotesField state={linked} />
       <NutritionFields form={form} onChange={setForm} withKcal={false} />
       <View style={s.block}>
         <Text variant="label" tone="tertiary">

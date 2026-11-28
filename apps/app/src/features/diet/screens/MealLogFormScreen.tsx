@@ -5,6 +5,7 @@ import { useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef } from 'react';
 import { View } from 'react-native';
 
+import { LinkedNotesField, useLinkedNotes } from '@/features/links';
 import { useEntityForm } from '@/shared/hooks/useEntityForm';
 import { parseDateInput } from '@/shared/lib/calendarInput';
 import { BackHeader, Button, EmptyState, Chip, DateInput, Input, Screen, Text, TimeInput, makeStyles } from '@/shared/ui';
@@ -20,8 +21,10 @@ export function MealLogFormScreen() {
   const params = useLocalSearchParams<{ id?: string; data?: string; plano?: string }>();
   const { repo, data } = useDiet();
   const now = localNow();
+  const linked = useLinkedNotes('meal', params.id);
   const f = useEntityForm({
     id: params.id,
+    extra: linked,
     load: (id) => repo.getLog(id),
     toForm: logToForm,
     // `plano` (botão "Registrar" do aviso ou da central): liga à refeição só se ela existe nos dados (ver abaixo).
@@ -89,6 +92,8 @@ export function MealLogFormScreen() {
         </View>
       )}
       <Input label="O que comeu" value={form.description} onChangeText={(description) => setForm({ description })} multiline maxLength={500} />
+
+      <LinkedNotesField state={linked} />
       <NutritionFields form={form} onChange={setForm} withKcal />
       <Button label="Salvar" onPress={() => void f.save()} loading={f.saving} haptic fullWidth />
       {!f.isNew && <Button label="Excluir registro" variant="danger" onPress={() => void f.remove()} fullWidth />}

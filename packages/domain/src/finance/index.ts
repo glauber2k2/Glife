@@ -222,6 +222,50 @@ export {
   type PositionedAsset,
 } from './investments.ts';
 export {
+  ALLOCATION_GROUPS,
+  ALLOCATION_LABELS,
+  TARGETS_SUM_MESSAGE,
+  allocation,
+  contributionToReach,
+  groupOf,
+  targetsSchema,
+  targetsSum,
+  type AllocationGroup,
+  type AllocationSlice,
+  type InvestmentTargetsRow,
+  type Targets,
+} from './allocation.ts';
+export {
+  PERIOD_DAYS,
+  assetDaily,
+  portfolioDaily,
+  slicePeriod,
+  type DailyPoint,
+  type Period,
+  type PriceBook,
+} from './investmentSeries.ts';
+export {
+  STATS_MIN_POINTS,
+  assetStats,
+  type AssetStats,
+  type Oscillation,
+  type StatWindow,
+} from './investmentStats.ts';
+export {
+  ASSET_QUESTIONS,
+  INSIGHT_DISCLAIMER,
+  PORTFOLIO_QUESTIONS,
+  assetInsight,
+  portfolioHeadline,
+  portfolioInsight,
+  rankBySinceBuy,
+  type AssetInsightContext,
+  type AssetQuestion,
+  type InsightBlock,
+  type PortfolioInsightContext,
+  type PortfolioQuestion,
+} from './insights.ts';
+export {
   type AssetOpening,
   type InvestmentsRepository,
   type InvestmentsSnapshot,

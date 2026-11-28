@@ -3,13 +3,22 @@
 import {
   RepositoryError,
   isAlive,
+  parseOrThrow,
   restore,
   softDelete,
+  stampNew,
+  stampUpdate,
   type ErrorListener,
   type Listener,
   type Unsubscribe,
 } from "../core/index.ts";
 import { keyOf, type Quote } from "../quotes/index.ts";
+import {
+  targetsOf,
+  targetsSchema,
+  type InvestmentTargetsRow,
+  type Targets,
+} from "./allocation.ts";
 import type { IsoDate } from "./calendar.ts";
 import {
   applyInvestmentAssetPatch,
@@ -36,6 +45,8 @@ export interface InvestmentsSnapshot {
   assets: InvestmentAsset[];
   /** movimentos vivos de ativos vivos, em ordem cronológica */
   movements: InvestmentMovement[];
+  /** metas de alocação; null enquanto o usuário não definir */
+  targets: Targets | null;
 }
 
 /** Saldo de quem já tem o investimento: vira o primeiro movimento. */
@@ -76,6 +87,9 @@ export interface InvestmentsRepository {
   close(id: string, date: IsoDate): Promise<InvestmentMovement>;
   /** Grava o último preço nos ativos vivos da mesma fonte e código, se a cotação for mais nova. Devolve quantos mudaram. */
   applyQuotes(quotes: readonly Quote[]): Promise<number>;
+  getTargets(): Promise<Targets | null>;
+  /** Grava as metas (inteiros 0–100 que somam 100); senão `validation` com "As metas precisam somar 100%". */
+  setTargets(targets: Targets): Promise<Targets>;
 }
 
 export interface InvestmentsDeps {
@@ -161,9 +175,10 @@ export function createInvestmentsRepository({
   async function snapshot(
     db: FinanceStoreReads = store,
   ): Promise<InvestmentsSnapshot> {
-    const [assets, movements] = await Promise.all([
+    const [assets, movements, targets] = await Promise.all([
       db.listAlive("investment_assets"),
       db.listAlive("investment_movements"),
+      targetsRow(db),
     ]);
     const ids = new Set(assets.map((a) => a.id));
     return {
@@ -171,7 +186,17 @@ export function createInvestmentsRepository({
       movements: movements
         .filter((m) => ids.has(m.asset_id))
         .sort(chronological),
+      targets: targets ? targetsOf(targets) : null,
     };
+  }
+
+  /** A meta viva mais recente (deve haver uma só). */
+  async function targetsRow(db: FinanceStoreReads) {
+    return (
+      (await db.listAlive("investment_targets")).sort((a, b) =>
+        a.updated_at < b.updated_at ? 1 : -1,
+      )[0] ?? null
+    );
   }
 
   const repo: InvestmentsRepository = {
@@ -358,6 +383,23 @@ export function createInvestmentsRepository({
           await check(db, m);
           await db.put("investment_movements", m);
           return m;
+        }),
+      ),
+    getTargets: () =>
+      guard(async () => {
+        const row = await targetsRow(store);
+        return row ? targetsOf(row) : null;
+      }),
+    setTargets: (input) =>
+      guard(() =>
+        store.transaction(async (db) => {
+          const targets = parseOrThrow(targetsSchema, input) as Targets;
+          const current = await targetsRow(db);
+          const row: InvestmentTargetsRow = current
+            ? stampUpdate(current, targets, clock)
+            : { ...stampNew(targets, userId, clock), id: userId };
+          await db.put("investment_targets", row);
+          return targetsOf(row);
         }),
       ),
     applyQuotes: (quotes) =>

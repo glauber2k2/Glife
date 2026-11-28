@@ -21,6 +21,11 @@ export interface EntityFormOptions<E, F, D> {
   restore: (id: string) => Promise<void>;
   /** "Evento excluído" */
   removedMessage: string;
+  /**
+   * Gravação junto com o item (ex.: notas vinculadas). Devolve como desfazer. Tudo ou nada: ao editar, roda antes e é
+   * desfeita se o item não grava; ao criar, roda depois e, se falhar, o item recém-criado é excluído.
+   */
+  extra?: { apply(id: string): Promise<() => Promise<void>> };
 }
 
 export function useEntityForm<E, F, D>(o: EntityFormOptions<E, F, D>) {
@@ -57,8 +62,27 @@ export function useEntityForm<E, F, D>(o: EntityFormOptions<E, F, D>) {
     if (!r.ok) return toast({ message: r.error });
     setSaving(true);
     try {
-      if (o.id) await o.update(o.id, r.value);
-      else await o.create(r.value);
+      if (o.id) {
+        const undo = o.extra ? await o.extra.apply(o.id) : null;
+        try {
+          await o.update(o.id, r.value);
+        } catch (e) {
+          await undo?.().catch(() => undefined);
+          throw e;
+        }
+      } else {
+        const created = await o.create(r.value);
+        const newId = (created as { id?: unknown } | null)?.id;
+        if (o.extra && typeof newId === 'string') {
+          try {
+            await o.extra.apply(newId);
+          } catch (e) {
+            // O item não fica pela metade: some de novo e a pessoa tenta outra vez.
+            await o.remove(newId).catch(() => undefined);
+            throw e;
+          }
+        }
+      }
       router.back();
     } catch (e) {
       toast({ message: errorText(e) });

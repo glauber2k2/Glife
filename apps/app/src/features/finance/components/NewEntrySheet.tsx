@@ -18,6 +18,7 @@ import { ArrowLeftRight, CreditCard, X } from 'lucide-react-native';
 import { useMemo, useState } from 'react';
 import { ScrollView, View, useWindowDimensions } from 'react-native';
 
+import { LinkedNotesField, useLinkedNotes } from '@/features/links';
 import { Button, Chip, Icon, IconButton, Input, SegmentedControl, Sheet, Switch, Text, makeStyles, useTheme, useToast } from '@/shared/ui';
 
 import { useFinance } from '../hooks/FinanceData';
@@ -76,7 +77,8 @@ function EntryForm({ onClose, today, preset, aboveTabBar }: Props) {
   const toast = useToast();
   const { height } = useWindowDimensions();
   const { data } = useFinance();
-  const { createEntry } = useFinanceActions();
+  const { createEntry, discardEntry } = useFinanceActions();
+  const linked = useLinkedNotes('tx', undefined);
 
   const accounts = useMemo(() => (data?.accounts ?? []).filter((a) => !a.archived), [data]);
   const banks = accounts.filter((a) => a.kind !== 'credit_card');
@@ -170,7 +172,7 @@ function EntryForm({ onClose, today, preset, aboveTabBar }: Props) {
     if (!canSave || !acctId || !amount) return;
     setSaving(true);
     try {
-      await createEntry({
+      const created = await createEntry({
         type,
         cents: amount.totalCents,
         description: desc,
@@ -188,6 +190,15 @@ function EntryForm({ onClose, today, preset, aboveTabBar }: Props) {
             }
           : null,
       });
+      // Tudo ou nada: se as notas não se ligam, o lançamento recém-criado sai de novo.
+      if (!repeat && linked.notes.length) {
+        for (const id of created.txIds) {
+          await linked.apply(id).catch(async (e: unknown) => {
+            await discardEntry(created).catch(() => undefined);
+            throw e;
+          });
+        }
+      }
       onClose();
       toast({
         aboveTabBar,
@@ -328,6 +339,7 @@ function EntryForm({ onClose, today, preset, aboveTabBar }: Props) {
         )}
 
         <Input label="Descrição" value={desc} onChangeText={setDesc} placeholder="Ex.: Mercado" maxLength={200} />
+        {!repeat && <LinkedNotesField state={linked} />}
 
         <DateRow
           label={monthly ? 'A partir de' : 'Data'}

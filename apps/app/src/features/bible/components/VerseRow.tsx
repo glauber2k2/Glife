@@ -3,7 +3,7 @@
 // a seleção é um sobretom translúcido por cima (também sobre o grifo), sem borda. Notas ligadas: marcador no fim.
 import type { BibleHighlight } from '@glife/domain/bible';
 import { NotebookPen } from 'lucide-react-native';
-import { memo, useCallback, useState } from 'react';
+import { memo, useCallback, useMemo, useState, type ReactNode } from 'react';
 import { Platform, Pressable, View, type TextLayoutEvent, type TextStyle } from 'react-native';
 
 import { Icon, Text, makeStyles, useTheme } from '@/shared/ui';
@@ -11,6 +11,7 @@ import { Icon, Text, makeStyles, useTheme } from '@/shared/ui';
 import type { ReadingAdjust } from '../data/readingPrefs';
 import { highlightBands, underlineStrokes, type Rect } from './highlightBands';
 import { letterSpacingPx } from './readerChrome';
+import { verseSegments } from './verseSegments';
 
 const WEB = Platform.OS === 'web';
 
@@ -26,10 +27,12 @@ export interface VerseRowProps {
   reading: ReadingAdjust;
   onPress(verse: number): void;
   onLinkedPress(verse: number): void;
+  /** toque numa referência citada no texto ("Salmo 118:22") */
+  onRefPress(href: string): void;
   onLayoutY(verse: number, y: number): void;
 }
 
-export const VerseRow = memo(function VerseRow({ verse, text, highlight, selected, flash, linked, reading, onPress, onLinkedPress, onLayoutY }: VerseRowProps) {
+export const VerseRow = memo(function VerseRow({ verse, text, highlight, selected, flash, linked, reading, onPress, onLinkedPress, onRefPress, onLayoutY }: VerseRowProps) {
   const s = useStyles();
   const t = useTheme();
   const [lines, setLines] = useState<Rect[]>([]);
@@ -51,6 +54,21 @@ export const VerseRow = memo(function VerseRow({ verse, text, highlight, selecte
         } as TextStyle)
       : null;
 
+  // Referências no texto viram links (cor de ação); o resto do versículo continua selecionando ao toque.
+  const content: ReactNode = useMemo(() => {
+    const parts = verseSegments(text);
+    if (parts.length === 1 && !parts[0]!.href) return text;
+    return parts.map((p, i) =>
+      p.href ? (
+        <Text key={i} style={s.ref} accessibilityRole="link" accessibilityLabel={`Abrir ${p.label}`} onPress={() => onRefPress(p.href!)}>
+          {p.text}
+        </Text>
+      ) : (
+        p.text
+      ),
+    );
+  }, [text, s.ref, onRefPress]);
+
   const onTextLayout = useCallback((e: TextLayoutEvent) => setLines(e.nativeEvent.lines.map(({ x, y, width, height }) => ({ x, y, width, height }))), []);
   const bands = !WEB && (fill || tone) ? highlightBands(lines, fontSize, lineHeight) : [];
   const strokes = !WEB && lineColor ? underlineStrokes(lines, fontSize, t.size.underline) : [];
@@ -64,11 +82,11 @@ export const VerseRow = memo(function VerseRow({ verse, text, highlight, selecte
   // web: o fundo vai em spans aninhados (o Text externo é bloco dentro da View e cresceria com o padding)
   const body = WEB ? (
     <Text variant="scripture" style={[textStyle, underline]}>
-      <Text style={fill ? webBand(fill) : null}>{tone ? <Text style={webBand(tone)}>{text}</Text> : text}</Text>
+      <Text style={fill ? webBand(fill) : null}>{tone ? <Text style={webBand(tone)}>{content}</Text> : content}</Text>
     </Text>
   ) : (
     <Text variant="scripture" style={[textStyle, underline]} onTextLayout={onTextLayout}>
-      {text}
+      {content}
     </Text>
   );
 
@@ -125,6 +143,7 @@ export const VerseRow = memo(function VerseRow({ verse, text, highlight, selecte
 const useStyles = makeStyles((t) => ({
   row: { flexDirection: 'row', alignItems: 'flex-start' },
   number: { textAlign: 'right', paddingRight: t.space[2] },
+  ref: { color: t.colors.accentInk, fontFamily: t.type.chip.font },
   text: { flex: 1, minWidth: t.space[0] },
   band: { position: 'absolute', borderRadius: t.radius.bandWeb, overflow: 'hidden' },
   stroke: { position: 'absolute', borderRadius: t.radius.full },

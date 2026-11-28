@@ -38,3 +38,18 @@ de data misturados, ativo automático só com rendimentos aparecendo como encerr
 - Posição minúscula (< R$ 0,005) não encerra.
 - Cada gravação de cotação relê todos os dados de Finanças; a conferência de ticker não usa o cache do servidor.
 - Gravar o preço muda `updated_at` (última gravação vence entre aparelhos) — rever na rotina de alerta de preço.
+
+## Investimentos v2 (Opção A, Painel) — 28/11/2026
+
+Protótipo: `docs/prototipos/investimentos-v2/index.html` (artifact "Glife Investimentos v2"). Design:
+`docs/superpowers/specs/2026-11-27-investimentos-v2-design.md`; plano: `docs/superpowers/plans/2026-11-27-investimentos-v2.md`.
+
+Diferenças do app para o protótipo (só dados grátis da brapi e da CoinGecko):
+- Sem comparação com o CDI e sem "consistência desde 2016"; estatísticas usam o histórico disponível (3 meses na B3,
+  1 ano em cripto, crescendo com o histórico próprio) e dizem a janela; com menos de 20 pregões não aparecem.
+- Sem cotação "ao vivo" de segundos: a tela mostra "Cotação de dd/mm hh:mm" (atraso de até 30 min).
+- Ranking do mercado: altas e quedas do dia e mais negociadas (B3 e cripto); 30 dias e 1 ano só em cripto.
+- Aba IA = "Leitura dos números" montada a partir dos dados (sem modelo); o botão "Perguntar à Glife IA" entra
+  depois que a branch `fase-6-ia` for juntada.
+- Lista de sugestões da busca fica logo abaixo do campo (não flutua por cima), e código B3 completo pode ser salvo
+  sem escolher sugestão (ETF, BDR, sem internet).
