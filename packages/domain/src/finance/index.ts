@@ -236,6 +236,15 @@ export {
   type Targets,
 } from './allocation.ts';
 export {
+  PERIOD_DAYS,
+  assetDaily,
+  portfolioDaily,
+  slicePeriod,
+  type DailyPoint,
+  type Period,
+  type PriceBook,
+} from './investmentSeries.ts';
+export {
   type AssetOpening,
   type InvestmentsRepository,
   type InvestmentsSnapshot,
