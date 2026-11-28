@@ -1,25 +1,30 @@
-// Linha de tarefa da agenda (Cobalto): círculo que enche, título que se risca e recolhe; horário em pílula.
-import type { AgendaItem } from '@glife/domain/agenda';
+// Linha de tarefa da agenda (Cobalto): círculo que enche e título que se risca; o feito esmaece, desce para o fim da
+// lista e se desmarca com outro toque. Horário em pílula.
 import { CalendarDays } from 'lucide-react-native';
 import { useState } from 'react';
 import { Pressable, View } from 'react-native';
-import Animated, { FadeOut, LinearTransition } from 'react-native-reanimated';
+import Animated, { FadeOut, LinearTransition, useAnimatedStyle, withTiming } from 'react-native-reanimated';
 
 import { formatDateInput } from '@/shared/lib/calendarInput';
 import { Checkbox, Icon, Text, makeStyles, useReduceMotion, useTheme } from '@/shared/ui';
 
-export interface Row {
-  key: string;
-  item: Pick<AgendaItem, 'kind' | 'id' | 'date' | 'time' | 'end_time' | 'title' | 'location'> & { repeats?: boolean };
-  late?: boolean;
-}
+import type { Row } from './rows';
 
-export /** Linha de tarefa: círculo que enche, título que se risca e recolhe depois de um instante. */
-function TaskRow({ row, onOpen, onDone }: { row: Row; onOpen: () => void; onDone: () => void }) {
+/**
+ * Linha de tarefa: o toque no círculo marca (enche e risca) ou desmarca. O estado aparece na hora e se acerta com o
+ * banco quando ele responde (`onToggle` com o novo valor diz se gravou; se não, o círculo volta).
+ */
+export function TaskRow({ row, onOpen, onToggle }: { row: Row; onOpen: () => void; onToggle: (done: boolean) => Promise<boolean> }) {
   const s = useStyles();
   const t = useTheme();
   const reduceMotion = useReduceMotion();
-  const [done, setDone] = useState(false);
+  const saved = row.item.done ?? false;
+  // O toque vale até o banco mudar: quando `saved` muda, ele volta a mandar.
+  const [local, setLocal] = useState({ saved, done: saved });
+  const done = local.saved === saved ? local.done : saved;
+  const fade = useAnimatedStyle(() => ({
+    opacity: withTiming(done ? t.opacity.muted : t.opacity.full, { duration: reduceMotion ? 0 : t.motion.standard }),
+  }));
   const { item } = row;
   const reminder = item.kind === 'reminder';
   const time = item.time ? `${item.time}${item.end_time ? `–${item.end_time}` : ''}` : 'Dia todo';
@@ -30,18 +35,19 @@ function TaskRow({ row, onOpen, onDone }: { row: Row; onOpen: () => void; onDone
     <Animated.View
       exiting={reduceMotion ? undefined : FadeOut.duration(t.motion.tap)}
       layout={reduceMotion ? undefined : LinearTransition.duration(t.motion.gentle)}
-      style={s.row}
+      style={[s.row, fade]}
     >
       {reminder ? (
         <Pressable
           accessibilityRole="checkbox"
           accessibilityState={{ checked: done }}
-          accessibilityLabel={`Concluir ${item.title}`}
+          accessibilityLabel={done ? `Desmarcar ${item.title}` : `Concluir ${item.title}`}
           hitSlop={t.touch.hitSlop + t.space[1]}
           onPress={() => {
-            if (done) return;
-            setDone(true);
-            setTimeout(onDone, reduceMotion ? 0 : t.motion.collapseDelay);
+            setLocal({ saved, done: !done });
+            void onToggle(!done).then((ok) => {
+              if (!ok) setLocal({ saved, done: saved });
+            });
           }}
         >
           <Checkbox checked={done} />
@@ -55,7 +61,7 @@ function TaskRow({ row, onOpen, onDone }: { row: Row; onOpen: () => void; onDone
         <Text variant="item" tone={done ? 'tertiary' : 'primary'} numberOfLines={2} style={done && s.strike}>
           {item.title}
         </Text>
-        <Text variant="caption" tone={row.late ? 'danger' : 'tertiary'} numberOfLines={1}>
+        <Text variant="caption" tone={row.late && !done ? 'danger' : 'tertiary'} numberOfLines={1}>
           {meta}
         </Text>
       </Pressable>

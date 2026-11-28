@@ -9,7 +9,7 @@ import { UserFacingError } from '@/shared/lib/errorText';
 
 import { useAgendaMaybe } from './AgendaData';
 
-const REMINDER_ID = /^reminder:([0-9a-f-]{36}):(\d{4}-\d{2}-\d{2})$/;
+const REMINDER_ID = /^reminder:([0-9a-f-]{36}):(\d{4}-\d{2}-\d{2})(?::(\d{2})(\d{2}))?$/;
 
 /** null sem sessão ou antes da primeira leitura. `now` vem da central (anda a cada minuto). */
 export function useAgendaNotifications(now: Date): NotificationSource | null {
@@ -24,20 +24,20 @@ export function useAgendaNotifications(now: Date): NotificationSource | null {
       resolve: async (id) => {
         const m = REMINDER_ID.exec(id);
         if (!m) throw new UserFacingError('Lembrete não encontrado.');
-        await repo.completeReminder(m[1]!, m[2]!);
+        await repo.completeReminder(m[1]!, m[2]!, m[3] ? `${m[3]}:${m[4]}` : undefined);
       },
     };
   }, [repo, reminders, date, time]);
 }
 
-/** Concluir um lembrete nesta data (único: feito; repetido: pula a data). null sem sessão. */
-export function useCompleteReminder(): ((id: string, date: string) => Promise<void>) | null {
+/** Concluir um lembrete nesta data (único: feito; repetido: pula a data; vários no dia: só o horário). null sem sessão. */
+export function useCompleteReminder(): ((id: string, date: string, time?: string) => Promise<void>) | null {
   const repo = useAgendaMaybe()?.repo ?? null;
-  return useMemo(() => (repo ? async (id, date) => void (await repo.completeReminder(id, date)) : null), [repo]);
+  return useMemo(() => (repo ? async (id, date, time) => void (await repo.completeReminder(id, date, time)) : null), [repo]);
 }
 
 /** O lembrete ainda está pendente nesta data? (um adiamento do aviso só vale se sim) null antes da leitura. */
-export function usePendingReminder(): ((id: string, date: string) => boolean) | null {
+export function usePendingReminder(): ((id: string, date: string, time?: string) => boolean) | null {
   const reminders = useAgendaMaybe()?.data?.reminders ?? null;
-  return useMemo(() => (reminders ? (id, date) => isReminderPending(reminders, id, date) : null), [reminders]);
+  return useMemo(() => (reminders ? (id, date, time) => isReminderPending(reminders, id, date, time) : null), [reminders]);
 }

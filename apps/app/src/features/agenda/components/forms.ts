@@ -1,6 +1,6 @@
 // Formulários da agenda: o que a tela guarda (texto dos campos) ↔ rascunho do domain. Puro e testável; as regras
 // de negócio (fim depois do início etc.) continuam no domain, aqui só a leitura dos campos.
-import type { CalendarEvent, EventDraft, Reminder, ReminderDraft } from '@glife/domain/agenda';
+import { REMINDER_SLOTS_MAX, REMINDER_TIMES_MAX, reminderTimes, type CalendarEvent, type EventDraft, type Reminder, type ReminderDraft, type ReminderTimeMode } from '@glife/domain/agenda';
 import { weekdayBit, weekdayOf, type IsoDate } from '@glife/domain/time';
 
 import { formatDateInput, parseDateInput, parseTimeInput } from '@/shared/lib/calendarInput';
@@ -109,10 +109,33 @@ export function readEventForm(f: EventForm): FormResult<EventDraft> {
 
 // ---------- Lembrete ----------
 
+export type ReminderMode = ReminderTimeMode;
+
+/** "A cada" do lembrete por intervalo (minutos). */
+export const EVERY_OPTIONS: readonly { label: string; minutes: number }[] = [
+  { label: '15 min', minutes: 15 },
+  { label: '30 min', minutes: 30 },
+  { label: '1 h', minutes: 60 },
+  { label: '2 h', minutes: 120 },
+  { label: '3 h', minutes: 180 },
+  { label: '4 h', minutes: 240 },
+  { label: '6 h', minutes: 360 },
+  { label: '8 h', minutes: 480 },
+  { label: '12 h', minutes: 720 },
+];
+
 export interface ReminderForm {
   title: string;
   date: string;
+  /** uma vez: a hora; intervalo: a partir de quando */
   time: string;
+  mode: ReminderMode;
+  /** lista de horários (hh:mm), em ordem */
+  times: string[];
+  /** intervalo: a cada quantos minutos */
+  every: number;
+  /** intervalo: até quando */
+  endTime: string;
   notes: string;
   repeat: RepeatValue;
 }
@@ -121,6 +144,10 @@ export const emptyReminderForm = (date: IsoDate): ReminderForm => ({
   title: '',
   date: formatDateInput(date),
   time: '09:00',
+  mode: 'once',
+  times: [],
+  every: 120,
+  endTime: '',
   notes: '',
   repeat: { frequency: 'none', interval: '1', weekdays: 0, until: '' },
 });
@@ -129,16 +156,48 @@ export const reminderToForm = (r: Reminder): ReminderForm => ({
   title: r.title,
   date: formatDateInput(r.start_date),
   time: r.time,
+  mode: r.time_mode,
+  times: [...r.times],
+  every: r.every_minutes ?? 120,
+  endTime: r.end_time ?? '',
   notes: r.notes,
   repeat: repeatOf(r),
 });
 
+/** Põe um horário na lista (em ordem, sem repetir). */
+export const addReminderTime = (times: readonly string[], time: string): string[] => {
+  const t = parseTimeInput(time);
+  return t ? [...new Set([...times, t])].sort() : [...times];
+};
+
+/** Os horários que o formulário daria (para o resumo ao vivo); vazio se ainda não dá para saber. */
+export function previewReminderTimes(f: ReminderForm): string[] {
+  if (f.mode === 'list') return f.times;
+  const time = parseTimeInput(f.time);
+  if (!time) return [];
+  if (f.mode === 'once') return [time];
+  const end = parseTimeInput(f.endTime);
+  if (!end || end <= time) return [];
+  return reminderTimes({ time, time_mode: 'interval', times: [], every_minutes: f.every, end_time: end });
+}
+
 export function readReminderForm(f: ReminderForm): FormResult<ReminderDraft> {
   const date = parseDateInput(f.date);
   if (!date) return { ok: false, error: 'Data inválida' };
-  const time = parseTimeInput(f.time);
-  if (!time) return { ok: false, error: 'Hora inválida (hh:mm)' };
   const repeat = readRepeat(f.repeat, date);
   if (!repeat.ok) return repeat;
-  return { ok: true, value: { title: f.title, start_date: date, time, notes: f.notes, ...repeat.value } };
+  const base = { title: f.title, start_date: date, notes: f.notes, ...repeat.value };
+  if (f.mode === 'list') {
+    if (f.times.length < 2) return { ok: false, error: 'Escolha ao menos 2 horários' };
+    if (f.times.length > REMINDER_TIMES_MAX) return { ok: false, error: `No máximo ${REMINDER_TIMES_MAX} horários` };
+    return { ok: true, value: { ...base, time: f.times[0]!, time_mode: 'list', times: f.times } };
+  }
+  const time = parseTimeInput(f.time);
+  if (!time) return { ok: false, error: f.mode === 'interval' ? 'Hora de início inválida (hh:mm)' : 'Hora inválida (hh:mm)' };
+  if (f.mode === 'once') return { ok: true, value: { ...base, time, time_mode: 'once' } };
+  const end = parseTimeInput(f.endTime);
+  if (!end) return { ok: false, error: 'Diga até que horas (hh:mm)' };
+  if (end <= time) return { ok: false, error: 'A hora final precisa ser depois da inicial' };
+  if (previewReminderTimes(f).length > REMINDER_SLOTS_MAX) return { ok: false, error: `São mais de ${REMINDER_SLOTS_MAX} vezes no dia; aumente o intervalo` };
+  return { ok: true, value: { ...base, time, time_mode: 'interval', every_minutes: f.every, end_time: end } };
 }

@@ -22,4 +22,4 @@ export { ChartCategoryScreen } from './screens/ChartCategoryScreen';
 export { TodayFinanceBlock } from './components/charts/SummaryBlocks';
 export { useFinanceTaggedSource } from './hooks/useFinanceTaggedSource';
 export { useFinanceNotifications } from './hooks/useFinanceNotifications';
-export { useFinanceTargetSource } from './hooks/useFinanceTargetSource';
+export { useFinanceTargetSources } from './hooks/useFinanceTargetSource';

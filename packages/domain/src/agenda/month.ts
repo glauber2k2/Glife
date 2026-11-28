@@ -1,12 +1,15 @@
-// Calendário do mês: a grade de semanas inteiras e os pontos (até 3, um por módulo) de cada dia. Funções puras.
+// Calendário do mês: a grade de semanas inteiras e os pontos (um por módulo) de cada dia. Funções puras.
 import { addDays, daysInMonth, weekdayOf, type IsoDate } from '../time/index.ts';
 
 /** "AAAA-MM". */
 export type YearMonth = string;
-/** Módulos que marcam o dia no calendário (subconjunto das chaves de módulo do app). */
-export type DayDotModule = 'agenda' | 'reminders' | 'diet';
+/**
+ * Módulos que marcam o dia no calendário. Só compromissos: o plano da dieta vale para todo dia e marcaria até o
+ * dia livre.
+ */
+export type DayDotModule = 'agenda' | 'reminders';
 
-/** Uma coisa que acontece num dia: evento, lembrete ou refeição do plano. */
+/** Uma coisa que acontece num dia: evento ou lembrete. */
 export interface DayOccurrence {
   date: IsoDate;
   module: DayDotModule;
@@ -17,7 +20,7 @@ export interface MonthCell {
   inMonth: boolean;
 }
 
-const DOT_ORDER: readonly DayDotModule[] = ['agenda', 'reminders', 'diet'];
+const DOT_ORDER: readonly DayDotModule[] = ['agenda', 'reminders'];
 
 /** Todos os dias do mês, completados com os vizinhos até fechar semanas inteiras (35 ou 42 células). */
 export function monthGrid(month: YearMonth, weekStartsOn: 0 | 1 = 0): MonthCell[] {
@@ -39,8 +42,8 @@ export function shiftMonth(month: YearMonth, by: number): YearMonth {
   return `${String(Math.floor(idx / 12)).padStart(4, '0')}-${String((idx % 12) + 1).padStart(2, '0')}`;
 }
 
-/** Pontos do dia: um por módulo que tem algo nele, na ordem agenda, lembrete, dieta (no máximo 3). */
+/** Pontos do dia: um por módulo que tem algo nele, na ordem agenda, lembrete. */
 export function dayDots(date: IsoDate, occurrences: readonly DayOccurrence[]): DayDotModule[] {
   const has = new Set(occurrences.filter((o) => o.date === date).map((o) => o.module));
-  return DOT_ORDER.filter((k) => has.has(k)).slice(0, 3);
+  return DOT_ORDER.filter((k) => has.has(k));
 }

@@ -42,11 +42,14 @@ export const mealLogRoute = (planId: string): string | null => {
 /** Valida o que volta de um aviso (dados do aparelho): só lembrete/refeição com id e data no formato certo. */
 export function parseNoticeRef(raw: unknown): NoticeRef | null {
   if (typeof raw !== 'object' || raw === null) return null;
-  const { kind, id, date } = raw as Record<string, unknown>;
+  const { kind, id, date, time } = raw as Record<string, unknown>;
   if (kind !== 'reminder' && kind !== 'meal') return null;
   if (typeof id !== 'string' || !new RegExp(`^${UUID}$`).test(id)) return null;
   if (typeof date !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(date)) return null;
-  return { kind, id, date };
+  if (time === undefined) return { kind, id, date };
+  // Horário só nos lembretes com várias vezes no dia.
+  if (kind !== 'reminder' || typeof time !== 'string' || !/^([01]\d|2[0-3]):[0-5]\d$/.test(time)) return null;
+  return { kind, id, date, time };
 }
 
 /** Aviso agendado como o agendador o vê (só o que importa para decidir o que cancelar). */

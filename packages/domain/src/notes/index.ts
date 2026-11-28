@@ -23,3 +23,4 @@ export {
 } from './model.ts';
 export type { NoteFolderSummary, NoteFoldersRepository, NoteListQuery, NotesRepository } from './repository.ts';
 export { folderBreadcrumbs, folderChildren, folderDestinations, folderPath } from './folders.ts';
+export { NOTES_AI_TOOLS } from './ai-tools.ts';

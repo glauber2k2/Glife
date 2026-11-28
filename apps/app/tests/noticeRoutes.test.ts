@@ -32,4 +32,11 @@ describe('parseNoticeRef', () => {
     for (const bad of [null, 'x', { kind: 'event', id: ID, date: '2026-11-26' }, { kind: 'meal', id: 'x', date: '2026-11-26' }, { kind: 'meal', id: ID, date: 26 }])
       expect(parseNoticeRef(bad)).toBeNull();
   });
+
+  it('horário só em lembrete e no formato hh:mm', () => {
+    expect(parseNoticeRef({ kind: 'reminder', id: ID, date: '2026-11-26', time: '14:00' })).toEqual({ kind: 'reminder', id: ID, date: '2026-11-26', time: '14:00' });
+    expect(parseNoticeRef({ kind: 'meal', id: ID, date: '2026-11-26', time: '14:00' })).toBeNull();
+    expect(parseNoticeRef({ kind: 'reminder', id: ID, date: '2026-11-26', time: '25:00' })).toBeNull();
+    expect(parseNoticeRef({ kind: 'reminder', id: ID, date: '2026-11-26', time: 1400 })).toBeNull();
+  });
 });

@@ -7,7 +7,10 @@
     "test": "vitest run"
   },
   "devDependencies": {
+    "@ai-sdk/deepseek": "3.0.61",
     "@electric-sql/pglite": "^0.5.17",
-    "vitest": "^5.1.1"
+    "ai": "7.0.131",
+    "vitest": "^5.1.1",
+    "zod": "^4.6.7"
   }
 }

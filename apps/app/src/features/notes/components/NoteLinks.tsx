@@ -5,7 +5,7 @@ import { BookOpen, FileText } from 'lucide-react-native';
 import { useEffect, useState } from 'react';
 import { View } from 'react-native';
 
-import { useAddressHref, useHasTargetSource, useLinksData, useOpenAddress, useOpenTarget } from '@/features/links';
+import { useAddressHref, useHasTargetSource, useLinksData, useOpenAddress, useOpenTarget, useTargetSources } from '@/features/links';
 import { ListGroup, NavRow, Section, makeStyles } from '@/shared/ui';
 
 import { useNotesData } from '../hooks/NotesData';
@@ -31,6 +31,7 @@ export function NoteLinks({ noteId, version }: { noteId: string; version: number
   const { notes } = useNotesData();
   const { links } = useLinksData();
   const openTarget = useOpenTarget();
+  const sources = useTargetSources();
   const canOpen = useHasTargetSource();
   const openAddress = useOpenAddress();
   const addressHref = useAddressHref();
@@ -75,21 +76,25 @@ export function NoteLinks({ noteId, version }: { noteId: string; version: number
     let active = true;
     void (async () => {
       const rows = await Promise.all(
-        backlinks
-          .filter((l) => l.source_type === 'note')
-          .map(async (l): Promise<Row | null> => {
+        backlinks.map(async (l): Promise<Row | null> => {
+          if (l.source_type === 'note') {
             const n = await notes.get(l.source_id);
-            return n
-              ? { key: l.id, label: n.title || 'Sem título', meta: 'Nota', kind: 'note', noteId: n.id }
-              : null;
-          }),
+            return n ? { key: l.id, label: n.title || 'Sem título', meta: 'Nota', kind: 'note', noteId: n.id } : null;
+          }
+          // Lembrete, lançamento, refeição… que vinculou esta nota (some se o item foi excluído).
+          const source = sources.find((x) => x.type === l.source_type);
+          const title = source?.title ? await source.title(l.source_id).catch(() => null) : null;
+          return source && title !== null
+            ? { key: l.id, label: title, meta: source.kindLabel ?? 'Item', kind: 'other', target: { type: l.source_type, id: l.source_id } }
+            : null;
+        }),
       );
       if (active) setBackRows(rows.filter((r): r is Row => r !== null));
     })();
     return () => {
       active = false;
     };
-  }, [backlinks, notes]);
+  }, [backlinks, notes, sources]);
 
   if (!outgoing.length && !backRows.length) return null;
 

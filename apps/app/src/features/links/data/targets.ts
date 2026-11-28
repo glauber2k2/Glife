@@ -21,6 +21,10 @@ export interface TargetSource {
   restore?(id: string): Promise<void>;
   /** tela da lixeira do módulo */
   trashHref?: string;
+  /** tipo do item numa lista de vínculos: "Lembrete", "Lançamento" */
+  kindLabel?: string;
+  /** nome do item vivo para listas de vínculos (null: excluído ou ausente) */
+  title?(id: string): Promise<string | null>;
 }
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;

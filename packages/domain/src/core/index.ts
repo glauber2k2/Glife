@@ -12,6 +12,7 @@ export const ENTITY_TYPES = [
   'event',
   'reminder',
   'meal',
+  'meal_plan',
   'media',
   'bible',
   'bible_annotation',

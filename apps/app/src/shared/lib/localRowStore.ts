@@ -9,6 +9,11 @@ export interface RowCodecs {
   booleans?: readonly string[];
   /** colunas com lista guardada como texto JSON (inválida ou vazia = lista vazia) */
   json?: readonly string[];
+  /**
+   * valor de coluna nula ao ler (coluna nova: linhas antigas chegam pelo sync sem ela, porque o servidor só reenvia
+   * a linha quando ela muda)
+   */
+  defaults?: Readonly<Record<string, unknown>>;
 }
 
 async function unavailable<T>(fn: () => Promise<T>): Promise<T> {
@@ -40,7 +45,7 @@ export function createLocalRowStore<R extends RowMap>(
     for (const [k, v] of Object.entries(row)) {
       if (booleans.has(k)) out[k] = v === 1 || v === true;
       else if (json.has(k)) out[k] = parseJson(v);
-      else out[k] = v ?? null;
+      else out[k] = v ?? codecs.defaults?.[k] ?? null;
     }
     return out as R[K];
   };
