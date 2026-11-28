@@ -37,7 +37,7 @@ import { Platform, Pressable, View } from 'react-native';
 import Animated, { Easing, FadeOut, LinearTransition, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 
 import { MoneyFade } from '@/shared/lib/MoneyVisibility';
-import { Button, EmptyState, Icon, IconButton, Reveal, Screen, Tag, Text, makeStyles, moduleHue, useReduceMotion, useTheme } from '@/shared/ui';
+import { BackHeader, Button, EmptyState, Icon, IconButton, Reveal, Screen, Tag, Text, makeStyles, moduleHue, useReduceMotion, useTheme } from '@/shared/ui';
 
 import { ACCOUNT_KIND_LABEL, accountIcon, categoryIcon, TRANSFER_ICON } from '../components/categories';
 import { dm, lateText, longDay, monthName, monthShort, todayIso } from '../components/format';
@@ -168,7 +168,7 @@ export function FinanceHomeScreen() {
     <Screen
       eyebrow={longDay(today)}
       title="Finanças"
-      tabBar
+      header={<BackHeader backLabel="Início" fallback="/" />}
       action={
         hasAccounts ? (
           <View style={s.topActions}>

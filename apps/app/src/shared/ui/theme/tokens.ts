@@ -343,6 +343,8 @@ export const layout = {
   /** Data/hora com ícone e ação de limpar: não comprimir o valor em pares estreitos. */
   calendarFieldMinWidth: 220,
   authMaxWidth: 420,
+  /** largura máxima de uma mensagem na conversa com o Glife IA */
+  chatBubbleMaxWidth: 560,
   /** respiro acima da marca na tela Entrar */
   authTop: 72,
   /** cabeçalho das etapas de acesso (marca + Sair) */

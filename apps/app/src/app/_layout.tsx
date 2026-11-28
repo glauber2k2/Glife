@@ -209,6 +209,7 @@ function RootStack() {
                   <Stack.Screen name="lixeira" options={{ animation: animation.detail }} />
                   <Stack.Screen name="tags" options={{ animation: animation.detail }} />
                   <Stack.Screen name="tags/[id]" options={{ animation: animation.detail }} />
+                  <Stack.Screen name="financas" options={{ animation: animation.detail }} />
                   <Stack.Screen name="financas/fatura/[id]" options={{ animation: animation.detail }} />
                   <Stack.Screen name="financas/conta/[id]" options={{ animation: animation.detail }} />
                   <Stack.Screen name="financas/nova-conta" options={{ animation: animation.detail }} />
