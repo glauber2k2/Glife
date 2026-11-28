@@ -134,6 +134,7 @@ O Claude é o agente principal; o Codex só assume quando os créditos do Claude
 - CLI do Supabase: `pnpm sb … --remote` (sem `--remote`, `db push` mira o Docker local). **Não** rode `pnpm sb config push`
   (o `config.toml` é de desenvolvimento); Auth do hospedado muda pela Management API, campo a campo. Contas de Auth: criar
   no projeto **GLIFE** (o usuário tem vários).
+- Edge Functions que usam o import map (`@glife/domain/*`, `ai`, `zod`): publique com `pnpm sb functions deploy <nome> --import-map supabase/functions/deno.json` (sem a flag, o bundle falha com "Relative import path").
 - QR do MFA do Supabase vem como data URL SVG sem viewBox: `svgFromDataUrl` trata.
 - PowerSync web: o worker vem de `public/@powersync` (`pnpm --filter app powersync:assets`, roda no postinstall).
   `op-sqlite` fixo em ~18.2. No navegador embutido do app Claude o banco local não abre ("Client has already been
