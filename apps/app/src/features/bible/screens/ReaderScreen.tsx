@@ -11,7 +11,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { errorText } from '@/shared/lib/errorText';
 import { BackHeader, EmptyState, Icon, IconButton, ListGroup, NavRow, Section, Spinner, Text, makeStyles, useReduceMotion, useTheme, useToast } from '@/shared/ui';
-import { goBackOr, replaceBack } from '@/shared/navigation/backNavigation';
+import { goBackOr } from '@/shared/navigation/backNavigation';
 
 import { passageActions, type PassageAction, type PassageContext } from '../components/actions';
 import { registerBuiltinActions } from '../components/builtinActions';
@@ -19,7 +19,7 @@ import { BooksSheet } from '../components/BooksSheet';
 import { ChapterHeader } from '../components/ChapterHeader';
 import { PlanReaderCard, PlanStrip } from '../components/PlanReader';
 import { LinkedItemsSheet } from '../components/LinkedItemsSheet';
-import { chapterHref, neighborChapter } from '../components/navigation';
+import { neighborChapter } from '../components/navigation';
 import { PassageBar } from '../components/PassageBar';
 import { rangeLabel } from '../components/passageLabel';
 import { ReadingSheet } from '../components/ReadingSheet';
@@ -40,6 +40,12 @@ export function ReaderScreen() {
   const book = getBook(String(livro ?? '').toUpperCase());
   const chapter = Number(cap);
   const s = useStyles();
+  // Troca de capítulo fica nesta tela (só o texto anima); guarda de que lado o novo capítulo entra.
+  const [step, setStep] = useState<ChapterStep>(0);
+  const change = useCallback((to: { book: string; chapter: number }, dir: 1 | -1) => {
+    setStep(dir);
+    router.setParams({ livro: to.book, cap: String(to.chapter), v: undefined });
+  }, []);
   if (!book || !Number.isInteger(chapter) || chapter < 1 || chapter > book.chapters) {
     return (
       <View style={s.root}>
@@ -48,10 +54,32 @@ export function ReaderScreen() {
       </View>
     );
   }
-  return <Reader key={`${book.code}.${chapter}`} book={book.code} chapter={chapter} target={Number(v) || null} planId={plano ?? null} />;
+  return (
+    <Reader
+      key={`${book.code}.${chapter}`}
+      book={book.code}
+      chapter={chapter}
+      target={Number(v) || null}
+      planId={plano ?? null}
+      enterFrom={step}
+      onChange={change}
+    />
+  );
 }
 
-function Reader({ book, chapter, target, planId }: { book: string; chapter: number; target: number | null; planId: string | null }) {
+/** 1 = veio do próximo (entra pela direita), -1 = do anterior (pela esquerda), 0 = abriu agora (sem animar). */
+type ChapterStep = 1 | -1 | 0;
+
+interface ReaderProps {
+  book: string;
+  chapter: number;
+  target: number | null;
+  planId: string | null;
+  enterFrom: ChapterStep;
+  onChange(to: { book: string; chapter: number }, dir: 1 | -1): void;
+}
+
+function Reader({ book, chapter, target, planId, enterFrom, onChange }: ReaderProps) {
   const s = useStyles();
   const t = useTheme();
   const toast = useToast();
@@ -176,13 +204,19 @@ function Reader({ book, chapter, target, planId }: { book: string; chapter: numb
 
   const prev = neighborChapter(book, chapter, -1);
   const next = neighborChapter(book, chapter, 1);
-  // Próximo capítulo entra pela direita; o anterior, pela esquerda (a troca anima como "voltar").
+  // Próximo capítulo entra pela direita; o anterior, pela esquerda. As barras ficam paradas.
   const go = (to: { book: string; chapter: number } | null, back = false) => {
-    if (!to) return;
-    const href = chapterHref(to.book, to.chapter) as Href;
-    if (back) replaceBack(href);
-    else router.replace(href);
+    if (to) onChange(to, back ? -1 : 1);
   };
+  // Só a coluna de texto anima: esmaece e desliza um pouco do lado de onde veio (reduzir movimento: só esmaece).
+  const enter = useSharedValue(enterFrom === 0 ? 1 : 0);
+  useEffect(() => {
+    if (enterFrom === 0) return;
+    const [x1, y1, x2, y2] = t.easing.enter;
+    enter.set(withTiming(1, { duration: reduceMotion ? t.motion.reduced : t.motion.gentle, easing: Easing.bezier(x1, y1, x2, y2) }));
+  }, [enter, enterFrom, reduceMotion, t]);
+  const offset = reduceMotion ? 0 : enterFrom * t.motion.enterOffset;
+  const columnStyle = useAnimatedStyle(() => ({ opacity: enter.get(), transform: [{ translateX: (1 - enter.get()) * offset }] }));
 
   const sheetItems = sheet ? (sheet.verse === null ? linked.chapter : (linked.byVerse.get(sheet.verse) ?? [])) : [];
   const sheetTitle = sheet ? formatRef(sheet.verse === null ? { book, chapter } : { book, chapter, verse: sheet.verse }, 'name') : '';
@@ -200,7 +234,7 @@ function Reader({ book, chapter, target, planId }: { book: string; chapter: numb
         ]}
         showsVerticalScrollIndicator={false}
       >
-        <View style={s.column}>
+        <Animated.View style={[s.column, columnStyle]}>
           {planView && <PlanStrip view={planView} book={book} chapter={chapter} today={plans.today} />}
           <ChapterHeader book={name} chapter={chapter} verses={state.status === 'ready' ? verses.length : null} minutes={state.status === 'ready' ? readMinutes(verses) : null} />
           {state.status === 'loading' && <Spinner />}
@@ -264,7 +298,7 @@ function Reader({ book, chapter, target, planId }: { book: string; chapter: numb
               {translation.credit}
             </Text>
           )}
-        </View>
+        </Animated.View>
       </ScrollView>
 
       <Animated.View style={[s.topBar, { paddingTop: insets.top }, topStyle]}>
