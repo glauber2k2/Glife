@@ -1,7 +1,8 @@
 // Executores das ferramentas de notas do Glife IA (definições em `@glife/domain/notes` → ai-tools). Usam o mesmo
 // repositório das telas (mesmas regras). O que volta ao modelo leva só apelidos e texto mascarado (sem ids reais,
 // telefones, e-mails ou links); o que vem do modelo para gravar tem os marcadores repostos.
-import { AiToolError, resolveAlias, type AiExecContext, type AiToolKit, type AiTouch } from '@glife/domain/ai';
+import { AiToolError, assertUnchanged, resolveAlias, type AiExecContext, type AiToolKit } from '@glife/domain/ai';
+import { RepositoryError } from '@glife/domain/core';
 import type { Note, NoteFoldersRepository, NotePatch, NotesRepository } from '@glife/domain/notes';
 
 const SNIPPET_MAX = 200;
@@ -67,13 +68,14 @@ export function createNotesAiKit(notes: NotesRepository, _folders: NoteFoldersRe
         if (i.pinned !== undefined) patch.pinned = i.pinned;
         const after = await notes.update(before.id, patch);
         const old = Object.fromEntries(Object.keys(patch).map((k) => [k, before[k as keyof Note]]));
-        return { output: { note: i.note, ok: true }, touches: [{ entity: 'note', id: after.id, kind: 'update', before: old }], summary: `Nota alterada: ${label(after)}` };
+        return { output: { note: i.note, ok: true }, touches: [{ entity: 'note', id: after.id, kind: 'update', before: old, version: after.updated_at }], summary: `Nota alterada: ${label(after)}` };
       },
       async notes_trash(input, ctx) {
-        const ids = (input as { notes: string[] }).notes.map((a) => resolveAlias(ctx.aliases, 'note', a));
+        const ids = [...new Set((input as { notes: string[] }).notes.map((a) => resolveAlias(ctx.aliases, 'note', a)))];
         const found = await Promise.all(ids.map((id) => existing(notes, id)));
         await notes.removeMany(ids);
-        const touches: AiTouch[] = ids.map((id) => ({ entity: 'note', id, kind: 'trash', before: null }));
+        // Uma ação só: desfazer tira todas da lixeira juntas (restoreMany é tudo ou nada).
+        const touches = [{ entity: 'note' as const, id: ids[0]!, ids, kind: 'trash' as const, before: null }];
         const summary = found.length === 1 ? `Nota na lixeira: ${label(found[0]!)}` : `${found.length} notas na lixeira`;
         return { output: { ok: true, trashed: ids.length }, touches, summary };
       },
@@ -88,8 +90,13 @@ export function createNotesAiKit(notes: NotesRepository, _folders: NoteFoldersRe
     undo: {
       async note(t) {
         if (t.kind === 'create') await notes.remove(t.id);
-        else if (t.kind === 'trash') await notes.restore(t.id);
-        else await notes.update(t.id, (t.before ?? {}) as NotePatch);
+        else if (t.kind === 'trash') await notes.restoreMany(t.ids ?? [t.id]);
+        else {
+          const current = await notes.get(t.id);
+          if (!current) throw new RepositoryError('not_found');
+          assertUnchanged(t, current);
+          await notes.update(t.id, (t.before ?? {}) as NotePatch);
+        }
       },
     },
   };

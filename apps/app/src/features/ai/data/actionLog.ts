@@ -1,6 +1,6 @@
 // Registro das ações da IA no banco local, com "Desfazer". Cada `undo` das features é idempotente; se um falhar,
 // a ação não é marcada como desfeita e dá para tentar de novo.
-import type { AiToolKit, AiTouch } from '@glife/domain/ai';
+import { AiToolError, type AiToolKit, type AiTouch } from '@glife/domain/ai';
 import { isRepositoryError, newId, nowIso, type LocalDb } from '@glife/domain/core';
 
 import { errorText } from '@/shared/lib/errorText';
@@ -55,6 +55,7 @@ export function createActionLog(db: LocalDb, clock: () => Date = () => new Date(
         }
       } catch (e) {
         if (isRepositoryError(e, 'not_found')) return { ok: false, reason: 'O item não existe mais.' };
+        if (e instanceof AiToolError) return { ok: false, reason: e.message };
         return { ok: false, reason: errorText(e) };
       }
       await db.execute('UPDATE ai_actions SET undone_at = ? WHERE id = ?', [nowIso(clock), id]);

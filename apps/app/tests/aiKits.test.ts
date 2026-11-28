@@ -63,7 +63,7 @@ describe('kits de ferramentas da IA', () => {
     const n = await notes.create({ title: 'Antigo', body_md: 'texto' });
     ctx.aliases.alias('note', n.id);
     const r = await run(kit, 'notes_update', { note: 'n1', title: 'Novo' });
-    expect(r.touches).toEqual([{ entity: 'note', id: n.id, kind: 'update', before: { title: 'Antigo' } }]);
+    expect(r.touches).toEqual([{ entity: 'note', id: n.id, kind: 'update', before: { title: 'Antigo' }, version: expect.any(String) }]);
     expect((await notes.get(n.id))!.title).toBe('Novo');
     await kit.undo.note!(r.touches[0]!);
     expect((await notes.get(n.id))!.title).toBe('Antigo');
@@ -126,5 +126,40 @@ describe('kits de ferramentas da IA', () => {
     const n = await notes.create({ title: 'Compras do mês' });
     ctx.aliases.alias('note', n.id);
     expect(await kit.preview!.notes_trash!({ notes: ['n1'] }, ctx)).toMatch(/Compras do mês/);
+  });
+});
+
+describe('desfazer seguro', () => {
+  it('lixeira de várias notas volta toda junto ou nada volta', async () => {
+    const { kit, run, notes, ctx } = setup();
+    const a = await notes.create({ title: 'A' });
+    const b = await notes.create({ title: 'B' });
+    ctx.aliases.alias('note', a.id);
+    ctx.aliases.alias('note', b.id);
+    const r = await run(kit, 'notes_trash', { notes: ['n1', 'n2'] });
+    expect(r.touches).toHaveLength(1);
+    await notes.deleteForever(b.id);
+    await expect(kit.undo.note!(r.touches[0]!)).rejects.toMatchObject({ code: 'not_found' });
+    expect(await notes.get(a.id)).toBeNull(); // A continua na lixeira: nada pela metade
+  });
+
+  it('desfazer edição não passa por cima do que o usuário mudou depois', async () => {
+    const { kit, run, notes, ctx } = setup();
+    const n = await notes.create({ title: 'Antigo' });
+    ctx.aliases.alias('note', n.id);
+    const r = await run(kit, 'notes_update', { note: 'n1', title: 'Da IA' });
+    await new Promise((res) => setTimeout(res, 5));
+    await notes.update(n.id, { title: 'Do usuário' });
+    await expect(kit.undo.note!(r.touches[0]!)).rejects.toThrow(/mudou depois/);
+    expect((await notes.get(n.id))!.title).toBe('Do usuário');
+  });
+
+  it('desfazer edição de evento também confere se mudou depois', async () => {
+    const { kit, run, agenda } = setup();
+    const c = await run(kit, 'event_create', { title: 'Dentista', start_date: '2026-12-02', start_time: '14:30' });
+    const u = await run(kit, 'event_update', { event: 'e1', start_time: '15:00' });
+    await new Promise((res) => setTimeout(res, 5));
+    await agenda.updateEvent(c.touches[0]!.id, { location: 'Clínica' });
+    await expect(kit.undo.event!(u.touches[0]!)).rejects.toThrow(/mudou depois/);
   });
 });

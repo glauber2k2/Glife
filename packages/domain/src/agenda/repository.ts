@@ -1,6 +1,6 @@
 // Repositório da agenda sobre um RowStore (SQLite no app, memória nos testes). Regras aqui; o armazenamento só
 // guarda linhas. Excluir é lógico (lixeira) e todo método devolve a linha como ficou.
-import { aliveRow, guardRules, repositoryErrorOf, restore, softDelete, type ErrorListener, type Listener, type RowStore, type Unsubscribe } from '../core/index.ts';
+import { RepositoryError, aliveRow, guardRules, repositoryErrorOf, restore, softDelete, type ErrorListener, type Listener, type RowStore, type Unsubscribe } from '../core/index.ts';
 import type { IsoDate } from '../time/index.ts';
 import {
   applyEventPatch,
@@ -69,7 +69,8 @@ export function createAgendaRepository(store: RowStore<AgendaRows>, userId: stri
   const undelete = (table: 'events' | 'reminders', id: string) =>
     guardRules(async () => {
       const row = await store.get(table, id);
-      if (!row) return;
+      // Item que não existe mais (apagado de vez): avisa em vez de fingir que restaurou.
+      if (!row) throw new RepositoryError('not_found');
       if (row.deleted_at !== null) await store.put(table, restore(row, clock));
     });
   const create = async <T extends CalendarEvent | Reminder>(table: 'events' | 'reminders', row: T) => {

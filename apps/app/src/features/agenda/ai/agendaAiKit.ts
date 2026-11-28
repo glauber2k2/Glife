@@ -1,7 +1,7 @@
 // Executores das ferramentas de agenda do Glife IA (definições em `@glife/domain/agenda` → ai-tools). Usam o mesmo
 // repositório das telas. Saídas com apelidos (e1, r1) e texto mascarado; nada de ids reais.
 import { agendaBetween, type AgendaRepository, type CalendarEvent, type EventPatch, type Reminder, type ReminderPatch } from '@glife/domain/agenda';
-import { resolveAlias, type AiExecContext, type AiToolKit } from '@glife/domain/ai';
+import { assertUnchanged, resolveAlias, type AiExecContext, type AiToolKit } from '@glife/domain/ai';
 
 const dm = (date: string) => `${date.slice(8, 10)}/${date.slice(5, 7)}`;
 const when = (date: string, time: string | null | undefined) => (time ? `${dm(date)} ${time}` : `${dm(date)}, dia inteiro`);
@@ -43,7 +43,7 @@ export function createAgendaAiKit(agenda: AgendaRepository): AiToolKit {
         const patch = Object.fromEntries(Object.entries(unmaskText(rest, ctx.aliases, TEXT_KEYS)).filter(([, v]) => v !== undefined)) as EventPatch;
         const before = await agenda.getEvent(id);
         const after = await agenda.updateEvent(id, patch);
-        return { output: { event, ok: true }, touches: [{ entity: 'event', id, kind: 'update', before: pickBefore(before, patch) }], summary: `Evento alterado: ${after.title} · ${when(after.start_date, after.start_time)}` };
+        return { output: { event, ok: true }, touches: [{ entity: 'event', id, kind: 'update', before: pickBefore(before, patch), version: after.updated_at }], summary: `Evento alterado: ${after.title} · ${when(after.start_date, after.start_time)}` };
       },
       async event_trash(input, ctx) {
         const id = resolveAlias(ctx.aliases, 'event', (input as { event: string }).event);
@@ -62,14 +62,14 @@ export function createAgendaAiKit(agenda: AgendaRepository): AiToolKit {
         const patch = Object.fromEntries(Object.entries(unmaskText(rest, ctx.aliases, TEXT_KEYS)).filter(([, v]) => v !== undefined)) as ReminderPatch;
         const before = await agenda.getReminder(id);
         const after = await agenda.updateReminder(id, patch);
-        return { output: { reminder, ok: true }, touches: [{ entity: 'reminder', id, kind: 'update', before: pickBefore(before, patch) }], summary: `Lembrete alterado: ${after.title} · ${when(after.start_date, after.time)}` };
+        return { output: { reminder, ok: true }, touches: [{ entity: 'reminder', id, kind: 'update', before: pickBefore(before, patch), version: after.updated_at }], summary: `Lembrete alterado: ${after.title} · ${when(after.start_date, after.time)}` };
       },
       async reminder_complete(input, ctx) {
         const { reminder, date, time } = input as { reminder: string; date: string; time?: string };
         const id = resolveAlias(ctx.aliases, 'reminder', reminder);
         const r = await agenda.completeReminder(id, date, time);
         // O "antes" guarda a data (e o horário) concluídos: desfazer chama `uncompleteReminder`.
-        return { output: { reminder, ok: true }, touches: [{ entity: 'reminder', id, kind: 'update', before: { __complete: { date, time: time ?? null } } }], summary: `Lembrete feito: ${r.title} · ${dm(date)}` };
+        return { output: { reminder, ok: true }, touches: [{ entity: 'reminder', id, kind: 'update', before: { __complete: { date, time: time ?? null } }, version: r.updated_at }], summary: `Lembrete feito: ${r.title} · ${dm(date)}` };
       },
       async reminder_trash(input, ctx) {
         const id = resolveAlias(ctx.aliases, 'reminder', (input as { reminder: string }).reminder);
@@ -92,12 +92,16 @@ export function createAgendaAiKit(agenda: AgendaRepository): AiToolKit {
       async event(t) {
         if (t.kind === 'create') await agenda.removeEvent(t.id);
         else if (t.kind === 'trash') await agenda.restoreEvent(t.id);
-        else await agenda.updateEvent(t.id, (t.before ?? {}) as EventPatch);
+        else {
+          assertUnchanged(t, await agenda.getEvent(t.id));
+          await agenda.updateEvent(t.id, (t.before ?? {}) as EventPatch);
+        }
       },
       async reminder(t) {
         if (t.kind === 'create') await agenda.removeReminder(t.id);
         else if (t.kind === 'trash') await agenda.restoreReminder(t.id);
         else {
+          assertUnchanged(t, await agenda.getReminder(t.id));
           const done = (t.before as { __complete?: { date: string; time: string | null } } | null)?.__complete;
           if (done) await agenda.uncompleteReminder(t.id, done.date, done.time ?? undefined);
           else await agenda.updateReminder(t.id, (t.before ?? {}) as ReminderPatch);

@@ -14,6 +14,17 @@ export interface AiTouch {
   id: string;
   kind: 'create' | 'update' | 'trash';
   before: Record<string, unknown> | null;
+  /** Vários itens da mesma ação (ex.: lixeira de várias notas): desfazer volta todos juntos ou nenhum. */
+  ids?: string[];
+  /** `updated_at` logo depois da ação: se o item mudou depois, desfazer não passa por cima. */
+  version?: string;
+}
+
+export const CHANGED_AFTER_MESSAGE = 'O item mudou depois da ação da IA; desfaça à mão para não perder a mudança.';
+
+/** Recusa desfazer uma edição se o item foi alterado depois dela. */
+export function assertUnchanged(touch: AiTouch, current: { updated_at: string }): void {
+  if (touch.version && current.updated_at !== touch.version) throw new AiToolError(CHANGED_AFTER_MESSAGE);
 }
 
 export interface AiExecResult {

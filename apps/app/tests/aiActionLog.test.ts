@@ -64,3 +64,14 @@ describe('registro de ações da IA', () => {
     expect(order).toEqual(['2', '1']);
   });
 });
+
+describe('motivo legível ao desfazer', () => {
+  it('erro com mensagem da IA vira o motivo do aviso', async () => {
+    const { AiToolError } = await import('@glife/domain/ai');
+    const { log, kit } = await setup(async () => {
+      throw new AiToolError('O item mudou depois da ação da IA; desfaça à mão.');
+    });
+    const a = await log.record({ conversation_id: 'c1', tool: 'notes_update', summary: 'Nota alterada', touches: [touch] });
+    expect(await log.undo(a.id, kit)).toEqual({ ok: false, reason: 'O item mudou depois da ação da IA; desfaça à mão.' });
+  });
+});
