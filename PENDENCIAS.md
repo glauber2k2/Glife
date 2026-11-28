@@ -23,7 +23,15 @@ Nada foi publicado nem conferido no aparelho/navegador logado (exige MFA).
   - Início → "Mês até agora": tag "Saldo esperado em DD/MM" igual ao "Esperado" da tela Finanças.
   - Investimentos → ativo → aba IA → escolher pergunta → "Perguntar à Glife IA".
 - [ ] Prototipagem pendente (decisão de 28/11: seguir o design system): compositor rápido e faixa de voz com cadeado.
-- [ ] Acompanhar o gasto da DeepSeek: anexos grandes são reenviados a cada mensagem da mesma conversa.
+- [ ] Acompanhar o gasto da DeepSeek: o anexo mais recente vai inteiro a cada mensagem da conversa (os antigos vão
+  só num trecho de 2 mil caracteres).
+- [ ] Privacidade: a voz usa o reconhecimento do sistema (no Android, normalmente o serviço do Google; no Chrome, o
+  do navegador), que pode enviar o áudio ao Google. O Glife não grava áudio. Se quiser só no aparelho, dá para exigir
+  reconhecimento offline onde houver (alguns aparelhos não têm).
+
+Menores adiados da revisão: com o JS ocupado, um toque pode virar gravação curta ("Não ouvi nada"); no web, negar o
+microfone gera aviso duplo e não abre o campo; TXT/CSV enormes são lidos inteiros; leitor de tela não alcança os
+links dentro do versículo; a faixa de voz não mostra cronômetro; pergunta do ativo cortada em 2 mil caracteres.
 
 ## Investimentos v2 (28/11/2026) — juntada na branch `integracao-ia-investimentos`
 

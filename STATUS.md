@@ -1,7 +1,7 @@
 # Status: 2026-11-28
-- Tarefa atual: integração da Glife IA (PRs #3–#5) e de Investimentos v2 no master, mais ajustes pedidos (versículos, previsto no Início, botão da IA, referências cruzadas)
-- Branch: integracao-ia-investimentos (base origin/master; o master só tinha recebido o PR #2)
-- Feito: merge de lembretes-feitos-e-calendario (IA) e investimentos-v2; conflitos só em PENDENCIAS.md e STATUS.md
-- Falta: ver PENDENCIAS.md (sync-streams de investimentos, APK novo, frases de teste da IA)
-- Atenção (riscos/decisões): migrações da IA (20261202*) e de investimentos (20261203000001) sem colisão
-- Último commit: (merge de investimentos-v2)
+- Tarefa atual: integração IA + Investimentos v2 e ajustes (botão da Glife IA com voz, anexos, versículos, previsto) — concluída em código
+- Branch: integracao-ia-investimentos (base origin/master; o master só tinha o PR #2 — os #3–#5 e investimentos-v2 entram por esta branch)
+- Feito: merges sem conflito de código; referências cruzadas no versículo; troca de capítulo suave; saldo esperado no Início; mascote no centro (toque/segurar/travar, expo-speech-recognition); Finanças de volta à 5ª aba; /ia com conversa na raiz; anexos PDF/TXT/MD/CSV (função extract-text com unpdf); "Perguntar à Glife IA" no ativo; revisão final e correções; 1.596 testes verdes
+- Falta: push/PR para o master; publicar extract-text e ai-agent; APK novo (prebuild --clean); conferir no Chrome/APK — PENDENCIAS.md
+- Atenção (riscos/decisões): voz usa o reconhecimento do sistema (Google); anexos grandes consomem o teto de US$ 2; nada conferido logado; spec e plano em docs/superpowers/*/2026-11-28-ia-central-e-ajustes*
+- Último commit: 84740c7 (correções da revisão)
