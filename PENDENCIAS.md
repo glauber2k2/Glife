@@ -31,9 +31,7 @@ links dentro do versículo; a faixa de voz não mostra cronômetro; pergunta do 
 
 ## Investimentos v2 (28/11/2026) — juntada na branch `integracao-ia-investimentos`
 
-- [ ] **Republicar o `sync-streams.yaml`** no painel do PowerSync (Validate → Deploy; cole, não digite):
-  traz a linha nova de `investment_targets`. Sem isso as metas não sincronizam. (Migração `20261203000001` e a
-  função `quotes` v5 já publicadas em 28/11/2026; `rls_check.sql` = 0 linhas.)
+Sync Streams republicado em 28/11 (versão 11 no painel, com `investment_targets`; validação ok).
 - [ ] Conferir no Chrome e no APK (claro/escuro, 360 dp, nomes longos): painel (gráfico com arraste e períodos,
   rosca Atual/Meta, "Definir metas" somando 100, ranking Minha carteira e Mercado, leitura da carteira), detalhe do
   ativo (Resumo com preço médio, Estatísticas tocando nos números, IA salvando nota, Notas) e o "Novo ativo" com a
