@@ -222,6 +222,20 @@ export {
   type PositionedAsset,
 } from './investments.ts';
 export {
+  ALLOCATION_GROUPS,
+  ALLOCATION_LABELS,
+  TARGETS_SUM_MESSAGE,
+  allocation,
+  contributionToReach,
+  groupOf,
+  targetsSchema,
+  targetsSum,
+  type AllocationGroup,
+  type AllocationSlice,
+  type InvestmentTargetsRow,
+  type Targets,
+} from './allocation.ts';
+export {
   type AssetOpening,
   type InvestmentsRepository,
   type InvestmentsSnapshot,

@@ -23,6 +23,7 @@ const emptyTables = (): Tables => ({
   shopping_items: new Map(),
   investment_assets: new Map(),
   investment_movements: new Map(),
+  investment_targets: new Map(),
 });
 
 const copy = (t: Tables): Tables =>

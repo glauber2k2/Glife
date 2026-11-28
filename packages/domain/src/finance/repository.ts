@@ -14,6 +14,7 @@ import {
   type Listener,
   type Unsubscribe,
 } from '../core/index.ts';
+import type { InvestmentTargetsRow } from './allocation.ts';
 import type { IsoDate, Month } from './calendar.ts';
 import { ADJUSTMENT_DESCRIPTION, balanceAdjustment } from './adjustment.ts';
 import { accountBalance } from './ledger.ts';
@@ -177,6 +178,7 @@ export interface FinanceRows {
   shopping_items: ShoppingItem;
   investment_assets: InvestmentAsset;
   investment_movements: InvestmentMovement;
+  investment_targets: InvestmentTargetsRow;
 }
 export type FinanceTable = keyof FinanceRows;
 export type SmallFinanceTable = Exclude<FinanceTable, 'transactions'>;
