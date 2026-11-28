@@ -48,3 +48,9 @@ describe('conversão para reais', () => {
     expect(AI_DEFAULT_CAP_CENTS).toBe(2000);
   });
 });
+
+describe('estimativa pelo lado caro', () => {
+  it("'peak' cobra como horário de pico", () => {
+    expect(costMicroUsd({ cacheHitTokens: 0, cacheMissTokens: 1_000_000, outputTokens: 0 }, 'peak')).toBe(300_000);
+  });
+});

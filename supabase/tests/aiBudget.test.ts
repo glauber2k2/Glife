@@ -86,3 +86,33 @@ describe('IA: uso e teto', () => {
     await expect(asService((tx) => tx.query('insert into public.ai_settings (user_id, cap_cents) values ($1, 100001)', [USER_B]))).rejects.toThrow();
   });
 });
+
+describe('IA: reserva atômica do teto', () => {
+  const reserve = (tx: Transaction, user: string, cents: number) =>
+    tx.query<{ id: string | null }>('select public.ai_reserve_budget($1, $2) as id', [user, cents]).then((r) => r.rows[0]!.id);
+
+  it('reserva conta no gasto e recusa quando o teto já foi alcançado', async () => {
+    const out = await asService(async (tx) => {
+      await record(tx, USER_B, 1990);
+      const first = await reserve(tx, USER_B, 50); // 1990 < 2000: passa e reserva
+      const second = await reserve(tx, USER_B, 50); // 2040 >= 2000: recusa
+      return { first, second, s: await status(tx, USER_B) };
+    });
+    expect(out.first).toMatch(/^[0-9a-f-]{36}$/);
+    expect(out.second).toBeNull();
+    expect(out.s).toEqual({ cap_cents: 2000, spent_cents: 2040 });
+  });
+
+  it('acerta a reserva com o custo real', async () => {
+    const s = await asService(async (tx) => {
+      const id = await reserve(tx, USER_B, 50);
+      await tx.query('select public.ai_settle_usage($1, $2, $3, $4, $5, $6, $7)', [id, USER_B, 3000, 2, 100, 200, 30]);
+      return status(tx, USER_B);
+    });
+    expect(s!.spent_cents).toBe(2);
+  });
+
+  it('o usuário não chama reserva nem acerto', async () => {
+    await expect(asUser(db, USER_A, (tx) => reserve(tx, USER_A, 1))).rejects.toThrow();
+  });
+});

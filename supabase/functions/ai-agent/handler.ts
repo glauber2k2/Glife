@@ -75,6 +75,41 @@ export function toAiUsage(u: LanguageModelUsage): AiUsage {
   return { cacheHitTokens: hit, cacheMissTokens: miss, outputTokens: u.outputTokens ?? 0 };
 }
 
+const addUsage = (a: AiUsage, b: AiUsage): AiUsage => ({
+  cacheHitTokens: a.cacheHitTokens + b.cacheHitTokens,
+  cacheMissTokens: a.cacheMissTokens + b.cacheMissTokens,
+  outputTokens: a.outputTokens + b.outputTokens,
+});
+
+/**
+ * Acerto do uso de um pedido: troca a estimativa reservada pelo custo real no fim, ou pelo que os passos já
+ * gastaram se o pedido for abortado. Sem nenhum passo concluído, a estimativa fica (lado seguro). Acerta uma vez só.
+ */
+export function createUsageMeter(budget: AiBudget, userId: string, reservationId: string, usdBrl: number, now: () => Date) {
+  let steps: AiUsage | null = null;
+  let settled = false;
+  const settle = async (usage: AiUsage) => {
+    if (settled) return;
+    settled = true;
+    const microUsd = costMicroUsd(usage, now());
+    try {
+      await budget.settle(reservationId, userId, usage, microUsd, microUsdToBrlCents(microUsd, usdBrl));
+    } catch (error) {
+      console.error('Glife IA: uso não gravado', { code: (error as Error).message });
+    }
+  };
+  return {
+    step(usage: LanguageModelUsage) {
+      const u = toAiUsage(usage);
+      steps = steps ? addUsage(steps, u) : u;
+    },
+    finish: (total: LanguageModelUsage) => settle(toAiUsage(total)),
+    abort: async () => {
+      if (steps) await settle(steps);
+    },
+  };
+}
+
 function statusOf(error: unknown): number | string {
   let e = error as { statusCode?: number; name?: string; lastError?: unknown; cause?: unknown } | null;
   for (let i = 0; i < 3 && e && e.statusCode === undefined; i++) e = (e.lastError ?? e.cause) as typeof e;
@@ -114,15 +149,6 @@ export function createHandler(deps: { verify: VerifyJwt; budget: AiBudget; model
     const parsed = aiRequestSchema.safeParse(raw);
     if (!parsed.success) return json({ error: `Pedido inválido (até ${MAX_MESSAGES} mensagens).` }, 400);
 
-    let budget: { capCents: number; spentCents: number };
-    try {
-      budget = await deps.budget.status(auth.userId);
-    } catch (error) {
-      console.error('Glife IA: teto indisponível', { code: (error as Error).message });
-      return json({ error: 'Não foi possível conferir o teto da IA agora. Tente de novo.' }, 503);
-    }
-    if (budget.spentCents >= budget.capCents) return json({ error: 'Você chegou ao teto de gasto da IA deste mês. Ajuste o teto em Ajustes.' }, 402);
-
     let messages: ModelMessage[];
     try {
       messages = await convertToModelMessages(redactMessages(parsed.data.messages), { tools, ignoreIncompleteToolCalls: true });
@@ -131,7 +157,19 @@ export function createHandler(deps: { verify: VerifyJwt; budget: AiBudget; model
     }
     if (parsed.data.today) messages.push({ role: 'system', content: todayMessage(parsed.data.today) });
 
+    // Reserva atômica de uma estimativa pelo lado caro (cada caractere como um token, horário de pico).
     const usdBrl = deps.usdBrl;
+    const estimate = Math.max(1, microUsdToBrlCents(costMicroUsd({ cacheHitTokens: 0, cacheMissTokens: text.length, outputTokens: MAX_OUTPUT_TOKENS }, 'peak'), usdBrl));
+    let reservation: string | null;
+    try {
+      reservation = await deps.budget.reserve(auth.userId, estimate);
+    } catch (error) {
+      console.error('Glife IA: teto indisponível', { code: (error as Error).message });
+      return json({ error: 'Não foi possível conferir o teto da IA agora. Tente de novo.' }, 503);
+    }
+    if (!reservation) return json({ error: 'Você chegou ao teto de gasto da IA deste mês. Ajuste o teto em Ajustes.' }, 402);
+    const meter = createUsageMeter(deps.budget, auth.userId, reservation, usdBrl, now);
+
     const result = streamText({
       model: deps.model,
       instructions: SYSTEM_PROMPT,
@@ -143,16 +181,12 @@ export function createHandler(deps: { verify: VerifyJwt; budget: AiBudget; model
       timeout: TIMEOUT_MS,
       abortSignal: req.signal,
       providerOptions: MODEL_PROVIDER_OPTIONS,
+      // Erro do provedor: a estimativa reservada fica (o custo real é desconhecido).
       onError: ({ error }) => console.error('Glife IA: erro do provedor', { code: statusOf(error) }),
-      onFinish: async ({ totalUsage }) => {
-        const usage = toAiUsage(totalUsage);
-        const microUsd = costMicroUsd(usage, now());
-        try {
-          await deps.budget.record(auth.userId, usage, microUsd, microUsdToBrlCents(microUsd, usdBrl));
-        } catch (error) {
-          console.error('Glife IA: uso não gravado', { code: (error as Error).message });
-        }
-      },
+      onStepEnd: (step) => meter.step(step.usage),
+      onFinish: ({ totalUsage }) => meter.finish(totalUsage),
+      // "Parar", cliente que saiu ou tempo esgotado: acerta com o que os passos já gastaram.
+      onAbort: () => meter.abort(),
     });
 
     const stream = toUIMessageStream({ stream: result.stream, tools, sendReasoning: false, onError: providerMessage });

@@ -20,10 +20,11 @@ export function isDeepSeekPeak(at: Date): boolean {
   return (h >= 1 && h < 4) || (h >= 6 && h < 10);
 }
 
-export function costMicroUsd(usage: AiUsage, at: Date): number {
+/** `at: 'peak'` cobra como horário de pico (estimativa pelo lado caro). */
+export function costMicroUsd(usage: AiUsage, at: Date | 'peak'): number {
   const p = DEEPSEEK_FLASH_PRICE;
   const total = usage.cacheHitTokens * p.cacheHit + usage.cacheMissTokens * p.cacheMiss + usage.outputTokens * p.output;
-  return Math.ceil(total / (isDeepSeekPeak(at) ? 1_000_000 : 2_000_000));
+  return Math.ceil(total / (at === 'peak' || isDeepSeekPeak(at) ? 1_000_000 : 2_000_000));
 }
 
 export function microUsdToBrlCents(microUsd: number, usdBrl: number): number {

@@ -2,7 +2,7 @@ import { convertArrayToReadableStream, MockLanguageModelV4 } from 'ai/test';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { AI_TOOLS, type AiUsage } from '../../packages/domain/src/ai/index.ts';
-import { buildToolSet, createHandler, type AiBudget } from '../functions/ai-agent/handler.ts';
+import { buildToolSet, createHandler, createUsageMeter, type AiBudget } from '../functions/ai-agent/handler.ts';
 
 // Vitest não lê o import map do Deno: resolve o alias para a implementação real do domain.
 vi.mock('@glife/domain/ai', () => import('../../packages/domain/src/ai/index.ts'));
@@ -32,12 +32,16 @@ function fakeModel() {
   });
 }
 
-function setup(over: { spent?: number; usdBrl?: number | null } = {}) {
-  const recorded: { userId: string; usage: AiUsage; microUsd: number; cents: number }[] = [];
+function setup(over: { full?: boolean; usdBrl?: number | null } = {}) {
+  const recorded: { id: string; userId: string; usage: AiUsage; microUsd: number; cents: number }[] = [];
+  const reserved: { userId: string; cents: number }[] = [];
   const budget: AiBudget = {
-    status: async () => ({ capCents: 2000, spentCents: over.spent ?? 0 }),
-    record: async (userId, usage, microUsd, cents) => {
-      recorded.push({ userId, usage, microUsd, cents });
+    reserve: async (userId, cents) => {
+      reserved.push({ userId, cents });
+      return over.full ? null : 'res-1';
+    },
+    settle: async (id, userId, usage, microUsd, cents) => {
+      recorded.push({ id, userId, usage, microUsd, cents });
     },
   };
   const model = fakeModel();
@@ -48,7 +52,7 @@ function setup(over: { spent?: number; usdBrl?: number | null } = {}) {
     usdBrl: over.usdBrl === undefined ? 5.4 : over.usdBrl,
     now: () => new Date('2026-11-30T05:00:00Z'), // fora do pico
   });
-  return { handler, model, recorded };
+  return { handler, model, recorded, reserved };
 }
 
 const userMsg = (text: string, id = 'm1') => ({ id, role: 'user', parts: [{ type: 'text', text }] });
@@ -95,7 +99,7 @@ describe('ai-agent: acesso e limites', () => {
   });
 
   it('teto atingido responde 402 sem chamar o modelo', async () => {
-    const { handler, model } = setup({ spent: 2000 });
+    const { handler, model } = setup({ full: true });
     const res = await handler(post({ messages: [userMsg('oi')] }));
     expect(res.status).toBe(402);
     expect((await res.json()).error).toMatch(/teto/);
@@ -152,6 +156,30 @@ describe('ai-agent: ferramentas e custo', () => {
     await (await handler(post({ messages: [userMsg('oi')] }))).text();
     await vi.waitFor(() => expect(recorded).toHaveLength(1));
     // fora do pico: (500*6000 + 1000*300000 + 200*1200000) / 2e6 = 271,5 → 272 µUSD; 272 * 5,4 → 1 centavo
-    expect(recorded[0]).toEqual({ userId: 'user-1', usage: { cacheHitTokens: 500, cacheMissTokens: 1000, outputTokens: 200 }, microUsd: 272, cents: 1 });
+    expect(recorded[0]).toEqual({ id: 'res-1', userId: 'user-1', usage: { cacheHitTokens: 500, cacheMissTokens: 1000, outputTokens: 200 }, microUsd: 272, cents: 1 });
+  });
+});
+
+describe('ai-agent: reserva e acerto do teto', () => {
+  it('reserva uma estimativa de pelo menos 1 centavo antes de chamar o modelo', async () => {
+    const { handler, reserved } = setup();
+    await (await handler(post({ messages: [userMsg('oi')] }))).text();
+    expect(reserved).toHaveLength(1);
+    expect(reserved[0]!.cents).toBeGreaterThanOrEqual(1);
+  });
+
+  it('pedido abortado depois de um passo acerta com o uso já gasto', async () => {
+    const settled: unknown[] = [];
+    const meter = createUsageMeter({ settle: async (...a) => void settled.push(a), reserve: async () => 'x' }, 'user-1', 'res-9', 5.4, () => new Date('2026-11-30T05:00:00Z'));
+    meter.step({ inputTokens: 1000, inputTokenDetails: { noCacheTokens: 1000, cacheReadTokens: 0, cacheWriteTokens: 0 }, outputTokens: 100 } as never);
+    await meter.abort();
+    expect(settled).toEqual([['res-9', 'user-1', { cacheHitTokens: 0, cacheMissTokens: 1000, outputTokens: 100 }, 210, 1]]);
+  });
+
+  it('pedido abortado sem nenhum passo mantém a estimativa reservada', async () => {
+    const settled: unknown[] = [];
+    const meter = createUsageMeter({ settle: async (...a) => void settled.push(a), reserve: async () => 'x' }, 'user-1', 'res-9', 5.4, () => new Date());
+    await meter.abort();
+    expect(settled).toEqual([]);
   });
 });
