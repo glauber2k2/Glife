@@ -252,6 +252,20 @@ export {
   type StatWindow,
 } from './investmentStats.ts';
 export {
+  ASSET_QUESTIONS,
+  INSIGHT_DISCLAIMER,
+  PORTFOLIO_QUESTIONS,
+  assetInsight,
+  portfolioHeadline,
+  portfolioInsight,
+  rankBySinceBuy,
+  type AssetInsightContext,
+  type AssetQuestion,
+  type InsightBlock,
+  type PortfolioInsightContext,
+  type PortfolioQuestion,
+} from './insights.ts';
+export {
   type AssetOpening,
   type InvestmentsRepository,
   type InvestmentsSnapshot,
