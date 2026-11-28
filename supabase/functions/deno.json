@@ -6,6 +6,7 @@
     "@ai-sdk/deepseek": "npm:@ai-sdk/deepseek@3.0.61",
     "@supabase/supabase-js": "npm:@supabase/supabase-js@^2.119.2",
     "ai": "npm:ai@7.0.131",
+    "unpdf": "npm:unpdf@2.1.0",
     "zod": "npm:zod@^4.6.7"
   }
 }

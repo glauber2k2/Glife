@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { AI_TOOLS, type AiUsage } from '../../packages/domain/src/ai/index.ts';
 import { buildToolSet, createHandler, createUsageMeter, type AiBudget } from '../functions/ai-agent/handler.ts';
+import { MAX_BODY } from '../functions/ai-agent/request.ts';
 
 // Vitest não lê o import map do Deno: resolve o alias para a implementação real do domain.
 vi.mock('@glife/domain/ai', () => import('../../packages/domain/src/ai/index.ts'));
@@ -80,7 +81,7 @@ describe('ai-agent: acesso e limites', () => {
 
   it('corpo grande demais responde 413', async () => {
     const { handler } = setup();
-    expect((await handler(post({ messages: [userMsg('x'.repeat(200_001))] }))).status).toBe(413);
+    expect((await handler(post({ messages: [userMsg('x'.repeat(MAX_BODY + 1))] }))).status).toBe(413);
   });
 
   it('JSON inválido ou mensagens demais respondem 400', async () => {

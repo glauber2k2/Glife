@@ -22,7 +22,7 @@ export function AiChatProvider({ children }: { children: ReactNode }) {
     const prompt = aiPrompts.take();
     if (!prompt) return;
     clearError();
-    void send(prompt.text);
+    void send(prompt.text, prompt.attachments);
   }, [asked, busy, send, clearError]);
 
   return <Ctx.Provider value={chat}>{children}</Ctx.Provider>;

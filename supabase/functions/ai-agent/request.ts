@@ -1,7 +1,8 @@
 // Formato do pedido do app (useChat → DefaultChatTransport): as mensagens da conversa e a data local de hoje.
 import { z } from 'zod';
 
-export const MAX_BODY = 200_000;
+// 400 mil: histórico + até 120 mil de anexos por mensagem (o teto em dólar segue valendo pela reserva).
+export const MAX_BODY = 400_000;
 export const MAX_MESSAGES = 60;
 
 const part = z.looseObject({ type: z.string().max(80) });

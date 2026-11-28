@@ -4,6 +4,7 @@
     "npm:@ai-sdk/deepseek@3.0.61": "3.0.61_zod@4.6.7",
     "npm:@supabase/supabase-js@^2.119.2": "2.119.2",
     "npm:ai@7.0.131": "7.0.131_zod@4.6.7",
+    "npm:unpdf@2.1.0": "2.1.0",
     "npm:zod@^4.6.7": "4.6.7"
   },
   "npm": {
@@ -119,6 +120,9 @@
     "undici@7.30.2": {
       "integrity": "sha512-mLyPQnHwUxaM/rideoK/+KL8DaAJLRl4aBCfmX444aCSLnIaomqPLtNRe2jdCYcsk5wZzXrDIQC8ZeYNRAYyIA=="
     },
+    "unpdf@2.1.0": {
+      "integrity": "sha512-G/Hsrm++g0EoubUhV8TDFItq6oQ+FUu9EMvIRtHUwseKXB0iJoCvaLvBGOpYUBqyvggv/XfxhYYtohL2QpE3xQ=="
+    },
     "zod@4.6.7": {
       "integrity": "sha512-g8W2D2kU6a8untc053fX1uVBKzM7yqAxW/3zwk83+6RyF2+SKOuV+c0wBDhUwzV1PaGapmZH+rmcUzPf+3CGwg=="
     }
@@ -128,6 +132,7 @@
       "npm:@ai-sdk/deepseek@3.0.61",
       "npm:@supabase/supabase-js@^2.119.2",
       "npm:ai@7.0.131",
+      "npm:unpdf@2.1.0",
       "npm:zod@^4.6.7"
     ]
   }

@@ -2,10 +2,12 @@
 // executadas aqui no aparelho (executor + política), e o resultado volta ao modelo automaticamente. Cada conversa
 // tem seu livro de apelidos (ids e dados pessoais nunca saem do aparelho).
 import { useChat } from '@ai-sdk/react';
-import { createAliasBook } from '@glife/domain/ai';
+import { attachmentPart, createAliasBook } from '@glife/domain/ai';
 import { newId } from '@glife/domain/core';
 import { localNow } from '@glife/domain/time';
 import { useCallback, useMemo, useState } from 'react';
+
+import type { PromptAttachment } from '@/shared/lib/aiPrompt';
 
 import { useAiTools } from '../AiToolsProvider';
 import { createTurnGate, createWriteCounter, shouldAutoSend, toolCallsExceeded } from '../conversation';
@@ -108,10 +110,16 @@ export function useAgentChat() {
     void chat.stop();
   }, [gate, pending, chat]);
 
+  // Anexos vão como partes de texto marcadas "[Anexo: nome]" (passam pela mesma máscara do texto do usuário).
   const send = useCallback(
-    (text: string) => {
+    (text: string, attachments: readonly PromptAttachment[] = []) => {
       turn.reset();
-      return chat.sendMessage({ text });
+      if (!attachments.length) return chat.sendMessage({ text });
+      const ask = text.trim() || (attachments.length === 1 ? 'Leia o anexo.' : 'Leia os anexos.');
+      return chat.sendMessage({
+        role: 'user',
+        parts: [{ type: 'text', text: ask }, ...attachments.map((a) => ({ type: 'text' as const, text: attachmentPart(a.name, a.text) }))],
+      });
     },
     [chat, turn],
   );
