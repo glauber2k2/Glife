@@ -2,11 +2,6 @@
 
 O que só o dono do projeto pode fazer (contas, chaves, testes no aparelho, decisões). Ao concluir um item, apague-o.
 
-## CLI do PowerSync (28/11/2026)
-
-- [ ] Criar o token no painel do PowerSync (conta → Access Tokens, nome "glife") e colar em `.env.powersync.local`
-  na linha `PS_ADMIN_TOKEN=` (os ids da instância já estão preenchidos). Depois: `pnpm ps fetch config` deve responder.
-
 ## Botão da Glife IA, voz, anexos, versículos e previsto (28/11/2026) — branch `integracao-ia-investimentos`
 
 Já feito: código, testes (lint, typecheck e todas as suítes verdes) e extração de PDF testada com `unpdf` no Deno.
