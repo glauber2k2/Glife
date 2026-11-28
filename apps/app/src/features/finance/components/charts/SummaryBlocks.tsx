@@ -1,14 +1,15 @@
 // Entradas para Gráficos: o bloco-resumo "Últimos 6 meses" em Finanças (miniatura das barras, sem toque) e
 // "Mês até agora" em Hoje (gasto × orçamento, como o mês fecha com os previstos e a maior categoria).
-import { daysInMonth, monthBuckets, monthSoFar, chartPeriod, type IsoDate } from '@glife/domain/finance';
+import { daysInMonth, monthBuckets, monthOverview, monthSoFar, chartPeriod, type IsoDate } from '@glife/domain/finance';
 import { router } from 'expo-router';
-import { ChevronRight, TriangleAlert } from 'lucide-react-native';
+import { ChevronRight, TrendingUp, TriangleAlert } from 'lucide-react-native';
 import { Pressable, View } from 'react-native';
 
 import { Card, Icon, ProgressBar, SectionHeader, Tag, Text, makeStyles, useTheme } from '@/shared/ui';
 
 
 import { useMoneyFormat } from '../../hooks/useMoneyFormat';
+import { dm } from '../format';
 import { MoneyEyeButton } from '../MoneyEyeButton';
 import { Block } from '../ui';
 import { useFinanceMaybe } from '../../hooks/FinanceData';
@@ -76,7 +77,7 @@ const daysLeft = (today: IsoDate) => {
 
 /** Início: "Mês até agora". Sem contas ainda, não aparece; tocar abre Finanças, o link abre Gráficos do mês. */
 export function MonthSoFarBlock() {
-  const { money } = useMoneyFormat();
+  const { money, balance, toneOf } = useMoneyFormat();
   const s = useStyles();
   const t = useTheme();
   const src = useChartsSource();
@@ -88,10 +89,13 @@ export function MonthSoFarBlock() {
   const budget = m.budget;
   const over = budget !== null && m.spent > budget;
   const closesOver = budget !== null && m.spent + m.planned > budget;
+  // Mesmo "Esperado" da tela de Finanças: saldo de hoje + previstos e recorrentes até o fim do mês.
+  const overview = monthOverview(src.data, src.occurrences, src.today, src.thisMonth);
+  const expected = `Saldo esperado em ${dm(overview.endDate)}: ${balance(overview.expected)}`;
   const aria =
     budget === null
-      ? `Mês até agora: ${money(m.spent)} gastos.${top ? ` Maior categoria: ${top}.` : ''} Abrir Finanças.`
-      : `Mês até agora: ${money(m.spent)} de ${money(budget)} de orçamento. ${over ? `${money(m.spent - budget)} acima.` : `Restam ${money(budget - m.spent)}.`}${top ? ` Maior categoria: ${top}.` : ''} Abrir Finanças.`;
+      ? `Mês até agora: ${money(m.spent)} gastos. ${expected}.${top ? ` Maior categoria: ${top}.` : ''} Abrir Finanças.`
+      : `Mês até agora: ${money(m.spent)} de ${money(budget)} de orçamento. ${over ? `${money(m.spent - budget)} acima.` : `Restam ${money(budget - m.spent)}.`} ${expected}.${top ? ` Maior categoria: ${top}.` : ''} Abrir Finanças.`;
   return (
     <View style={s.section}>
       <SectionHeader
@@ -127,6 +131,7 @@ export function MonthSoFarBlock() {
           />
         )}
         <View style={s.tags}>
+          <Tag tone={toneOf(overview.expected < 0 ? 'danger' : 'success', 'neutral')} icon={TrendingUp} label={expected} />
           {over && budget !== null && <Tag tone="danger" icon={TriangleAlert} label={`Passou ${money(m.spent - budget)}`} />}
           {!over && closesOver && budget !== null && <Tag tone="warning" label={`Com os previstos, fecha ${money(m.spent + m.planned - budget)} acima`} />}
           {m.planned > 0 && <Tag label={`${money(m.planned)} previstos`} />}
