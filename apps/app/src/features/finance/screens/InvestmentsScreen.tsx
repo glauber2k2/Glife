@@ -74,7 +74,7 @@ export function InvestmentsScreen() {
   const openMarket = (m: MarketItem) => {
     const mine = snap?.assets.find((a) => a.quote_symbol === m.symbol && quoteSourceOf(a.kind) === m.source);
     if (mine) openAsset(mine.id);
-    else router.push({ pathname: '/financas/investimento/novo', params: { symbol: m.symbol, source: m.source } });
+    else router.push({ pathname: '/financas/investimento/novo', params: { symbol: m.symbol, type: m.type, name: m.name } });
   };
 
   return (
