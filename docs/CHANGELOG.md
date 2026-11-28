@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.10.0 — 2026-11-28
+
+- Glife IA no centro da barra (mascote): toque para digitar; segure para falar e solte para enviar; segure e arraste
+  para cima para travar e enviar quando quiser. A conversa abre numa tela própria e continua ao sair e voltar.
+- Anexos na conversa da IA: PDF, TXT, MD e CSV (o texto do PDF é lido pelo servidor, sem guardar o arquivo).
+- Finanças volta a ser a 5ª aba. No Início, "Mês até agora" mostra o saldo esperado no fim do mês.
+- Bíblia: referências citadas no texto (ex.: "Salmo 118:22") viram links para o versículo; trocar de capítulo ficou
+  mais suave (só o texto desliza; as barras ficam paradas).
+- Investimentos v2: painel com gráfico, metas por grupo, ranking, detalhe do ativo e "Perguntar à Glife IA".
+- Glife IA (etapa 6.1): agente que cria e organiza notas, lembretes e eventos, com Desfazer.
+
 ## 0.9.2 — 2026-11-27
 
 - Agenda: lembrete feito fica mais apagado e desce para o fim da lista; os pendentes ficam em cima, do mais próximo ao
