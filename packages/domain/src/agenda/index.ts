@@ -38,3 +38,4 @@ export {
   type AgendaSnapshot,
 } from './repository.ts';
 export { dayDots, monthGrid, shiftMonth, type DayDotModule, type DayOccurrence, type MonthCell, type YearMonth } from './month.ts';
+export { AGENDA_AI_TOOLS } from './ai-tools.ts';
