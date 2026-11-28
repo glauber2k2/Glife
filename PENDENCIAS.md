@@ -11,8 +11,8 @@ Nada foi publicado nem conferido no aparelho/navegador logado (exige MFA).
   `pnpm sb functions deploy extract-text --import-map supabase/functions/deno.json` e
   `pnpm sb functions deploy ai-agent --import-map supabase/functions/deno.json` (limite do pedido subiu para 400 mil
   caracteres por causa dos anexos).
-- [ ] **Gerar APK novo** com `prebuild --clean` (módulo nativo novo `expo-speech-recognition`; o APK antigo não tem
-  voz — o botão avisa e abre o campo de texto). Reiniciar o dev server antes de testar.
+- [ ] **Instalar o APK 0.10.0** (gerado em 28/11: `Desktop/Glauber/Glife-0.10.0.apk`, 54 MB; `.zip` de 23 MB para
+  mandar pelo chat). Migrações: as 18 já estão no GLIFE (nada a aplicar).
 - [ ] Conferir no Chrome e no APK (claro/escuro, 360 dp):
   - Barra: Início · Agenda · mascote · Notas · Finanças. Tocar no mascote abre o campo; segurar fala e soltar envia;
     segurar e arrastar para cima trava no cadeado e só envia em "Enviar"; negar o microfone cai no texto.
