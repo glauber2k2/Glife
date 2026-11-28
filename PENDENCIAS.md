@@ -2,6 +2,30 @@
 
 O que só o dono do projeto pode fazer (contas, chaves, testes no aparelho, decisões). Ao concluir um item, apague-o.
 
+## Glife IA etapa 6.1: agente com DeepSeek Flash (28/11/2026) — branch `fase-6-ia`, PR #5
+
+Já feito: 3 migrações aplicadas no GLIFE, função `ai-agent` publicada (`--import-map`), secret `DEEPSEEK_API_KEY`
+conferido, teto US$ 2,00/mês. A conversa real com o modelo **não** foi testada.
+
+- [ ] Juntar os PRs em ordem: #2 → #3 → #4 → #5 (o #5 tem base `lembretes-feitos-e-calendario`). Se outra branch
+  mexeu em `src/app/_layout.tsx`, `src/app/(tabs)/_layout.tsx` ou na tela inicial de Finanças, conferir conflitos.
+- [ ] Gerar APK novo **a partir do código com o PR #5** (biblioteca nova: `ai`, `@ai-sdk/react`; usa `expo/fetch`).
+- [ ] Testar no Chrome (`pnpm web`, não no navegador do Claude) e no APK a aba **IA** com as 44 frases de
+  `docs/ia/frases-de-teste.md`, anotando o resultado no arquivo. Conferir: resposta chega aos poucos (streaming) no
+  Android; "Desfazer" funciona; lixeira pede "Confirmar?"; telefone digitado é gravado inteiro.
+- [ ] Se o streaming não funcionar no Android: implementar o modo sem stream (`createAgentTransport` com `mode:
+  'single'` e resposta sem stream na função), previsto no desenho.
+- [ ] Conferir a aba IA e Finanças (agora aberta pelo Início, com voltar) nos dois temas e em 360 dp.
+- [ ] Acompanhar o gasto no painel da DeepSeek (saldo de US$ 2).
+
+Menores adiados da revisão (fazer quando der): regex de telefone pega intervalos como `2025-2026` (o modelo vê
+`[tel1]`, o app grava certo); não há ferramenta para listar pastas; se o registro da ação falhar depois de gravar, a
+IA pode repetir; `event_update` só com `start_date` não guarda o `end_date` ajustado para desfazer; comentário da
+busca universal fora do lugar em `src/app/_layout.tsx`; sem teste do hook `useAgentChat`.
+
+Próximas etapas (plano em `docs/PLANO_DE_IMPLEMENTACAO.md`, Fase 6): 6.2 finanças/investimentos/compras, 6.3 dieta
+e Bíblia, 6.4 caixa de entrada, Conversas, Ações da IA e Ajustes (teto editável em US$).
+
 ## Versão 0.9.0: lembretes com vários horários e notas vinculadas (27/11/2026)
 
 - [ ] Conferir no Android e no Chrome (claro/escuro, 360 dp): lembrete com "Horários" (08:00, 14:00 e 20:00) e com
