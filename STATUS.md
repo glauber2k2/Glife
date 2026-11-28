@@ -1,7 +1,7 @@
-# Status: 2026-11-27
-- Tarefa atual: 0.9.2 — lembrete feito esmaece, vai para o fim e é desmarcável (pendentes do mais próximo ao mais longe); calendário sem ponto da dieta — PR #4 (base lembretes-horarios-e-notas-vinculadas)
-- Branch: lembretes-feitos-e-calendario (PR #2 e #3 ainda abertos, em cadeia)
-- Feito: `done` em agendaBetween, `uncompleteReminder`, `lateReminders` (atrasado feito hoje fica riscado); TaskRow marca/desmarca; dieta não marca mais o calendário (DayMarks removido); APK 0.9.2 em Desktop\Glauber\apk
-- Falta: usuário instalar o APK e conferir na tela; se ainda não rodou, `pnpm sb db push --remote` (migrações da 0.9.0); juntar PR #2, #3 e #4
-- Atenção (riscos/decisões): nada conferido na tela (MFA); no lembrete repetido de um horário, `skipped_dates` = datas feitas (só o "feito" grava ali)
-- Último commit: 0c45261
+# Status: 2026-11-28
+- Tarefa atual: Investimentos v2 (Opção A, Painel) — tarefas 1–12 prontas, revisão final feita e corrigida; falta publicar (Tarefa 13)
+- Branch: investimentos-v2 (worktree ../glife-investimentos-v2), base lembretes-feitos-e-calendario
+- Feito: histórico/mercado/busca na função quotes, migração 20261203000001 (metas + private), séries, estatísticas, leitura, painel, detalhe com abas, busca com sugestões; testes 141/717/604
+- Falta: usuário publicar (db push, função quotes, sync-streams) e conferir telas logado; juntar depois da fase-6-ia
+- Atenção (riscos/decisões): telas não vistas (MFA); /quote/list da brapi é v1 e pode sumir; menores adiados em PENDENCIAS.md
+- Último commit: (ver git log; este docs vem logo após 6e40f35)

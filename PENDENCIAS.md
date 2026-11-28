@@ -2,6 +2,24 @@
 
 O que só o dono do projeto pode fazer (contas, chaves, testes no aparelho, decisões). Ao concluir um item, apague-o.
 
+## Investimentos v2 (28/11/2026) — branch `investimentos-v2`
+
+- [ ] Publicar (migração autorizada em 27/11): `pnpm sb db push --remote` (`20261203000001_investimentos_v2`),
+  publicar a função `quotes` e **republicar o `sync-streams.yaml`** no painel do PowerSync (Validate → Deploy).
+- [ ] Conferir no Chrome e no APK (claro/escuro, 360 dp, nomes longos): painel (gráfico com arraste e períodos,
+  rosca Atual/Meta, "Definir metas" somando 100, ranking Minha carteira e Mercado, leitura da carteira), detalhe do
+  ativo (Resumo com preço médio, Estatísticas tocando nos números, IA salvando nota, Notas) e o "Novo ativo" com a
+  busca ("logis", "itau", "btc", "BOVA11" digitado).
+- [ ] Ver se o histórico de 3 meses da brapi chega com a sua chave (gráfico de ITSA4 com ~60 pontos). Se vier vazio,
+  as estatísticas da B3 dependem só do histórico que o app acumula a partir de agora.
+- [ ] Juntar a branch depois da `fase-6-ia` (ou antes, conferindo conflitos em `_layout.tsx` e `PENDENCIAS.md`).
+
+Menores adiados da revisão: "abaixo da meta" com meta igual/0%; sugestão diz "hoje" com preço de até 24 h; histórico
+do app sem prazo diário; gravação do histórico sequencial; sombra na lista de sugestões; números soltos (swatch,
+faixa ±2, limiar 3 p.p.); preço médio calculado em 4 lugares; chaves React duplicáveis em InsightBlocks; vínculo que
+falha não tenta de novo; área do gráfico com último valor nulo; marcas de busca sem limite; "Mais negociadas" mistura
+papéis e reais; cripto com data de Brasília e UTC.
+
 ## Versão 0.9.0: lembretes com vários horários e notas vinculadas (27/11/2026)
 
 - [ ] Conferir no Android e no Chrome (claro/escuro, 360 dp): lembrete com "Horários" (08:00, 14:00 e 20:00) e com
