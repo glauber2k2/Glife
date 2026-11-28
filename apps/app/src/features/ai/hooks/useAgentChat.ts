@@ -32,12 +32,21 @@ export function agentErrorText(error: Error | undefined): string | null {
   return error.message || 'O Glife IA não respondeu. Tente de novo.';
 }
 
-export function useAgentChat() {
+/** `sessionKey` = usuário da sessão: ao trocar de conta (ou sair), a conversa e os apelidos recomeçam do zero. */
+export function useAgentChat(sessionKey: string | null = null) {
   const { kit, log } = useAiTools();
   const [conversationId, setConversationId] = useState(newId);
   const aliases = useMemo(() => createAliasBook(), [conversationId]); // eslint-disable-line react-hooks/exhaustive-deps
   const [pending, setPending] = useState<PendingConfirm | null>(null);
   const [actions, setActions] = useState<Record<string, AiActionEntry>>({});
+  // troca de conta: estado derivado (ajustado no render, sem efeito), como manda o React
+  const [seenSession, setSeenSession] = useState(sessionKey);
+  if (seenSession !== sessionKey) {
+    setSeenSession(sessionKey);
+    setActions({});
+    setPending(null);
+    setConversationId(newId());
+  }
   const today = () => localNow().date;
   // "Nova conversa" e "Parar" invalidam a vez: saída de ferramenta que chegar depois é descartada.
   const [gate] = useState(createTurnGate);

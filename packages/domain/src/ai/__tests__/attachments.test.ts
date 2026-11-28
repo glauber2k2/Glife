@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { ATTACH, attachmentKind, attachmentPart, fitAttachments, parseAttachmentPart } from '../attachments.ts';
+import { ATTACH, OLD_ATTACHMENT_KEEP, attachmentKind, attachmentPart, compactAttachmentHistory, fitAttachments, parseAttachmentPart } from '../attachments.ts';
 
 describe('anexos da Glife IA', () => {
   it('limites do design', () => {
@@ -45,5 +45,28 @@ describe('anexos da Glife IA', () => {
     const r = fitAttachments([{ name: 'vazio.txt', text: '   ' }]);
     expect(r.kept).toEqual([]);
     expect(r.notices).toEqual(['vazio.txt está vazio.']);
+  });
+});
+
+describe('histórico com anexos', () => {
+  const user = (id: string, ...texts: string[]) => ({ id, role: 'user' as const, parts: texts.map((text) => ({ type: 'text', text })) });
+  const bot = (id: string) => ({ id, role: 'assistant' as const, parts: [{ type: 'text', text: 'ok' }] });
+
+  it('só a mensagem mais recente com anexo vai inteira; as antigas viram trecho', () => {
+    const old = attachmentPart('velho.pdf', 'a'.repeat(50_000));
+    const recent = attachmentPart('novo.txt', 'b'.repeat(30_000));
+    const out = compactAttachmentHistory([user('1', 'leia', old), bot('2'), user('3', 'e este', recent), bot('4'), user('5', 'resuma')]);
+    const oldOut = parseAttachmentPart(out[0]!.parts[1]!.text as string)!;
+    expect(oldOut.name).toBe('velho.pdf');
+    expect(oldOut.text.startsWith('a'.repeat(OLD_ATTACHMENT_KEEP))).toBe(true);
+    expect(oldOut.text).toContain('[trecho: o anexo inteiro foi lido numa mensagem anterior]');
+    expect(oldOut.text.length).toBeLessThan(OLD_ATTACHMENT_KEEP + 100);
+    expect(out[2]!.parts[1]!.text).toBe(recent);
+    expect(out[4]).toEqual(user('5', 'resuma'));
+  });
+
+  it('sem anexos, nada muda', () => {
+    const msgs = [user('1', 'oi'), bot('2')];
+    expect(compactAttachmentHistory(msgs)).toEqual(msgs);
   });
 });

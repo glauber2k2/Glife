@@ -17,13 +17,13 @@ interface AiTools {
 
 const Ctx = createContext<AiTools | null>(null);
 
-export function AiToolsProvider({ db, kits, children }: { db: LocalDb | null; kits: readonly AiToolKit[]; children: ReactNode }) {
+export function AiToolsProvider({ db, kits, sessionKey = null, children }: { db: LocalDb | null; kits: readonly AiToolKit[]; sessionKey?: string | null; children: ReactNode }) {
   const kit = useMemo(() => mergeKits(kits), [kits]);
   const log = useMemo(() => (db ? createActionLog(db) : null), [db]);
   const value = useMemo(() => ({ kit, log }), [kit, log]);
   return (
     <Ctx.Provider value={value}>
-      <AiChatProvider>{children}</AiChatProvider>
+      <AiChatProvider sessionKey={sessionKey}>{children}</AiChatProvider>
     </Ctx.Provider>
   );
 }

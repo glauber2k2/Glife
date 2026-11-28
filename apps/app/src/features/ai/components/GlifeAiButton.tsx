@@ -8,7 +8,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Mascot, makeStyles, usePress, useTheme, useToast } from '@/shared/ui';
 
-import { startVoice, type VoiceSession } from '../data/speech';
+import { voice, type VoiceSession } from '../data/speech';
 import { askGlifeAi } from '@/shared/navigation/askGlifeAi';
 
 import { AiComposer } from './AiComposer';
@@ -44,7 +44,7 @@ export function GlifeAiButton({ placement = 'bottom' }: { placement?: 'bottom' |
         case 'startVoice':
           tap();
           setHeard('');
-          session.current = startVoice(setHeard, (message) => toast({ message, aboveTabBar: true })).then((r) => {
+          session.current = voice.start(setHeard, (message) => toast({ message, aboveTabBar: true })).then((r) => {
             if (r.session) return r.session;
             // sem voz: volta ao repouso e oferece o texto
             current.current = { phase: 'idle' };
@@ -134,14 +134,14 @@ export function GlifeAiButton({ placement = 'bottom' }: { placement?: 'bottom' |
   const lifted = t.size.tabBar + t.space[3];
   const top = placement === 'top';
   // posição da faixa: acima da barra flutuante (celular) ou abaixo da barra do topo (web largo)
-  const floatPos = top ? { top: t.size.fab + t.space[3] } : { bottom: lifted - (t.size.tabBar - t.size.fab) / 2 };
-  const lockedPos = top ? { top: insets.top + t.size.topNav + t.space[3] } : { bottom: insets.bottom + t.layout.tabBarBottom + lifted };
+  const floatPos = top ? { top: t.size.fab + t.space[3], right: 0 } : { bottom: lifted - (t.size.tabBar - t.size.fab) / 2, left: (slotWidth - barWidth) / 2 };
+  const lockedPos = top ? { top: insets.top + t.size.topNav + t.space[3], right: t.layout.gutterWeb } : { bottom: insets.bottom + t.layout.tabBarBottom + lifted };
 
   return (
     <View style={s.slot} onLayout={(e) => setSlotWidth(e.nativeEvent.layout.width)}>
       {recording && (
         // Enquanto o dedo segura: só mostra (os toques continuam no botão).
-        <View pointerEvents="none" style={[s.float, { width: barWidth, left: (slotWidth - barWidth) / 2, ...floatPos }]}>
+        <View pointerEvents="none" style={[s.float, { width: barWidth, ...floatPos }]}>
           <VoiceBar text={heard} locked={false} lockProgress={state.lockProgress} />
         </View>
       )}
@@ -172,7 +172,8 @@ export function GlifeAiButton({ placement = 'bottom' }: { placement?: 'bottom' |
 }
 
 const useStyles = makeStyles((t) => ({
-  slot: { alignItems: 'center', justifyContent: 'center' },
+  // no web largo o conteúdo da tela vem depois no DOM: a faixa precisa ficar por cima
+  slot: { alignItems: 'center', justifyContent: 'center', zIndex: t.layer.float },
   fab: {
     width: t.size.fab,
     height: t.size.fab,
@@ -182,7 +183,7 @@ const useStyles = makeStyles((t) => ({
     justifyContent: 'center',
     boxShadow: t.colors.shadow.fab,
   },
-  float: { position: 'absolute' },
+  float: { position: 'absolute', zIndex: t.layer.float },
   modal: { flex: 1, alignItems: 'center' },
   lockedBar: { position: 'absolute' },
 }));

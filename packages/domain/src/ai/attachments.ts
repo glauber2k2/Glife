@@ -68,3 +68,35 @@ export function fitAttachments(list: readonly { name: string; text: string }[]):
   }
   return { kept, notices };
 }
+
+/** Quanto de um anexo antigo continua indo no histórico (o resto já foi lido na mensagem em que ele entrou). */
+export const OLD_ATTACHMENT_KEEP = 2_000;
+const OLD_NOTE = '\n[trecho: o anexo inteiro foi lido numa mensagem anterior]';
+
+interface MessageLike {
+  role: string;
+  parts: readonly { type: string; text?: string }[];
+}
+
+/**
+ * A conversa inteira é reenviada a cada pedido: só a mensagem do usuário mais recente que tem anexos leva o texto
+ * inteiro; anexos de mensagens anteriores viram um trecho curto. Assim a conversa não estoura o limite depressa.
+ */
+export function compactAttachmentHistory<M extends MessageLike>(messages: readonly M[]): M[] {
+  const hasAttachment = (m: M) => m.role === 'user' && m.parts.some((p) => p.type === 'text' && typeof p.text === 'string' && parseAttachmentPart(p.text));
+  let latest = -1;
+  messages.forEach((m, i) => {
+    if (hasAttachment(m)) latest = i;
+  });
+  return messages.map((m, i) => {
+    if (i === latest || !hasAttachment(m)) return m;
+    return {
+      ...m,
+      parts: m.parts.map((p) => {
+        const file = p.type === 'text' && typeof p.text === 'string' ? parseAttachmentPart(p.text) : null;
+        if (!file || file.text.length <= OLD_ATTACHMENT_KEEP) return p;
+        return { ...p, text: attachmentPart(file.name, file.text.slice(0, OLD_ATTACHMENT_KEEP) + OLD_NOTE) };
+      }),
+    };
+  });
+}

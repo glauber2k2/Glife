@@ -1,7 +1,7 @@
 // Transporte da conversa com a Edge Function `ai-agent`. Antes de sair do aparelho, o texto do usuário tem
 // telefone, e-mail, link e número longo trocados por marcadores ([tel1]…) e ids crus removidos; vai junto a data
 // local de hoje. Sem sessão, nada é enviado. O token é o da sessão (aal2), lido a cada pedido.
-import type { AliasBook } from '@glife/domain/ai';
+import { compactAttachmentHistory, type AliasBook } from '@glife/domain/ai';
 import type { IsoDate } from '@glife/domain/time';
 import { DefaultChatTransport, type UIMessage } from 'ai';
 
@@ -34,7 +34,7 @@ export function createAgentTransport(opts: AgentTransportOptions) {
       if (!token) throw new Error('Entre de novo: a sessão terminou.');
       return {
         headers: { Authorization: `Bearer ${token}`, apikey: opts.apikey },
-        body: { messages: maskMessages(messages, opts.aliases), today: opts.today() },
+        body: { messages: maskMessages(compactAttachmentHistory(messages), opts.aliases), today: opts.today() },
       };
     },
   });

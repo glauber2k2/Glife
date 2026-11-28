@@ -1,4 +1,4 @@
-import { createAliasBook } from '@glife/domain/ai';
+import { attachmentPart, createAliasBook } from '@glife/domain/ai';
 import type { UIMessage } from 'ai';
 import { describe, expect, it } from 'vitest';
 
@@ -54,4 +54,18 @@ describe('transporte do Glife IA', () => {
     await expect(transport.sendMessages({ chatId: 'c1', messages: [msg('oi')], abortSignal: undefined, trigger: 'submit-message', messageId: undefined })).rejects.toThrow(/sessão/i);
     expect(calls).toHaveLength(0);
   });
+
+  it('anexos: os antigos vão em trecho e o texto do anexo também é mascarado', async () => {
+    const { calls, fetchFn } = capture();
+    const transport = createAgentTransport({ url: 'https://x.test/ai-agent', apikey: 'a', getToken: async () => 't', aliases: createAliasBook(), today: () => '2026-11-28', fetch: fetchFn });
+    const old: UIMessage = { id: 'u1', role: 'user', parts: [{ type: 'text', text: 'leia' }, { type: 'text', text: attachmentPart('velho.txt', 'v'.repeat(10_000)) }] };
+    const reply: UIMessage = { id: 'a1', role: 'assistant', parts: [{ type: 'text', text: 'ok' }] };
+    const recent: UIMessage = { id: 'u2', role: 'user', parts: [{ type: 'text', text: 'e este' }, { type: 'text', text: attachmentPart('novo.txt', 'fone 11 98765-4321') }] };
+    await transport.sendMessages({ chatId: 'c', messages: [old, reply, recent], abortSignal: undefined, trigger: 'submit-message', messageId: undefined });
+    const body = JSON.parse(String(calls[0]!.init.body)) as { messages: UIMessage[] };
+    const text = (m: UIMessage, i: number) => (m.parts[i] as { text: string }).text;
+    expect(text(body.messages[0]!, 1).length).toBeLessThan(3_000);
+    expect(text(body.messages[2]!, 1)).not.toContain('98765-4321');
+  });
 });
+

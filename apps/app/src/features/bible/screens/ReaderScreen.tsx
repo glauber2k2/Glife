@@ -44,7 +44,8 @@ export function ReaderScreen() {
   const [step, setStep] = useState<ChapterStep>(0);
   const change = useCallback((to: { book: string; chapter: number }, dir: 1 | -1) => {
     setStep(dir);
-    router.setParams({ livro: to.book, cap: String(to.chapter), v: undefined });
+    // as setas saem do plano (como antes): o capítulo vizinho não é o do plano
+    router.setParams({ livro: to.book, cap: String(to.chapter), v: undefined, plano: undefined });
   }, []);
   if (!book || !Number.isInteger(chapter) || chapter < 1 || chapter > book.chapters) {
     return (

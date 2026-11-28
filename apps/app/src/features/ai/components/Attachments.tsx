@@ -9,6 +9,7 @@ import type { PromptAttachment } from '@/shared/lib/aiPrompt';
 import { Chip, IconButton, Spinner, Tag, makeStyles, useToast } from '@/shared/ui';
 
 import { pickAttachments } from '../data/attachments';
+import { mergeAttachments } from './attachmentList';
 
 const kChars = (n: number) => `${Math.max(1, Math.round(n / 1000))} mil caracteres`;
 
@@ -21,14 +22,16 @@ export function useAttachments() {
     try {
       const r = await pickAttachments();
       if (!r) return;
-      setItems((cur) => [...cur, ...r.attachments].slice(0, ATTACH.maxFiles));
-      if (r.notices.length) toast({ message: r.notices.join(' ') });
+      const merged = mergeAttachments(items, r.attachments);
+      setItems(merged.items);
+      const notices = [...r.notices, ...merged.notices];
+      if (notices.length) toast({ message: notices.join(' ') });
     } catch (e) {
       toast({ message: `Não deu para anexar: ${errorText(e)}` });
     } finally {
       setReading(false);
     }
-  }, [toast]);
+  }, [toast, items]);
   const remove = useCallback((i: number) => setItems((cur) => cur.filter((_, j) => j !== i)), []);
   const clear = useCallback(() => setItems([]), []);
   return { items, reading, add, remove, clear, full: items.length >= ATTACH.maxFiles };

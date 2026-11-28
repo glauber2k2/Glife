@@ -369,6 +369,9 @@ export const layout = {
 } as const;
 
 /** Estados sem mudar cor: pressionado (sem movimento) e desabilitado. */
+/** Camadas (zIndex) do que precisa ficar por cima do conteúdo no web, onde a ordem do DOM decide. */
+export const layer = { float: 10 } as const;
+
 export const opacity = { hidden: 0, full: 1, pressed: 0.6, disabled: 0.5, fieldDisabled: 0.55, faint: 0.35, muted: 0.45, area: 0.08 } as const;
 
 /** Medidas fixas de componentes. */

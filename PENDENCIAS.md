@@ -2,6 +2,29 @@
 
 O que só o dono do projeto pode fazer (contas, chaves, testes no aparelho, decisões). Ao concluir um item, apague-o.
 
+## Botão da Glife IA, voz, anexos, versículos e previsto (28/11/2026) — branch `integracao-ia-investimentos`
+
+Já feito: código, testes (lint, typecheck e todas as suítes verdes) e extração de PDF testada com `unpdf` no Deno.
+Nada foi publicado nem conferido no aparelho/navegador logado (exige MFA).
+
+- [ ] **Publicar as funções** (as duas mudaram/são novas):
+  `pnpm sb functions deploy extract-text --import-map supabase/functions/deno.json` e
+  `pnpm sb functions deploy ai-agent --import-map supabase/functions/deno.json` (limite do pedido subiu para 400 mil
+  caracteres por causa dos anexos).
+- [ ] **Gerar APK novo** com `prebuild --clean` (módulo nativo novo `expo-speech-recognition`; o APK antigo não tem
+  voz — o botão avisa e abre o campo de texto). Reiniciar o dev server antes de testar.
+- [ ] Conferir no Chrome e no APK (claro/escuro, 360 dp):
+  - Barra: Início · Agenda · mascote · Notas · Finanças. Tocar no mascote abre o campo; segurar fala e soltar envia;
+    segurar e arrastar para cima trava no cadeado e só envia em "Enviar"; negar o microfone cai no texto.
+  - Conversa em `/ia` (com voltar): a conversa continua ao sair e voltar; clipe anexa PDF/TXT/MD/CSV (teste um PDF
+    digitalizado: deve avisar que não tem texto).
+  - Bíblia (tradução Livre): Romanos 10:13 e 1 Coríntios 9:9 mostram referências como link; tocar abre o versículo e
+    voltar retorna. Trocar de capítulo pelas setas: só o texto desliza e esmaece, as barras ficam paradas.
+  - Início → "Mês até agora": tag "Saldo esperado em DD/MM" igual ao "Esperado" da tela Finanças.
+  - Investimentos → ativo → aba IA → escolher pergunta → "Perguntar à Glife IA".
+- [ ] Prototipagem pendente (decisão de 28/11: seguir o design system): compositor rápido e faixa de voz com cadeado.
+- [ ] Acompanhar o gasto da DeepSeek: anexos grandes são reenviados a cada mensagem da mesma conversa.
+
 ## Investimentos v2 (28/11/2026) — juntada na branch `integracao-ia-investimentos`
 
 - [ ] **Republicar o `sync-streams.yaml`** no painel do PowerSync (Validate → Deploy; cole, não digite):

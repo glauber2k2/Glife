@@ -77,12 +77,12 @@ installCrashReport(AsyncStorage, (globalThis as { ErrorUtils?: GlobalErrorUtils 
 
 /** Busca universal: cada feature entrega as suas fontes; Ctrl+K só com acesso completo e app desbloqueado. */
 /** Glife IA: cada feature entrega seu kit de ferramentas; o registro de ações fica no banco local. */
-function AiComposition({ db, children }: { db: LocalDb | null; children: ReactNode }) {
+function AiComposition({ db, userId, children }: { db: LocalDb | null; userId: string | null; children: ReactNode }) {
   const notes = useNotesAiTools();
   const agenda = useAgendaAiTools();
   const kits = useMemo(() => [notes, agenda], [notes, agenda]);
   return (
-    <AiToolsProvider db={db} kits={kits}>
+    <AiToolsProvider db={db} kits={kits} sessionKey={userId}>
       {children}
     </AiToolsProvider>
   );
@@ -163,7 +163,7 @@ function RootStack() {
           <SearchComposition enabled={stage === 'ready'}>
           <TaggedComposition>
           <TargetsComposition>
-          <AiComposition db={userId ? localSync.db : null}>
+          <AiComposition db={userId ? localSync.db : null} userId={userId}>
           <ToastProvider>
             {/* Dentro do aviso (toast): um "Feito" do aviso que falhar diz o motivo. */}
             <NoticesSync scheduler={noticeScheduler} signedOut={stage === 'signed_out'} />

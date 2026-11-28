@@ -47,7 +47,7 @@
         "expo-speech-recognition",
         {
           "microphonePermission": "O Glife usa o microfone para você pedir à Glife IA por voz.",
-          "speechRecognitionPermission": "O Glife transcreve o seu pedido de voz no aparelho para enviar à Glife IA."
+          "speechRecognitionPermission": "O Glife usa o reconhecimento de voz do sistema (no Android, normalmente o serviço do Google) para transformar seu pedido em texto para a Glife IA."
         }
       ]
     ],

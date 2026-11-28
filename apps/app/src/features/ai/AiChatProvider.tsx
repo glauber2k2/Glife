@@ -10,8 +10,10 @@ export type AiChat = ReturnType<typeof useAgentChat>;
 
 const Ctx = createContext<AiChat | null>(null);
 
-export function AiChatProvider({ children }: { children: ReactNode }) {
-  const chat = useAgentChat();
+export function AiChatProvider({ sessionKey, children }: { sessionKey: string | null; children: ReactNode }) {
+  const chat = useAgentChat(sessionKey);
+  // pedido deixado por outra conta não vale para esta
+  useEffect(() => () => void aiPrompts.take(), [sessionKey]);
   const [asked, setAsked] = useState(0);
   useEffect(() => aiPrompts.subscribe(() => setAsked((n) => n + 1)), []);
 
