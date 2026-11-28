@@ -43,6 +43,12 @@ function fakeProvider(source: QuoteSource, price: number) {
     async lookup() {
       return [];
     },
+    async history() {
+      return [];
+    },
+    async market() {
+      return [];
+    },
   };
   return { provider, asked };
 }

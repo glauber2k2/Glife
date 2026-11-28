@@ -89,6 +89,8 @@ export interface Palette {
   qrInk: string;
   /** bolinha do interruptor */
   knob: string;
+  /** gráficos de Investimentos: um tom por grupo, em ordem fixa (validado para daltonismo, claro e escuro) */
+  chart: { fixed_income: string; crypto: string; stocks: string; reits: string; funds: string; other: string };
   shadow: Shadows;
 }
 
@@ -136,6 +138,7 @@ const light: Palette = {
   qrPaper: '#FFFFFF',
   qrInk: '#0E1116',
   knob: '#FFFFFF',
+  chart: { fixed_income: '#2D5BFF', crypto: '#E29936', stocks: '#009A9B', reits: '#70449C', funds: '#348F4F', other: '#C9CED8' },
   shadow: {
     level1: '0px 1px 2px rgba(14,17,22,0.04), 0px 6px 16px -8px rgba(14,17,22,0.16)',
     level2: '0px 14px 32px -12px rgba(14,17,22,0.32)',
@@ -191,6 +194,7 @@ const dark: Palette = {
   qrPaper: '#FFFFFF',
   qrInk: '#0E1116',
   knob: '#FFFFFF',
+  chart: { fixed_income: '#5A7DFF', crypto: '#C8800D', stocks: '#008E96', reits: '#7D4DAD', funds: '#40A35C', other: '#3A4252' },
   shadow: {
     level1: '0px 1px 2px rgba(0,0,0,0.3), 0px 6px 16px -8px rgba(0,0,0,0.6)',
     level2: '0px 14px 32px -12px rgba(0,0,0,0.7)',
@@ -365,7 +369,7 @@ export const layout = {
 } as const;
 
 /** Estados sem mudar cor: pressionado (sem movimento) e desabilitado. */
-export const opacity = { hidden: 0, full: 1, pressed: 0.6, disabled: 0.5, fieldDisabled: 0.55, faint: 0.35, muted: 0.45 } as const;
+export const opacity = { hidden: 0, full: 1, pressed: 0.6, disabled: 0.5, fieldDisabled: 0.55, faint: 0.35, muted: 0.45, area: 0.08 } as const;
 
 /** Medidas fixas de componentes. */
 export const size = {
@@ -503,6 +507,20 @@ export const size = {
   categoryBar: 8,
   /** marcador do ponto tocado na linha */
   scrubDot: 7,
+  /** Investimentos: rosca, mini gráfico da lista, barras do ranking e gráfico de linha */
+  donut: 150,
+  donutSmall: 84,
+  donutStroke: 17,
+  donutStrokeActive: 24,
+  donutGap: 2.5,
+  sparkWidth: 56,
+  sparkHeight: 22,
+  rankTrack: 10,
+  rankName: 86,
+  rankValue: 64,
+  investLine: 150,
+  investLineAsset: 130,
+  investMark: 4.5,
   /** quadradinho da legenda (entradas, saídas, previsto) */
   legendSwatch: 10,
   /** coluna do percentual em "Para onde foi" */

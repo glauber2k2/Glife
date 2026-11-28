@@ -146,8 +146,9 @@ export function createLocalFinanceStore(db: LocalDb, userId: string): FinanceSto
     watchInvestments: (onChange, onError) =>
       db.watch<{ a: string; m: string }>(
         `SELECT (SELECT count(*) || max(updated_at) FROM investment_assets WHERE user_id = ?) AS a,
-                (SELECT count(*) || max(updated_at) FROM investment_movements WHERE user_id = ?) AS m`,
-        [userId, userId],
+                (SELECT count(*) || max(updated_at) FROM investment_movements WHERE user_id = ?) AS m,
+                (SELECT count(*) || max(updated_at) FROM investment_targets WHERE user_id = ?) AS t`,
+        [userId, userId, userId],
         () => onChange(),
         onError,
       ),

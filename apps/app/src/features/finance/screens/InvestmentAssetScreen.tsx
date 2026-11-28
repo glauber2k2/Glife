@@ -4,9 +4,13 @@
 import {
   ASSET_KIND_LABELS,
   accountBalance,
+  assetInsight,
   assetPosition,
+  assetStats,
   isAutoQuoted,
+  portfolio,
   quoteSourceOf,
+  type Period,
   type InvestmentMovement,
   type MovementKind,
 } from "@glife/domain/finance";
@@ -24,6 +28,7 @@ import {
   ListGroup,
   Reveal,
   Screen,
+  SegmentedControl,
   Sheet,
   Text,
   makeStyles,
@@ -32,7 +37,12 @@ import {
   type TextTone,
 } from "@/shared/ui";
 
+import { LinkedNotesField, useLinkedNotes } from '@/features/links';
+
 import { MovementSheet, type MovementDraft } from "../components/MovementSheet";
+import { assetChartData } from "../components/assetDetail";
+import { AssetInsightPanel, AssetStatsGrid, useApplyLinkedNow } from "../components/assetPanels";
+import { InvestLineChart } from "../components/charts/InvestLineChart";
 import {
   dm,
   dmy,
@@ -45,7 +55,6 @@ import {
   quantityText,
 } from "../components/investmentFormat";
 import {
-  AssetChart,
   MOVEMENT_LABELS,
   MovementRow,
   movementIcon,
@@ -56,6 +65,7 @@ import { useCountUp } from "../components/ui";
 import { useMoneyFormat } from "../hooks/useMoneyFormat";
 import { useFinance } from "../hooks/FinanceData";
 import { useInvestments, useRefreshQuotes } from "../hooks/useInvestments";
+import { usePriceBook } from "../hooks/useMarket";
 import { goBackOr } from '@/shared/navigation/backNavigation';
 
 const SOURCE_LABELS = { brapi: "B3", coingecko: "CoinGecko" } as const;
@@ -71,7 +81,19 @@ const DELETED: Record<MovementKind, string> = {
   income: "Rendimento excluído",
   quote: "Cotação excluída",
 };
-const MONTH_SHORT = MONTH_NAMES.map((m) => m.slice(0, 3));
+type Tab = "summary" | "stats" | "ai" | "notes";
+const TABS: readonly { value: Tab; label: string }[] = [
+  { value: "summary", label: "Resumo" },
+  { value: "stats", label: "Estatísticas" },
+  { value: "ai", label: "IA" },
+  { value: "notes", label: "Notas" },
+];
+const PERIODS: readonly { value: Period; label: string }[] = [
+  { value: "1M", label: "1M" },
+  { value: "6M", label: "6M" },
+  { value: "1A", label: "1A" },
+  { value: "Tudo", label: "Tudo" },
+];
 const capital = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 const warn = (what: string) => (e: unknown) => console.warn(what, e);
 
@@ -101,6 +123,15 @@ export function InvestmentAssetScreen() {
   );
   const pos = asset ? assetPosition(asset, movements, today) : null;
   const current = useCountUp(pos?.current ?? 0);
+  const [tab, setTab] = useState<Tab>("summary");
+  const [period, setPeriod] = useState<Period>("6M");
+  const assetOnly = useMemo(() => (asset ? [asset] : null), [asset]);
+  const { book } = usePriceBook(assetOnly);
+  const prices = asset ? (book.get(asset.id) ?? []) : [];
+  const linked = useLinkedNotes("asset", id);
+  useApplyLinkedNow(linked, id);
+  // Só a aba IA usa a carteira inteira (peso do ativo e metas).
+  const p = snap && tab === "ai" ? portfolio(snap.assets, snap.movements, today) : null;
   const accounts = useMemo(
     () =>
       (data?.accounts ?? [])
@@ -156,6 +187,12 @@ export function InvestmentAssetScreen() {
         : "Sem cotação ainda";
   const unitPrice =
     asset.last_price_e8 !== null ? Math.round(asset.last_price_e8 / 1e6) : null;
+  const stats = assetStats(asset, pos, movements, prices, today);
+  const chart = assetChartData(asset, movements, prices, today, period);
+  const avgCents =
+    auto && pos.units && pos.units > 0 && pos.invested > 0
+      ? Math.round(pos.invested / (pos.units / 1e8))
+      : null;
 
   // Histórico por mês, mais recente primeiro.
   const history = [...movements].reverse();
@@ -361,20 +398,59 @@ export function InvestmentAssetScreen() {
           )}
           {auto && unitPrice !== null && (
             <Stat
-              label="Preço"
+              label="Preço hoje"
               value={unitPrice > 0 ? money(unitPrice) : "< R$ 0,01"}
             />
           )}
+          {avgCents !== null && <Stat label="Preço médio" value={money(avgCents)} />}
+          {pos.income !== 0 && (
+            <Stat label="Rendimentos" value={money(pos.income)} tone={toneOf(resultTone(pos.income), "tertiary")} />
+          )}
         </View>
 
-        {pos.series.length > 1 && pos.firstDate && (
+        <SegmentedControl
+          label="Seção do ativo"
+          options={TABS}
+          value={tab}
+          onChange={setTab}
+        />
+
+        {tab === "summary" && chart.values.length > 1 && (
           <View style={s.block}>
-            <AssetChart
-              series={pos.series}
-              from={`Desde ${MONTH_SHORT[Number(pos.firstDate.slice(5, 7)) - 1]}/${pos.firstDate.slice(2, 4)}`}
+            <View style={s.chartHead}>
+              <Text variant="label" tone="tertiary">
+                {chart.kind === "price" ? "Preço" : "Valor"}
+              </Text>
+              <SegmentedControl label="Período" shape="pill" options={PERIODS} value={period} onChange={setPeriod} />
+            </View>
+            <InvestLineChart
+              series={[{ values: chart.values, color: t.colors.accent, area: true, label: chart.kind === "price" ? "Preço" : "Valor" }]}
+              dates={chart.dates}
+              reference={chart.reference ? { value: chart.reference.value, label: `${chart.reference.label} ${money(chart.reference.value)}` } : null}
+              marks={chart.marks}
+              height={t.size.investLineAsset}
+              format={balance}
+              resetKey={`${period}:${chart.values.length}`}
+              accessibilityLabel={`${chart.kind === "price" ? "Preço" : "Valor"} de ${money(chart.values[0]!)} para ${money(chart.values.at(-1)!)} no período`}
             />
           </View>
         )}
+
+        {tab === "stats" && <AssetStatsGrid stats={stats} money={money} auto={auto} />}
+
+        {tab === "ai" && p && (
+          <AssetInsightPanel
+            assetName={asset.name}
+            linked={linked}
+            today={today}
+            answer={(q) => assetInsight(q, { asset, position: pos, stats, portfolio: p, targets: snap.targets, movements, money })}
+          />
+        )}
+
+        {tab === "notes" && <LinkedNotesField state={linked} />}
+
+        {tab === "summary" && (
+        <>
 
         <View style={[s.block, s.actions]}>
           {actions.map((k) => (
@@ -439,6 +515,8 @@ export function InvestmentAssetScreen() {
               </ListGroup>
             </View>
           ))
+        )}
+        </>
         )}
       </Reveal>
 
@@ -550,4 +628,5 @@ const useStyles = makeStyles((t) => ({
   historyTitle: { marginBottom: -t.space[3] },
   month: { gap: t.space[2] },
   monthLabel: {},
+  chartHead: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: t.space[2], marginBottom: t.space[2] },
 }));

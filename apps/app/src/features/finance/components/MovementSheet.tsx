@@ -17,7 +17,8 @@ import { Button, Chip, Input, SegmentedControl, Sheet, Text, makeStyles, type Te
 
 import { dm, relativeDay } from './format';
 import { useMoneyFormat } from '../hooks/useMoneyFormat';
-import { parseQuantity, pctSigned, quantityText } from './investmentFormat';
+import { dayTime, parseQuantity, pctSigned, quantityText } from './investmentFormat';
+import { totalAtPrice } from './symbolSearch';
 import { MOVEMENT_LABELS, resultTone } from './investmentRows';
 import { DateRow, MoneyField } from './ui';
 
@@ -164,6 +165,16 @@ function MovementForm({ asset, movements, accounts, editing, initialKind, today,
           hint={qtyText.trim() !== '' && qty === null ? 'Use até 8 casas decimais.' : undefined}
         />
       )}
+      {needsQty && asset.last_price_e8 !== null && (
+        <View style={s.quoteRow}>
+          <Text variant="caption" tone="tertiary" numeric style={s.quoteText}>
+            {`Cotação${asset.last_price_at ? ` de ${dayTime(asset.last_price_at)}` : ''}: ${money(Math.round(asset.last_price_e8 / 1e6))} por ${asset.kind === 'crypto' ? 'unidade' : 'cota'}`}
+          </Text>
+          {totalAtPrice(qty, asset.last_price_e8) !== null && (
+            <Button label="Usar o preço de hoje" variant="ghost" size="sm" selfAlign="center" onPress={() => setCents(totalAtPrice(qty, asset.last_price_e8))} />
+          )}
+        </View>
+      )}
       <DateRow date={date} hint={relativeDay(date, today)} onChange={setDate} />
       {flow && accounts.length > 0 && (
         <View style={s.accounts}>
@@ -197,4 +208,6 @@ const useStyles = makeStyles((t) => ({
   valueBlock: { gap: t.space[1.5] },
   accounts: { gap: t.space[2] },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: t.space[2] },
+  quoteRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: t.space[2] },
+  quoteText: { flex: 1, minWidth: 0 },
 }));

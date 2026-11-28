@@ -2,7 +2,7 @@
 // "Encerrados" que abre e fecha, linha de movimento e o gráfico de evolução do valor.
 import { ASSET_KIND_LABELS, type AssetKind, type MovementKind, type PortfolioGroup } from '@glife/domain/finance';
 import { Activity, ArrowDownLeft, ArrowUpRight, ChevronDown, TrendingDown, TrendingUp, type LucideIcon } from 'lucide-react-native';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { Pressable, View } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 import Svg, { Circle, Path } from 'react-native-svg';
@@ -37,6 +37,8 @@ export function AssetRow(p: {
   pct: string;
   pctTone: TextTone;
   closed?: boolean;
+  /** mini gráfico antes do valor */
+  spark?: ReactNode;
   onPress: () => void;
 }) {
   const s = useStyles();
@@ -59,6 +61,7 @@ export function AssetRow(p: {
           </Text>
         ) : null}
       </View>
+      {p.spark}
       <View style={s.right}>
         <Text variant="amount" tone={p.closed ? 'tertiary' : 'primary'} numeric>
           {p.value}

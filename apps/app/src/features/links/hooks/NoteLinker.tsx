@@ -15,8 +15,8 @@ export interface NoteChoice {
 export interface NoteLinkerPort {
   /** notas vivas cujo título ou texto têm `query` (vazio: as mais recentes) */
   search(query: string): Promise<NoteChoice[]>;
-  /** cria uma nota vazia com este título */
-  create(title: string): Promise<NoteChoice>;
+  /** cria uma nota com este título (e o texto, se vier; senão vazia) */
+  create(title: string, body?: string): Promise<NoteChoice>;
   /** título de uma nota viva; null se excluída ou ainda não chegou */
   title(id: string): Promise<string | null>;
 }

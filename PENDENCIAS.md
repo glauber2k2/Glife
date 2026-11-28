@@ -2,13 +2,29 @@
 
 O que só o dono do projeto pode fazer (contas, chaves, testes no aparelho, decisões). Ao concluir um item, apague-o.
 
-## Glife IA etapa 6.1: agente com DeepSeek Flash (28/11/2026) — branch `fase-6-ia`, PR #5
+## Investimentos v2 (28/11/2026) — juntada na branch `integracao-ia-investimentos`
+
+- [ ] **Republicar o `sync-streams.yaml`** no painel do PowerSync (Validate → Deploy; cole, não digite):
+  traz a linha nova de `investment_targets`. Sem isso as metas não sincronizam. (Migração `20261203000001` e a
+  função `quotes` v5 já publicadas em 28/11/2026; `rls_check.sql` = 0 linhas.)
+- [ ] Conferir no Chrome e no APK (claro/escuro, 360 dp, nomes longos): painel (gráfico com arraste e períodos,
+  rosca Atual/Meta, "Definir metas" somando 100, ranking Minha carteira e Mercado, leitura da carteira), detalhe do
+  ativo (Resumo com preço médio, Estatísticas tocando nos números, IA salvando nota, Notas) e o "Novo ativo" com a
+  busca ("logis", "itau", "btc", "BOVA11" digitado).
+- [ ] Ver se o histórico de 3 meses da brapi chega com a sua chave (gráfico de ITSA4 com ~60 pontos). Se vier vazio,
+  as estatísticas da B3 dependem só do histórico que o app acumula a partir de agora.
+
+Menores adiados da revisão: "abaixo da meta" com meta igual/0%; sugestão diz "hoje" com preço de até 24 h; histórico
+do app sem prazo diário; gravação do histórico sequencial; sombra na lista de sugestões; números soltos (swatch,
+faixa ±2, limiar 3 p.p.); preço médio calculado em 4 lugares; chaves React duplicáveis em InsightBlocks; vínculo que
+falha não tenta de novo; área do gráfico com último valor nulo; marcas de busca sem limite; "Mais negociadas" mistura
+papéis e reais; cripto com data de Brasília e UTC.
+
+## Glife IA etapa 6.1: agente com DeepSeek Flash (28/11/2026) — juntada na branch `integracao-ia-investimentos`
 
 Já feito: 3 migrações aplicadas no GLIFE, função `ai-agent` publicada (`--import-map`), secret `DEEPSEEK_API_KEY`
 conferido, teto US$ 2,00/mês. A conversa real com o modelo **não** foi testada.
 
-- [ ] Juntar os PRs em ordem: #2 → #3 → #4 → #5 (o #5 tem base `lembretes-feitos-e-calendario`). Se outra branch
-  mexeu em `src/app/_layout.tsx`, `src/app/(tabs)/_layout.tsx` ou na tela inicial de Finanças, conferir conflitos.
 - [ ] Gerar APK novo **a partir do código com o PR #5** (biblioteca nova: `ai`, `@ai-sdk/react`; usa `expo/fetch`).
 - [ ] Testar no Chrome (`pnpm web`, não no navegador do Claude) e no APK a aba **IA** com as 44 frases de
   `docs/ia/frases-de-teste.md`, anotando o resultado no arquivo. Conferir: resposta chega aos poucos (streaming) no

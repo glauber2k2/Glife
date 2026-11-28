@@ -1,12 +1,25 @@
 // Edge Function `quotes`: cotações (ações/FIIs pela brapi, cripto pela CoinGecko) com cache de 30 min no servidor.
 // As chaves das APIs ficam só nos secrets. Só atende sessão com MFA; não registra dados do usuário.
-import { quoteRequestSchema, type LookupItem, type QuoteKey, type QuoteResult, type QuoteSource } from '@glife/domain/quotes';
+import {
+  quoteRequestSchema,
+  type LookupItem,
+  type MarketItem,
+  type MarketSort,
+  type MarketType,
+  type PricePoint,
+  type QuoteKey,
+  type QuoteResult,
+  type QuoteSource,
+} from '@glife/domain/quotes';
 
 import { requireAal2, type VerifyJwt } from '../_shared/auth.ts';
 
 export interface QuotesService {
   getQuotes(keys: readonly QuoteKey[]): Promise<QuoteResult>;
   lookup(source: QuoteSource, query: string): Promise<LookupItem[]>;
+  history(key: QuoteKey): Promise<PricePoint[]>;
+  market(source: QuoteSource, sort: MarketSort, type?: MarketType): Promise<MarketItem[]>;
+  search(query: string, types?: readonly MarketType[]): Promise<MarketItem[]>;
 }
 
 const MAX_BODY = 16_000;
@@ -41,8 +54,18 @@ export function createHandler(deps: { verify: VerifyJwt; service: QuotesService 
 
     try {
       const request = parsed.data;
-      if (request.action === 'lookup') return json({ items: await deps.service.lookup(request.source, request.query) });
-      return json(await deps.service.getQuotes(request.items));
+      switch (request.action) {
+        case 'lookup':
+          return json({ items: await deps.service.lookup(request.source, request.query) });
+        case 'history':
+          return json({ points: await deps.service.history(request.item) });
+        case 'market':
+          return json({ items: await deps.service.market(request.source, request.sort, request.type) });
+        case 'search':
+          return json({ items: await deps.service.search(request.query, request.types) });
+        default:
+          return json(await deps.service.getQuotes(request.items));
+      }
     } catch {
       return json({ error: 'Cotação indisponível agora.' }, 502);
     }

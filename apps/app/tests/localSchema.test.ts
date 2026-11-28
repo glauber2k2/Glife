@@ -66,6 +66,7 @@ describe('schema local (PowerSync) espelha as migrações', () => {
       'events',
       'investment_assets',
       'investment_movements',
+      'investment_targets',
       'links',
       'meal_plans',
       'meals',
