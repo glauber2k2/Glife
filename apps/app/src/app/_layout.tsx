@@ -10,6 +10,7 @@ import { Alert } from 'react-native';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
+import { aiLocalTables } from '@/features/ai';
 import { AppLockGate, AppLockProvider, createDeviceAppLock, deviceBiometrics, useAppLock } from '@/features/app-lock';
 import { AuthProvider, createSupabaseAuthService, useAuth } from '@/features/auth';
 import { AgendaProvider, agendaTableLabels, agendaTables, useAgendaTargetSources } from '@/features/agenda';
@@ -61,7 +62,7 @@ const quoteClient = createEdgeQuoteClient(getSupabase());
 const appLock = createDeviceAppLock();
 const signOut = () => authService.signOut();
 // Banco local com as tabelas das features; sincroniza com o Supabase via PowerSync.
-const localSync = createLocalSync({ ...notesTables, ...linksTables, ...financeTables, ...agendaTables, ...dietTables, ...bibleTables, ...bibleLocalTables }, [notesSearchIndex]);
+const localSync = createLocalSync({ ...notesTables, ...linksTables, ...financeTables, ...agendaTables, ...dietTables, ...bibleTables, ...bibleLocalTables, ...aiLocalTables }, [notesSearchIndex]);
 /** Nome de cada tabela (fila de envio e contagens de Ajustes › Sincronização), entregue por cada módulo. */
 const syncLabels = { ...notesTableLabels, ...linksTableLabels, ...financeTableLabels, ...agendaTableLabels, ...dietTableLabels, ...bibleTableLabels };
 /** Avisos locais do aparelho (agenda e dieta); no web não faz nada. */
