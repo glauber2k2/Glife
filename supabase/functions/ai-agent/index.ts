@@ -1,6 +1,5 @@
-// Composição da Edge Function `ai-agent`. Secrets: DEEPSEEK_API_KEY, GLIFE_AI_USD_BRL (cotação do dólar para o teto
-// em reais) e GLIFE_AI_MODEL (opcional). SUPABASE_URL e SUPABASE_SERVICE_ROLE_KEY vêm do ambiente.
-import { parseUsdBrl } from '@glife/domain/ai';
+// Composição da Edge Function `ai-agent`. Secrets: DEEPSEEK_API_KEY e GLIFE_AI_MODEL (opcional). O teto é em dólar,
+// sem cotação. SUPABASE_URL e SUPABASE_SERVICE_ROLE_KEY vêm do ambiente.
 import { createClient } from '@supabase/supabase-js';
 
 import { supabaseAiBudget } from './budget.ts';
@@ -23,6 +22,5 @@ Deno.serve(
     verify,
     budget: supabaseAiBudget(admin),
     model: buildLanguageModel(),
-    usdBrl: parseUsdBrl(env('GLIFE_AI_USD_BRL')),
   }),
 );

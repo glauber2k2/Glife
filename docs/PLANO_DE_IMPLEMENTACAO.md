@@ -151,7 +151,7 @@ Ações da IA (desfazer), uso e teto em Ajustes.
 
 **Decisão de 27/11/2026** (spec `docs/superpowers/specs/2026-11-27-glife-ia-agente-design.md`): agente no aparelho
 com **DeepSeek Flash** pelo Vercel AI SDK (mesmo do guf_backend); a Edge Function `ai-agent` só faz a ponte (MFA,
-teto em R$, limpeza de dados pessoais). Criar/editar direto com "Desfazer"; lixeira, dinheiro e lote com "Confirmar?";
+teto em dólar (US$ 2,00/mês, sem cotação), limpeza de dados pessoais). Criar/editar direto com "Desfazer"; lixeira, dinheiro e lote com "Confirmar?";
 a caixa de entrada segue a mesma regra. Excluir é sempre lixeira. Substitui o Haiku/Sonnet e o "proposta → Aplicar".
 
 | # | Etapa | Status |

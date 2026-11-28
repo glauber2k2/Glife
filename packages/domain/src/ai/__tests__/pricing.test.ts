@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { AI_DEFAULT_CAP_CENTS, costMicroUsd, isDeepSeekPeak, microUsdToBrlCents, parseUsdBrl } from '../index.ts';
+import { AI_DEFAULT_CAP_MICRO_USD, costMicroUsd, isDeepSeekPeak } from '../index.ts';
 
 const PEAK = new Date('2026-11-30T02:00:00Z'); // segunda, 02:00 UTC
 const OFF = new Date('2026-11-30T05:00:00Z'); // segunda, 05:00 UTC
@@ -28,24 +28,9 @@ describe('custo de uma chamada', () => {
   });
 });
 
-describe('conversão para reais', () => {
-  it('converte micro-dólares em centavos arredondando para cima', () => {
-    expect(microUsdToBrlCents(1_000_000, 5.4)).toBe(540);
-    expect(microUsdToBrlCents(1, 5.4)).toBe(1);
-    expect(microUsdToBrlCents(0, 5.4)).toBe(0);
-  });
-
-  it('lê a cotação do secret com ponto ou vírgula e recusa valor sem sentido', () => {
-    expect(parseUsdBrl('5,40')).toBe(5.4);
-    expect(parseUsdBrl(' 5.40 ')).toBe(5.4);
-    expect(parseUsdBrl('0')).toBeNull();
-    expect(parseUsdBrl('abc')).toBeNull();
-    expect(parseUsdBrl('150')).toBeNull();
-    expect(parseUsdBrl(null)).toBeNull();
-  });
-
-  it('teto padrão de R$ 20,00', () => {
-    expect(AI_DEFAULT_CAP_CENTS).toBe(2000);
+describe('teto em dólar', () => {
+  it('teto padrão de US$ 2,00 por mês (em micro-dólares)', () => {
+    expect(AI_DEFAULT_CAP_MICRO_USD).toBe(2_000_000);
   });
 });
 

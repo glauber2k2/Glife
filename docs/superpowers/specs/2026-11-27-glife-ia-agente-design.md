@@ -166,10 +166,11 @@ teste do plano (Fase 6: "Suite de 20 frases").
   no servidor continua como segunda rede e não mexe nos marcadores.
 - **Dinheiro vai ao modelo formatado** ("R$ 150.000,00"), nunca em centavos crus (evita a limpeza de números longos
   e erro de escala); o executor converte de volta para centavos com `money.ts`.
-- **Teto:** padrão R$ 20,00 por mês (valor do protótipo), editável em Ajustes; sempre existe um teto. O custo é
-  calculado em dólar pela tabela de preço e convertido com a cotação do secret `GLIFE_AI_USD_BRL` (o usuário define;
-  sem ele a função recusa com aviso claro, para o teto nunca mentir). Ao estourar no meio de uma resposta, o turno
-  atual termina e o próximo pedido é recusado.
+- **Teto em dólar** (usuário, 28/11/2026: "coloque o limite em dólar mesmo"): padrão **US$ 2,00 por mês**, a mesma
+  moeda e valor da recarga na DeepSeek, sem cotação; editável em Ajustes; sempre existe um teto. Uso e teto guardados
+  em micro-dólares (migração `20261202000003`). Reserva atômica antes de chamar o modelo e acerto no fim. Ao estourar
+  no meio de uma resposta, o turno atual termina e o próximo pedido é recusado. Saldo acabado na DeepSeek chega como
+  erro 402 com aviso claro.
 - **Captura:** cada texto vira um item `inbox_items` (tabela sincronizada como as demais, com RLS padrão), estado
   `pendente` → `processado`; sem internet ou com o app fechado, fica pendente e é processado quando o app abrir com
   conexão. Capturar no web e processar no celular funciona.

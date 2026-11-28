@@ -3,10 +3,10 @@
 import type { AiUsage } from '@glife/domain/ai';
 
 export interface AiBudget {
-  /** Reserva `cents` se o gasto do mês ainda não chegou ao teto; null = teto alcançado. */
-  reserve(userId: string, cents: number): Promise<string | null>;
-  /** Troca a estimativa reservada pelo custo real. */
-  settle(reservationId: string, userId: string, usage: AiUsage, microUsd: number, cents: number): Promise<void>;
+  /** Reserva `microUsd` se o gasto do mês ainda não chegou ao teto; null = teto alcançado. */
+  reserve(userId: string, microUsd: number): Promise<string | null>;
+  /** Troca a estimativa reservada pelo custo real (micro-dólares). */
+  settle(reservationId: string, userId: string, usage: AiUsage, microUsd: number): Promise<void>;
 }
 
 export interface RpcClient {
@@ -15,17 +15,16 @@ export interface RpcClient {
 
 export function supabaseAiBudget(admin: RpcClient): AiBudget {
   return {
-    async reserve(userId, cents) {
-      const { data, error } = await admin.rpc('ai_reserve_budget', { p_user: userId, p_cents: cents });
+    async reserve(userId, microUsd) {
+      const { data, error } = await admin.rpc('ai_reserve_budget', { p_user: userId, p_micro_usd: microUsd });
       if (error) throw new Error(`ai_reserve_budget ${error.code ?? ''}`);
       return typeof data === 'string' ? data : null;
     },
-    async settle(reservationId, userId, usage, microUsd, cents) {
+    async settle(reservationId, userId, usage, microUsd) {
       const { error } = await admin.rpc('ai_settle_usage', {
         p_id: reservationId,
         p_user: userId,
         p_micro_usd: microUsd,
-        p_cents: cents,
         p_hit: usage.cacheHitTokens,
         p_miss: usage.cacheMissTokens,
         p_out: usage.outputTokens,

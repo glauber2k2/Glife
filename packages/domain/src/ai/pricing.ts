@@ -1,5 +1,5 @@
-// Preço do deepseek-flash (página oficial "Models & Pricing", consultada em 27/11/2026) e conversão para o teto em
-// reais. Contas em inteiros (micro-dólares e centavos) e sempre arredondando para cima: o teto nunca subestima.
+// Preço do deepseek-flash (página oficial "Models & Pricing", consultada em 27/11/2026). O teto é em dólar, a mesma
+// moeda da recarga na DeepSeek (sem cotação). Contas em micro-dólares inteiros, arredondando para cima.
 
 export interface AiUsage {
   cacheHitTokens: number;
@@ -10,7 +10,8 @@ export interface AiUsage {
 /** Micro-dólares por milhão de tokens no horário de pico ($0.006 / $0.30 / $1.20); fora do pico é a metade. */
 export const DEEPSEEK_FLASH_PRICE = { cacheHit: 6_000, cacheMiss: 300_000, output: 1_200_000 } as const;
 
-export const AI_DEFAULT_CAP_CENTS = 2000;
+/** Teto padrão por mês: US$ 2,00 (em micro-dólares; US$ 1 = 1.000.000). */
+export const AI_DEFAULT_CAP_MICRO_USD = 2_000_000;
 
 /** Pico: 01:00–04:00 e 06:00–10:00 UTC, segunda a sexta. Feriados chineses contam como pico (lado seguro). */
 export function isDeepSeekPeak(at: Date): boolean {
@@ -27,16 +28,3 @@ export function costMicroUsd(usage: AiUsage, at: Date | 'peak'): number {
   return Math.ceil(total / (at === 'peak' || isDeepSeekPeak(at) ? 1_000_000 : 2_000_000));
 }
 
-export function microUsdToBrlCents(microUsd: number, usdBrl: number): number {
-  const rate = Math.round(usdBrl * 10_000); // cotação em décimos de milésimo, para a conta ficar inteira
-  return Math.ceil((microUsd * rate) / 100_000_000);
-}
-
-/** Cotação do secret (`"5.40"` ou `"5,40"`). Fora de (0, 100] ou ilegível: null. */
-export function parseUsdBrl(raw: string | null | undefined): number | null {
-  if (raw == null) return null;
-  const text = raw.trim().replace(',', '.');
-  if (!/^\d+(\.\d+)?$/.test(text)) return null;
-  const n = Number(text);
-  return n > 0 && n <= 100 ? n : null;
-}

@@ -32,16 +32,16 @@ function fakeModel() {
   });
 }
 
-function setup(over: { full?: boolean; usdBrl?: number | null } = {}) {
-  const recorded: { id: string; userId: string; usage: AiUsage; microUsd: number; cents: number }[] = [];
-  const reserved: { userId: string; cents: number }[] = [];
+function setup(over: { full?: boolean } = {}) {
+  const recorded: { id: string; userId: string; usage: AiUsage; microUsd: number }[] = [];
+  const reserved: { userId: string; microUsd: number }[] = [];
   const budget: AiBudget = {
-    reserve: async (userId, cents) => {
-      reserved.push({ userId, cents });
+    reserve: async (userId, microUsd) => {
+      reserved.push({ userId, microUsd });
       return over.full ? null : 'res-1';
     },
-    settle: async (id, userId, usage, microUsd, cents) => {
-      recorded.push({ id, userId, usage, microUsd, cents });
+    settle: async (id, userId, usage, microUsd) => {
+      recorded.push({ id, userId, usage, microUsd });
     },
   };
   const model = fakeModel();
@@ -49,7 +49,6 @@ function setup(over: { full?: boolean; usdBrl?: number | null } = {}) {
     verify: async (jwt) => claims[jwt] ?? null,
     budget,
     model,
-    usdBrl: over.usdBrl === undefined ? 5.4 : over.usdBrl,
     now: () => new Date('2026-11-30T05:00:00Z'), // fora do pico
   });
   return { handler, model, recorded, reserved };
@@ -77,13 +76,6 @@ describe('ai-agent: acesso e limites', () => {
     const { handler, model } = setup();
     expect((await handler(post({ messages: [userMsg('oi')] }, 'token-aal1'))).status).toBe(403);
     expect(model.doStreamCalls).toHaveLength(0);
-  });
-
-  it('sem cotação do dólar responde 503', async () => {
-    const { handler } = setup({ usdBrl: null });
-    const res = await handler(post({ messages: [userMsg('oi')] }));
-    expect(res.status).toBe(503);
-    expect((await res.json()).error).toMatch(/cotação/);
   });
 
   it('corpo grande demais responde 413', async () => {
@@ -155,30 +147,30 @@ describe('ai-agent: ferramentas e custo', () => {
     const { handler, recorded } = setup();
     await (await handler(post({ messages: [userMsg('oi')] }))).text();
     await vi.waitFor(() => expect(recorded).toHaveLength(1));
-    // fora do pico: (500*6000 + 1000*300000 + 200*1200000) / 2e6 = 271,5 → 272 µUSD; 272 * 5,4 → 1 centavo
-    expect(recorded[0]).toEqual({ id: 'res-1', userId: 'user-1', usage: { cacheHitTokens: 500, cacheMissTokens: 1000, outputTokens: 200 }, microUsd: 272, cents: 1 });
+    // fora do pico: (500*6000 + 1000*300000 + 200*1200000) / 2e6 = 271,5 → 272 µUSD
+    expect(recorded[0]).toEqual({ id: 'res-1', userId: 'user-1', usage: { cacheHitTokens: 500, cacheMissTokens: 1000, outputTokens: 200 }, microUsd: 272 });
   });
 });
 
 describe('ai-agent: reserva e acerto do teto', () => {
-  it('reserva uma estimativa de pelo menos 1 centavo antes de chamar o modelo', async () => {
+  it('reserva uma estimativa em dólar antes de chamar o modelo', async () => {
     const { handler, reserved } = setup();
     await (await handler(post({ messages: [userMsg('oi')] }))).text();
     expect(reserved).toHaveLength(1);
-    expect(reserved[0]!.cents).toBeGreaterThanOrEqual(1);
+    expect(reserved[0]!.microUsd).toBeGreaterThanOrEqual(2_400); // ao menos a saída máxima no pico
   });
 
   it('pedido abortado depois de um passo acerta com o uso já gasto', async () => {
     const settled: unknown[] = [];
-    const meter = createUsageMeter({ settle: async (...a) => void settled.push(a), reserve: async () => 'x' }, 'user-1', 'res-9', 5.4, () => new Date('2026-11-30T05:00:00Z'));
+    const meter = createUsageMeter({ settle: async (...a) => void settled.push(a), reserve: async () => 'x' }, 'user-1', 'res-9', () => new Date('2026-11-30T05:00:00Z'));
     meter.step({ inputTokens: 1000, inputTokenDetails: { noCacheTokens: 1000, cacheReadTokens: 0, cacheWriteTokens: 0 }, outputTokens: 100 } as never);
     await meter.abort();
-    expect(settled).toEqual([['res-9', 'user-1', { cacheHitTokens: 0, cacheMissTokens: 1000, outputTokens: 100 }, 210, 1]]);
+    expect(settled).toEqual([['res-9', 'user-1', { cacheHitTokens: 0, cacheMissTokens: 1000, outputTokens: 100 }, 210]]);
   });
 
   it('pedido abortado sem nenhum passo mantém a estimativa reservada', async () => {
     const settled: unknown[] = [];
-    const meter = createUsageMeter({ settle: async (...a) => void settled.push(a), reserve: async () => 'x' }, 'user-1', 'res-9', 5.4, () => new Date());
+    const meter = createUsageMeter({ settle: async (...a) => void settled.push(a), reserve: async () => 'x' }, 'user-1', 'res-9', () => new Date());
     await meter.abort();
     expect(settled).toEqual([]);
   });

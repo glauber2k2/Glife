@@ -1,11 +1,10 @@
 // Edge Function `ai-agent`: ponte segura entre o app e o modelo. O servidor NÃO lê o banco do usuário nem executa
 // ferramentas: entrega ao modelo só as definições (sem execute) e o app executa com os próprios repositórios.
-// Ordem: MFA → configuração → tamanho → formato → teto → limpeza de dados pessoais → modelo → custo real.
+// Ordem: MFA → tamanho → formato → teto → limpeza de dados pessoais → modelo → custo real.
 // Logs só com código/motivo, nunca conteúdo da conversa.
 import {
   AI_TOOLS,
   costMicroUsd,
-  microUsdToBrlCents,
   redactPersonalData,
   type AiUsage,
 } from '@glife/domain/ai';
@@ -85,15 +84,14 @@ const addUsage = (a: AiUsage, b: AiUsage): AiUsage => ({
  * Acerto do uso de um pedido: troca a estimativa reservada pelo custo real no fim, ou pelo que os passos já
  * gastaram se o pedido for abortado. Sem nenhum passo concluído, a estimativa fica (lado seguro). Acerta uma vez só.
  */
-export function createUsageMeter(budget: AiBudget, userId: string, reservationId: string, usdBrl: number, now: () => Date) {
+export function createUsageMeter(budget: AiBudget, userId: string, reservationId: string, now: () => Date) {
   let steps: AiUsage | null = null;
   let settled = false;
   const settle = async (usage: AiUsage) => {
     if (settled) return;
     settled = true;
-    const microUsd = costMicroUsd(usage, now());
     try {
-      await budget.settle(reservationId, userId, usage, microUsd, microUsdToBrlCents(microUsd, usdBrl));
+      await budget.settle(reservationId, userId, usage, costMicroUsd(usage, now()));
     } catch (error) {
       console.error('Glife IA: uso não gravado', { code: (error as Error).message });
     }
@@ -123,7 +121,7 @@ function providerMessage(error: unknown): string {
   return `O Glife IA não conseguiu responder agora. Tente de novo em instantes. (código ${code})`;
 }
 
-export function createHandler(deps: { verify: VerifyJwt; budget: AiBudget; model: LanguageModel; usdBrl: number | null; now?: () => Date }) {
+export function createHandler(deps: { verify: VerifyJwt; budget: AiBudget; model: LanguageModel; now?: () => Date }) {
   const now = deps.now ?? (() => new Date());
   const tools = buildToolSet();
 
@@ -133,8 +131,6 @@ export function createHandler(deps: { verify: VerifyJwt; budget: AiBudget; model
 
     const auth = await requireAal2(req, deps.verify);
     if ('status' in auth) return json({ error: auth.error }, auth.status);
-
-    if (deps.usdBrl === null) return json({ error: 'A IA ainda não foi configurada (cotação do dólar).' }, 503);
 
     const declared = Number(req.headers.get('Content-Length') ?? '0');
     if (declared > MAX_BODY) return json({ error: 'Conversa grande demais. Comece uma nova.' }, 413);
@@ -158,8 +154,7 @@ export function createHandler(deps: { verify: VerifyJwt; budget: AiBudget; model
     if (parsed.data.today) messages.push({ role: 'system', content: todayMessage(parsed.data.today) });
 
     // Reserva atômica de uma estimativa pelo lado caro (cada caractere como um token, horário de pico).
-    const usdBrl = deps.usdBrl;
-    const estimate = Math.max(1, microUsdToBrlCents(costMicroUsd({ cacheHitTokens: 0, cacheMissTokens: text.length, outputTokens: MAX_OUTPUT_TOKENS }, 'peak'), usdBrl));
+    const estimate = costMicroUsd({ cacheHitTokens: 0, cacheMissTokens: text.length, outputTokens: MAX_OUTPUT_TOKENS }, 'peak');
     let reservation: string | null;
     try {
       reservation = await deps.budget.reserve(auth.userId, estimate);
@@ -168,7 +163,7 @@ export function createHandler(deps: { verify: VerifyJwt; budget: AiBudget; model
       return json({ error: 'Não foi possível conferir o teto da IA agora. Tente de novo.' }, 503);
     }
     if (!reservation) return json({ error: 'Você chegou ao teto de gasto da IA deste mês. Ajuste o teto em Ajustes.' }, 402);
-    const meter = createUsageMeter(deps.budget, auth.userId, reservation, usdBrl, now);
+    const meter = createUsageMeter(deps.budget, auth.userId, reservation, now);
 
     const result = streamText({
       model: deps.model,
