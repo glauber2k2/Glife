@@ -11,9 +11,11 @@
     "lint": "pnpm --filter app lint",
     "build:web": "pnpm --filter app exec expo export --platform web",
     "sb": "node supabase/scripts/cli.mjs",
-    "codex": "codex \"Siga o fluxo de retomada do AGENTS.md: leia AGENTS.md, STATUS.md, HANDOFF.md (se existir) e git log --oneline -15, e continue a tarefa indicada.\""
+    "codex": "codex \"Siga o fluxo de retomada do AGENTS.md: leia AGENTS.md, STATUS.md, HANDOFF.md (se existir) e git log --oneline -15, e continue a tarefa indicada.\"",
+    "ps": "node supabase/scripts/powersync.mjs"
   },
   "devDependencies": {
+    "powersync": "0.10.3",
     "supabase": "^3.2.0"
   }
 }

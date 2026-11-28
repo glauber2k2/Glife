@@ -25,3 +25,10 @@ export function parseEnvFile(text) {
 export function cliEnv(vars) {
   return Object.fromEntries(CLI_VARS.filter((k) => vars[k]).map((k) => [k, vars[k]]));
 }
+
+/** Variáveis da CLI do PowerSync: o token (segredo) e os ids da instância (fora do git: o repositório é público). */
+export const POWERSYNC_VARS = ['PS_ADMIN_TOKEN', 'INSTANCE_ID', 'PROJECT_ID', 'ORG_ID'];
+
+export function powersyncEnv(vars) {
+  return Object.fromEntries(POWERSYNC_VARS.filter((k) => vars[k]).map((k) => [k, vars[k]]));
+}

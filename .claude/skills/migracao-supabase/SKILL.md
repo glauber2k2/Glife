@@ -27,7 +27,8 @@ description: Qualquer mudança no banco do Glife (tabela, coluna, índice). Gera
    ```
    Função nova: `set search_path = ''`, nomes qualificados (`pg_catalog.now()`), e `revoke execute` se não for API.
 3. Adicione `- SELECT * FROM <t> WHERE user_id = auth.user_id() AND auth.parameter('aal') = 'aal2'` em
-   `supabase/powersync/sync-streams.yaml` e republique no painel do PowerSync (Glife → Production → Sync Streams).
+   `supabase/powersync/sync-streams.yaml` e republique: `pnpm ps validate`, `pnpm ps deploy sync-config` (prévia) e,
+   com o ok do dono, `pnpm ps deploy sync-config --yes` (sem token: painel → Glife → Production → Sync Streams).
    O teste `supabase/tests/syncStreams.test.ts` falha se a tabela publicada faltar ou vier sem esses filtros.
 4. Atualize o schema local do PowerSync em `apps/app/src/shared/lib/powersync/schema.ts` (ou no `data/` da feature).
 5. Valide: `pnpm test` roda `supabase/tests/rls.test.ts` (Postgres real via PGlite) — o teste genérico cobre toda tabela

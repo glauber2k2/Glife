@@ -9,6 +9,7 @@ ios/
 .env.*
 !.env.example
 !.env.supabase.example
+!.env.powersync.example
 coverage/
 supabase/.branches
 supabase/.temp
