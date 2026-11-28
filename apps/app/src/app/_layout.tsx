@@ -6,13 +6,15 @@ import { useFonts } from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useMemo, type ReactNode } from 'react';
+import type { LocalDb } from '@glife/domain/core';
 import { Alert } from 'react-native';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
+import { AiToolsProvider, aiLocalTables } from '@/features/ai';
 import { AppLockGate, AppLockProvider, createDeviceAppLock, deviceBiometrics, useAppLock } from '@/features/app-lock';
 import { AuthProvider, createSupabaseAuthService, useAuth } from '@/features/auth';
-import { AgendaProvider, agendaTableLabels, agendaTables, useAgendaTargetSources } from '@/features/agenda';
+import { AgendaProvider, useAgendaAiTools, agendaTableLabels, agendaTables, useAgendaTargetSources } from '@/features/agenda';
 import { BibleProvider, bibleHref, bibleLocalTables, bibleTableLabels, bibleTables } from '@/features/bible';
 import { DietProvider, dietTableLabels, dietTables, useDietTargetSources } from '@/features/diet';
 import {
@@ -26,6 +28,7 @@ import {
 import { LinksProvider, NoteLinkerProvider, TaggedItemsProvider, TargetsProvider, linksTableLabels, linksTables, useLinksSearchSources } from '@/features/links';
 import {
   NotesProvider,
+  useNotesAiTools,
   notesSearchIndex,
   notesTableLabels,
   notesTables,
@@ -61,7 +64,7 @@ const quoteClient = createEdgeQuoteClient(getSupabase());
 const appLock = createDeviceAppLock();
 const signOut = () => authService.signOut();
 // Banco local com as tabelas das features; sincroniza com o Supabase via PowerSync.
-const localSync = createLocalSync({ ...notesTables, ...linksTables, ...financeTables, ...agendaTables, ...dietTables, ...bibleTables, ...bibleLocalTables }, [notesSearchIndex]);
+const localSync = createLocalSync({ ...notesTables, ...linksTables, ...financeTables, ...agendaTables, ...dietTables, ...bibleTables, ...bibleLocalTables, ...aiLocalTables }, [notesSearchIndex]);
 /** Nome de cada tabela (fila de envio e contagens de Ajustes › Sincronização), entregue por cada módulo. */
 const syncLabels = { ...notesTableLabels, ...linksTableLabels, ...financeTableLabels, ...agendaTableLabels, ...dietTableLabels, ...bibleTableLabels };
 /** Avisos locais do aparelho (agenda e dieta); no web não faz nada. */
@@ -73,6 +76,18 @@ void SplashScreen.preventAutoHideAsync();
 installCrashReport(AsyncStorage, (globalThis as { ErrorUtils?: GlobalErrorUtils }).ErrorUtils);
 
 /** Busca universal: cada feature entrega as suas fontes; Ctrl+K só com acesso completo e app desbloqueado. */
+/** Glife IA: cada feature entrega seu kit de ferramentas; o registro de ações fica no banco local. */
+function AiComposition({ db, children }: { db: LocalDb | null; children: ReactNode }) {
+  const notes = useNotesAiTools();
+  const agenda = useAgendaAiTools();
+  const kits = useMemo(() => [notes, agenda], [notes, agenda]);
+  return (
+    <AiToolsProvider db={db} kits={kits}>
+      {children}
+    </AiToolsProvider>
+  );
+}
+
 function SearchComposition({ enabled, children }: { enabled: boolean; children: ReactNode }) {
   const notes = useNotesSearchSources();
   const links = useLinksSearchSources();
@@ -148,6 +163,7 @@ function RootStack() {
           <SearchComposition enabled={stage === 'ready'}>
           <TaggedComposition>
           <TargetsComposition>
+          <AiComposition db={userId ? localSync.db : null}>
           <ToastProvider>
             {/* Dentro do aviso (toast): um "Feito" do aviso que falhar diz o motivo. */}
             <NoticesSync scheduler={noticeScheduler} signedOut={stage === 'signed_out'} />
@@ -193,6 +209,7 @@ function RootStack() {
                   <Stack.Screen name="lixeira" options={{ animation: animation.detail }} />
                   <Stack.Screen name="tags" options={{ animation: animation.detail }} />
                   <Stack.Screen name="tags/[id]" options={{ animation: animation.detail }} />
+                  <Stack.Screen name="financas" options={{ animation: animation.detail }} />
                   <Stack.Screen name="financas/fatura/[id]" options={{ animation: animation.detail }} />
                   <Stack.Screen name="financas/conta/[id]" options={{ animation: animation.detail }} />
                   <Stack.Screen name="financas/nova-conta" options={{ animation: animation.detail }} />
@@ -233,6 +250,7 @@ function RootStack() {
               </AppLockGate>
             </NavigationThemeProvider>
           </ToastProvider>
+          </AiComposition>
           </TargetsComposition>
           </TaggedComposition>
           </SearchComposition>

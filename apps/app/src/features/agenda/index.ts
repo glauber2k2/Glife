@@ -8,3 +8,4 @@ export { useAgendaNotices } from './hooks/useAgendaNotices';
 export { AgendaMonthScreen } from './screens/AgendaMonthScreen';
 export { useAgendaNotifications, useCompleteReminder, usePendingReminder } from './hooks/useAgendaNotifications';
 export { useAgendaTargetSources } from './hooks/useAgendaTargetSources';
+export { useAgendaAiTools } from './ai/useAgendaAiTools';

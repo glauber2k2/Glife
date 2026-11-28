@@ -2,12 +2,32 @@
 
 O que só o dono do projeto pode fazer (contas, chaves, testes no aparelho, decisões). Ao concluir um item, apague-o.
 
+## Glife IA etapa 6.1: agente com DeepSeek Flash (28/11/2026) — branch `fase-6-ia`, PR #5
+
+Já feito: 3 migrações aplicadas no GLIFE, função `ai-agent` publicada (`--import-map`), secret `DEEPSEEK_API_KEY`
+conferido, teto US$ 2,00/mês. A conversa real com o modelo **não** foi testada.
+
+- [ ] Juntar os PRs em ordem: #2 → #3 → #4 → #5 (o #5 tem base `lembretes-feitos-e-calendario`). Se outra branch
+  mexeu em `src/app/_layout.tsx`, `src/app/(tabs)/_layout.tsx` ou na tela inicial de Finanças, conferir conflitos.
+- [ ] Gerar APK novo **a partir do código com o PR #5** (biblioteca nova: `ai`, `@ai-sdk/react`; usa `expo/fetch`).
+- [ ] Testar no Chrome (`pnpm web`, não no navegador do Claude) e no APK a aba **IA** com as 44 frases de
+  `docs/ia/frases-de-teste.md`, anotando o resultado no arquivo. Conferir: resposta chega aos poucos (streaming) no
+  Android; "Desfazer" funciona; lixeira pede "Confirmar?"; telefone digitado é gravado inteiro.
+- [ ] Se o streaming não funcionar no Android: implementar o modo sem stream (`createAgentTransport` com `mode:
+  'single'` e resposta sem stream na função), previsto no desenho.
+- [ ] Conferir a aba IA e Finanças (agora aberta pelo Início, com voltar) nos dois temas e em 360 dp.
+- [ ] Acompanhar o gasto no painel da DeepSeek (saldo de US$ 2).
+
+Menores adiados da revisão (fazer quando der): regex de telefone pega intervalos como `2025-2026` (o modelo vê
+`[tel1]`, o app grava certo); não há ferramenta para listar pastas; se o registro da ação falhar depois de gravar, a
+IA pode repetir; `event_update` só com `start_date` não guarda o `end_date` ajustado para desfazer; comentário da
+busca universal fora do lugar em `src/app/_layout.tsx`; sem teste do hook `useAgentChat`.
+
+Próximas etapas (plano em `docs/PLANO_DE_IMPLEMENTACAO.md`, Fase 6): 6.2 finanças/investimentos/compras, 6.3 dieta
+e Bíblia, 6.4 caixa de entrada, Conversas, Ações da IA e Ajustes (teto editável em US$).
+
 ## Versão 0.9.0: lembretes com vários horários e notas vinculadas (27/11/2026)
 
-- [ ] Instalar o APK 0.9.0 e, **logo em seguida e antes de criar ou editar lembretes e notas**, rodar
-  `pnpm sb db push --remote`. Ele aplica as duas migrações pendentes (`20261130000001_notas_sem_tipo` e
-  `20261201000001_lembretes_varios_horarios`). Até lá, o servidor recusaria o envio dos lembretes novos.
-  Não precisa republicar o Sync Streams (as colunas novas vêm pelo `SELECT *`).
 - [ ] Conferir no Android e no Chrome (claro/escuro, 360 dp): lembrete com "Horários" (08:00, 14:00 e 20:00) e com
   "Intervalo" (a cada 2 h das 08:00 às 18:00): cada horário aparece na agenda e no Início, tem aviso próprio, e
   "Feito" e "Adiar" no aviso valem só para aquele horário.
@@ -16,10 +36,7 @@ O que só o dono do projeto pode fazer (contas, chaves, testes no aparelho, deci
 
 ## Notas sem tipo (27/11/2026)
 
-- [ ] Instalar o APK novo (e abrir o web atualizado) **antes** de aplicar a migração: `pnpm sb db push --remote`
-  (`20261130000001_notas_sem_tipo`). O app antigo ainda envia o tipo da nota e o envio seria recusado. Notas que eram
-  devocional ou diário ganham as tags `devocional` e `diário`.
-- [ ] Conferir: o editor não tem mais o seletor de tipo e a lista de notas só tem os filtros Todas e Fixadas (mais as tags).
+- [ ] Conferir: notas que eram devocional ou diário ganharam as tags `devocional` e `diário`; o editor não tem mais o seletor de tipo e a lista de notas só tem os filtros Todas e Fixadas (mais as tags).
 
 ## Bíblia v2: planos de leitura (27/11/2026)
 
@@ -43,11 +60,8 @@ O que só o dono do projeto pode fazer (contas, chaves, testes no aparelho, deci
 
 ## Investimentos (25/11/2026)
 
-- [ ] Criar conta grátis na brapi (https://brapi.dev) e gerar o token.
-- [ ] Criar conta grátis na CoinGecko e gerar a chave **Demo**.
-- [ ] Guardar as chaves no Supabase (projeto GLIFE), na raiz `glife/`:
-      `pnpm sb secrets set BRAPI_TOKEN=sua_chave COINGECKO_DEMO_KEY=sua_chave`
-      (sem elas, a brapi só cota PETR4, VALE3, MGLU3 e ITUB4, e a CoinGecko fica bem limitada).
+- [ ] Opcional: gerar chaves novas na brapi e na CoinGecko (as atuais foram coladas num chat) e regravar com
+      `pnpm sb secrets set --env-file supabase/functions/.env.secrets.local --yes` (arquivo local, ignorado pelo git).
 - [ ] Testar Investimentos no Chrome e no APK: claro/escuro, 360 dp, nomes longos, ação (ITSA4), FII (HGLG11),
       cripto (bitcoin), "Já tenho", aporte com conta (saldo e extrato), encerrar, excluir e desfazer.
 
@@ -58,4 +72,5 @@ O que só o dono do projeto pode fazer (contas, chaves, testes no aparelho, deci
 
 ## Já publicado (não precisa fazer)
 
-Migrações até `20261127000002` (R2 publicada em 26/11/2026 após backup em `../backups/glife-r2-20261126/`); verificação de RLS hospedado sem problemas. A Edge Function `quotes` e os Sync Streams v7 já estavam publicados; Sync Streams v8 (com `diet_goals`) publicados em 26/11/2026; v10 (com `bible_plans` e `bible_plan_reads`) publicados em 27/11/2026.
+Migrações até `20261127000002` (R2 publicada em 26/11/2026 após backup em `../backups/glife-r2-20261126/`); verificação de RLS hospedado sem problemas. A Edge Function `quotes` e os Sync Streams v7 já estavam publicados; Sync Streams v8 (com `diet_goals`) publicados em 26/11/2026; v10 (com `bible_plans` e `bible_plan_reads`) publicados em 27/11/2026. Migrações `20261130000001` (notas sem tipo) e
+`20261201000001` (lembretes com vários horários) aplicadas em 27/11/2026; `rls_check.sql` = 0 linhas. Secrets `BRAPI_TOKEN` e `COINGECKO_DEMO_KEY` gravados em 27/11/2026.

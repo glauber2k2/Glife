@@ -14,3 +14,4 @@ export { NoteListScreen } from './screens/NoteListScreen';
 export { TrashScreen } from './screens/TrashScreen';
 export { useNotesTargetSource } from './hooks/useNotesTargetSource';
 export { useNotesLinkerPort } from './hooks/useNotesLinkerPort';
+export { useNotesAiTools } from './ai/useNotesAiTools';
