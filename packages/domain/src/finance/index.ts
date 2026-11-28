@@ -245,6 +245,13 @@ export {
   type PriceBook,
 } from './investmentSeries.ts';
 export {
+  STATS_MIN_POINTS,
+  assetStats,
+  type AssetStats,
+  type Oscillation,
+  type StatWindow,
+} from './investmentStats.ts';
+export {
   type AssetOpening,
   type InvestmentsRepository,
   type InvestmentsSnapshot,
