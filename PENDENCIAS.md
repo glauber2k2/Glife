@@ -5,12 +5,8 @@ O que só o dono do projeto pode fazer (contas, chaves, testes no aparelho, deci
 ## Botão da Glife IA, voz, anexos, versículos e previsto (28/11/2026) — branch `integracao-ia-investimentos`
 
 Já feito: código, testes (lint, typecheck e todas as suítes verdes) e extração de PDF testada com `unpdf` no Deno.
-Nada foi publicado nem conferido no aparelho/navegador logado (exige MFA).
+Funções `extract-text` e `ai-agent` publicadas em 28/11 (respondem 401 sem sessão). Nada conferido logado (exige MFA).
 
-- [ ] **Publicar as funções** (as duas mudaram/são novas):
-  `pnpm sb functions deploy extract-text --import-map supabase/functions/deno.json` e
-  `pnpm sb functions deploy ai-agent --import-map supabase/functions/deno.json` (limite do pedido subiu para 400 mil
-  caracteres por causa dos anexos).
 - [ ] **Instalar o APK 0.10.0** (gerado em 28/11: `Desktop/Glauber/Glife-0.10.0.apk`, 54 MB; `.zip` de 23 MB para
   mandar pelo chat). Migrações: as 18 já estão no GLIFE (nada a aplicar).
 - [ ] Conferir no Chrome e no APK (claro/escuro, 360 dp):
