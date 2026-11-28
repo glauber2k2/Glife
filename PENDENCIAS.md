@@ -50,7 +50,6 @@ papéis e reais; cripto com data de Brasília e UTC.
 Já feito: 3 migrações aplicadas no GLIFE, função `ai-agent` publicada (`--import-map`), secret `DEEPSEEK_API_KEY`
 conferido, teto US$ 2,00/mês. A conversa real com o modelo **não** foi testada.
 
-- [ ] Gerar APK novo **a partir do código com o PR #5** (biblioteca nova: `ai`, `@ai-sdk/react`; usa `expo/fetch`).
 - [ ] Testar no Chrome (`pnpm web`, não no navegador do Claude) e no APK a aba **IA** com as 44 frases de
   `docs/ia/frases-de-teste.md`, anotando o resultado no arquivo. Conferir: resposta chega aos poucos (streaming) no
   Android; "Desfazer" funciona; lixeira pede "Confirmar?"; telefone digitado é gravado inteiro.
@@ -81,22 +80,21 @@ e Bíblia, 6.4 caixa de entrada, Conversas, Ações da IA e Ajustes (teto editá
 
 ## Bíblia v2: planos de leitura (27/11/2026)
 
-- [ ] Gerar APK novo e conferir no Chrome e no Android (claro/escuro, 360 dp): leitor em Outfit, Aa (tamanho, entrelinhas, letras), grifo e sublinhado com respiro, seleção em sobretom, busca ("aguas", "Jo 3:16"), início com AT/NT e últimos registros, criar plano, ler pelo plano e marcar como lido, pausar/retomar, lembrete às 06:30.
+- [ ] Conferir no Chrome e no APK 0.10.0 (claro/escuro, 360 dp): leitor em Outfit, Aa (tamanho, entrelinhas, letras), grifo e sublinhado com respiro, seleção em sobretom, busca ("aguas", "Jo 3:16"), início com AT/NT e últimos registros, criar plano, ler pelo plano e marcar como lido, pausar/retomar, lembrete às 06:30.
 
 ## Bíblia (26/11/2026)
 
-- [ ] Gerar APK novo (bibliotecas nativas novas: expo-file-system, expo-document-picker; `prebuild --clean`).
 - [ ] Conferir no Chrome e no APK (claro/escuro, 360 dp): Início → Bíblia, abrir um capítulo, grifar nas 4 cores e sublinhar, remover, Anotar (vira nota com [[Jo 3:16]]), ver o marcador no versículo, abrir o versículo pela nota, trocar BLIVRE/BPM, importar uma tradução (USFM) e remover.
 - [ ] Saber: traduções importadas ficam só no aparelho e somem ao sair da conta (importar de novo depois).
 
 ## Fechamento da Fase R2 (26/11/2026)
 
-- [ ] Instalar o APK 0.5.0 e conferir no Android e no Chrome: dois temas, largura de 360 dp e textos longos.
+- [ ] Conferir no APK 0.10.0 e no Chrome: dois temas, largura de 360 dp e textos longos.
 - [ ] Testar uma alteração offline entre Android e web, a preferência do olhinho após reabrir e os botões Feito, Registrar e Adiar com o app aberto e com o app fechado (incluindo concluir um item adiado).
 
 ## Agenda e dieta (26/11/2026)
 
-- [ ] Instalar o APK novo (tem biblioteca nativa nova, a de notificações) e permitir as notificações quando o app pedir.
+- [ ] No APK 0.10.0, permitir as notificações quando o app pedir.
 - [ ] Testar: evento com aviso 15 min antes, lembrete avulso, refeição do plano com aviso, tudo com o celular offline.
 
 ## Investimentos (25/11/2026)
